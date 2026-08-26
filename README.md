@@ -1,5 +1,7 @@
 # Fantasia
 
+유한대학교 게임콘텐츠, 게임엔진, 팀플
+
 3D 턴제 보드게임. *For the King*(헥스 보드 이동, 주사위 판정, 파티 대형 기반 전투, 캠프 사이클)에서 시스템적 영감을 받아 제작 중.
 
 ## 문서
@@ -49,7 +51,7 @@ fantasia/
 │   ├── References/
 │   └── Concept/
 ├── .gitignore                   # Unity 표준 gitignore
-├── .gitattributes               # meta 파일 텍스트 처리 + Git LFS 템플릿(주석 처리됨)
+├── .gitattributes               # meta 파일 텍스트 처리 + Git LFS 패턴
 └── README.md
 ```
 
@@ -61,20 +63,10 @@ fantasia/
 - 기능이 늘어나면 `Board`, `Combat` 등 모듈별로 asmdef를 추가로 쪼개는 것을 권장 (현재는 단일 어셈블리로 시작, 과도한 초기 분리는 지양).
 - 게임 데이터(캐릭터 스탯, 아이템, 이벤트 등)는 하드코딩 대신 `Data/` 아래 ScriptableObject로 관리 — 디자이너가 코드 수정 없이 콘텐츠 추가 가능.
 
-## 버전 관리
-- Git 저장소로 초기화되어 있습니다 (기본 브랜치: `main`).
-- **최초 커밋 전 필수**: 이 머신에 git 사용자 정보가 없다면 아래를 한 번 실행하세요.
-  ```
-  git config --global user.name "Your Name"
-  git config --global user.email "you@example.com"
-  ```
-- **바이너리 에셋을 추가하기 전에** 저장소 안에서 `git lfs install`을 한 번 실행하세요. `.gitattributes`에 모델/텍스처/오디오용 LFS 패턴을 이미 설정해뒀습니다 (Unity 프로젝트를 git 서버에 올릴 때 바이너리를 LFS 없이 먼저 커밋하면 나중에 히스토리 재작성 없이는 되돌리기 어렵습니다).
-  - Public 저장소 + 무료 플랜 조합이라면 GitHub 기준 LFS 무료 할당량이 저장소당 월 1GB(용량/대역폭)로 꽤 빠듯합니다. 3D 에셋이 늘어나면 LFS 데이터 팩 구매나 유료 플랜 전환이 필요할 수 있다는 점 참고하세요.
-- 라이선스: `LICENSE` 파일에 All Rights Reserved로 명시되어 있습니다 — 저장소는 공개(public)지만 코드/에셋의 재사용·배포는 명시적 허가 없이는 불가합니다.
-
-## 원격 저장소(Git 서버) 연결
-로컬 준비가 끝나면 GitHub/GitLab 등에서 **빈 저장소**(README/gitignore/license 자동 생성 옵션 전부 끄기 — 이미 로컬에 있음)를 만든 뒤:
-```
-git remote add origin <저장소 URL>
-git push -u origin main
-```
+## 협업 / 버전 관리
+- 기본 브랜치: `main`.
+- 팀원 각자 로컬에서 `git config --global user.name/user.email` 설정 필요.
+- **바이너리 에셋을 추가하기 전에** 저장소 안에서 `git lfs install`을 한 번 실행하세요. `.gitattributes`에 모델/텍스처/오디오용 LFS 패턴이 이미 설정되어 있습니다 (Unity 프로젝트에서 바이너리를 LFS 없이 먼저 커밋하면 나중에 히스토리 재작성 없이는 되돌리기 어렵습니다).
+  - Public 저장소 + 무료 플랜 조합이라면 GitHub 기준 LFS 무료 할당량이 저장소당 월 1GB(용량/대역폭)입니다. 팀 작업으로 3D 에셋이 늘어나면 데이터 팩 구매/플랜 전환이 필요할 수 있습니다.
+- 라이선스: [`LICENSE`](LICENSE) — GPLv3.
+- Unity 에디터 설정 권장: `Project Settings > Editor` → **Asset Serialization = Force Text**, **Version Control Mode = Visible Meta Files**. 팀원 간 씬/프리팹 diff·merge를 위해 필수입니다.
