@@ -9,14 +9,16 @@
 - For the King 시스템 리서치 노트: [`Docs/References/ForTheKing_SystemNotes.md`](Docs/References/ForTheKing_SystemNotes.md)
 
 ## Unity 프로젝트 열기 (최초 1회)
-이 폴더는 아직 `ProjectSettings/`, `Packages/`가 없는 상태입니다 (Unity 에디터가 생성하는 파일이라 미리 만들지 않았습니다).
+이 폴더는 아직 Unity 에디터로 실제 생성된 적이 없습니다. `Packages/`는 없고, `ProjectSettings/EditorSettings.asset` 한 파일만 미리 세팅해둔 상태입니다 (아래 참고).
 
 1. Unity Hub → **New Project**
 2. 템플릿: **3D (URP)** 권장 (스타일라이즈드 3D + 성능 확보에 유리)
 3. Project Name: `fantasia`
 4. Location: `C:\Obsidian\Game` (이 폴더의 부모 경로)
-   - 이미 `fantasia` 폴더가 존재하고 `Assets/` 등이 채워져 있어도 Unity가 그대로 인식해서 `ProjectSettings/`, `Packages/`, `Library/` 등을 추가로 생성합니다.
+   - 이미 `fantasia` 폴더가 존재하고 `Assets/`, `ProjectSettings/` 등이 일부 채워져 있어도 Unity가 그대로 인식해서 `Packages/`, `Library/` 등 나머지를 추가로 생성합니다.
+   - 단, Unity 버전에 따라 템플릿이 기존 `ProjectSettings/` 내용을 덮어쓸 수도 있습니다 — 아래 4번 확인 필수.
 5. 생성 후 기본 템플릿이 넣어준 `Assets/Scenes/SampleScene` 등은 정리하고, 아래 `Assets/_Project` 구조를 기준으로 작업하세요.
+6. **필수 확인**: `Edit > Project Settings > Editor`에서 **Asset Serialization = Force Text**, **Version Control Mode = Visible Meta Files**로 되어 있는지 확인하세요. 미리 세팅해뒀지만 프로젝트 생성 과정에서 덮어써졌을 수 있습니다. 값이 바뀌어 있었다면 다시 맞추고 `git add ProjectSettings/EditorSettings.asset && git commit`으로 커밋해주세요.
 
 ## 폴더 구조
 
@@ -69,4 +71,4 @@ fantasia/
 - **바이너리 에셋을 추가하기 전에** 저장소 안에서 `git lfs install`을 한 번 실행하세요. `.gitattributes`에 모델/텍스처/오디오용 LFS 패턴이 이미 설정되어 있습니다 (Unity 프로젝트에서 바이너리를 LFS 없이 먼저 커밋하면 나중에 히스토리 재작성 없이는 되돌리기 어렵습니다).
   - Public 저장소 + 무료 플랜 조합이라면 GitHub 기준 LFS 무료 할당량이 저장소당 월 1GB(용량/대역폭)입니다. 팀 작업으로 3D 에셋이 늘어나면 데이터 팩 구매/플랜 전환이 필요할 수 있습니다.
 - 라이선스: [`LICENSE`](LICENSE) — GPLv3.
-- Unity 에디터 설정 권장: `Project Settings > Editor` → **Asset Serialization = Force Text**, **Version Control Mode = Visible Meta Files**. 팀원 간 씬/프리팹 diff·merge를 위해 필수입니다.
+- Force Text / Visible Meta Files 설정은 위 "Unity 프로젝트 열기" 6번 참고.
