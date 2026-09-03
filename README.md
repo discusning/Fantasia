@@ -8,17 +8,15 @@
 - 게임 디자인 문서(뼈대): [`Docs/GDD/GDD.md`](Docs/GDD/GDD.md)
 - For the King 시스템 리서치 노트: [`Docs/References/ForTheKing_SystemNotes.md`](Docs/References/ForTheKing_SystemNotes.md)
 
-## Unity 프로젝트 열기 (최초 1회)
-이 폴더는 아직 Unity 에디터로 실제 생성된 적이 없습니다. `Packages/`는 없고, `ProjectSettings/EditorSettings.asset` 한 파일만 미리 세팅해둔 상태입니다 (아래 참고).
+## Unity 프로젝트 열기
+프로젝트는 이미 생성되어 저장소에 커밋되어 있습니다 (Unity **6000.5.9f1**, 명령줄 배치 모드로 생성). 팀원은 새로 만들 필요 없이 그대로 열면 됩니다.
 
-1. Unity Hub → **New Project**
-2. 템플릿: **3D (URP)** 권장 (스타일라이즈드 3D + 성능 확보에 유리)
-3. Project Name: `fantasia`
-4. Location: `C:\Obsidian\Game` (이 폴더의 부모 경로)
-   - 이미 `fantasia` 폴더가 존재하고 `Assets/`, `ProjectSettings/` 등이 일부 채워져 있어도 Unity가 그대로 인식해서 `Packages/`, `Library/` 등 나머지를 추가로 생성합니다.
-   - 단, Unity 버전에 따라 템플릿이 기존 `ProjectSettings/` 내용을 덮어쓸 수도 있습니다 — 아래 4번 확인 필수.
-5. 생성 후 기본 템플릿이 넣어준 `Assets/Scenes/SampleScene` 등은 정리하고, 아래 `Assets/_Project` 구조를 기준으로 작업하세요.
-6. **필수 확인**: `Edit > Project Settings > Editor`에서 **Asset Serialization = Force Text**, **Version Control Mode = Visible Meta Files**로 되어 있는지 확인하세요. 미리 세팅해뒀지만 프로젝트 생성 과정에서 덮어써졌을 수 있습니다. 값이 바뀌어 있었다면 다시 맞추고 `git add ProjectSettings/EditorSettings.asset && git commit`으로 커밋해주세요.
+1. Unity Hub 설치 후, Editor 버전 **6000.5.9f1** 설치 (다른 버전으로 열면 `Library/`가 재생성되며 임포트 시간이 오래 걸릴 수 있습니다).
+2. Unity Hub → **Add** → 클론한 `fantasia` 폴더 선택 → 프로젝트 열기.
+3. 최초 오픈 시 에셋 임포트가 진행됩니다 (`Library/`는 gitignore 대상이라 로컬에서 새로 생성됨).
+4. 기본값 확인: **Asset Serialization = Force Text**가 기본으로 적용되어 있습니다 (`ProjectSettings/EditorSettings.asset`). 이 Unity 버전부터는 meta 파일이 항상 보이는 방식(Visible Meta Files)만 지원하므로 별도 설정이 필요 없습니다.
+5. **렌더 파이프라인 미정 상태**: 현재는 Built-in Render Pipeline으로 생성되어 있고, URP는 아직 패키지로 추가하지 않았습니다. URP로 전환하기로 확정되면 Package Manager에서 `Universal RP` 설치 후 `Edit > Render Pipeline > Universal Render Pipeline > Upgrade Project Materials`로 마이그레이션하세요.
+6. 기본 씬(`Assets/Scenes/SampleScene` 등)이 남아있다면 정리하고, `Assets/_Project` 구조를 기준으로 작업하세요.
 
 ## 폴더 구조
 
@@ -73,4 +71,4 @@ fantasia/
 - **바이너리 에셋을 추가하기 전에** 저장소 안에서 `git lfs install`을 한 번 실행하세요. `.gitattributes`에 모델/텍스처/오디오용 LFS 패턴이 이미 설정되어 있습니다 (Unity 프로젝트에서 바이너리를 LFS 없이 먼저 커밋하면 나중에 히스토리 재작성 없이는 되돌리기 어렵습니다).
   - Public 저장소 + 무료 플랜 조합이라면 GitHub 기준 LFS 무료 할당량이 저장소당 월 1GB(용량/대역폭)입니다. 팀 작업으로 3D 에셋이 늘어나면 데이터 팩 구매/플랜 전환이 필요할 수 있습니다.
 - 라이선스: [`LICENSE`](LICENSE) — GPLv3.
-- Force Text / Visible Meta Files 설정은 위 "Unity 프로젝트 열기" 6번 참고.
+- Force Text / meta 파일 설정은 위 "Unity 프로젝트 열기" 4번 참고.
