@@ -51,7 +51,9 @@ fantasia/
 ├── Docs/                        # 기획 문서 (Unity에는 임포트되지 않음, 루트에 위치)
 │   ├── GDD/
 │   ├── References/
-│   └── Concept/
+│   └── Concept/                 # 컨셉/참고 이미지
+│       ├── Concept/             # 자체 제작 컨셉 아트
+│       └── Images/              # 외부 참고 자료 이미지
 ├── .gitignore                   # Unity 표준 gitignore
 ├── .gitattributes               # meta 파일 텍스트 처리 + Git LFS 패턴
 └── README.md
