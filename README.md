@@ -28,7 +28,7 @@ fantasia/
 │   │   │   ├── Core/          # 게임/씬 매니저, 상태 머신, 부트스트랩
 │   │   │   ├── Board/         # 헥스 보드, 이동, POI, 챕터 진행
 │   │   │   ├── Combat/        # 턴 순서, 액션, 포커스 리소스
-│   │   │   ├── Dice/          # 범용 d100 판정 모듈 (전투/이벤트/캠프 공용)
+│   │   │   ├── Dice/          # 범용 확률 판정 모듈 (전투/이벤트/캠프 공용)
 │   │   │   ├── Characters/    # 파티원 스탯/성장
 │   │   │   ├── Items/         # 인벤토리, 장비, 상점
 │   │   │   ├── Events/        # 텍스트 이벤트/인카운터
@@ -64,6 +64,19 @@ fantasia/
 - `Scripts/Editor/`는 별도 `Fantasia.Scripts.Editor` asmdef로 분리(Editor 플랫폼 전용) — 런타임 빌드에 에디터 코드가 섞이지 않도록 함.
 - 기능이 늘어나면 `Board`, `Combat` 등 모듈별로 asmdef를 추가로 쪼개는 것을 권장 (현재는 단일 어셈블리로 시작, 과도한 초기 분리는 지양).
 - 게임 데이터(캐릭터 스탯, 아이템, 이벤트 등)는 하드코딩 대신 `Data/` 아래 ScriptableObject로 관리 — 디자이너가 코드 수정 없이 콘텐츠 추가 가능.
+
+## 구현 현황 / 테스트 방법
+아직 아트/애니메이션 없이 로직만 먼저 만드는 단계입니다. Unity Editor 상단 메뉴 **Fantasia**에서 실행:
+
+- **Setup Board Test Scene** — 헥스 보드(`Scripts/Board`) 생성. Play 후 Space로 주사위 굴려 이동 범위(초록) 확인, 클릭하면 굴린 만큼의 타일을 한 칸씩 밟으며 이동(순간이동 아님). 어두운 타일은 진입 불가(장애물, `HexBoard.obstacleChance`). **I 키**로 스테이터스/인벤토리 창(`Scripts/UI/StatusInventoryPanel.cs`, 참고: `Docs/Concept/Images/Fantasia_Status_Inventory.png`) 토글 — 캐릭1/2/3 탭으로 캐릭터 전환.
+- **Setup Combat Test Scene** — 파티(파랑) vs 적(빨강) 3:3 전투 프로토타입(`Scripts/Combat`). Speed 기반 턴 큐 + 무기 슬롯 롤 판정을 화면 버튼(공격/포커스 소모/턴 넘기기)으로 직접 테스트 가능. 오버월드와 다른 로우앵글 대치 구도(참고: `Docs/Concept/Concept/판타지아 전투 화면.jpg`).
+- **Run Combat Slot-Roll Self-Test** / **Run Turn Queue Self-Test** / **Run Pathfinding Self-Test** — 각각 슬롯 판정 확률, 자동 전투 진행, 이동 경로 계산을 화면 없이 시뮬레이션해 콘솔에 결과 출력.
+
+두 테스트 씬 모두 화면 우상단에 씬 전환 버튼(`Scripts/Core/DevSceneNav.cs`)이 있어 Play 중에 오버월드 ↔ 전투 화면을 자유롭게 오갈 수 있습니다. 시작 씬은 `Overworld/BoardTest`(Build Settings 0번)입니다.
+
+각 `Setup ...` 메뉴는 해당 테스트 씬을 처음부터 다시 만듭니다(기존 씬 내용 덮어씀) — 씬 안에서 수동으로 손댄 게 있다면 재실행 전 백업하세요.
+
+캐릭터/아이템 데이터는 아직 실제 기획값이 아니라 UI 작업용 placeholder입니다 (`Data/Characters`, `Data/Items`, `Scripts/Editor/PlaceholderDataSetup.cs`에서 생성). Canvas UI를 쓰기 위해 `com.unity.ugui` 패키지를 추가했습니다(기본 명령줄 프로젝트 생성 시 빠져 있었음).
 
 ## 협업 / 버전 관리
 - 기본 브랜치: `main`.
