@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Fantasia.Core;
 using UnityEngine;
 
 namespace Fantasia.Board
@@ -12,14 +13,21 @@ namespace Fantasia.Board
         [SerializeField] private float tileGap = 0.05f;
         [SerializeField] private float tileHeight = 0.4f;
         [SerializeField, Range(0f, 1f)] private float obstacleChance = 0.18f;
+        [SerializeField, Range(0f, 1f)] private float encounterChance = 0.1f;
 
         private readonly Dictionary<HexCoord, HexTile> _tiles = new Dictionary<HexCoord, HexTile>();
         private Material _tileMaterial;
 
         private bool _generated;
 
+        // Tiles are placed with their base (not top surface) at the tile's
+        // own transform position — callers placing anything on the board
+        // surface need this to sit above it correctly.
+        public float TileHeight => tileHeight;
+
         private void Awake()
         {
+            BoardSession.EnsureExists();
             Generate();
         }
 
@@ -39,18 +47,23 @@ namespace Fantasia.Board
             // it — 61 tiles at radius 4 previously meant 61 identical meshes.
             var sharedMesh = HexMeshBuilder.BuildFlatTopHexPrism(tileSize - tileGap, tileHeight);
 
+            // A local RNG seeded from BoardSession (not UnityEngine.Random's
+            // global state) so the same board reproduces every reload without
+            // making dice rolls/combat elsewhere suspiciously repetitive too.
+            var rng = new System.Random(BoardSession.Instance != null ? BoardSession.Instance.BoardSeed : System.Environment.TickCount);
+
             for (int q = -radius; q <= radius; q++)
             {
                 int r1 = Mathf.Max(-radius, -q - radius);
                 int r2 = Mathf.Min(radius, -q + radius);
                 for (int r = r1; r <= r2; r++)
                 {
-                    CreateTile(new HexCoord(q, r), sharedMesh);
+                    CreateTile(new HexCoord(q, r), sharedMesh, rng);
                 }
             }
         }
 
-        private void CreateTile(HexCoord coord, Mesh sharedMesh)
+        private void CreateTile(HexCoord coord, Mesh sharedMesh, System.Random rng)
         {
             var go = new GameObject($"Hex {coord}");
             go.transform.SetParent(transform, false);
@@ -66,9 +79,20 @@ namespace Fantasia.Board
             var tile = go.AddComponent<HexTile>();
             tile.Initialize(coord);
 
-            // Origin stays walkable — that's where the token spawns.
+            // Origin stays walkable and encounter-free — that's where the token spawns.
             bool isOrigin = coord.Q == 0 && coord.R == 0;
-            tile.SetBlocked(!isOrigin && Random.value < obstacleChance);
+            bool blocked = !isOrigin && rng.NextDouble() < obstacleChance;
+            tile.SetBlocked(blocked);
+
+            if (!blocked && !isOrigin)
+            {
+                bool isEncounter = rng.NextDouble() < encounterChance;
+                tile.SetEncounter(isEncounter);
+                if (isEncounter && BoardSession.Instance != null && BoardSession.Instance.ClearedEncounters.Contains(coord))
+                {
+                    tile.SetCleared(true);
+                }
+            }
 
             _tiles[coord] = tile;
         }

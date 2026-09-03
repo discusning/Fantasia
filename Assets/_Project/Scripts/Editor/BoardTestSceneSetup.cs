@@ -30,7 +30,9 @@ namespace Fantasia.Editor
         public static void CreateSceneAndCapture()
         {
             var cam = BuildScene();
-            GameObject.Find("BoardManager").GetComponent<HexBoard>().Generate();
+            var boardGO = GameObject.Find("BoardManager");
+            boardGO.GetComponent<HexBoard>().Generate();
+            boardGO.GetComponent<BoardTestController>().SpawnToken();
             EditorScreenshotUtility.Capture(cam, "board_test_screenshot.png");
         }
 

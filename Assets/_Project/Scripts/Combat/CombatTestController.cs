@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using Fantasia.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Fantasia.Combat
 {
@@ -93,6 +95,19 @@ namespace Fantasia.Combat
             Log($"— {_turnQueue.Advance().Name} 턴 —");
         }
 
+        // Only a win clears the encounter tile — a loss leaves it to fight again.
+        private void ReturnToBoard(bool partyWon)
+        {
+            var session = BoardSession.Instance;
+            if (partyWon && session != null && session.PendingEncounterCoord.HasValue)
+            {
+                session.ClearedEncounters.Add(session.PendingEncounterCoord.Value);
+            }
+            if (session != null) session.PendingEncounterCoord = null;
+
+            SceneManager.LoadScene("BoardTest");
+        }
+
         private void RefreshVisual(Combatant combatant)
         {
             if (!_renderers.TryGetValue(combatant, out var renderer) || renderer == null) return;
@@ -130,6 +145,12 @@ namespace Fantasia.Combat
                 GUILayout.EndHorizontal();
 
                 if (GUILayout.Button("턴 넘기기")) SkipTurn();
+            }
+            else
+            {
+                bool partyWon = _party.Any(c => c.IsAlive);
+                GUILayout.Label(partyWon ? "승리!" : "패배...");
+                if (GUILayout.Button("보드로 돌아가기")) ReturnToBoard(partyWon);
             }
 
             GUILayout.Space(8);
