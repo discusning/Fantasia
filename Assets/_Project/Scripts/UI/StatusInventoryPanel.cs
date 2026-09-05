@@ -345,17 +345,29 @@ namespace Fantasia.UI
             _discardDialog.SetActive(false);
         }
 
+        // Only consumables respond to double-click — equipment/material use
+        // right-click (TryEquipSlot) instead. Actual use-effects (heal, feed,
+        // ...) depend on the stat/combat connection GDD 6.3/6.7 hasn't
+        // settled yet, but the item is still actually consumed either way.
         public void UseSlot(int index)
         {
             var items = CurrentInventory();
             if (index >= items.Length || items[index] == null) return;
 
-            // Actual use-effects (heal, feed, ...) depend on the stat/combat
-            // connection GDD 6.3/6.7 hasn't settled yet — this just proves
-            // the double-click hook works.
-            Debug.Log($"[Inventory] 사용: {items[index].ItemName}");
+            var item = items[index];
+            if (item.Category != ItemCategory.Consumable) return;
+
+            Debug.Log($"[Inventory] 사용: {item.ItemName}");
+            if (BoardSession.Instance != null)
+            {
+                BoardSession.Instance.RemoveItemAt(index);
+                RefreshInventory();
+            }
         }
 
+        // Right-click toggles equip/unequip — equipment only. Actual
+        // stat application depends on the character/equipment system GDD 6.3
+        // hasn't settled yet; this just tracks the on/off state.
         public void TryEquipSlot(int index)
         {
             var items = CurrentInventory();
@@ -363,11 +375,10 @@ namespace Fantasia.UI
 
             var item = items[index];
             if (item.Category != ItemCategory.Equipment) return;
+            if (BoardSession.Instance == null) return;
 
-            // Actual equip slots/stat application depend on the character/
-            // equipment system GDD 6.3 hasn't settled yet — this just proves
-            // the right-click hook works.
-            Debug.Log($"[Inventory] 장착: {item.ItemName}");
+            bool nowEquipped = BoardSession.Instance.ToggleEquipped(item);
+            Debug.Log(nowEquipped ? $"[Inventory] 장착: {item.ItemName}" : $"[Inventory] 해제: {item.ItemName}");
         }
 
         private void SetActiveCharacter(int index)

@@ -66,6 +66,25 @@ namespace Fantasia.Core
             (Inventory[indexA], Inventory[indexB]) = (Inventory[indexB], Inventory[indexA]);
         }
 
+        // Keyed by ItemDefinition rather than slot index so equip state
+        // follows the item through a drag/swap instead of staying pinned to
+        // a grid position. No per-pickup item identity yet, so two inventory
+        // entries sharing the same ItemDefinition asset are indistinguishable
+        // and will show as equipped together — acceptable until items get
+        // real per-instance identity.
+        public HashSet<ItemDefinition> EquippedItems { get; } = new HashSet<ItemDefinition>();
+
+        // Returns true if the item ends up equipped, false if it was just unequipped.
+        public bool ToggleEquipped(ItemDefinition item)
+        {
+            if (!EquippedItems.Add(item))
+            {
+                EquippedItems.Remove(item);
+                return false;
+            }
+            return true;
+        }
+
         private bool _initialized;
 
         public static void EnsureExists()
