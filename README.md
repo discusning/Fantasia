@@ -7,6 +7,7 @@
 ## 문서
 - 게임 디자인 문서(뼈대): [`Docs/GDD/GDD.md`](Docs/GDD/GDD.md)
 - For the King 시스템 리서치 노트: [`Docs/References/ForTheKing_SystemNotes.md`](Docs/References/ForTheKing_SystemNotes.md)
+- 검토 중인 무료 Unity 에셋 목록(미다운로드): [`Docs/참고자료/UnityAssets.md`](Docs/참고자료/UnityAssets.md)
 
 ## Unity 프로젝트 열기
 프로젝트는 이미 생성되어 저장소에 커밋되어 있습니다 (Unity **6000.5.9f1**, 명령줄 배치 모드로 생성). 팀원은 새로 만들 필요 없이 그대로 열면 됩니다.
@@ -49,6 +50,7 @@ fantasia/
 ├── Docs/                        # 기획 문서 (Unity에는 임포트되지 않음, 루트에 위치)
 │   ├── GDD/
 │   ├── References/
+│   ├── 참고자료/                # 나중에 검토할 참고 자료 (예: 무료 에셋 후보 목록)
 │   └── Concept/                 # 컨셉/참고 이미지
 │       ├── Concept/             # 자체 제작 컨셉 아트
 │       └── Images/              # 외부 참고 자료 이미지
