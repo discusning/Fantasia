@@ -274,8 +274,11 @@ namespace Fantasia.UI
             UpdateGhostPosition(eventData);
         }
 
-        // Dropped on another slot (filled or empty) -> swap; dropped anywhere
-        // else -> treat as "outside the inventory" and ask before discarding.
+        // Dropped on a slot (filled or empty) -> swap. Dropped inside the
+        // status/inventory window but not on a slot (a gap, the portrait
+        // panel, the tab bar, ...) -> snap back to where it was, i.e. do
+        // nothing (the data was never touched during the drag). Only a drop
+        // outside the whole window -> ask before discarding.
         public void EndDragSlot(PointerEventData eventData)
         {
             _dragGhost.gameObject.SetActive(false);
@@ -290,8 +293,12 @@ namespace Fantasia.UI
             if (targetSlot != null)
             {
                 SwapSlots(sourceIndex, targetSlot.Index);
+                return;
             }
-            else
+
+            var panelRect = (RectTransform)_panelRoot.transform;
+            bool droppedInsideWindow = RectTransformUtility.RectangleContainsScreenPoint(panelRect, eventData.position, eventData.pressEventCamera);
+            if (!droppedInsideWindow)
             {
                 RequestDiscard(sourceIndex);
             }
