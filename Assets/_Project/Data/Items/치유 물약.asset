@@ -16,3 +16,4 @@ MonoBehaviour:
   Icon: {fileID: 0}
   IconTint: {r: 0.9, g: 0.3, b: 0.3, a: 1}
   Description: "HP\uB97C \uD68C\uBCF5\uD55C\uB2E4."
+  Category: 0

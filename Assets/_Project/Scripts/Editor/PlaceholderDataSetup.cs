@@ -56,11 +56,11 @@ namespace Fantasia.Editor
 
         public static ItemDefinition[] EnsureItems()
         {
-            var specs = new (string name, Color tint, string desc)[]
+            var specs = new (string name, Color tint, string desc, ItemCategory category)[]
             {
-                ("치유 물약", new Color(0.9f, 0.3f, 0.3f), "HP를 회복한다."),
-                ("빵", new Color(0.8f, 0.65f, 0.3f), "캠프에서 소비하는 식량."),
-                ("녹슨 검", new Color(0.6f, 0.6f, 0.6f), "기본 무기."),
+                ("치유 물약", new Color(0.9f, 0.3f, 0.3f), "HP를 회복한다.", ItemCategory.Consumable),
+                ("빵", new Color(0.8f, 0.65f, 0.3f), "캠프에서 소비하는 식량.", ItemCategory.Consumable),
+                ("녹슨 검", new Color(0.6f, 0.6f, 0.6f), "기본 무기.", ItemCategory.Equipment),
             };
 
             Directory.CreateDirectory(ItemDir);
@@ -68,7 +68,7 @@ namespace Fantasia.Editor
 
             for (int i = 0; i < specs.Length; i++)
             {
-                var (name, tint, desc) = specs[i];
+                var (name, tint, desc, category) = specs[i];
                 string path = $"{ItemDir}/{name}.asset";
                 var asset = AssetDatabase.LoadAssetAtPath<ItemDefinition>(path);
                 if (asset == null)
@@ -80,6 +80,7 @@ namespace Fantasia.Editor
                 asset.ItemName = name;
                 asset.IconTint = tint;
                 asset.Description = desc;
+                asset.Category = category;
                 EditorUtility.SetDirty(asset);
 
                 result[i] = asset;

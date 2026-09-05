@@ -128,8 +128,7 @@ namespace Fantasia.Combat
             if (PossibleLoot.Length == 0) return;
 
             var loot = PossibleLoot[Random.Range(0, PossibleLoot.Length)];
-            session.AddItem(loot);
-            Log($"전리품 획득: {loot.ItemName}");
+            Log(session.AddItem(loot) ? $"전리품 획득: {loot.ItemName}" : "인벤토리가 가득 차 전리품을 놓쳤다.");
         }
 
         private void RefreshVisual(Combatant combatant)

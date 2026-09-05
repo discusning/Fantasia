@@ -19,21 +19,45 @@ namespace Fantasia.Core
         public HashSet<HexCoord> ClearedEncounters { get; } = new HashSet<HexCoord>();
         public HexCoord? PendingEncounterCoord { get; set; }
 
-        // Not stacked/counted — a duplicate pickup is just another entry with
-        // the same ItemDefinition reference, matching how StatusInventoryPanel
-        // already treated its placeholder slots. Any source (combat loot,
+        // Fixed slot array (not a growing list) so a specific grid position
+        // can be targeted directly — StatusInventoryPanel's drag/drop needs
+        // "move to slot index" and "swap these two slots", which a compact
+        // list can't express once there's a gap. Any source (combat loot,
         // events, camp, ...) can feed this through AddItem — it isn't
         // combat-specific.
-        public List<ItemDefinition> Inventory { get; } = new List<ItemDefinition>();
+        public const int InventoryCapacity = 12;
+        public ItemDefinition[] Inventory { get; } = new ItemDefinition[InventoryCapacity];
 
-        public void AddItem(ItemDefinition item)
+        // Returns false if every slot is already full.
+        public bool AddItem(ItemDefinition item)
         {
-            if (item != null) Inventory.Add(item);
+            if (item == null) return false;
+
+            for (int i = 0; i < Inventory.Length; i++)
+            {
+                if (Inventory[i] == null)
+                {
+                    Inventory[i] = item;
+                    return true;
+                }
+            }
+            return false;
         }
 
-        public void RemoveItem(ItemDefinition item)
+        public void RemoveItemAt(int index)
         {
-            Inventory.Remove(item);
+            if (index >= 0 && index < Inventory.Length) Inventory[index] = null;
+        }
+
+        // Swapping into a null slot is how an item moves to an empty slot —
+        // no separate "move" method needed.
+        public void SwapItems(int indexA, int indexB)
+        {
+            if (indexA == indexB) return;
+            if (indexA < 0 || indexA >= Inventory.Length) return;
+            if (indexB < 0 || indexB >= Inventory.Length) return;
+
+            (Inventory[indexA], Inventory[indexB]) = (Inventory[indexB], Inventory[indexA]);
         }
 
         private bool _initialized;

@@ -16,3 +16,4 @@ MonoBehaviour:
   Icon: {fileID: 0}
   IconTint: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   Description: "\uAE30\uBCF8 \uBB34\uAE30."
+  Category: 1

@@ -1,8 +1,8 @@
-using System.Collections.Generic;
 using Fantasia.Characters;
 using Fantasia.Core;
 using Fantasia.Items;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Fantasia.UI
@@ -33,7 +33,6 @@ namespace Fantasia.UI
         private static readonly Color BorderColor = new Color(0.5f, 0.5f, 0.5f);
         private static readonly Color FillColor = Color.white;
         private static readonly Color SlotFillColor = new Color(0.92f, 0.92f, 0.92f);
-        private const int InventorySlotCount = 12;
 
         private bool _built;
         private GameObject _panelRoot;
@@ -46,7 +45,14 @@ namespace Fantasia.UI
 
         private Image[] _slotIcons;
         private Text[] _slotLabels;
-        private Button[] _slotButtons;
+
+        private RectTransform _dragGhost;
+        private Image _dragGhostImage;
+        private int _dragSourceIndex = -1;
+
+        private GameObject _discardDialog;
+        private Text _discardDialogLabel;
+        private int _pendingDiscardIndex = -1;
 
         private void Awake()
         {
@@ -111,6 +117,8 @@ namespace Fantasia.UI
             BuildTabBar(panelFill);
             BuildUpperSection(panelFill);
             BuildInventory(panelFill);
+            BuildDiscardDialog(canvasGO.transform);
+            BuildDragGhost(canvasGO.transform);
 
             if (Characters.Length > 0) SetActiveCharacter(0);
         }
@@ -161,37 +169,75 @@ namespace Fantasia.UI
             layout.cellSize = new Vector2(52f, 52f);
             layout.spacing = new Vector2(6f, 6f);
 
-            _slotIcons = new Image[InventorySlotCount];
-            _slotLabels = new Text[InventorySlotCount];
-            _slotButtons = new Button[InventorySlotCount];
+            int slotCount = BoardSession.InventoryCapacity;
+            _slotIcons = new Image[slotCount];
+            _slotLabels = new Text[slotCount];
 
-            for (int i = 0; i < InventorySlotCount; i++)
+            for (int i = 0; i < slotCount; i++)
             {
                 var slotFill = CreateBorderedPanel(gridRect, $"Slot{i}", Vector2.zero, Vector2.one, BorderColor, SlotFillColor, 2f);
 
                 _slotIcons[i] = CreateImage(slotFill, "Icon", new Vector2(0.15f, 0.28f), new Vector2(0.85f, 1f), Color.clear);
                 _slotLabels[i] = CreateText(slotFill, "Label", new Vector2(0f, 0f), new Vector2(1f, 0.28f), "", 7, TextAnchor.LowerCenter);
 
-                // Clicking a filled slot discards that item — no drag/drop or
-                // confirmation yet, this is dev-harness UI, not final UX.
-                var button = slotFill.parent.gameObject.AddComponent<Button>();
-                button.targetGraphic = slotFill.GetComponent<Image>();
-                int captured = i;
-                button.onClick.AddListener(() => DiscardSlot(captured));
-                _slotButtons[i] = button;
+                // Drag/drop, double-click and right-click all live on the
+                // outer slot object — it already has a raycastable Image
+                // (the border) from CreateBorderedPanel, so no Button needed.
+                var slotView = slotFill.parent.gameObject.AddComponent<InventorySlotView>();
+                slotView.Panel = this;
+                slotView.Index = i;
             }
 
             RefreshInventory();
         }
 
+        private void BuildDiscardDialog(Transform canvasRoot)
+        {
+            var dialogFill = CreateBorderedPanel(canvasRoot, "DiscardDialog", Vector2.zero, Vector2.one, BorderColor, new Color(0.98f, 0.98f, 0.9f), 2f);
+            var dialogOuter = (RectTransform)dialogFill.transform.parent;
+            dialogOuter.anchorMin = dialogOuter.anchorMax = new Vector2(0.5f, 0.5f);
+            dialogOuter.sizeDelta = new Vector2(220f, 100f);
+            dialogOuter.anchoredPosition = Vector2.zero;
+            _discardDialog = dialogOuter.gameObject;
+
+            _discardDialogLabel = CreateText(dialogFill, "Message", new Vector2(0.05f, 0.4f), new Vector2(0.95f, 0.95f), "", 11, TextAnchor.MiddleCenter);
+
+            var yesBtn = CreateButton(dialogFill, "Yes", new Vector2(0.1f, 0.08f), new Vector2(0.48f, 0.35f), "예", new Color(0.85f, 0.9f, 0.85f), 11);
+            yesBtn.onClick.AddListener(ConfirmDiscard);
+
+            var noBtn = CreateButton(dialogFill, "No", new Vector2(0.52f, 0.08f), new Vector2(0.9f, 0.35f), "아니오", new Color(0.9f, 0.85f, 0.85f), 11);
+            noBtn.onClick.AddListener(CancelDiscard);
+
+            _discardDialog.SetActive(false);
+        }
+
+        private void BuildDragGhost(Transform canvasRoot)
+        {
+            var go = new GameObject("DragGhost", typeof(RectTransform));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(canvasRoot, false);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(40f, 40f);
+
+            var img = go.AddComponent<Image>();
+            img.raycastTarget = false; // must not steal the drop raycast from the slot underneath
+            go.SetActive(false);
+
+            _dragGhost = rt;
+            _dragGhostImage = img;
+        }
+
         // BoardSession.Instance.Inventory is the live inventory once the game
         // is running; InventoryItems is only a fallback for contexts with no
-        // session (e.g. CreateSceneAndCaptureUI's headless screenshot).
-        private List<ItemDefinition> CurrentInventory()
+        // session (e.g. CreateSceneAndCaptureUI's headless screenshot) — that
+        // fallback is display-only, drag/discard/use/equip all no-op on it.
+        private ItemDefinition[] CurrentInventory()
         {
-            return BoardSession.Instance != null
-                ? BoardSession.Instance.Inventory
-                : new List<ItemDefinition>(InventoryItems);
+            if (BoardSession.Instance != null) return BoardSession.Instance.Inventory;
+
+            var fallback = new ItemDefinition[BoardSession.InventoryCapacity];
+            for (int i = 0; i < InventoryItems.Length && i < fallback.Length; i++) fallback[i] = InventoryItems[i];
+            return fallback;
         }
 
         private void RefreshInventory()
@@ -199,24 +245,122 @@ namespace Fantasia.UI
             if (_slotIcons == null) return; // not built yet
 
             var items = CurrentInventory();
-            for (int i = 0; i < InventorySlotCount; i++)
+            for (int i = 0; i < _slotIcons.Length; i++)
             {
-                var item = i < items.Count ? items[i] : null;
+                var item = i < items.Length ? items[i] : null;
                 _slotIcons[i].color = item != null ? item.IconTint : Color.clear;
                 _slotLabels[i].text = item != null ? item.ItemName : "";
-                _slotButtons[i].interactable = item != null;
             }
         }
 
-        private void DiscardSlot(int index)
+        public void BeginDragSlot(int index, PointerEventData eventData)
         {
             var items = CurrentInventory();
-            if (index >= items.Count) return;
+            if (index >= items.Length || items[index] == null)
+            {
+                _dragSourceIndex = -1;
+                return;
+            }
+
+            _dragSourceIndex = index;
+            _dragGhostImage.color = items[index].IconTint;
+            _dragGhost.gameObject.SetActive(true);
+            UpdateGhostPosition(eventData);
+        }
+
+        public void DragSlot(PointerEventData eventData)
+        {
+            if (_dragSourceIndex < 0) return;
+            UpdateGhostPosition(eventData);
+        }
+
+        // Dropped on another slot (filled or empty) -> swap; dropped anywhere
+        // else -> treat as "outside the inventory" and ask before discarding.
+        public void EndDragSlot(PointerEventData eventData)
+        {
+            _dragGhost.gameObject.SetActive(false);
+            if (_dragSourceIndex < 0) return;
+
+            int sourceIndex = _dragSourceIndex;
+            _dragSourceIndex = -1;
+
+            var hit = eventData.pointerCurrentRaycast.gameObject;
+            var targetSlot = hit != null ? hit.GetComponentInParent<InventorySlotView>() : null;
+
+            if (targetSlot != null)
+            {
+                SwapSlots(sourceIndex, targetSlot.Index);
+            }
+            else
+            {
+                RequestDiscard(sourceIndex);
+            }
+        }
+
+        private void UpdateGhostPosition(PointerEventData eventData)
+        {
+            var canvasRect = (RectTransform)_dragGhost.parent;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, eventData.position, eventData.pressEventCamera, out var localPoint);
+            _dragGhost.anchoredPosition = localPoint;
+        }
+
+        private void SwapSlots(int a, int b)
+        {
+            if (BoardSession.Instance == null) return;
+            BoardSession.Instance.SwapItems(a, b);
+            RefreshInventory();
+        }
+
+        private void RequestDiscard(int index)
+        {
+            var items = CurrentInventory();
+            if (index >= items.Length || items[index] == null) return;
+
+            _pendingDiscardIndex = index;
+            _discardDialogLabel.text = $"{items[index].ItemName}\n아이템을 버리시겠습니까?";
+            _discardDialog.SetActive(true);
+        }
+
+        private void ConfirmDiscard()
+        {
+            if (_pendingDiscardIndex >= 0 && BoardSession.Instance != null)
+            {
+                BoardSession.Instance.RemoveItemAt(_pendingDiscardIndex);
+            }
+            _pendingDiscardIndex = -1;
+            _discardDialog.SetActive(false);
+            RefreshInventory();
+        }
+
+        private void CancelDiscard()
+        {
+            _pendingDiscardIndex = -1;
+            _discardDialog.SetActive(false);
+        }
+
+        public void UseSlot(int index)
+        {
+            var items = CurrentInventory();
+            if (index >= items.Length || items[index] == null) return;
+
+            // Actual use-effects (heal, feed, ...) depend on the stat/combat
+            // connection GDD 6.3/6.7 hasn't settled yet — this just proves
+            // the double-click hook works.
+            Debug.Log($"[Inventory] 사용: {items[index].ItemName}");
+        }
+
+        public void TryEquipSlot(int index)
+        {
+            var items = CurrentInventory();
+            if (index >= items.Length || items[index] == null) return;
 
             var item = items[index];
-            if (BoardSession.Instance != null) BoardSession.Instance.RemoveItem(item);
-            Debug.Log($"[Inventory] 버림: {item.ItemName}");
-            RefreshInventory();
+            if (item.Category != ItemCategory.Equipment) return;
+
+            // Actual equip slots/stat application depend on the character/
+            // equipment system GDD 6.3 hasn't settled yet — this just proves
+            // the right-click hook works.
+            Debug.Log($"[Inventory] 장착: {item.ItemName}");
         }
 
         private void SetActiveCharacter(int index)
