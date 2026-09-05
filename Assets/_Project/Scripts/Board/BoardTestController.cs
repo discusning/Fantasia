@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Fantasia.Core;
 using Fantasia.Dice;
+using Fantasia.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -30,6 +31,7 @@ namespace Fantasia.Board
         private void Start()
         {
             BoardSession.EnsureExists();
+            ItemAcquiredToast.EnsureExists();
             _board = GetComponent<HexBoard>();
             _currentCoord = BoardSession.Instance.PlayerPosition;
             SpawnToken();

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Fantasia.Core;
 using Fantasia.Items;
+using Fantasia.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -31,6 +32,7 @@ namespace Fantasia.Combat
             // Combat can be entered directly via DevSceneNav without ever
             // visiting the board first, so don't assume a session exists yet.
             BoardSession.EnsureExists();
+            ItemAcquiredToast.EnsureExists();
 
             _party = BuildSide("Party", isPlayerSide: true, new[] { 8, 6, 10 },
                 new WeaponDefinition { SlotCount = 3, BaseDamagePerSlot = 6f, Durability = DurabilityTier.Strong });

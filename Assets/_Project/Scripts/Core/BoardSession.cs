@@ -28,6 +28,11 @@ namespace Fantasia.Core
         public const int InventoryCapacity = 12;
         public ItemDefinition[] Inventory { get; } = new ItemDefinition[InventoryCapacity];
 
+        // Fires on every successful AddItem regardless of source — UI (e.g.
+        // ItemAcquiredToast) subscribes here instead of each pickup site
+        // calling into UI directly.
+        public event System.Action<ItemDefinition> ItemAdded;
+
         // Returns false if every slot is already full.
         public bool AddItem(ItemDefinition item)
         {
@@ -38,6 +43,7 @@ namespace Fantasia.Core
                 if (Inventory[i] == null)
                 {
                     Inventory[i] = item;
+                    ItemAdded?.Invoke(item);
                     return true;
                 }
             }
