@@ -74,7 +74,8 @@ namespace Fantasia.Editor
         {
             SpawnLine(-SideOffset, new Color(0.25f, 0.4f, 0.85f), "Party", facesRight: true);
             SpawnLine(SideOffset, new Color(0.8f, 0.25f, 0.25f), "Enemy", facesRight: false);
-            new GameObject("CombatManager").AddComponent<CombatTestController>();
+            var combatManager = new GameObject("CombatManager").AddComponent<CombatTestController>();
+            combatManager.PossibleLoot = PlaceholderDataSetup.EnsureItems();
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();
         }
 

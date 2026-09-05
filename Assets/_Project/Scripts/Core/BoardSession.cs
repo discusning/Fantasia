@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fantasia.Board;
+using Fantasia.Items;
 using UnityEngine;
 
 namespace Fantasia.Core
@@ -17,6 +18,23 @@ namespace Fantasia.Core
         public HexCoord PlayerPosition { get; set; }
         public HashSet<HexCoord> ClearedEncounters { get; } = new HashSet<HexCoord>();
         public HexCoord? PendingEncounterCoord { get; set; }
+
+        // Not stacked/counted — a duplicate pickup is just another entry with
+        // the same ItemDefinition reference, matching how StatusInventoryPanel
+        // already treated its placeholder slots. Any source (combat loot,
+        // events, camp, ...) can feed this through AddItem — it isn't
+        // combat-specific.
+        public List<ItemDefinition> Inventory { get; } = new List<ItemDefinition>();
+
+        public void AddItem(ItemDefinition item)
+        {
+            if (item != null) Inventory.Add(item);
+        }
+
+        public void RemoveItem(ItemDefinition item)
+        {
+            Inventory.Remove(item);
+        }
 
         private bool _initialized;
 

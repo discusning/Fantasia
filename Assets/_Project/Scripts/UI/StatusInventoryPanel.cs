@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Fantasia.Characters;
+using Fantasia.Core;
 using Fantasia.Items;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +17,11 @@ namespace Fantasia.UI
     {
         public Camera TargetCamera;
         public CharacterDefinition[] Characters = System.Array.Empty<CharacterDefinition>();
+
+        // Only used when there's no live BoardSession (e.g. the headless
+        // editor screenshot capture) — otherwise the grid reads/writes
+        // BoardSession.Instance.Inventory so items picked up in combat (or
+        // anywhere else that calls BoardSession.AddItem) actually show up here.
         public ItemDefinition[] InventoryItems = System.Array.Empty<ItemDefinition>();
 
         // Lazy, not a field initializer — GetBuiltinResource isn't allowed to
@@ -37,6 +44,10 @@ namespace Fantasia.UI
         private Button[] _tabButtons;
         private int _activeIndex;
 
+        private Image[] _slotIcons;
+        private Text[] _slotLabels;
+        private Button[] _slotButtons;
+
         private void Awake()
         {
             BuildIfNeeded();
@@ -51,6 +62,7 @@ namespace Fantasia.UI
         public void Open()
         {
             BuildIfNeeded();
+            RefreshInventory();
             _panelRoot.SetActive(true);
         }
 
@@ -63,7 +75,9 @@ namespace Fantasia.UI
         public void Toggle()
         {
             BuildIfNeeded();
-            _panelRoot.SetActive(!_panelRoot.activeSelf);
+            bool opening = !_panelRoot.activeSelf;
+            if (opening) RefreshInventory();
+            _panelRoot.SetActive(opening);
         }
 
         public void BuildIfNeeded()
@@ -147,17 +161,62 @@ namespace Fantasia.UI
             layout.cellSize = new Vector2(52f, 52f);
             layout.spacing = new Vector2(6f, 6f);
 
+            _slotIcons = new Image[InventorySlotCount];
+            _slotLabels = new Text[InventorySlotCount];
+            _slotButtons = new Button[InventorySlotCount];
+
             for (int i = 0; i < InventorySlotCount; i++)
             {
                 var slotFill = CreateBorderedPanel(gridRect, $"Slot{i}", Vector2.zero, Vector2.one, BorderColor, SlotFillColor, 2f);
 
-                if (i < InventoryItems.Length && InventoryItems[i] != null)
-                {
-                    var item = InventoryItems[i];
-                    CreateImage(slotFill, "Icon", new Vector2(0.15f, 0.28f), new Vector2(0.85f, 1f), item.IconTint);
-                    CreateText(slotFill, "Label", new Vector2(0f, 0f), new Vector2(1f, 0.28f), item.ItemName, 7, TextAnchor.LowerCenter);
-                }
+                _slotIcons[i] = CreateImage(slotFill, "Icon", new Vector2(0.15f, 0.28f), new Vector2(0.85f, 1f), Color.clear);
+                _slotLabels[i] = CreateText(slotFill, "Label", new Vector2(0f, 0f), new Vector2(1f, 0.28f), "", 7, TextAnchor.LowerCenter);
+
+                // Clicking a filled slot discards that item — no drag/drop or
+                // confirmation yet, this is dev-harness UI, not final UX.
+                var button = slotFill.parent.gameObject.AddComponent<Button>();
+                button.targetGraphic = slotFill.GetComponent<Image>();
+                int captured = i;
+                button.onClick.AddListener(() => DiscardSlot(captured));
+                _slotButtons[i] = button;
             }
+
+            RefreshInventory();
+        }
+
+        // BoardSession.Instance.Inventory is the live inventory once the game
+        // is running; InventoryItems is only a fallback for contexts with no
+        // session (e.g. CreateSceneAndCaptureUI's headless screenshot).
+        private List<ItemDefinition> CurrentInventory()
+        {
+            return BoardSession.Instance != null
+                ? BoardSession.Instance.Inventory
+                : new List<ItemDefinition>(InventoryItems);
+        }
+
+        private void RefreshInventory()
+        {
+            if (_slotIcons == null) return; // not built yet
+
+            var items = CurrentInventory();
+            for (int i = 0; i < InventorySlotCount; i++)
+            {
+                var item = i < items.Count ? items[i] : null;
+                _slotIcons[i].color = item != null ? item.IconTint : Color.clear;
+                _slotLabels[i].text = item != null ? item.ItemName : "";
+                _slotButtons[i].interactable = item != null;
+            }
+        }
+
+        private void DiscardSlot(int index)
+        {
+            var items = CurrentInventory();
+            if (index >= items.Count) return;
+
+            var item = items[index];
+            if (BoardSession.Instance != null) BoardSession.Instance.RemoveItem(item);
+            Debug.Log($"[Inventory] 버림: {item.ItemName}");
+            RefreshInventory();
         }
 
         private void SetActiveCharacter(int index)

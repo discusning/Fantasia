@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Fantasia.Core;
+using Fantasia.Items;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +15,11 @@ namespace Fantasia.Combat
     {
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
+        // Assigned by CombatTestSceneSetup from PlaceholderDataSetup — real
+        // loot tables/drop rates are a design decision (GDD 6.7, still TBD),
+        // this just proves items make it from a fight into BoardSession.Inventory.
+        public ItemDefinition[] PossibleLoot = System.Array.Empty<ItemDefinition>();
+
         private List<Combatant> _party;
         private List<Combatant> _enemies;
         private TurnQueue _turnQueue;
@@ -22,6 +28,10 @@ namespace Fantasia.Combat
 
         private void Start()
         {
+            // Combat can be entered directly via DevSceneNav without ever
+            // visiting the board first, so don't assume a session exists yet.
+            BoardSession.EnsureExists();
+
             _party = BuildSide("Party", isPlayerSide: true, new[] { 8, 6, 10 },
                 new WeaponDefinition { SlotCount = 3, BaseDamagePerSlot = 6f, Durability = DurabilityTier.Strong });
             _enemies = BuildSide("Enemy", isPlayerSide: false, new[] { 7, 9, 5 },
@@ -95,17 +105,31 @@ namespace Fantasia.Combat
             Log($"— {_turnQueue.Advance().Name} 턴 —");
         }
 
-        // Only a win clears the encounter tile — a loss leaves it to fight again.
+        // Only a win clears the encounter tile (and grants loot) — a loss
+        // leaves it to fight again empty-handed.
         private void ReturnToBoard(bool partyWon)
         {
             var session = BoardSession.Instance;
-            if (partyWon && session != null && session.PendingEncounterCoord.HasValue)
+            if (partyWon && session != null)
             {
-                session.ClearedEncounters.Add(session.PendingEncounterCoord.Value);
+                if (session.PendingEncounterCoord.HasValue)
+                {
+                    session.ClearedEncounters.Add(session.PendingEncounterCoord.Value);
+                }
+                GrantLoot(session);
             }
             if (session != null) session.PendingEncounterCoord = null;
 
             SceneManager.LoadScene("BoardTest");
+        }
+
+        private void GrantLoot(BoardSession session)
+        {
+            if (PossibleLoot.Length == 0) return;
+
+            var loot = PossibleLoot[Random.Range(0, PossibleLoot.Length)];
+            session.AddItem(loot);
+            Log($"전리품 획득: {loot.ItemName}");
         }
 
         private void RefreshVisual(Combatant combatant)
