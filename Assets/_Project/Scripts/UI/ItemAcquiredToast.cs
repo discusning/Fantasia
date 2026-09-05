@@ -76,66 +76,16 @@ namespace Fantasia.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280, 720);
 
-            var outer = CreateImage(canvasGO.transform, "Banner", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Color(0.5f, 0.5f, 0.5f));
-            var outerRect = (RectTransform)outer.transform;
+            var inner = UGUIKit.CreateBorderedPanel(canvasGO.transform, "Banner", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), UGUIKit.DefaultBorderColor, new Color(0.98f, 0.98f, 0.95f), 2f);
+            var outerRect = (RectTransform)inner.transform.parent;
             outerRect.sizeDelta = new Vector2(240f, 44f);
             outerRect.anchoredPosition = new Vector2(0f, -40f);
 
-            var inner = CreateInset(outer.transform, 2f, new Color(0.98f, 0.98f, 0.95f));
-
-            _icon = CreateImage(inner, "Icon", new Vector2(0.05f, 0.15f), new Vector2(0.28f, 0.85f), Color.clear);
-            _label = CreateText(inner, "Label", new Vector2(0.32f, 0f), new Vector2(0.97f, 1f), "", 12, TextAnchor.MiddleLeft);
+            _icon = UGUIKit.CreateImage(inner, "Icon", new Vector2(0.05f, 0.15f), new Vector2(0.28f, 0.85f), Color.clear);
+            _label = UGUIKit.CreateText(inner, "Label", new Vector2(0.32f, 0f), new Vector2(0.97f, 1f), "", 12, TextAnchor.MiddleLeft);
 
             _root = outerRect.gameObject;
             _root.SetActive(false);
-        }
-
-        // --- minimal code-only uGUI helpers (isolated copy — StatusInventoryPanel
-        // has the fuller version with borders/buttons if this ever needs those) ---
-
-        private static RectTransform CreateRect(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax)
-        {
-            var go = new GameObject(name, typeof(RectTransform));
-            var rt = (RectTransform)go.transform;
-            rt.SetParent(parent, false);
-            rt.anchorMin = anchorMin;
-            rt.anchorMax = anchorMax;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-            return rt;
-        }
-
-        private static Image CreateImage(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Color color)
-        {
-            var rt = CreateRect(parent, name, anchorMin, anchorMax);
-            var img = rt.gameObject.AddComponent<Image>();
-            img.color = color;
-            return img;
-        }
-
-        private static Transform CreateInset(Transform parent, float insetPx, Color fillColor)
-        {
-            var go = new GameObject("Fill", typeof(RectTransform));
-            var rt = (RectTransform)go.transform;
-            rt.SetParent(parent, false);
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = new Vector2(insetPx, insetPx);
-            rt.offsetMax = new Vector2(-insetPx, -insetPx);
-            go.AddComponent<Image>().color = fillColor;
-            return rt;
-        }
-
-        private static Text CreateText(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, string content, int fontSize, TextAnchor alignment)
-        {
-            var rt = CreateRect(parent, name, anchorMin, anchorMax);
-            var text = rt.gameObject.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.alignment = alignment;
-            text.color = Color.black;
-            text.text = content;
-            return text;
         }
     }
 }
