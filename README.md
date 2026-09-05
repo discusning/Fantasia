@@ -8,6 +8,7 @@
 - 게임 디자인 문서(뼈대): [`Docs/GDD/GDD.md`](Docs/GDD/GDD.md)
 - For the King 시스템 리서치 노트: [`Docs/References/ForTheKing_SystemNotes.md`](Docs/References/ForTheKing_SystemNotes.md)
 - 검토 중인 무료 Unity 에셋 목록(미다운로드): [`Docs/참고자료/UnityAssets.md`](Docs/참고자료/UnityAssets.md)
+- 작업 진행일지(날짜별): [`Docs/진행일지/`](Docs/진행일지/)
 
 ## Unity 프로젝트 열기
 프로젝트는 이미 생성되어 저장소에 커밋되어 있습니다 (Unity **6000.5.9f1**, 명령줄 배치 모드로 생성). 팀원은 새로 만들 필요 없이 그대로 열면 됩니다.
