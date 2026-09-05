@@ -51,7 +51,7 @@ fantasia/
 │   ├── GDD/
 │   ├── References/
 │   ├── 참고자료/                # 나중에 검토할 참고 자료 (예: 무료 에셋 후보 목록)
-│   └── Concept/                 # 컨셉/참고 이미지
+│   └── Concept_Image/           # 컨셉/참고 이미지
 │       ├── Concept/             # 자체 제작 컨셉 아트
 │       └── Images/              # 외부 참고 자료 이미지
 ├── .gitignore                   # Unity 표준 gitignore
@@ -70,8 +70,8 @@ fantasia/
 ## 구현 현황 / 테스트 방법
 아직 아트/애니메이션 없이 로직만 먼저 만드는 단계입니다. Unity Editor 상단 메뉴 **Fantasia**에서 실행:
 
-- **Setup Board Test Scene** — 헥스 보드(`Scripts/Board`) 생성. Play 후 Space로 주사위 굴려 이동 범위(초록) 확인, 클릭하면 굴린 만큼의 타일을 한 칸씩 밟으며 이동(순간이동 아님). 어두운 타일은 진입 불가(장애물, `HexBoard.obstacleChance`), **주황 타일은 인카운터**(`HexBoard.encounterChance`) — 밟고 도착하면 자동으로 `CombatTest` 씬으로 전환됩니다. **I 키**로 스테이터스/인벤토리 창(`Scripts/UI/StatusInventoryPanel.cs`, 참고: `Docs/Concept/Images/Fantasia_Status_Inventory.png`) 토글 — 캐릭1/2/3 탭으로 캐릭터 전환.
-- **Setup Combat Test Scene** — 파티(파랑) vs 적(빨강) 3:3 전투 프로토타입(`Scripts/Combat`). Speed 기반 턴 큐 + 무기 슬롯 롤 판정을 화면 버튼(공격/포커스 소모/턴 넘기기)으로 직접 테스트 가능. 오버월드와 다른 로우앵글 대치 구도(참고: `Docs/Concept/Concept/판타지아 전투 화면.jpg`). 승리하면 "보드로 돌아가기" 버튼으로 오버월드에 복귀 — 밟았던 인카운터 타일이 청록색(클리어됨)으로 바뀌고 재도전이 발동하지 않습니다.
+- **Setup Board Test Scene** — 헥스 보드(`Scripts/Board`) 생성. Play 후 Space로 주사위 굴려 이동 범위(초록) 확인, 클릭하면 굴린 만큼의 타일을 한 칸씩 밟으며 이동(순간이동 아님). 어두운 타일은 진입 불가(장애물, `HexBoard.obstacleChance`), **주황 타일은 인카운터**(`HexBoard.encounterChance`) — 밟고 도착하면 자동으로 `CombatTest` 씬으로 전환됩니다. **I 키**로 스테이터스/인벤토리 창(`Scripts/UI/StatusInventoryPanel.cs`, 참고: `Docs/Concept_Image/Images/Fantasia_Status_Inventory.png`) 토글 — 캐릭1/2/3 탭으로 캐릭터 전환.
+- **Setup Combat Test Scene** — 파티(파랑) vs 적(빨강) 3:3 전투 프로토타입(`Scripts/Combat`). Speed 기반 턴 큐 + 무기 슬롯 롤 판정을 화면 버튼(공격/포커스 소모/턴 넘기기)으로 직접 테스트 가능. 오버월드와 다른 로우앵글 대치 구도(참고: `Docs/Concept_Image/Concept/판타지아 전투 화면.jpg`). 승리하면 "보드로 돌아가기" 버튼으로 오버월드에 복귀 — 밟았던 인카운터 타일이 청록색(클리어됨)으로 바뀌고 재도전이 발동하지 않습니다.
 - **Run Combat Slot-Roll Self-Test** / **Run Turn Queue Self-Test** / **Run Pathfinding Self-Test** / **Run Board Session Self-Test** — 각각 슬롯 판정 확률, 자동 전투 진행, 이동 경로 계산, 보드 재생성 결정성/인카운터 클리어 유지를 화면 없이 시뮬레이션해 콘솔에 결과 출력.
 
 두 테스트 씬 모두 화면 우상단에 씬 전환 버튼(`Scripts/Core/DevSceneNav.cs`)이 있어 Play 중에 오버월드 ↔ 전투 화면을 자유롭게 오갈 수 있습니다. 시작 씬은 `Overworld/BoardTest`(Build Settings 0번)입니다.

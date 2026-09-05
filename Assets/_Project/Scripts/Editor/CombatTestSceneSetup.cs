@@ -8,7 +8,7 @@ namespace Fantasia.Editor
 {
     // Combat needs its own camera treatment — a low, close battle-line view,
     // nothing like the overworld's 3/4 top-down board (see the reference in
-    // Docs/Concept/Concept). Kept as a separate scene/scaffold so the two
+    // Docs/Concept_Image/Concept). Kept as a separate scene/scaffold so the two
     // viewpoints don't get tangled together.
     public static class CombatTestSceneSetup
     {

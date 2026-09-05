@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace Fantasia.UI
 {
     // Builds the status + inventory overlay entirely from code (see
-    // Docs/Concept/Images/Fantasia_Status_Inventory.png): 캐릭1/2/3 tabs swap
+    // Docs/Concept_Image/Images/Fantasia_Status_Inventory.png): 캐릭1/2/3 tabs swap
     // which character's portrait/stats are shown, ✕ closes it. No art yet
     // — portraits/icons are flat color placeholders swappable later. Every
     // section is a bordered outer+inner "Fill" pair so regions read as
