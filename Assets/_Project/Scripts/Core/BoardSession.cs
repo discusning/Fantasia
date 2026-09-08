@@ -113,7 +113,17 @@ namespace Fantasia.Core
             // Only legal in Play mode — editor tooling (self-tests, scene
             // scaffolding) that calls this outside Play mode skips it, since
             // there's no scene-load lifecycle to persist across there anyway.
-            if (Application.isPlaying) DontDestroyOnLoad(gameObject);
+            if (Application.isPlaying)
+            {
+                DontDestroyOnLoad(gameObject);
+                // Uncapped frame rate on a scene full of 3D objects can pin a
+                // low-end GPU and crash the editor. This is the one place
+                // every scene's Start() reaches before anything else runs
+                // (see BoardTestController/CombatTestController.Start(),
+                // ItemAcquiredToast.Awake()), so cap it once here rather than
+                // per-scene.
+                Application.targetFrameRate = 60;
+            }
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
         }
     }

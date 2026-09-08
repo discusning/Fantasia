@@ -83,6 +83,8 @@ fantasia/
 
 캐릭터/아이템 데이터는 아직 실제 기획값이 아니라 UI 작업용 placeholder입니다 (`Data/Characters`, `Data/Items`, `Scripts/Editor/PlaceholderDataSetup.cs`에서 생성). Canvas UI를 쓰기 위해 `com.unity.ugui` 패키지를 추가했습니다(기본 명령줄 프로젝트 생성 시 빠져 있었음).
 
+**Play 모드 프레임 제한(60 FPS)**: 저사양 GPU에서 3D 오브젝트가 많은 씬을 프레임 제한 없이 돌리면 에디터가 과부하로 죽을 수 있어, `BoardSession` 초기화 시점(모든 테스트 씬의 `Start()`가 가장 먼저 거치는 지점)에 `Application.targetFrameRate = 60`을 걸어뒀습니다(`Scripts/Core/BoardSession.cs`). 콘텐츠(모델/이펙트)가 늘어날수록 필요하면 더 낮추되, 프로토타입 초반처럼 무제한으로 되돌리지 않는 것을 기본 방침으로 합니다.
+
 ## 협업 / 버전 관리
 - 기본 브랜치: `main`.
 - 팀원 각자 로컬에서 `git config --global user.name/user.email` 설정 필요.
