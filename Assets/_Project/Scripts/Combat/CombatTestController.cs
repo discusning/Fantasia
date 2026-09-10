@@ -18,8 +18,9 @@ namespace Fantasia.Combat
 
         // Assigned by CombatTestSceneSetup from PlaceholderDataSetup — real
         // loot tables/drop rates are a design decision (GDD 6.7, still TBD),
-        // this just proves items make it from a fight into BoardSession.Inventory.
-        public ItemDefinition[] PossibleLoot = System.Array.Empty<ItemDefinition>();
+        // this just proves items make it from a fight into BoardSession.Inventory
+        // with a plausible (if placeholder) weighting instead of flat-uniform.
+        public LootEntry[] PossibleLoot = System.Array.Empty<LootEntry>();
 
         private List<Combatant> _party;
         private List<Combatant> _enemies;
@@ -129,7 +130,8 @@ namespace Fantasia.Combat
         {
             if (PossibleLoot.Length == 0) return;
 
-            var loot = PossibleLoot[Random.Range(0, PossibleLoot.Length)];
+            var loot = LootTable.PickWeighted(PossibleLoot);
+            if (loot == null) return;
             Log(session.AddItem(loot) ? $"전리품 획득: {loot.ItemName}" : "인벤토리가 가득 차 전리품을 놓쳤다.");
         }
 

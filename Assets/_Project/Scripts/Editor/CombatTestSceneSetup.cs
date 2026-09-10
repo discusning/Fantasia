@@ -1,5 +1,6 @@
 using Fantasia.Combat;
 using Fantasia.Core;
+using Fantasia.Items;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -75,7 +76,9 @@ namespace Fantasia.Editor
             SpawnLine(-SideOffset, new Color(0.25f, 0.4f, 0.85f), "Party", facesRight: true);
             SpawnLine(SideOffset, new Color(0.8f, 0.25f, 0.25f), "Enemy", facesRight: false);
             var combatManager = new GameObject("CombatManager").AddComponent<CombatTestController>();
-            combatManager.PossibleLoot = PlaceholderDataSetup.EnsureItems();
+            var items = PlaceholderDataSetup.EnsureItems();
+            combatManager.PossibleLoot = System.Array.ConvertAll(items,
+                item => new LootEntry(item, LootTable.DefaultWeight(item.Category)));
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();
         }
 
