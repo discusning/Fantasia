@@ -7,6 +7,8 @@
 ## 문서
 - 게임 디자인 문서(뼈대): [`Docs/GDD/GDD.md`](Docs/GDD/GDD.md)
 - For the King 시스템 리서치 노트: [`Docs/References/ForTheKing_SystemNotes.md`](Docs/References/ForTheKing_SystemNotes.md)
+- 게임 디자인 레퍼런스 조사(모티브 참고용): [`Docs/References/GameDesignInspiration_2026-09-10.md`](Docs/References/GameDesignInspiration_2026-09-10.md)
+- Unity 개발/최적화 자료조사: [`Docs/References/UnityOptimization_2026-09-10.md`](Docs/References/UnityOptimization_2026-09-10.md)
 - 검토 중인 무료 Unity 에셋 목록(미다운로드): [`Docs/참고자료/UnityAssets.md`](Docs/참고자료/UnityAssets.md)
 - 작업 진행일지(날짜별): [`Docs/진행일지/`](Docs/진행일지/)
 
