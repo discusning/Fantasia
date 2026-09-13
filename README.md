@@ -14,7 +14,7 @@
 - 게임 디자인 레퍼런스 조사: [`Docs/References/GameDesignInspiration_2026-09-10.md`](Docs/References/GameDesignInspiration_2026-09-10.md)
 - Unity 개발/최적화 자료조사: [`Docs/References/UnityOptimization_2026-09-10.md`](Docs/References/UnityOptimization_2026-09-10.md)
 - 지형지물 정보창 UI 리서치(10개 게임 사례): [`Docs/References/LandmarkUI_Research_2026-09-13.md`](Docs/References/LandmarkUI_Research_2026-09-13.md)
-- 검토 중인 무료 Unity 에셋 목록(미다운로드): [`Docs/참고자료/UnityAssets.md`](Docs/참고자료/UnityAssets.md)
+- 검토 중인 무료 Unity 에셋 목록(미다운로드): [`Docs/References/UnityAssets.md`](Docs/References/UnityAssets.md)
 
 **작업 기록**
 - 진행일지(날짜별, 무엇을 왜 바꿨는지): [`Docs/진행일지/`](Docs/진행일지/)
@@ -59,8 +59,7 @@ fantasia/
 │   └── ThirdParty/             # 에셋스토어 등 외부 에셋 (직접 수정 X)
 ├── Docs/                        # 기획 문서 (Unity에는 임포트되지 않음, 루트에 위치)
 │   ├── GDD/
-│   ├── References/
-│   ├── 참고자료/                # 나중에 검토할 참고 자료 (예: 무료 에셋 후보 목록)
+│   ├── References/               # 시스템 리서치/디자인 참고/최적화 자료 (모두 영문 폴더명, 내용은 한국어)
 │   └── Concept_Image/           # 컨셉/참고 이미지
 │       ├── Concept/             # 자체 제작 컨셉 아트
 │       └── Images/              # 외부 참고 자료 이미지

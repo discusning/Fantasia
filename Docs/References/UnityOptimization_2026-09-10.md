@@ -12,7 +12,7 @@
 
 - 요약: LOD는 카메라와의 거리에 따라 낮은 폴리곤 버전을 렌더링, Occlusion Culling은 카메라 시야에서 가려진 오브젝트를 아예 그리지 않음. 두 기능은 서로 영향을 주므로(LOD0 실루엣이 다른 레벨과 크게 다르면 정적 오클루더로 부적합) 함께 설정 시 주의 필요.
 - 출처: [Unity Manual - Level of Detail (LOD)](https://docs.unity3d.com/2022.2/Documentation/Manual/LevelOfDetail.html), [Unity Manual - Getting started with occlusion culling](https://docs.unity3d.com/Manual/occlusion-culling-getting-started.html)
-- Fantasia 적용 지점: 지금은 아트/모델이 거의 placeholder 단계라 당장은 이르지만, 실제 3D 모델(캐릭터/환경 에셋, `Docs/참고자료/UnityAssets.md`에 정리해둔 후보들)이 들어오면 보드 전체를 한 화면에 담는 오버월드 씬 특성상 Occlusion Culling보다는 LOD가 먼저 체감 효과가 클 가능성이 높음.
+- Fantasia 적용 지점: 지금은 아트/모델이 거의 placeholder 단계라 당장은 이르지만, 실제 3D 모델(캐릭터/환경 에셋, `Docs/References/UnityAssets.md`에 정리해둔 후보들)이 들어오면 보드 전체를 한 화면에 담는 오버월드 씬 특성상 Occlusion Culling보다는 LOD가 먼저 체감 효과가 클 가능성이 높음.
 
 ## 3. 텍스처 압축 / 임포트 설정
 
