@@ -32,6 +32,7 @@ namespace Fantasia.Board
         {
             BoardSession.EnsureExists();
             ItemAcquiredToast.EnsureExists();
+            QuestTrackerPanel.EnsureExists();
             _board = GetComponent<HexBoard>();
             _currentCoord = BoardSession.Instance.PlayerPosition;
             SpawnToken();
@@ -131,6 +132,7 @@ namespace Fantasia.Board
 
             _isMoving = false;
             BoardSession.Instance.PlayerPosition = _currentCoord;
+            BoardSession.Instance.AdvanceQuestRound();
 
             // Landing on an encounter tile — not just passing through it —
             // is what starts a fight, matching how the highlight/click flow

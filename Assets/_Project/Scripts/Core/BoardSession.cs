@@ -85,6 +85,34 @@ namespace Fantasia.Core
             return true;
         }
 
+        // Real quests (GDD content, not yet designed) will replace this —
+        // for now it only proves the right-side quest-tracker UI mechanism
+        // works, seeded with a throwaway dummy quest (see QuestTrackerPanel).
+        public string QuestTitle { get; private set; }
+        public string QuestObjective { get; private set; }
+        public int QuestRoundsRemaining { get; private set; }
+        public bool HasQuest => !string.IsNullOrEmpty(QuestTitle);
+
+        public event System.Action QuestChanged;
+
+        public void SetQuest(string title, string objective, int roundsRemaining)
+        {
+            QuestTitle = title;
+            QuestObjective = objective;
+            QuestRoundsRemaining = roundsRemaining;
+            QuestChanged?.Invoke();
+        }
+
+        // Ticks the round counter down by one — called once per board move
+        // (BoardTestController.WalkPath) as a stand-in for whatever "a round
+        // passed" ends up meaning once real quests exist.
+        public void AdvanceQuestRound()
+        {
+            if (!HasQuest || QuestRoundsRemaining <= 0) return;
+            QuestRoundsRemaining--;
+            QuestChanged?.Invoke();
+        }
+
         private bool _initialized;
 
         public static void EnsureExists()
@@ -123,6 +151,10 @@ namespace Fantasia.Core
                 // ItemAcquiredToast.Awake()), so cap it once here rather than
                 // per-scene.
                 Application.targetFrameRate = 60;
+
+                // Dummy quest so the right-side tracker UI has something to
+                // show before real quest content exists — see QuestTrackerPanel.
+                SetQuest("게임 완성시키기", "판타지아를 끝까지 만들어라", 13);
             }
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
         }
