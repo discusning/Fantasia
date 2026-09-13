@@ -52,7 +52,7 @@ fantasia/
 │   │   ├── Prefabs/           # Characters / Enemies / Environment / UI / VFX
 │   │   ├── Art/                # Models / Materials / Textures / Animations
 │   │   ├── Audio/              # Music / SFX / Voice
-│   │   ├── Scenes/             # MainMenu / Overworld / Combat / Town
+│   │   ├── Scenes/             # MainMenu / Overworld / Combat / Dialogue / Town
 │   │   ├── Data/                # ScriptableObject 데이터 (Characters/Items/Landmarks/Enemies/Events/Boards)
 │   │   └── UI/                  # Fonts / Sprites
 │   ├── Plugins/                # 네이티브/서드파티 플러그인
@@ -84,11 +84,12 @@ fantasia/
   - **I 키 — 스테이터스/인벤토리 창** (`Scripts/UI/StatusInventoryPanel.cs`, 참고: `Docs/Concept_Image/Images/Fantasia_Status_Inventory.png`): 캐릭1/2/3 탭으로 캐릭터 전환, 아이템 드래그로 위치 교환/버리기, 더블클릭 사용, 우클릭 장비 착용.
   - **퀘스트 추적 UI** (화면 우측, 항상 표시 — `Scripts/UI/QuestTrackerPanel.cs`, 참고: `Docs/Concept_Image/Concept/판타지아_UI(지형 오브젝트, 퀘스트).png`): 메인 1개 + 서브 여러 개 동시 표시 가능, 메인이 항상 맨 위 고정되고 서브는 그 아래로 쌓임. 제목 색으로 메인(금색)/서브(실버) 구분 + 은은한 반짝임 효과. 각 줄 제목 오른쪽 끝의 **"달성!" 버튼**을 누르면 해당 퀘스트가 완료 처리됨(`BoardSession.CompleteQuest`) — 실제 완료 조건은 아직 없어 플레이어가 직접 누르는 수동 방식. 실제 퀘스트 콘텐츠는 아직 없어 더미 데이터로 UI/메커니즘만 검증하는 단계.
   - **지형지물 정보창** (`Ctrl+우클릭` — `Scripts/UI/LandmarkInfoPanel.cs`, 참고: `Docs/References/LandmarkUI_Research_2026-09-13.md`): 보드 위 고정 위치의 지형지물 타일 3종(성소/감옥/유적)을 Ctrl+우클릭하면 정보 팝업 표시. 아직 3D 모델이 없어 타일 색+배지 글자로 종류를 구분하는 placeholder 단계.
-  - **대화창 프로토타입** (`Scripts/UI/DialoguePanel.cs`, 참고: `Docs/Concept_Image/Concept/판타지아_UI(대화).png`): 더미 서브 퀘스트("1차 개발 완성")를 퀘스트 창의 "달성!" 버튼으로 완료하면 화면 하단에 VN 스타일 대화창이 뜨고, "다음" 버튼으로 4줄을 순서대로 넘기다 마지막에 닫힘. 캐릭터 초상화/스킵/퀘스트 수락 선택지는 아직 없는 최소 단계(GDD 6.6 참고).
+  - **대화창 프로토타입** (`Scripts/UI/DialoguePanel.cs`, 참고: `Docs/Concept_Image/Concept/판타지아_UI(대화).png`): 더미 서브 퀘스트("1차 개발 완성")를 퀘스트 창의 "달성!" 버튼으로 완료하면 전용 **대화 씬(`DialogueTest`)**으로 전환됩니다 — 3D 대화 상대(NPC, 아직 모델이 없어 캡슐로 대체)가 있는 공간으로 이동한 뒤 화면 하단에 VN 스타일 대화창이 뜨고, "다음" 버튼으로 4줄을 순서대로 넘기다 마지막에 닫히면 자동으로 `BoardTest`로 복귀합니다. 캐릭터 초상화/스킵/퀘스트 수락 선택지는 아직 없는 최소 단계(GDD 6.6 참고).
+- **Setup Dialogue Test Scene** — 위 대화창 프로토타입이 이동하는 대화 전용 씬(`Scripts/Editor/DialogueTestSceneSetup.cs`) 생성. 단독으로 열어서 확인할 수도 있고, 보통은 보드에서 퀘스트를 완료하면 자동으로 전환됩니다.
 - **Setup Combat Test Scene** — 파티(파랑) vs 적(빨강) 3:3 전투 프로토타입(`Scripts/Combat`). Speed 기반 턴 큐 + 무기 슬롯 롤 판정을 화면 버튼(공격/포커스 소모/턴 넘기기)으로 직접 테스트 가능. 오버월드와 다른 로우앵글 대치 구도(참고: `Docs/Concept_Image/Concept/판타지아 전투 화면.jpg`). 승리하면 "보드로 돌아가기" 버튼으로 오버월드에 복귀 — 밟았던 인카운터 타일이 청록색(클리어됨)으로 바뀌고 재도전이 발동하지 않습니다.
 - **Run Combat Slot-Roll Self-Test** / **Run Turn Queue Self-Test** / **Run Pathfinding Self-Test** / **Run Board Session Self-Test** — 각각 슬롯 판정 확률, 자동 전투 진행, 이동 경로 계산, 보드 재생성 결정성/인카운터 클리어 유지를 화면 없이 시뮬레이션해 콘솔에 결과 출력.
 
-두 테스트 씬 모두 화면 우상단에 씬 전환 버튼(`Scripts/Core/DevSceneNav.cs`)이 있어 Play 중에 오버월드 ↔ 전투 화면을 자유롭게 오갈 수 있습니다. 시작 씬은 `Overworld/BoardTest`(Build Settings 0번)입니다.
+세 테스트 씬(오버월드/전투/대화) 모두 화면 우상단에 씬 전환 버튼(`Scripts/Core/DevSceneNav.cs`)이 있어 Play 중에 자유롭게 오갈 수 있습니다. 시작 씬은 `Overworld/BoardTest`(Build Settings 0번)입니다.
 
 플레이어 위치와 클리어한 인카운터는 `Scripts/Core/BoardSession.cs`(씬 전환에도 살아남는 세션, `DevSceneNav`와 같은 패턴)에 저장됩니다. 보드는 씬을 나갔다 돌아와도 매번 같은 시드로 재생성되므로 레이아웃이 그대로 유지됩니다(캐릭터 스탯/인벤토리 등 다른 데이터는 아직 세션에 연결되지 않음 — 기획 확정 후 진행 예정).
 

@@ -1,25 +1,38 @@
 using Fantasia.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Fantasia.UI
 {
     // Bare-bones sequential dialogue box — proves the "completing a quest
-    // triggers an NPC dialogue" mechanism end to end. No character portrait,
-    // skip-to-next-key-line, or accept/decline choice yet (see GDD 6.6 idea
-    // notes, based on Docs/Concept_Image/Concept/판타지아_UI(대화).png) —
-    // this pass is deliberately just "a few text boxes in a row, then done."
+    // triggers an NPC dialogue" mechanism end to end. No character portrait
+    // (the "NPC" capsule in DialogueTest fills in for that), skip-to-
+    // next-key-line, or accept/decline choice yet (see GDD 6.6 idea notes,
+    // based on Docs/Concept_Image/Concept/판타지아_UI(대화).png) — this
+    // pass is deliberately just "a few text boxes in a row, then done."
+    //
+    // Per feedback, the text box alone floating over the board wasn't
+    // enough — the player should visibly move to a space where the 3D
+    // conversation partner exists, the same way an encounter moves you to
+    // CombatTest. So a quest completion now loads a dedicated DialogueTest
+    // scene (a placeholder capsule NPC + camera), plays the lines once that
+    // scene is loaded, and returns to BoardTest when the last line closes.
     //
     // Subscribes to BoardSession.QuestCompleted itself (same decoupling
     // pattern as ItemAcquiredToast/QuestTrackerPanel) rather than having
     // BoardTestController know anything about dialogue.
     //
     // Screen Space - Overlay + DontDestroyOnLoad, same reasoning as the
-    // other persistent UI panels in this project.
+    // other persistent UI panels in this project — it needs to keep
+    // showing across the BoardTest -> DialogueTest -> BoardTest round trip.
     public class DialoguePanel : MonoBehaviour
     {
         public static DialoguePanel Instance { get; private set; }
         public static bool IsOpen => Instance != null && Instance._root != null && Instance._root.activeSelf;
+
+        private const string DialogueSceneName = "DialogueTest";
+        private const string ReturnSceneName = "BoardTest";
 
         // Prototype-only: completing this specific dummy sub quest fires a
         // sample dialogue. Real per-quest dialogue data doesn't exist yet.
@@ -37,6 +50,7 @@ namespace Fantasia.UI
         private Text _nextButtonLabel;
         private string[] _lines;
         private int _lineIndex;
+        private string[] _pendingLines;
 
         private bool _initialized;
 
@@ -80,7 +94,17 @@ namespace Fantasia.UI
         private void OnQuestCompleted(BoardSession.QuestEntry quest)
         {
             if (quest.Title != TestQuestTitle) return;
-            PlayInternal(SampleLines);
+
+            _pendingLines = SampleLines;
+            SceneManager.sceneLoaded += OnDialogueSceneLoaded;
+            SceneManager.LoadScene(DialogueSceneName);
+        }
+
+        private void OnDialogueSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (scene.name != DialogueSceneName) return;
+            SceneManager.sceneLoaded -= OnDialogueSceneLoaded;
+            PlayInternal(_pendingLines);
         }
 
         private void PlayInternal(string[] lines)
@@ -109,6 +133,14 @@ namespace Fantasia.UI
             else
             {
                 _root.SetActive(false);
+
+                // Only leave the dialogue space if that's actually where we
+                // are — Play(lines) can also be called directly (e.g. tests)
+                // without ever loading DialogueTest.
+                if (SceneManager.GetActiveScene().name == DialogueSceneName)
+                {
+                    SceneManager.LoadScene(ReturnSceneName);
+                }
             }
         }
 

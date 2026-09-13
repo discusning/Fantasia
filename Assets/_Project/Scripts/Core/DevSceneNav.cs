@@ -10,7 +10,7 @@ namespace Fantasia.Core
     public class DevSceneNav : MonoBehaviour
     {
         private static DevSceneNav _instance;
-        private static readonly string[] Scenes = { "BoardTest", "CombatTest" };
+        private static readonly string[] Scenes = { "BoardTest", "CombatTest", "DialogueTest" };
 
         private void Awake()
         {
