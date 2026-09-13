@@ -22,14 +22,25 @@ namespace Fantasia.UI
         private Text _objectiveText;
         private Text _roundsText;
 
+        private bool _initialized;
+
         public static void EnsureExists()
         {
             if (Instance != null) return;
-            new GameObject("QuestTrackerPanel").AddComponent<QuestTrackerPanel>();
+            new GameObject("QuestTrackerPanel").AddComponent<QuestTrackerPanel>().Initialize();
         }
 
-        private void Awake()
+        private void Awake() => Initialize();
+
+        // Idempotent, same reasoning as BoardSession.Initialize() — AddComponent
+        // reliably fires Awake in Play mode, but not always from editor
+        // tooling, so EnsureExists() also calls this directly rather than
+        // trusting Awake.
+        private void Initialize()
         {
+            if (_initialized) return;
+            _initialized = true;
+
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
@@ -69,22 +80,36 @@ namespace Fantasia.UI
             scaler.referenceResolution = new Vector2(1280, 720);
 
             // Anchored below DevSceneNav's OnGUI box (top-right, ~100px tall)
-            // so the two don't overlap.
+            // so the two don't overlap. Semi-transparent fill so the board
+            // reads through it (per feedback) instead of a solid black slab.
             var inner = UGUIKit.CreateBorderedPanel(canvasGO.transform, "QuestBox", new Vector2(1f, 1f), new Vector2(1f, 1f),
-                UGUIKit.DefaultBorderColor, new Color(0.12f, 0.12f, 0.16f, 0.9f), 2f);
+                new Color(0.65f, 0.6f, 0.5f, 0.55f), new Color(0.05f, 0.05f, 0.08f, 0.5f), 2f);
             var outerRect = (RectTransform)inner.transform.parent;
-            outerRect.sizeDelta = new Vector2(260f, 92f);
+            outerRect.sizeDelta = new Vector2(270f, 100f);
+
+            // Anchor point (1,1) is the canvas's top-right *corner* — without
+            // matching the pivot to that same corner, anchoredPosition offsets
+            // from the rect's center instead, pushing roughly half the box
+            // past the right edge of the screen (the clipping bug reported).
+            // Pivot (1,1) makes anchoredPosition mean "top-right corner of
+            // this box, offset from the top-right corner of the canvas".
+            outerRect.pivot = new Vector2(1f, 1f);
             outerRect.anchoredPosition = new Vector2(-10f, -110f);
 
-            _titleText = UGUIKit.CreateText(inner, "Title", new Vector2(0.05f, 0.62f), new Vector2(0.95f, 0.95f), "", 14, TextAnchor.MiddleLeft);
+            _titleText = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.66f), new Vector2(0.95f, 0.94f), "", 15, TextAnchor.MiddleLeft);
             _titleText.color = new Color(0.95f, 0.85f, 0.55f);
             _titleText.fontStyle = FontStyle.Bold;
 
-            _objectiveText = UGUIKit.CreateText(inner, "Objective", new Vector2(0.05f, 0.28f), new Vector2(0.95f, 0.62f), "", 11, TextAnchor.UpperLeft);
-            _objectiveText.color = Color.white;
+            // Thin divider under the title — small touch so the box doesn't
+            // read as one undifferentiated block of text.
+            var divider = UGUIKit.CreateImage(inner, "Divider", new Vector2(0.08f, 0.63f), new Vector2(0.92f, 0.645f), new Color(1f, 1f, 1f, 0.25f));
+            _ = divider;
 
-            _roundsText = UGUIKit.CreateText(inner, "Rounds", new Vector2(0.05f, 0.02f), new Vector2(0.95f, 0.28f), "", 11, TextAnchor.LowerRight);
-            _roundsText.color = new Color(0.75f, 0.75f, 0.75f);
+            _objectiveText = UGUIKit.CreateText(inner, "Objective", new Vector2(0.08f, 0.3f), new Vector2(0.95f, 0.6f), "", 11, TextAnchor.UpperLeft);
+            _objectiveText.color = new Color(0.92f, 0.92f, 0.92f);
+
+            _roundsText = UGUIKit.CreateText(inner, "Rounds", new Vector2(0.08f, 0.04f), new Vector2(0.95f, 0.26f), "", 11, TextAnchor.LowerRight);
+            _roundsText.color = new Color(0.8f, 0.75f, 0.6f);
 
             _root = outerRect.gameObject;
             _root.SetActive(false);
