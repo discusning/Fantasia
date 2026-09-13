@@ -6,7 +6,7 @@ namespace Fantasia.UI
 {
     // Ctrl+Right-click info popup for board landmarks (see HexTile.Landmark /
     // BoardTestController.TryInspectLandmark). Styled after the "Lucky's
-    // Vault" card in Docs/Concept_Image/Concept/판타지아_UI(1).png and For
+    // Vault" card in Docs/Concept_Image/Concept/판타지아_UI(지형 오브젝트, 퀘스트).png and For
     // the King's chest/event popups generally: title + short flavor text +
     // a close button, nothing more, since landmark effects don't exist yet.
     //

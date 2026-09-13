@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace Fantasia.UI
 {
     // Always-on quest tracker anchored to the screen's top-right, per the
-    // reference layout in Docs/Concept_Image/Concept/판타지아_UI(1).png
+    // reference layout in Docs/Concept_Image/Concept/판타지아_UI(지형 오브젝트, 퀘스트).png
     // (title / objective line, right side of screen). Several quests can be
     // active at once (e.g. one Main + one Sub) — each gets its own stacked
     // box, with the Main quest pinned at the top and Sub quests stacking
