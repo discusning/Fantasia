@@ -1,3 +1,4 @@
+using System.Linq;
 using Fantasia.Core;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,21 +7,26 @@ namespace Fantasia.UI
 {
     // Always-on quest tracker anchored to the screen's top-right, per the
     // reference layout in Docs/Concept_Image/Concept/판타지아_UI(1).png
-    // (title / objective line, right side of screen). Title color signals
-    // Main vs Sub (see QuestType) instead of a text label — gold/silver
-    // "tier" coloring is the common convention for quest-log importance
-    // (medal-tier metaphor used across MMO/mobile RPG quest logs) and keeps
-    // the box from getting more cluttered with an extra label.
+    // (title / objective line, right side of screen). Several quests can be
+    // active at once (e.g. one Main + one Sub) — each gets its own stacked
+    // box, Sub quests above Main quests, since a player is more likely to
+    // have a couple of side objectives alongside the one main quest.
     //
-    // The title also gets a slow brightness pulse ("shimmer") so the box
-    // draws the eye a bit more, per feedback that it read as too quiet.
+    // Title color signals Main vs Sub (see QuestType) instead of a text
+    // label — gold/silver "tier" coloring is the common convention for
+    // quest-log importance (medal-tier metaphor used across MMO/mobile RPG
+    // quest logs) and keeps each box from getting more cluttered with an
+    // extra label.
+    //
+    // The title also gets a slow brightness pulse ("shimmer") so the boxes
+    // draw the eye a bit more, per feedback that they read as too quiet.
     // A moving specular sweep (the flashier version seen on legendary item
     // names in some ARPGs) needs a custom shader/mask on the text mesh; a
     // periodic Lerp-toward-white on the plain uGUI Text color is the
     // lightweight code-only equivalent and is deliberately kept subtle.
     //
     // Real quest content doesn't exist yet (GDD TBD) — this only proves the
-    // UI mechanism using the dummy quest BoardSession seeds itself with.
+    // UI mechanism using the dummy quests BoardSession seeds itself with.
     //
     // Screen Space - Overlay + DontDestroyOnLoad, same reasoning as
     // ItemAcquiredToast: no single scene camera persists across the
@@ -35,10 +41,25 @@ namespace Fantasia.UI
         private const float ShimmerSpeed = 1.6f; // radians/sec
         private const float ShimmerStrength = 0.35f; // 0 = off, 1 = flashes fully white
 
-        private GameObject _root;
-        private Text _titleText;
-        private Text _objectiveText;
-        private Color _titleBaseColor = MainQuestColor;
+        // Placeholder cap on simultaneous quest boxes — not a real design
+        // limit, just enough rows pre-built to cover "a main plus a
+        // handful of sides" without instantiating UI on every refresh.
+        private const int MaxQuestRows = 4;
+        private const float RowWidth = 170f; // 189 * 0.9 — 10% smaller, per feedback
+        private const float RowHeight = 63f; // 70 * 0.9
+        private const float RowGap = 6f;
+        private const float TopMargin = 110f; // clears DevSceneNav's OnGUI box (top-right, ~100px tall)
+        private const float RightMargin = 10f;
+
+        private class QuestRow
+        {
+            public GameObject Root;
+            public Text Title;
+            public Text Objective;
+            public Color BaseColor = MainQuestColor;
+        }
+
+        private readonly QuestRow[] _rows = new QuestRow[MaxQuestRows];
 
         private bool _initialized;
 
@@ -77,23 +98,36 @@ namespace Fantasia.UI
         private void Refresh()
         {
             var session = BoardSession.Instance;
-            bool hasQuest = session != null && session.HasQuest;
-            _root.SetActive(hasQuest);
-            if (!hasQuest) return;
+            // Sub quests stack above Main quests — OrderBy is stable, so
+            // quests of the same kind keep their original relative order.
+            var ordered = session == null
+                ? System.Array.Empty<BoardSession.QuestEntry>()
+                : session.Quests.OrderBy(q => q.Kind == QuestType.Sub ? 0 : 1).ToArray();
 
-            _titleText.text = session.QuestTitle;
-            _titleBaseColor = session.QuestKind == QuestType.Main ? MainQuestColor : SubQuestColor;
-            _objectiveText.text = session.QuestObjective;
+            for (int i = 0; i < _rows.Length; i++)
+            {
+                bool active = i < ordered.Length;
+                _rows[i].Root.SetActive(active);
+                if (!active) continue;
+
+                var quest = ordered[i];
+                _rows[i].Title.text = quest.Title;
+                _rows[i].Objective.text = quest.Objective;
+                _rows[i].BaseColor = quest.Kind == QuestType.Main ? MainQuestColor : SubQuestColor;
+            }
         }
 
         // Shimmer only touches color, not text/layout, so it's cheap enough
         // to run every frame — no need to gate it behind a coroutine/timer.
         private void Update()
         {
-            if (_titleText == null || !_root.activeSelf) return;
-
             float glow = (Mathf.Sin(Time.unscaledTime * ShimmerSpeed) + 1f) * 0.5f;
-            _titleText.color = Color.Lerp(_titleBaseColor, Color.white, glow * ShimmerStrength);
+            for (int i = 0; i < _rows.Length; i++)
+            {
+                var row = _rows[i];
+                if (!row.Root.activeSelf) continue;
+                row.Title.color = Color.Lerp(row.BaseColor, Color.white, glow * ShimmerStrength);
+            }
         }
 
         private void Build()
@@ -107,42 +141,44 @@ namespace Fantasia.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280, 720);
 
-            // Anchored below DevSceneNav's OnGUI box (top-right, ~100px tall)
-            // so the two don't overlap. Semi-transparent fill so the board
-            // reads through it (per feedback) instead of a solid black slab.
-            var inner = UGUIKit.CreateBorderedPanel(canvasGO.transform, "QuestBox", new Vector2(1f, 1f), new Vector2(1f, 1f),
+            for (int i = 0; i < _rows.Length; i++)
+            {
+                _rows[i] = BuildRow(canvasGO.transform, i);
+            }
+        }
+
+        private QuestRow BuildRow(Transform canvasTransform, int index)
+        {
+            // Semi-transparent fill so the board reads through it (per
+            // feedback) instead of a solid black slab.
+            var inner = UGUIKit.CreateBorderedPanel(canvasTransform, $"QuestBox{index}", new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Color(0.65f, 0.6f, 0.5f, 0.55f), new Color(0.05f, 0.05f, 0.08f, 0.5f), 1.5f);
             var outerRect = (RectTransform)inner.transform.parent;
-            // ~30% smaller than the original 270x100 — full size read as too
-            // intrusive during actual play (per feedback).
-            outerRect.sizeDelta = new Vector2(189f, 70f);
+            outerRect.sizeDelta = new Vector2(RowWidth, RowHeight);
 
             // Anchor point (1,1) is the canvas's top-right *corner* — without
             // matching the pivot to that same corner, anchoredPosition offsets
             // from the rect's center instead, pushing roughly half the box
-            // past the right edge of the screen (the clipping bug reported).
+            // past the right edge of the screen (a clipping bug hit earlier).
             // Pivot (1,1) makes anchoredPosition mean "top-right corner of
             // this box, offset from the top-right corner of the canvas".
             outerRect.pivot = new Vector2(1f, 1f);
-            outerRect.anchoredPosition = new Vector2(-10f, -110f);
+            outerRect.anchoredPosition = new Vector2(-RightMargin, -TopMargin - index * (RowHeight + RowGap));
 
-            // Base color is set per-quest in Refresh() (gold=Main, silver=Sub)
-            // and Update() shimmers on top of it — the value here is just a
-            // sane default before the first Refresh().
-            _titleText = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.95f, 0.92f), "", 11, TextAnchor.MiddleLeft);
-            _titleText.color = MainQuestColor;
-            _titleText.fontStyle = FontStyle.Bold;
+            var title = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.95f, 0.92f), "", 10, TextAnchor.MiddleLeft);
+            title.color = MainQuestColor;
+            title.fontStyle = FontStyle.Bold;
 
             // Thin divider under the title — small touch so the box doesn't
             // read as one undifferentiated block of text.
             var divider = UGUIKit.CreateImage(inner, "Divider", new Vector2(0.08f, 0.58f), new Vector2(0.92f, 0.6f), new Color(1f, 1f, 1f, 0.25f));
             _ = divider;
 
-            _objectiveText = UGUIKit.CreateText(inner, "Objective", new Vector2(0.08f, 0.08f), new Vector2(0.95f, 0.52f), "", 8, TextAnchor.UpperLeft);
-            _objectiveText.color = new Color(0.92f, 0.92f, 0.92f);
+            var objective = UGUIKit.CreateText(inner, "Objective", new Vector2(0.08f, 0.08f), new Vector2(0.95f, 0.52f), "", 7, TextAnchor.UpperLeft);
+            objective.color = new Color(0.92f, 0.92f, 0.92f);
 
-            _root = outerRect.gameObject;
-            _root.SetActive(false);
+            outerRect.gameObject.SetActive(false);
+            return new QuestRow { Root = outerRect.gameObject, Title = title, Objective = objective };
         }
     }
 }

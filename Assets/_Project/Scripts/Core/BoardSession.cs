@@ -6,8 +6,9 @@ using UnityEngine;
 namespace Fantasia.Core
 {
     // Only decides QuestTrackerPanel's title color for now (gold=Main,
-    // blue=Sub — common convention across RPGs, e.g. The Witcher 3, Genshin
-    // Impact) — no gameplay difference yet.
+    // silver=Sub — the "tier" coloring convention common in MMO/mobile RPG
+    // quest logs) and display order (Sub stacks above Main) — no gameplay
+    // difference yet.
     public enum QuestType
     {
         Main,
@@ -96,19 +97,40 @@ namespace Fantasia.Core
 
         // Real quests (GDD content, not yet designed) will replace this —
         // for now it only proves the right-side quest-tracker UI mechanism
-        // works, seeded with a throwaway dummy quest (see QuestTrackerPanel).
-        public string QuestTitle { get; private set; }
-        public string QuestObjective { get; private set; }
-        public QuestType QuestKind { get; private set; }
-        public bool HasQuest => !string.IsNullOrEmpty(QuestTitle);
+        // works (including several active at once), seeded with throwaway
+        // dummy quests (see QuestTrackerPanel).
+        public readonly struct QuestEntry
+        {
+            public readonly string Title;
+            public readonly string Objective;
+            public readonly QuestType Kind;
+
+            public QuestEntry(string title, string objective, QuestType kind)
+            {
+                Title = title;
+                Objective = objective;
+                Kind = kind;
+            }
+        }
+
+        private readonly List<QuestEntry> _quests = new List<QuestEntry>();
+        public IReadOnlyList<QuestEntry> Quests => _quests;
 
         public event System.Action QuestChanged;
 
+        // Adds a new quest, or updates the existing one with the same title.
         public void SetQuest(string title, string objective, QuestType kind)
         {
-            QuestTitle = title;
-            QuestObjective = objective;
-            QuestKind = kind;
+            for (int i = 0; i < _quests.Count; i++)
+            {
+                if (_quests[i].Title == title)
+                {
+                    _quests[i] = new QuestEntry(title, objective, kind);
+                    QuestChanged?.Invoke();
+                    return;
+                }
+            }
+            _quests.Add(new QuestEntry(title, objective, kind));
             QuestChanged?.Invoke();
         }
 
@@ -151,10 +173,12 @@ namespace Fantasia.Core
                 // per-scene.
                 Application.targetFrameRate = 60;
 
-                // Dummy quest so the right-side tracker UI has something to
+                // Dummy quests so the right-side tracker UI has something to
                 // show before real quest content exists — see QuestTrackerPanel.
-                // Sub (silver) for now so that color gets exercised in real
-                // Play mode too, not just the headless verification shots.
+                // Both Main and Sub seeded together so the multi-quest
+                // stacking layout gets exercised in real Play mode, not just
+                // one type at a time.
+                SetQuest("게임 완성시키기", "판타지아를 끝까지 만들어라", QuestType.Main);
                 SetQuest("1차 개발 완성", "판타지아 프로토타입 1차 개발을 마무리하라", QuestType.Sub);
             }
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
