@@ -9,8 +9,9 @@ namespace Fantasia.UI
     // reference layout in Docs/Concept_Image/Concept/판타지아_UI(1).png
     // (title / objective line, right side of screen). Several quests can be
     // active at once (e.g. one Main + one Sub) — each gets its own stacked
-    // box, Sub quests above Main quests, since a player is more likely to
-    // have a couple of side objectives alongside the one main quest.
+    // box, with the Main quest pinned at the top and Sub quests stacking
+    // below it, so the primary objective stays in the same spot regardless
+    // of how many side quests are active.
     //
     // Title color signals Main vs Sub (see QuestType) instead of a text
     // label — gold/silver "tier" coloring is the common convention for
@@ -98,11 +99,12 @@ namespace Fantasia.UI
         private void Refresh()
         {
             var session = BoardSession.Instance;
-            // Sub quests stack above Main quests — OrderBy is stable, so
-            // quests of the same kind keep their original relative order.
+            // Main quest is pinned at the top, subs stack below it — OrderBy
+            // is stable, so quests of the same kind keep their original
+            // relative order.
             var ordered = session == null
                 ? System.Array.Empty<BoardSession.QuestEntry>()
-                : session.Quests.OrderBy(q => q.Kind == QuestType.Sub ? 0 : 1).ToArray();
+                : session.Quests.OrderBy(q => q.Kind == QuestType.Main ? 0 : 1).ToArray();
 
             for (int i = 0; i < _rows.Length; i++)
             {

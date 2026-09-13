@@ -7,8 +7,8 @@ namespace Fantasia.Core
 {
     // Only decides QuestTrackerPanel's title color for now (gold=Main,
     // silver=Sub — the "tier" coloring convention common in MMO/mobile RPG
-    // quest logs) and display order (Sub stacks above Main) — no gameplay
-    // difference yet.
+    // quest logs) and display order (Main pinned at top, Sub stacks below)
+    // — no gameplay difference yet.
     public enum QuestType
     {
         Main,
