@@ -134,6 +134,28 @@ namespace Fantasia.Core
             QuestChanged?.Invoke();
         }
 
+        // Fires after a quest is removed by CompleteQuest — DialoguePanel
+        // subscribes to this instead of any specific completion site calling
+        // into UI directly (same decoupling idea as ItemAdded/QuestChanged).
+        public event System.Action<QuestEntry> QuestCompleted;
+
+        // Returns false if no quest had that title.
+        public bool CompleteQuest(string title)
+        {
+            for (int i = 0; i < _quests.Count; i++)
+            {
+                if (_quests[i].Title == title)
+                {
+                    var completed = _quests[i];
+                    _quests.RemoveAt(i);
+                    QuestChanged?.Invoke();
+                    QuestCompleted?.Invoke(completed);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private bool _initialized;
 
         public static void EnsureExists()

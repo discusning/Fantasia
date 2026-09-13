@@ -45,6 +45,7 @@ namespace Fantasia.Board
             ItemAcquiredToast.EnsureExists();
             QuestTrackerPanel.EnsureExists();
             LandmarkInfoPanel.EnsureExists();
+            DialoguePanel.EnsureExists();
             _board = GetComponent<HexBoard>();
             _currentCoord = BoardSession.Instance.PlayerPosition;
             SpawnToken();
@@ -93,7 +94,7 @@ namespace Fantasia.Board
 
         private void Update()
         {
-            if (LandmarkInfoPanel.IsOpen) return;
+            if (LandmarkInfoPanel.IsOpen || DialoguePanel.IsOpen) return;
 
             // Ctrl+Right-click = "just look" (info popup only), independent
             // of move/roll state — right-click alone is left free for future
@@ -101,6 +102,15 @@ namespace Fantasia.Board
             if (Input.GetMouseButtonDown(1) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
             {
                 TryInspectLandmark();
+                return;
+            }
+
+            // Prototype-only test hook — there's no real quest-completion
+            // condition yet (GDD 6.6 TBD), so Q just proves "completing a
+            // quest can trigger an NPC dialogue" end to end (see DialoguePanel).
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                BoardSession.Instance.CompleteQuest("1차 개발 완성");
                 return;
             }
 
@@ -209,6 +219,7 @@ namespace Fantasia.Board
                 GUI.Label(new Rect(10, 34, 400, 24), "이동 중...");
             }
             GUI.Label(new Rect(10, 58, 400, 24), "Ctrl+우클릭: 지형지물 정보 확인");
+            GUI.Label(new Rect(10, 82, 400, 24), "Q: 서브 퀘스트 완료(테스트) → 대화 시작");
         }
     }
 }
