@@ -6,7 +6,10 @@ namespace Fantasia.UI
 {
     // Always-on quest tracker anchored to the screen's top-right, per the
     // reference layout in Docs/Concept_Image/Concept/판타지아_UI(1).png
-    // (title / objective line / rounds-remaining, right side of screen).
+    // (title / objective line, right side of screen). Title color signals
+    // Main vs Sub (see QuestType) instead of a text label — matches common
+    // RPG convention (e.g. The Witcher 3, Genshin Impact) and keeps the box
+    // from getting more cluttered.
     // Real quest content doesn't exist yet (GDD TBD) — this only proves the
     // UI mechanism using the dummy quest BoardSession seeds itself with.
     //
@@ -17,10 +20,12 @@ namespace Fantasia.UI
     {
         public static QuestTrackerPanel Instance { get; private set; }
 
+        private static readonly Color MainQuestColor = new Color(0.95f, 0.85f, 0.55f); // gold
+        private static readonly Color SubQuestColor = new Color(0.55f, 0.78f, 0.95f); // blue
+
         private GameObject _root;
         private Text _titleText;
         private Text _objectiveText;
-        private Text _roundsText;
 
         private bool _initialized;
 
@@ -64,8 +69,8 @@ namespace Fantasia.UI
             if (!hasQuest) return;
 
             _titleText.text = session.QuestTitle;
+            _titleText.color = session.QuestKind == QuestType.Main ? MainQuestColor : SubQuestColor;
             _objectiveText.text = session.QuestObjective;
-            _roundsText.text = $"({session.QuestRoundsRemaining} Rounds)";
         }
 
         private void Build()
@@ -98,20 +103,19 @@ namespace Fantasia.UI
             outerRect.pivot = new Vector2(1f, 1f);
             outerRect.anchoredPosition = new Vector2(-10f, -110f);
 
-            _titleText = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.66f), new Vector2(0.95f, 0.94f), "", 11, TextAnchor.MiddleLeft);
-            _titleText.color = new Color(0.95f, 0.85f, 0.55f);
+            // Color is set per-quest in Refresh() (gold=Main, blue=Sub) — the
+            // value here is just a sane default before the first Refresh().
+            _titleText = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.95f, 0.92f), "", 11, TextAnchor.MiddleLeft);
+            _titleText.color = MainQuestColor;
             _titleText.fontStyle = FontStyle.Bold;
 
             // Thin divider under the title — small touch so the box doesn't
             // read as one undifferentiated block of text.
-            var divider = UGUIKit.CreateImage(inner, "Divider", new Vector2(0.08f, 0.63f), new Vector2(0.92f, 0.645f), new Color(1f, 1f, 1f, 0.25f));
+            var divider = UGUIKit.CreateImage(inner, "Divider", new Vector2(0.08f, 0.58f), new Vector2(0.92f, 0.6f), new Color(1f, 1f, 1f, 0.25f));
             _ = divider;
 
-            _objectiveText = UGUIKit.CreateText(inner, "Objective", new Vector2(0.08f, 0.3f), new Vector2(0.95f, 0.6f), "", 8, TextAnchor.UpperLeft);
+            _objectiveText = UGUIKit.CreateText(inner, "Objective", new Vector2(0.08f, 0.08f), new Vector2(0.95f, 0.52f), "", 8, TextAnchor.UpperLeft);
             _objectiveText.color = new Color(0.92f, 0.92f, 0.92f);
-
-            _roundsText = UGUIKit.CreateText(inner, "Rounds", new Vector2(0.08f, 0.04f), new Vector2(0.95f, 0.26f), "", 8, TextAnchor.LowerRight);
-            _roundsText.color = new Color(0.8f, 0.75f, 0.6f);
 
             _root = outerRect.gameObject;
             _root.SetActive(false);

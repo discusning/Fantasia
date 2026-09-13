@@ -5,6 +5,15 @@ using UnityEngine;
 
 namespace Fantasia.Core
 {
+    // Only decides QuestTrackerPanel's title color for now (gold=Main,
+    // blue=Sub — common convention across RPGs, e.g. The Witcher 3, Genshin
+    // Impact) — no gameplay difference yet.
+    public enum QuestType
+    {
+        Main,
+        Sub,
+    }
+
     // Persists across the board <-> combat scene round trip (DevSceneNav /
     // real encounter triggers) so player position and cleared-encounter
     // progress survive it. The board itself still regenerates fresh on every
@@ -90,26 +99,16 @@ namespace Fantasia.Core
         // works, seeded with a throwaway dummy quest (see QuestTrackerPanel).
         public string QuestTitle { get; private set; }
         public string QuestObjective { get; private set; }
-        public int QuestRoundsRemaining { get; private set; }
+        public QuestType QuestKind { get; private set; }
         public bool HasQuest => !string.IsNullOrEmpty(QuestTitle);
 
         public event System.Action QuestChanged;
 
-        public void SetQuest(string title, string objective, int roundsRemaining)
+        public void SetQuest(string title, string objective, QuestType kind)
         {
             QuestTitle = title;
             QuestObjective = objective;
-            QuestRoundsRemaining = roundsRemaining;
-            QuestChanged?.Invoke();
-        }
-
-        // Ticks the round counter down by one — called once per board move
-        // (BoardTestController.WalkPath) as a stand-in for whatever "a round
-        // passed" ends up meaning once real quests exist.
-        public void AdvanceQuestRound()
-        {
-            if (!HasQuest || QuestRoundsRemaining <= 0) return;
-            QuestRoundsRemaining--;
+            QuestKind = kind;
             QuestChanged?.Invoke();
         }
 
@@ -154,7 +153,7 @@ namespace Fantasia.Core
 
                 // Dummy quest so the right-side tracker UI has something to
                 // show before real quest content exists — see QuestTrackerPanel.
-                SetQuest("게임 완성시키기", "판타지아를 끝까지 만들어라", 13);
+                SetQuest("게임 완성시키기", "판타지아를 끝까지 만들어라", QuestType.Main);
             }
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
         }
