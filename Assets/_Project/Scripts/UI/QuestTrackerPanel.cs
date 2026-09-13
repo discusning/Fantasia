@@ -7,9 +7,18 @@ namespace Fantasia.UI
     // Always-on quest tracker anchored to the screen's top-right, per the
     // reference layout in Docs/Concept_Image/Concept/판타지아_UI(1).png
     // (title / objective line, right side of screen). Title color signals
-    // Main vs Sub (see QuestType) instead of a text label — matches common
-    // RPG convention (e.g. The Witcher 3, Genshin Impact) and keeps the box
-    // from getting more cluttered.
+    // Main vs Sub (see QuestType) instead of a text label — gold/silver
+    // "tier" coloring is the common convention for quest-log importance
+    // (medal-tier metaphor used across MMO/mobile RPG quest logs) and keeps
+    // the box from getting more cluttered with an extra label.
+    //
+    // The title also gets a slow brightness pulse ("shimmer") so the box
+    // draws the eye a bit more, per feedback that it read as too quiet.
+    // A moving specular sweep (the flashier version seen on legendary item
+    // names in some ARPGs) needs a custom shader/mask on the text mesh; a
+    // periodic Lerp-toward-white on the plain uGUI Text color is the
+    // lightweight code-only equivalent and is deliberately kept subtle.
+    //
     // Real quest content doesn't exist yet (GDD TBD) — this only proves the
     // UI mechanism using the dummy quest BoardSession seeds itself with.
     //
@@ -21,11 +30,15 @@ namespace Fantasia.UI
         public static QuestTrackerPanel Instance { get; private set; }
 
         private static readonly Color MainQuestColor = new Color(0.95f, 0.85f, 0.55f); // gold
-        private static readonly Color SubQuestColor = new Color(0.55f, 0.78f, 0.95f); // blue
+        private static readonly Color SubQuestColor = new Color(0.78f, 0.8f, 0.82f); // silver
+
+        private const float ShimmerSpeed = 1.6f; // radians/sec
+        private const float ShimmerStrength = 0.35f; // 0 = off, 1 = flashes fully white
 
         private GameObject _root;
         private Text _titleText;
         private Text _objectiveText;
+        private Color _titleBaseColor = MainQuestColor;
 
         private bool _initialized;
 
@@ -69,8 +82,18 @@ namespace Fantasia.UI
             if (!hasQuest) return;
 
             _titleText.text = session.QuestTitle;
-            _titleText.color = session.QuestKind == QuestType.Main ? MainQuestColor : SubQuestColor;
+            _titleBaseColor = session.QuestKind == QuestType.Main ? MainQuestColor : SubQuestColor;
             _objectiveText.text = session.QuestObjective;
+        }
+
+        // Shimmer only touches color, not text/layout, so it's cheap enough
+        // to run every frame — no need to gate it behind a coroutine/timer.
+        private void Update()
+        {
+            if (_titleText == null || !_root.activeSelf) return;
+
+            float glow = (Mathf.Sin(Time.unscaledTime * ShimmerSpeed) + 1f) * 0.5f;
+            _titleText.color = Color.Lerp(_titleBaseColor, Color.white, glow * ShimmerStrength);
         }
 
         private void Build()
@@ -103,8 +126,9 @@ namespace Fantasia.UI
             outerRect.pivot = new Vector2(1f, 1f);
             outerRect.anchoredPosition = new Vector2(-10f, -110f);
 
-            // Color is set per-quest in Refresh() (gold=Main, blue=Sub) — the
-            // value here is just a sane default before the first Refresh().
+            // Base color is set per-quest in Refresh() (gold=Main, silver=Sub)
+            // and Update() shimmers on top of it — the value here is just a
+            // sane default before the first Refresh().
             _titleText = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.95f, 0.92f), "", 11, TextAnchor.MiddleLeft);
             _titleText.color = MainQuestColor;
             _titleText.fontStyle = FontStyle.Bold;

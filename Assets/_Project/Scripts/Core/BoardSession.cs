@@ -153,7 +153,9 @@ namespace Fantasia.Core
 
                 // Dummy quest so the right-side tracker UI has something to
                 // show before real quest content exists — see QuestTrackerPanel.
-                SetQuest("게임 완성시키기", "판타지아를 끝까지 만들어라", QuestType.Main);
+                // Sub (silver) for now so that color gets exercised in real
+                // Play mode too, not just the headless verification shots.
+                SetQuest("1차 개발 완성", "판타지아 프로토타입 1차 개발을 마무리하라", QuestType.Sub);
             }
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
         }
