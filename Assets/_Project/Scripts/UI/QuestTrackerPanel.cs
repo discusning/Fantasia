@@ -26,6 +26,11 @@ namespace Fantasia.UI
     // periodic Lerp-toward-white on the plain uGUI Text color is the
     // lightweight code-only equivalent and is deliberately kept subtle.
     //
+    // Each row also has a player-facing "달성!" button (top-right, next to
+    // the title) that completes that specific quest (BoardSession.CompleteQuest)
+    // — real completion conditions don't exist yet, so this is the manual
+    // stand-in until quests have actual objectives to detect.
+    //
     // Real quest content doesn't exist yet (GDD TBD) — this only proves the
     // UI mechanism using the dummy quests BoardSession seeds itself with.
     //
@@ -58,6 +63,12 @@ namespace Fantasia.UI
             public Text Title;
             public Text Objective;
             public Color BaseColor = MainQuestColor;
+
+            // Whichever quest currently occupies this row — rows are a
+            // fixed pool reused across refreshes (see MaxQuestRows), so the
+            // "달성!" button's click handler needs to look this up at click
+            // time rather than capture a quest reference when the row was built.
+            public string CurrentTitle;
         }
 
         private readonly QuestRow[] _rows = new QuestRow[MaxQuestRows];
@@ -116,6 +127,7 @@ namespace Fantasia.UI
                 _rows[i].Title.text = quest.Title;
                 _rows[i].Objective.text = quest.Objective;
                 _rows[i].BaseColor = quest.Kind == QuestType.Main ? MainQuestColor : SubQuestColor;
+                _rows[i].CurrentTitle = quest.Title;
             }
         }
 
@@ -138,6 +150,7 @@ namespace Fantasia.UI
             canvasGO.transform.SetParent(transform, false);
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasGO.AddComponent<GraphicRaycaster>(); // needed for the "달성!" button clicks
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -167,7 +180,9 @@ namespace Fantasia.UI
             outerRect.pivot = new Vector2(1f, 1f);
             outerRect.anchoredPosition = new Vector2(-RightMargin, -TopMargin - index * (RowHeight + RowGap));
 
-            var title = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.95f, 0.92f), "", 10, TextAnchor.MiddleLeft);
+            // Title takes the left ~60% of the row so the achieve button
+            // (right end, per feedback) has room without overlapping it.
+            var title = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.66f, 0.92f), "", 10, TextAnchor.MiddleLeft);
             title.color = MainQuestColor;
             title.fontStyle = FontStyle.Bold;
 
@@ -180,7 +195,22 @@ namespace Fantasia.UI
             objective.color = new Color(0.92f, 0.92f, 0.92f);
 
             outerRect.gameObject.SetActive(false);
-            return new QuestRow { Root = outerRect.gameObject, Title = title, Objective = objective };
+            var row = new QuestRow { Root = outerRect.gameObject, Title = title, Objective = objective };
+
+            // Player-driven completion — clicking marks whichever quest
+            // currently sits in this row as done (BoardSession.CompleteQuest),
+            // which also fires DialoguePanel's dummy dialogue for the one
+            // test quest it's wired to.
+            var achieveButton = UGUIKit.CreateButton(inner, "AchieveButton", new Vector2(0.68f, 0.64f), new Vector2(0.95f, 0.9f), "달성!", new Color(0.25f, 0.4f, 0.25f), 8);
+            achieveButton.onClick.AddListener(() => CompleteRow(row));
+
+            return row;
+        }
+
+        private static void CompleteRow(QuestRow row)
+        {
+            if (string.IsNullOrEmpty(row.CurrentTitle)) return;
+            BoardSession.Instance.CompleteQuest(row.CurrentTitle);
         }
     }
 }

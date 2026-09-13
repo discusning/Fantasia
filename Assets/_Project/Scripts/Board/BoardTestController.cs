@@ -105,15 +105,6 @@ namespace Fantasia.Board
                 return;
             }
 
-            // Prototype-only test hook — there's no real quest-completion
-            // condition yet (GDD 6.6 TBD), so Q just proves "completing a
-            // quest can trigger an NPC dialogue" end to end (see DialoguePanel).
-            if (Input.GetKeyDown(KeyCode.Q))
-            {
-                BoardSession.Instance.CompleteQuest("1차 개발 완성");
-                return;
-            }
-
             if (_isMoving) return;
 
             if (Input.GetKeyDown(KeyCode.Space))
@@ -219,7 +210,7 @@ namespace Fantasia.Board
                 GUI.Label(new Rect(10, 34, 400, 24), "이동 중...");
             }
             GUI.Label(new Rect(10, 58, 400, 24), "Ctrl+우클릭: 지형지물 정보 확인");
-            GUI.Label(new Rect(10, 82, 400, 24), "Q: 서브 퀘스트 완료(테스트) → 대화 시작");
+            GUI.Label(new Rect(10, 82, 400, 24), "우측 퀘스트 창의 '달성!' 버튼으로 퀘스트 완료");
         }
     }
 }
