@@ -21,6 +21,8 @@ namespace Fantasia.Board
         public bool IsBlocked { get; private set; }
         public bool IsEncounter { get; private set; }
         public bool IsCleared { get; private set; }
+        public LandmarkDefinition Landmark { get; private set; }
+        public bool IsLandmark => Landmark != null;
 
         // Set up directly from Initialize rather than Awake — HexBoard always
         // calls this right after AddComponent, and Awake isn't guaranteed to
@@ -57,14 +59,24 @@ namespace Fantasia.Board
             RefreshColor();
         }
 
-        // Encounter/cleared markers stay visible even while highlighted
-        // reachable — they're landmarks, not something a highlight overlay
-        // should hide.
+        // Ctrl+Right-click reads this off the raycast hit (see
+        // BoardTestController.TryInspectLandmark) — no per-type tile prefab
+        // yet, so the accent color IS the tile's visual identity for now.
+        public void SetLandmark(LandmarkDefinition landmark)
+        {
+            Landmark = landmark;
+            RefreshColor();
+        }
+
+        // Encounter/cleared/landmark markers stay visible even while
+        // highlighted reachable — they're points of interest, not something
+        // a highlight overlay should hide.
         private void RefreshColor()
         {
             Color color = IsBlocked ? blockedColor
                 : IsCleared ? clearedColor
                 : IsEncounter ? encounterColor
+                : IsLandmark ? Landmark.AccentColor
                 : _isReachable ? reachableColor
                 : baseColor;
             ApplyColor(color);

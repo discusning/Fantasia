@@ -65,7 +65,8 @@ namespace Fantasia.Editor
 
             var boardGO = new GameObject("BoardManager");
             boardGO.AddComponent<HexBoard>();
-            boardGO.AddComponent<BoardTestController>();
+            var boardTestController = boardGO.AddComponent<BoardTestController>();
+            boardTestController.PlaceholderLandmarks = PlaceholderDataSetup.EnsureLandmarks();
 
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();
 

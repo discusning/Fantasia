@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &196353012
+--- !u!1 &153402265
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,62 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 196353014}
-  - component: {fileID: 196353013}
-  m_Layer: 0
-  m_Name: StatusInventoryUI
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &196353013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 196353012}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 15740037f9e36814594fd5d69876553e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.UI.StatusInventoryPanel
-  TargetCamera: {fileID: 1796882679}
-  Characters:
-  - {fileID: 11400000, guid: 334c12e6cf56de04fbe85056efcfd5aa, type: 2}
-  - {fileID: 11400000, guid: cd2df2b5f880d8f44a816216f0dda8bc, type: 2}
-  - {fileID: 11400000, guid: ccecdc219696b634a87d94aaf259f6cb, type: 2}
-  InventoryItems:
-  - {fileID: 11400000, guid: 86598bf34f1a262479e613302a5b5fdc, type: 2}
-  - {fileID: 11400000, guid: a9c6fab69f5145d4ab73f4a02b2f8191, type: 2}
-  - {fileID: 11400000, guid: f12ea1256c019e54ca1b54a62af95549, type: 2}
---- !u!4 &196353014
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 196353012}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &258519503
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 258519506}
-  - component: {fileID: 258519505}
-  - component: {fileID: 258519504}
+  - component: {fileID: 153402268}
+  - component: {fileID: 153402267}
+  - component: {fileID: 153402266}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -190,13 +137,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &258519504
+--- !u!114 &153402266
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 258519503}
+  m_GameObject: {fileID: 153402265}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
@@ -210,13 +157,13 @@ MonoBehaviour:
   m_InputActionsPerSecond: 10
   m_RepeatDelay: 0.5
   m_ForceModuleActive: 0
---- !u!114 &258519505
+--- !u!114 &153402267
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 258519503}
+  m_GameObject: {fileID: 153402265}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
@@ -225,13 +172,13 @@ MonoBehaviour:
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
---- !u!4 &258519506
+--- !u!4 &153402268
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 258519503}
+  m_GameObject: {fileID: 153402265}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -240,7 +187,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &557212307
+--- !u!1 &682788908
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -248,8 +195,174 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 557212309}
-  - component: {fileID: 557212308}
+  - component: {fileID: 682788910}
+  - component: {fileID: 682788909}
+  m_Layer: 0
+  m_Name: DevSceneNav
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &682788909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 682788908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14cd199090291774a9f34bf3ce9aab73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Core.DevSceneNav
+--- !u!4 &682788910
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 682788908}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &733818627
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 733818629}
+  - component: {fileID: 733818628}
+  m_Layer: 0
+  m_Name: StatusInventoryUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &733818628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 733818627}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15740037f9e36814594fd5d69876553e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.UI.StatusInventoryPanel
+  TargetCamera: {fileID: 1965246042}
+  Characters:
+  - {fileID: 11400000, guid: 334c12e6cf56de04fbe85056efcfd5aa, type: 2}
+  - {fileID: 11400000, guid: cd2df2b5f880d8f44a816216f0dda8bc, type: 2}
+  - {fileID: 11400000, guid: ccecdc219696b634a87d94aaf259f6cb, type: 2}
+  InventoryItems:
+  - {fileID: 11400000, guid: 86598bf34f1a262479e613302a5b5fdc, type: 2}
+  - {fileID: 11400000, guid: a9c6fab69f5145d4ab73f4a02b2f8191, type: 2}
+  - {fileID: 11400000, guid: f12ea1256c019e54ca1b54a62af95549, type: 2}
+--- !u!4 &733818629
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 733818627}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &925151881
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 925151884}
+  - component: {fileID: 925151883}
+  - component: {fileID: 925151882}
+  m_Layer: 0
+  m_Name: BoardManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &925151882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 925151881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cfdb12fc7e04ec40b133397e351e1bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Board.BoardTestController
+  tokenRadius: 0.5
+  secondsPerTile: 0.25
+  PlaceholderLandmarks:
+  - {fileID: 11400000, guid: 2807ed5cdc7e1014ca82075babed8763, type: 2}
+  - {fileID: 11400000, guid: 8e2794f96e2d3394a89fe7f0394e3815, type: 2}
+  - {fileID: 11400000, guid: 7b3e2b501ff3b714ab87cda316eac9cd, type: 2}
+--- !u!114 &925151883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 925151881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf1e0ae57c6b07244b774694fe284a6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Board.HexBoard
+  radius: 4
+  tileSize: 1
+  tileGap: 0.05
+  tileHeight: 0.4
+  obstacleChance: 0.18
+  encounterChance: 0.1
+--- !u!4 &925151884
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 925151881}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1501025047
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1501025049}
+  - component: {fileID: 1501025048}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -257,13 +370,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!108 &557212308
+--- !u!108 &1501025048
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 557212307}
+  m_GameObject: {fileID: 1501025047}
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 1
@@ -322,13 +435,13 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!4 &557212309
+--- !u!4 &1501025049
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 557212307}
+  m_GameObject: {fileID: 1501025047}
   serializedVersion: 2
   m_LocalRotation: {x: 0.40821794, y: -0.23456973, z: 0.10938166, w: 0.8754261}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -337,7 +450,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1088063650
+--- !u!1 &1965246041
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -345,121 +458,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1088063653}
-  - component: {fileID: 1088063652}
-  - component: {fileID: 1088063651}
-  m_Layer: 0
-  m_Name: BoardManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1088063651
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1088063650}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2cfdb12fc7e04ec40b133397e351e1bb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Board.BoardTestController
-  startCoord:
-    Q: 0
-    R: 0
-  tokenRadius: 0.5
-  secondsPerTile: 0.25
---- !u!114 &1088063652
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1088063650}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bf1e0ae57c6b07244b774694fe284a6c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Board.HexBoard
-  radius: 4
-  tileSize: 1
-  tileGap: 0.05
-  tileHeight: 0.4
-  obstacleChance: 0.18
-  encounterChance: 0.1
---- !u!4 &1088063653
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1088063650}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1316711754
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1316711756}
-  - component: {fileID: 1316711755}
-  m_Layer: 0
-  m_Name: DevSceneNav
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1316711755
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1316711754}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 14cd199090291774a9f34bf3ce9aab73, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Core.DevSceneNav
---- !u!4 &1316711756
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1316711754}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1796882678
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1796882681}
-  - component: {fileID: 1796882679}
-  - component: {fileID: 1796882680}
+  - component: {fileID: 1965246044}
+  - component: {fileID: 1965246042}
+  - component: {fileID: 1965246043}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -467,13 +468,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &1796882679
+--- !u!20 &1965246042
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1796882678}
+  m_GameObject: {fileID: 1965246041}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
@@ -518,21 +519,21 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &1796882680
+--- !u!81 &1965246043
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1796882678}
+  m_GameObject: {fileID: 1965246041}
   m_Enabled: 1
---- !u!4 &1796882681
+--- !u!4 &1965246044
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1796882678}
+  m_GameObject: {fileID: 1965246041}
   serializedVersion: 2
   m_LocalRotation: {x: 0.32556814, y: 0, z: 0, w: 0.94551855}
   m_LocalPosition: {x: 0, y: 10, z: -12}
@@ -545,9 +546,9 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 557212309}
-  - {fileID: 1796882681}
-  - {fileID: 1088063653}
-  - {fileID: 1316711756}
-  - {fileID: 258519506}
-  - {fileID: 196353014}
+  - {fileID: 1501025049}
+  - {fileID: 1965246044}
+  - {fileID: 925151884}
+  - {fileID: 682788910}
+  - {fileID: 153402268}
+  - {fileID: 733818629}

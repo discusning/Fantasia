@@ -9,6 +9,7 @@
 - For the King 시스템 리서치 노트: [`Docs/References/ForTheKing_SystemNotes.md`](Docs/References/ForTheKing_SystemNotes.md)
 - 게임 디자인 레퍼런스 조사(모티브 참고용): [`Docs/References/GameDesignInspiration_2026-09-10.md`](Docs/References/GameDesignInspiration_2026-09-10.md)
 - Unity 개발/최적화 자료조사: [`Docs/References/UnityOptimization_2026-09-10.md`](Docs/References/UnityOptimization_2026-09-10.md)
+- 지형지물 정보창 UI 리서치(10개 게임 사례): [`Docs/References/LandmarkUI_Research_2026-09-13.md`](Docs/References/LandmarkUI_Research_2026-09-13.md)
 - 검토 중인 무료 Unity 에셋 목록(미다운로드): [`Docs/참고자료/UnityAssets.md`](Docs/참고자료/UnityAssets.md)
 - 작업 진행일지(날짜별): [`Docs/진행일지/`](Docs/진행일지/)
 
@@ -73,7 +74,7 @@ fantasia/
 ## 구현 현황 / 테스트 방법
 아직 아트/애니메이션 없이 로직만 먼저 만드는 단계입니다. Unity Editor 상단 메뉴 **Fantasia**에서 실행:
 
-- **Setup Board Test Scene** — 헥스 보드(`Scripts/Board`) 생성. Play 후 Space로 주사위 굴려 이동 범위(초록) 확인, 클릭하면 굴린 만큼의 타일을 한 칸씩 밟으며 이동(순간이동 아님). 어두운 타일은 진입 불가(장애물, `HexBoard.obstacleChance`), **주황 타일은 인카운터**(`HexBoard.encounterChance`) — 밟고 도착하면 자동으로 `CombatTest` 씬으로 전환됩니다. **I 키**로 스테이터스/인벤토리 창(`Scripts/UI/StatusInventoryPanel.cs`, 참고: `Docs/Concept_Image/Images/Fantasia_Status_Inventory.png`) 토글 — 캐릭1/2/3 탭으로 캐릭터 전환. 화면 우측에는 퀘스트 추적 UI(`Scripts/UI/QuestTrackerPanel.cs`, 참고: `Docs/Concept_Image/Concept/판타지아_UI(1).png`)가 항상 떠 있습니다 — 여러 퀘스트(메인 1개 + 서브 여러 개)가 동시에 활성화될 수 있고, 메인 퀘스트가 항상 맨 위에 고정되고 서브 퀘스트는 그 아래로 쌓입니다. 제목 색으로 메인(금색)/서브(실버)를 구분하고(`Fantasia.Core.QuestType`), 제목에는 은은한 반짝임(밝기 펄스) 효과가 있습니다. 실제 퀘스트 콘텐츠는 아직 없어서 더미 메인/서브 퀘스트로 UI/메커니즘만 먼저 검증하는 단계입니다.
+- **Setup Board Test Scene** — 헥스 보드(`Scripts/Board`) 생성. Play 후 Space로 주사위 굴려 이동 범위(초록) 확인, 클릭하면 굴린 만큼의 타일을 한 칸씩 밟으며 이동(순간이동 아님). 어두운 타일은 진입 불가(장애물, `HexBoard.obstacleChance`), **주황 타일은 인카운터**(`HexBoard.encounterChance`) — 밟고 도착하면 자동으로 `CombatTest` 씬으로 전환됩니다. **I 키**로 스테이터스/인벤토리 창(`Scripts/UI/StatusInventoryPanel.cs`, 참고: `Docs/Concept_Image/Images/Fantasia_Status_Inventory.png`) 토글 — 캐릭1/2/3 탭으로 캐릭터 전환. 화면 우측에는 퀘스트 추적 UI(`Scripts/UI/QuestTrackerPanel.cs`, 참고: `Docs/Concept_Image/Concept/판타지아_UI(1).png`)가 항상 떠 있습니다 — 여러 퀘스트(메인 1개 + 서브 여러 개)가 동시에 활성화될 수 있고, 메인 퀘스트가 항상 맨 위에 고정되고 서브 퀘스트는 그 아래로 쌓입니다. 제목 색으로 메인(금색)/서브(실버)를 구분하고(`Fantasia.Core.QuestType`), 제목에는 은은한 반짝임(밝기 펄스) 효과가 있습니다. 실제 퀘스트 콘텐츠는 아직 없어서 더미 메인/서브 퀘스트로 UI/메커니즘만 먼저 검증하는 단계입니다. 보드 위에는 색이 다른 지형지물 타일 3종(성소/감옥/유적, `Scripts/Board/LandmarkDefinition.cs`)이 고정 위치에 배치되어 있고, **Ctrl+우클릭**하면 정보 팝업(`Scripts/UI/LandmarkInfoPanel.cs`)이 뜹니다 — 실제 3D 모델이 없어 타일 색+배지 글자로 종류를 구분하는 placeholder 단계입니다(참고: `Docs/References/LandmarkUI_Research_2026-09-13.md`).
 - **Setup Combat Test Scene** — 파티(파랑) vs 적(빨강) 3:3 전투 프로토타입(`Scripts/Combat`). Speed 기반 턴 큐 + 무기 슬롯 롤 판정을 화면 버튼(공격/포커스 소모/턴 넘기기)으로 직접 테스트 가능. 오버월드와 다른 로우앵글 대치 구도(참고: `Docs/Concept_Image/Concept/판타지아 전투 화면.jpg`). 승리하면 "보드로 돌아가기" 버튼으로 오버월드에 복귀 — 밟았던 인카운터 타일이 청록색(클리어됨)으로 바뀌고 재도전이 발동하지 않습니다.
 - **Run Combat Slot-Roll Self-Test** / **Run Turn Queue Self-Test** / **Run Pathfinding Self-Test** / **Run Board Session Self-Test** — 각각 슬롯 판정 확률, 자동 전투 진행, 이동 경로 계산, 보드 재생성 결정성/인카운터 클리어 유지를 화면 없이 시뮬레이션해 콘솔에 결과 출력.
 

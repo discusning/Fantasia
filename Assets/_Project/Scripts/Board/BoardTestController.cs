@@ -20,6 +20,17 @@ namespace Fantasia.Board
         [SerializeField] private float tokenRadius = 0.5f; // matches the default primitive Sphere's radius
         [SerializeField] private float secondsPerTile = 0.25f;
 
+        // Assigned by BoardTestSceneSetup from PlaceholderDataSetup — real
+        // landmark placement (frequency, rules) is a design decision
+        // (GDD TBD); this only proves Ctrl+Right-click info popups work for
+        // several distinct landmark types.
+        public LandmarkDefinition[] PlaceholderLandmarks = System.Array.Empty<LandmarkDefinition>();
+
+        // Fixed offsets so every placeholder type is deterministically
+        // reachable for testing, regardless of the board's random
+        // obstacle/encounter rolls.
+        private static readonly HexCoord[] LandmarkOffsets = { new HexCoord(2, -1), new HexCoord(-2, 1), new HexCoord(0, 2) };
+
         private HexBoard _board;
         private Transform _token;
         private HexCoord _currentCoord;
@@ -33,9 +44,26 @@ namespace Fantasia.Board
             BoardSession.EnsureExists();
             ItemAcquiredToast.EnsureExists();
             QuestTrackerPanel.EnsureExists();
+            LandmarkInfoPanel.EnsureExists();
             _board = GetComponent<HexBoard>();
             _currentCoord = BoardSession.Instance.PlayerPosition;
             SpawnToken();
+            PlaceLandmarks();
+        }
+
+        private void PlaceLandmarks()
+        {
+            for (int i = 0; i < PlaceholderLandmarks.Length && i < LandmarkOffsets.Length; i++)
+            {
+                if (!_board.TryGetTile(LandmarkOffsets[i], out var tile)) continue;
+
+                // A landmark is a real point of interest — clear any
+                // obstacle/encounter roll on its tile so it's always visible
+                // and walkable for testing.
+                tile.SetBlocked(false);
+                tile.SetEncounter(false);
+                tile.SetLandmark(PlaceholderLandmarks[i]);
+            }
         }
 
         // Public so editor tooling can spawn it for a headless screenshot
@@ -65,6 +93,17 @@ namespace Fantasia.Board
 
         private void Update()
         {
+            if (LandmarkInfoPanel.IsOpen) return;
+
+            // Ctrl+Right-click = "just look" (info popup only), independent
+            // of move/roll state — right-click alone is left free for future
+            // use (e.g. a board-side equivalent of the equip-toggle gesture).
+            if (Input.GetMouseButtonDown(1) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+            {
+                TryInspectLandmark();
+                return;
+            }
+
             if (_isMoving) return;
 
             if (Input.GetKeyDown(KeyCode.Space))
@@ -76,6 +115,20 @@ namespace Fantasia.Board
             {
                 TrySelectTile();
             }
+        }
+
+        private void TryInspectLandmark()
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+
+            var ray = cam.ScreenPointToRay(Input.mousePosition);
+            if (!Physics.Raycast(ray, out var hit)) return;
+
+            var tile = hit.collider.GetComponent<HexTile>();
+            if (tile == null || !tile.IsLandmark) return;
+
+            LandmarkInfoPanel.Show(tile.Landmark);
         }
 
         private void RollAndHighlight()
@@ -155,6 +208,7 @@ namespace Fantasia.Board
             {
                 GUI.Label(new Rect(10, 34, 400, 24), "이동 중...");
             }
+            GUI.Label(new Rect(10, 58, 400, 24), "Ctrl+우클릭: 지형지물 정보 확인");
         }
     }
 }
