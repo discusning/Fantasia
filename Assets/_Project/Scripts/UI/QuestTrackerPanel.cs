@@ -83,9 +83,11 @@ namespace Fantasia.UI
             // so the two don't overlap. Semi-transparent fill so the board
             // reads through it (per feedback) instead of a solid black slab.
             var inner = UGUIKit.CreateBorderedPanel(canvasGO.transform, "QuestBox", new Vector2(1f, 1f), new Vector2(1f, 1f),
-                new Color(0.65f, 0.6f, 0.5f, 0.55f), new Color(0.05f, 0.05f, 0.08f, 0.5f), 2f);
+                new Color(0.65f, 0.6f, 0.5f, 0.55f), new Color(0.05f, 0.05f, 0.08f, 0.5f), 1.5f);
             var outerRect = (RectTransform)inner.transform.parent;
-            outerRect.sizeDelta = new Vector2(270f, 100f);
+            // ~30% smaller than the original 270x100 — full size read as too
+            // intrusive during actual play (per feedback).
+            outerRect.sizeDelta = new Vector2(189f, 70f);
 
             // Anchor point (1,1) is the canvas's top-right *corner* — without
             // matching the pivot to that same corner, anchoredPosition offsets
@@ -96,7 +98,7 @@ namespace Fantasia.UI
             outerRect.pivot = new Vector2(1f, 1f);
             outerRect.anchoredPosition = new Vector2(-10f, -110f);
 
-            _titleText = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.66f), new Vector2(0.95f, 0.94f), "", 15, TextAnchor.MiddleLeft);
+            _titleText = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.66f), new Vector2(0.95f, 0.94f), "", 11, TextAnchor.MiddleLeft);
             _titleText.color = new Color(0.95f, 0.85f, 0.55f);
             _titleText.fontStyle = FontStyle.Bold;
 
@@ -105,10 +107,10 @@ namespace Fantasia.UI
             var divider = UGUIKit.CreateImage(inner, "Divider", new Vector2(0.08f, 0.63f), new Vector2(0.92f, 0.645f), new Color(1f, 1f, 1f, 0.25f));
             _ = divider;
 
-            _objectiveText = UGUIKit.CreateText(inner, "Objective", new Vector2(0.08f, 0.3f), new Vector2(0.95f, 0.6f), "", 11, TextAnchor.UpperLeft);
+            _objectiveText = UGUIKit.CreateText(inner, "Objective", new Vector2(0.08f, 0.3f), new Vector2(0.95f, 0.6f), "", 8, TextAnchor.UpperLeft);
             _objectiveText.color = new Color(0.92f, 0.92f, 0.92f);
 
-            _roundsText = UGUIKit.CreateText(inner, "Rounds", new Vector2(0.08f, 0.04f), new Vector2(0.95f, 0.26f), "", 11, TextAnchor.LowerRight);
+            _roundsText = UGUIKit.CreateText(inner, "Rounds", new Vector2(0.08f, 0.04f), new Vector2(0.95f, 0.26f), "", 8, TextAnchor.LowerRight);
             _roundsText.color = new Color(0.8f, 0.75f, 0.6f);
 
             _root = outerRect.gameObject;
