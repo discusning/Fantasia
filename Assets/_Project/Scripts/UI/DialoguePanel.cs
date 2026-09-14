@@ -87,23 +87,37 @@ namespace Fantasia.UI
         private const string DialogueSceneName = "DialogueTest";
         private const string ReturnSceneName = "BoardTest";
 
-        // Prototype-only: completing this specific dummy sub quest fires a
-        // sample dialogue. Real per-quest dialogue data doesn't exist yet.
-        // Two named speakers so switching is exercised at the data level —
-        // but only "팀장 요정" gets a capsule in DialogueTest (per
+        // Prototype-only: completing these specific dummy sub quests fires a
+        // sample dialogue each. Real per-quest dialogue data doesn't exist
+        // yet. Two named speakers so switching is exercised at the data
+        // level — but only "팀장 요정" gets a capsule in DialogueTest (per
         // feedback: most conversations show one on-screen character, not
         // several; "개발자" here is the player's own line and stays
         // portrait-less, same as in most VNs). A scene that genuinely needs
         // 2+ characters visible at once is a case-by-case ask, not the default.
-        private const string TestQuestTitle = "1차 개발 완성";
-        private static readonly DialogueLine[] SampleLines =
+        //
+        // The two test quests chain into each other so both dialogue
+        // endings are reachable in real Play mode: completing quest 1 ends
+        // with a quest offer (Accept/Decline); accepting it adds quest 2,
+        // and completing quest 2 ends with a plain close (no offer) — per
+        // feedback that the no-offer ending needed to be seen in-game too.
+        private const string TestQuestTitle1 = "1차 개발 완성";
+        private static readonly DialogueLine[] SampleLines1 =
         {
             new DialogueLine("팀장 요정", "수고하셨습니다, 개발자님."),
             new DialogueLine("개발자", "감사합니다! 1차 프로토타입을 마무리했어요."),
             new DialogueLine("팀장 요정", "다음 단계도 준비가 필요할 것 같은데..."),
             new DialogueLine("팀장 요정", "이어서 2차 개발도 맡아주시겠어요?"),
         };
-        private static readonly QuestOffer SampleOffer = new QuestOffer("2차 개발 완성", "판타지아 프로토타입 2차 개발을 마무리하라", QuestType.Sub);
+        private static readonly QuestOffer SampleOffer1 = new QuestOffer("2차 개발 완성", "판타지아 프로토타입 2차 개발을 마무리하라", QuestType.Sub);
+
+        private const string TestQuestTitle2 = "2차 개발 완성";
+        private static readonly DialogueLine[] SampleLines2 =
+        {
+            new DialogueLine("팀장 요정", "2차 개발까지 정말 고생 많으셨습니다."),
+            new DialogueLine("개발자", "감사합니다! 이번에도 무사히 마쳤어요."),
+            new DialogueLine("팀장 요정", "오늘은 여기까지 하고 푹 쉬세요."),
+        };
 
         private GameObject _root;
         private Text _speakerText;
@@ -159,10 +173,20 @@ namespace Fantasia.UI
 
         private void OnQuestCompleted(BoardSession.QuestEntry quest)
         {
-            if (quest.Title != TestQuestTitle) return;
+            switch (quest.Title)
+            {
+                case TestQuestTitle1:
+                    _pendingLines = SampleLines1;
+                    _pendingOffer = SampleOffer1;
+                    break;
+                case TestQuestTitle2:
+                    _pendingLines = SampleLines2;
+                    _pendingOffer = null;
+                    break;
+                default:
+                    return;
+            }
 
-            _pendingLines = SampleLines;
-            _pendingOffer = SampleOffer;
             SceneManager.sceneLoaded += OnDialogueSceneLoaded;
             SceneManager.LoadScene(DialogueSceneName);
         }
