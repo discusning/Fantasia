@@ -6,11 +6,13 @@ using UnityEngine.UI;
 namespace Fantasia.UI
 {
     // Bare-bones sequential dialogue box — proves the "completing a quest
-    // triggers an NPC dialogue" mechanism end to end. No character portrait
-    // (the "NPC" capsule in DialogueTest fills in for that), skip-to-
-    // next-key-line, or accept/decline choice yet (see GDD 6.6 idea notes,
-    // based on Docs/Concept_Image/Concept/판타지아_UI(대화).png) — this
-    // pass is deliberately just "a few text boxes in a row, then done."
+    // triggers an NPC dialogue" mechanism end to end. Each line names its
+    // speaker (a story with several characters won't always be one NPC
+    // talking) and DialogueStageController in DialogueTest highlights
+    // whichever placeholder capsule matches. No real character portraits,
+    // skip-to-next-key-line, or accept/decline choice yet (see GDD 6.6 idea
+    // notes, based on Docs/Concept_Image/Concept/판타지아_UI(대화).png) —
+    // this pass is deliberately just "a few text boxes in a row, then done."
     //
     // Per feedback, the text box alone floating over the board wasn't
     // enough — the player should visibly move to a space where the 3D
@@ -28,29 +30,55 @@ namespace Fantasia.UI
     // showing across the BoardTest -> DialogueTest -> BoardTest round trip.
     public class DialoguePanel : MonoBehaviour
     {
+        // A story with several characters won't always mean talking to the
+        // same one — each line names its own speaker so the conversation
+        // partner can change mid-dialogue (DialogueStageController reacts
+        // to SpeakerChanged to swap which placeholder capsule is highlighted).
+        public readonly struct DialogueLine
+        {
+            public readonly string Speaker;
+            public readonly string Text;
+
+            public DialogueLine(string speaker, string text)
+            {
+                Speaker = speaker;
+                Text = text;
+            }
+        }
+
         public static DialoguePanel Instance { get; private set; }
         public static bool IsOpen => Instance != null && Instance._root != null && Instance._root.activeSelf;
+
+        public string CurrentSpeaker { get; private set; }
+
+        // Fires whenever the shown line's speaker changes — DialogueStageController
+        // (in DialogueTest) subscribes to this instead of DialoguePanel needing
+        // to know anything about the 3D scene it's floating over.
+        public event System.Action<string> SpeakerChanged;
 
         private const string DialogueSceneName = "DialogueTest";
         private const string ReturnSceneName = "BoardTest";
 
         // Prototype-only: completing this specific dummy sub quest fires a
         // sample dialogue. Real per-quest dialogue data doesn't exist yet.
+        // Two speakers so the character-switching mechanism actually gets
+        // exercised, not just a single NPC monologue.
         private const string TestQuestTitle = "1차 개발 완성";
-        private static readonly string[] SampleLines =
+        private static readonly DialogueLine[] SampleLines =
         {
-            "수고하셨습니다, 개발자님.",
-            "1차 프로토타입이 무사히 완성되었네요.",
-            "이제 다음 단계로 넘어갈 준비가 된 것 같습니다.",
-            "앞으로의 작업도 기대하겠습니다!",
+            new DialogueLine("팀장 요정", "수고하셨습니다, 개발자님."),
+            new DialogueLine("개발자", "감사합니다! 1차 프로토타입을 마무리했어요."),
+            new DialogueLine("팀장 요정", "이제 다음 단계로 넘어갈 준비가 된 것 같습니다."),
+            new DialogueLine("개발자", "앞으로의 작업도 기대해주세요!"),
         };
 
         private GameObject _root;
+        private Text _speakerText;
         private Text _bodyText;
         private Text _nextButtonLabel;
-        private string[] _lines;
+        private DialogueLine[] _lines;
         private int _lineIndex;
-        private string[] _pendingLines;
+        private DialogueLine[] _pendingLines;
 
         private bool _initialized;
 
@@ -60,7 +88,7 @@ namespace Fantasia.UI
             new GameObject("DialoguePanel").AddComponent<DialoguePanel>().Initialize();
         }
 
-        public static void Play(string[] lines)
+        public static void Play(DialogueLine[] lines)
         {
             EnsureExists();
             Instance.PlayInternal(lines);
@@ -107,7 +135,7 @@ namespace Fantasia.UI
             PlayInternal(_pendingLines);
         }
 
-        private void PlayInternal(string[] lines)
+        private void PlayInternal(DialogueLine[] lines)
         {
             if (lines == null || lines.Length == 0) return;
 
@@ -119,8 +147,13 @@ namespace Fantasia.UI
 
         private void ShowCurrentLine()
         {
-            _bodyText.text = _lines[_lineIndex];
+            var line = _lines[_lineIndex];
+            _speakerText.text = line.Speaker;
+            _bodyText.text = line.Text;
             _nextButtonLabel.text = _lineIndex == _lines.Length - 1 ? "닫기" : "다음";
+
+            CurrentSpeaker = line.Speaker;
+            SpeakerChanged?.Invoke(line.Speaker);
         }
 
         private void Advance()
@@ -165,7 +198,11 @@ namespace Fantasia.UI
             outerRect.sizeDelta = new Vector2(900f, 160f);
             outerRect.anchoredPosition = new Vector2(0f, 40f);
 
-            _bodyText = UGUIKit.CreateText(inner, "Body", new Vector2(0.04f, 0.32f), new Vector2(0.96f, 0.92f), "", 16, TextAnchor.UpperLeft);
+            _speakerText = UGUIKit.CreateText(inner, "Speaker", new Vector2(0.04f, 0.8f), new Vector2(0.6f, 0.94f), "", 14, TextAnchor.MiddleLeft);
+            _speakerText.color = new Color(0.95f, 0.85f, 0.55f);
+            _speakerText.fontStyle = FontStyle.Bold;
+
+            _bodyText = UGUIKit.CreateText(inner, "Body", new Vector2(0.04f, 0.32f), new Vector2(0.96f, 0.78f), "", 16, TextAnchor.UpperLeft);
             _bodyText.color = Color.white;
 
             var nextButton = UGUIKit.CreateButton(inner, "NextButton", new Vector2(0.78f, 0.06f), new Vector2(0.96f, 0.26f), "다음", new Color(0.2f, 0.2f, 0.24f), 13);

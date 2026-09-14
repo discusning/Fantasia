@@ -1,5 +1,6 @@
 using System.IO;
 using Fantasia.Core;
+using Fantasia.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -11,7 +12,10 @@ namespace Fantasia.Editor
     // box alone (floating over whatever scene it was triggered from) wasn't
     // enough; the player should be moved somewhere a 3D character is
     // actually standing, matching the reference screenshot's framing. No
-    // NPC model exists yet (GDD 6.6 note), so a tinted capsule stands in.
+    // character models exist yet (GDD 6.6 note), so tinted capsules stand
+    // in — two of them (not one), named to match
+    // DialoguePanel.SampleLines' speakers, so DialogueStageController has
+    // more than a single character to switch the spotlight between.
     public static class DialogueTestSceneSetup
     {
         private const string ScenePath = "Assets/_Project/Scenes/Dialogue/DialogueTest.unity";
@@ -47,20 +51,20 @@ namespace Fantasia.Editor
             groundGO.GetComponent<Renderer>().sharedMaterial =
                 new Material(Shader.Find("Standard")) { color = new Color(0.35f, 0.45f, 0.3f) };
 
-            // Placeholder NPC — no 3D model yet, a tinted capsule stands in
-            // for "whoever the player is currently talking to."
-            var npcGO = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            npcGO.name = "NPC";
-            npcGO.transform.position = new Vector3(0f, 1f, 0f);
-            npcGO.GetComponent<Renderer>().sharedMaterial =
-                new Material(Shader.Find("Standard")) { color = new Color(0.8f, 0.5f, 0.2f) };
+            // Placeholder speakers — no 3D models yet, tinted capsules stand
+            // in. Names must match DialoguePanel.SampleLines' Speaker values
+            // so DialogueStageController can find and highlight them.
+            var speakersGO = new GameObject("Speakers");
+            speakersGO.AddComponent<DialogueStageController>();
+            SpawnSpeaker(speakersGO.transform, "팀장 요정", new Vector3(-0.9f, 1f, 0f), new Color(0.5f, 0.7f, 0.9f));
+            SpawnSpeaker(speakersGO.transform, "개발자", new Vector3(0.9f, 1f, 0f), new Color(0.8f, 0.5f, 0.2f));
 
             var cameraGO = new GameObject("Main Camera");
             cameraGO.tag = "MainCamera";
             var cam = cameraGO.AddComponent<Camera>();
             cameraGO.AddComponent<AudioListener>();
-            cam.fieldOfView = 45f;
-            cameraGO.transform.position = new Vector3(0f, 1.6f, -3.5f);
+            cam.fieldOfView = 50f;
+            cameraGO.transform.position = new Vector3(0f, 1.6f, -4.2f);
             cameraGO.transform.LookAt(new Vector3(0f, 1.3f, 0f));
 
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();
@@ -80,6 +84,15 @@ namespace Fantasia.Editor
             EditorSceneManager.OpenScene(ScenePath);
 
             return GameObject.Find("Main Camera").GetComponent<Camera>();
+        }
+
+        private static void SpawnSpeaker(Transform parent, string speakerName, Vector3 position, Color color)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            go.name = speakerName;
+            go.transform.SetParent(parent, false);
+            go.transform.position = position;
+            go.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Standard")) { color = color };
         }
     }
 }
