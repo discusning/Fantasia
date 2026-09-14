@@ -9,10 +9,21 @@ namespace Fantasia.UI
     // triggers an NPC dialogue" mechanism end to end. Each line names its
     // speaker (a story with several characters won't always be one NPC
     // talking) and DialogueStageController in DialogueTest highlights
-    // whichever placeholder capsule matches. No real character portraits,
-    // skip-to-next-key-line, or accept/decline choice yet (see GDD 6.6 idea
-    // notes, based on Docs/Concept_Image/Concept/판타지아_UI(대화).png) —
-    // this pass is deliberately just "a few text boxes in a row, then done."
+    // whichever placeholder capsule matches. No real character portraits
+    // yet (see GDD 6.6 idea notes, based on
+    // Docs/Concept_Image/Concept/판타지아_UI(대화).png).
+    //
+    // Skip always exists (every dialogue needs it), but jumps to the last
+    // line rather than closing outright — matching how VN engines like
+    // Ren'Py stop skipping at the next choice/unread line instead of
+    // barreling past it. Here the "choice" is whatever the last line is:
+    // a plain close, or a quest offer.
+    //
+    // Accept/Decline only exist when PlayInternal was given a QuestOffer —
+    // a dialogue that just ends (no offer) never shows them, since forcing
+    // an accept/decline prompt onto a conversation with nothing to decide
+    // reads as broken (see e.g. WoW players' complaints about quests with
+    // no real Decline option).
     //
     // Per feedback, the text box alone floating over the board wasn't
     // enough — the player should visibly move to a space where the 3D
@@ -46,6 +57,23 @@ namespace Fantasia.UI
             }
         }
 
+        // Present only when the dialogue's last line is actually offering a
+        // quest — Accept adds it via BoardSession.SetQuest, Decline just
+        // closes. Nothing else about the dialogue changes.
+        public readonly struct QuestOffer
+        {
+            public readonly string Title;
+            public readonly string Objective;
+            public readonly QuestType Kind;
+
+            public QuestOffer(string title, string objective, QuestType kind)
+            {
+                Title = title;
+                Objective = objective;
+                Kind = kind;
+            }
+        }
+
         public static DialoguePanel Instance { get; private set; }
         public static bool IsOpen => Instance != null && Instance._root != null && Instance._root.activeSelf;
 
@@ -68,17 +96,23 @@ namespace Fantasia.UI
         {
             new DialogueLine("팀장 요정", "수고하셨습니다, 개발자님."),
             new DialogueLine("개발자", "감사합니다! 1차 프로토타입을 마무리했어요."),
-            new DialogueLine("팀장 요정", "이제 다음 단계로 넘어갈 준비가 된 것 같습니다."),
-            new DialogueLine("개발자", "앞으로의 작업도 기대해주세요!"),
+            new DialogueLine("팀장 요정", "다음 단계도 준비가 필요할 것 같은데..."),
+            new DialogueLine("팀장 요정", "이어서 2차 개발도 맡아주시겠어요?"),
         };
+        private static readonly QuestOffer SampleOffer = new QuestOffer("2차 개발 완성", "판타지아 프로토타입 2차 개발을 마무리하라", QuestType.Sub);
 
         private GameObject _root;
         private Text _speakerText;
         private Text _bodyText;
+        private GameObject _nextButtonRoot;
         private Text _nextButtonLabel;
+        private GameObject _acceptButtonRoot;
+        private GameObject _declineButtonRoot;
         private DialogueLine[] _lines;
         private int _lineIndex;
+        private QuestOffer? _offer;
         private DialogueLine[] _pendingLines;
+        private QuestOffer? _pendingOffer;
 
         private bool _initialized;
 
@@ -88,10 +122,10 @@ namespace Fantasia.UI
             new GameObject("DialoguePanel").AddComponent<DialoguePanel>().Initialize();
         }
 
-        public static void Play(DialogueLine[] lines)
+        public static void Play(DialogueLine[] lines, QuestOffer? offer = null)
         {
             EnsureExists();
-            Instance.PlayInternal(lines);
+            Instance.PlayInternal(lines, offer);
         }
 
         private void Awake() => Initialize();
@@ -124,6 +158,7 @@ namespace Fantasia.UI
             if (quest.Title != TestQuestTitle) return;
 
             _pendingLines = SampleLines;
+            _pendingOffer = SampleOffer;
             SceneManager.sceneLoaded += OnDialogueSceneLoaded;
             SceneManager.LoadScene(DialogueSceneName);
         }
@@ -132,15 +167,16 @@ namespace Fantasia.UI
         {
             if (scene.name != DialogueSceneName) return;
             SceneManager.sceneLoaded -= OnDialogueSceneLoaded;
-            PlayInternal(_pendingLines);
+            PlayInternal(_pendingLines, _pendingOffer);
         }
 
-        private void PlayInternal(DialogueLine[] lines)
+        private void PlayInternal(DialogueLine[] lines, QuestOffer? offer)
         {
             if (lines == null || lines.Length == 0) return;
 
             _lines = lines;
             _lineIndex = 0;
+            _offer = offer;
             ShowCurrentLine();
             _root.SetActive(true);
         }
@@ -150,10 +186,28 @@ namespace Fantasia.UI
             var line = _lines[_lineIndex];
             _speakerText.text = line.Speaker;
             _bodyText.text = line.Text;
-            _nextButtonLabel.text = _lineIndex == _lines.Length - 1 ? "닫기" : "다음";
+
+            bool isLast = _lineIndex == _lines.Length - 1;
+            bool showOffer = isLast && _offer.HasValue;
+
+            _nextButtonRoot.SetActive(!showOffer);
+            _nextButtonLabel.text = isLast ? "닫기" : "다음";
+            _acceptButtonRoot.SetActive(showOffer);
+            _declineButtonRoot.SetActive(showOffer);
 
             CurrentSpeaker = line.Speaker;
             SpeakerChanged?.Invoke(line.Speaker);
+        }
+
+        // Jumps straight to the last line instead of closing outright — the
+        // last line is this dialogue's one "choice point" (a quest offer,
+        // or just the closing line), and skip should never silently resolve
+        // that on the player's behalf.
+        private void Skip()
+        {
+            if (_lineIndex >= _lines.Length - 1) return;
+            _lineIndex = _lines.Length - 1;
+            ShowCurrentLine();
         }
 
         private void Advance()
@@ -165,15 +219,32 @@ namespace Fantasia.UI
             }
             else
             {
-                _root.SetActive(false);
+                CloseAndReturn();
+            }
+        }
 
-                // Only leave the dialogue space if that's actually where we
-                // are — Play(lines) can also be called directly (e.g. tests)
-                // without ever loading DialogueTest.
-                if (SceneManager.GetActiveScene().name == DialogueSceneName)
-                {
-                    SceneManager.LoadScene(ReturnSceneName);
-                }
+        private void AcceptOffer()
+        {
+            if (_offer.HasValue)
+            {
+                var offer = _offer.Value;
+                BoardSession.Instance.SetQuest(offer.Title, offer.Objective, offer.Kind);
+            }
+            CloseAndReturn();
+        }
+
+        private void DeclineOffer() => CloseAndReturn();
+
+        private void CloseAndReturn()
+        {
+            _root.SetActive(false);
+
+            // Only leave the dialogue space if that's actually where we
+            // are — Play(lines) can also be called directly (e.g. tests)
+            // without ever loading DialogueTest.
+            if (SceneManager.GetActiveScene().name == DialogueSceneName)
+            {
+                SceneManager.LoadScene(ReturnSceneName);
             }
         }
 
@@ -208,6 +279,29 @@ namespace Fantasia.UI
             var nextButton = UGUIKit.CreateButton(inner, "NextButton", new Vector2(0.78f, 0.06f), new Vector2(0.96f, 0.26f), "다음", new Color(0.2f, 0.2f, 0.24f), 13);
             nextButton.onClick.AddListener(Advance);
             _nextButtonLabel = nextButton.GetComponentInChildren<Text>();
+            _nextButtonRoot = nextButton.gameObject;
+
+            // Same slot as NextButton — only one of the two states is ever
+            // active at once (see ShowCurrentLine).
+            var declineButton = UGUIKit.CreateButton(inner, "DeclineButton", new Vector2(0.78f, 0.06f), new Vector2(0.96f, 0.26f), "거절", new Color(0.35f, 0.2f, 0.2f), 13);
+            declineButton.onClick.AddListener(DeclineOffer);
+            _declineButtonRoot = declineButton.gameObject;
+
+            var acceptButton = UGUIKit.CreateButton(inner, "AcceptButton", new Vector2(0.58f, 0.06f), new Vector2(0.76f, 0.26f), "수락", new Color(0.2f, 0.35f, 0.2f), 13);
+            acceptButton.onClick.AddListener(AcceptOffer);
+            _acceptButtonRoot = acceptButton.gameObject;
+
+            // Both start hidden — ShowCurrentLine() turns them on only for
+            // an offer's last line; without this they'd briefly show at
+            // Build() time before the first PlayInternal() call.
+            _declineButtonRoot.SetActive(false);
+            _acceptButtonRoot.SetActive(false);
+
+            // Always present (every dialogue can be skipped), separate
+            // corner from the advance/offer buttons so it can't be
+            // mistaken for "confirm."
+            var skipButton = UGUIKit.CreateButton(inner, "SkipButton", new Vector2(0.84f, 0.86f), new Vector2(0.97f, 0.98f), "스킵", new Color(0.18f, 0.18f, 0.2f), 10);
+            skipButton.onClick.AddListener(Skip);
 
             _root = outerRect.gameObject;
             _root.SetActive(false);
