@@ -12,10 +12,17 @@ namespace Fantasia.Editor
     // box alone (floating over whatever scene it was triggered from) wasn't
     // enough; the player should be moved somewhere a 3D character is
     // actually standing, matching the reference screenshot's framing. No
-    // character models exist yet (GDD 6.6 note), so tinted capsules stand
-    // in — two of them (not one), named to match
-    // DialoguePanel.SampleLines' speakers, so DialogueStageController has
-    // more than a single character to switch the spotlight between.
+    // character models exist yet (GDD 6.6 note), so a tinted capsule stands
+    // in.
+    //
+    // Default is ONE on-screen speaker — most conversations only ever show
+    // one NPC at a time (the player's own lines, e.g. "개발자" in
+    // DialoguePanel.SampleLines, don't get a capsule at all — no one is
+    // highlighted during those, matching how VN portraits dim on the
+    // player's own line). DialogueStageController still supports any number
+    // of named capsules, so a specific scene that genuinely needs 2+
+    // characters on screen at once can add more via SpawnSpeaker() — do
+    // that only when asked for, not by default.
     public static class DialogueTestSceneSetup
     {
         private const string ScenePath = "Assets/_Project/Scenes/Dialogue/DialogueTest.unity";
@@ -51,20 +58,20 @@ namespace Fantasia.Editor
             groundGO.GetComponent<Renderer>().sharedMaterial =
                 new Material(Shader.Find("Standard")) { color = new Color(0.35f, 0.45f, 0.3f) };
 
-            // Placeholder speakers — no 3D models yet, tinted capsules stand
-            // in. Names must match DialoguePanel.SampleLines' Speaker values
-            // so DialogueStageController can find and highlight them.
+            // Placeholder speaker — no 3D model yet, a tinted capsule stands
+            // in. Name must match a DialoguePanel.SampleLines Speaker value
+            // ("팀장 요정") so DialogueStageController can find and
+            // highlight it.
             var speakersGO = new GameObject("Speakers");
             speakersGO.AddComponent<DialogueStageController>();
-            SpawnSpeaker(speakersGO.transform, "팀장 요정", new Vector3(-0.9f, 1f, 0f), new Color(0.5f, 0.7f, 0.9f));
-            SpawnSpeaker(speakersGO.transform, "개발자", new Vector3(0.9f, 1f, 0f), new Color(0.8f, 0.5f, 0.2f));
+            SpawnSpeaker(speakersGO.transform, "팀장 요정", new Vector3(0f, 1f, 0f), new Color(0.5f, 0.7f, 0.9f));
 
             var cameraGO = new GameObject("Main Camera");
             cameraGO.tag = "MainCamera";
             var cam = cameraGO.AddComponent<Camera>();
             cameraGO.AddComponent<AudioListener>();
-            cam.fieldOfView = 50f;
-            cameraGO.transform.position = new Vector3(0f, 1.6f, -4.2f);
+            cam.fieldOfView = 45f;
+            cameraGO.transform.position = new Vector3(0f, 1.6f, -3.5f);
             cameraGO.transform.LookAt(new Vector3(0f, 1.3f, 0f));
 
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();

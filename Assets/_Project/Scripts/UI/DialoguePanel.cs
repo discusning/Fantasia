@@ -89,8 +89,12 @@ namespace Fantasia.UI
 
         // Prototype-only: completing this specific dummy sub quest fires a
         // sample dialogue. Real per-quest dialogue data doesn't exist yet.
-        // Two speakers so the character-switching mechanism actually gets
-        // exercised, not just a single NPC monologue.
+        // Two named speakers so switching is exercised at the data level —
+        // but only "팀장 요정" gets a capsule in DialogueTest (per
+        // feedback: most conversations show one on-screen character, not
+        // several; "개발자" here is the player's own line and stays
+        // portrait-less, same as in most VNs). A scene that genuinely needs
+        // 2+ characters visible at once is a case-by-case ask, not the default.
         private const string TestQuestTitle = "1차 개발 완성";
         private static readonly DialogueLine[] SampleLines =
         {
