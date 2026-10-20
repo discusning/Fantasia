@@ -8,6 +8,8 @@
 
 **기획**
 - 게임 디자인 문서(뼈대): [`Docs/GDD/GDD.md`](Docs/GDD/GDD.md)
+- 시스템 기획 원문: [`Docs/Planning/System.md`](Docs/Planning/System.md)
+- 스토리 기획 원문: [`Docs/Planning/Story.md`](Docs/Planning/Story.md)
 
 **리서치 / 참고 자료** (전부 모티브 참고용 — 그대로 복제 금지)
 - For the King 시스템 리서치 노트: [`Docs/References/ForTheKing_SystemNotes.md`](Docs/References/ForTheKing_SystemNotes.md)
