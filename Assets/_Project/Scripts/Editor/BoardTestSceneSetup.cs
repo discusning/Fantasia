@@ -1,5 +1,6 @@
 using Fantasia.Board;
 using Fantasia.Core;
+using Fantasia.Data;
 using Fantasia.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -63,10 +64,23 @@ namespace Fantasia.Editor
             cameraGO.transform.position = new Vector3(0f, 10f, -12f);
             cameraGO.transform.rotation = Quaternion.Euler(38f, 0f, 0f);
 
+            // D08 조우 판정 테스트에 쓸 명탐정 + 샘플 적을 보장해둔다 (idempotent, GameDataSeed 참고).
+            GameDataSeed.SeedAll();
+            var detectiveJob = AssetDatabase.LoadAssetAtPath<JobDefinition>("Assets/_Project/Data/Jobs/Job_명탐정.asset");
+            var shadowHound = AssetDatabase.LoadAssetAtPath<EnemyDefinition>("Assets/_Project/Data/Enemies/Enemy_그림자사냥개.asset");
+
             var boardGO = new GameObject("BoardManager");
-            boardGO.AddComponent<HexBoard>();
+            var hexBoard = boardGO.AddComponent<HexBoard>();
+            hexBoard.EncounterEnemyPool = shadowHound != null ? new[] { shadowHound } : System.Array.Empty<EnemyDefinition>();
             var boardTestController = boardGO.AddComponent<BoardTestController>();
             boardTestController.PlaceholderLandmarks = PlaceholderDataSetup.EnsureLandmarks();
+            boardTestController.TestHeroJob = detectiveJob;
+            boardTestController.TestPartyJobs = new[]
+            {
+                detectiveJob,
+                AssetDatabase.LoadAssetAtPath<JobDefinition>("Assets/_Project/Data/Jobs/Job_역병의사.asset"),
+                AssetDatabase.LoadAssetAtPath<JobDefinition>("Assets/_Project/Data/Jobs/Job_저격수.asset"),
+            };
 
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();
 

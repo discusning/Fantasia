@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fantasia.Core;
+using Fantasia.Data;
 using UnityEngine;
 
 namespace Fantasia.Board
@@ -14,6 +15,12 @@ namespace Fantasia.Board
         [SerializeField] private float tileHeight = 0.4f;
         [SerializeField, Range(0f, 1f)] private float obstacleChance = 0.18f;
         [SerializeField, Range(0f, 1f)] private float encounterChance = 0.1f;
+        [SerializeField, Range(0f, 1f)] private float eventChance = 0.08f;
+
+        // 인카운터 칸에 배치할 적 후보 — 실제 소형 4종 등 콘텐츠는 D13에서 채운다.
+        // 지금은 D04/D08 샘플(그림자 사냥개 1종)만 있어도 동작하게 설계. Assigned by
+        // BoardTestSceneSetup.
+        public EnemyDefinition[] EncounterEnemyPool = System.Array.Empty<EnemyDefinition>();
 
         private readonly Dictionary<HexCoord, HexTile> _tiles = new Dictionary<HexCoord, HexTile>();
         private Material _tileMaterial;
@@ -86,11 +93,18 @@ namespace Fantasia.Board
 
             if (!blocked && !isOrigin)
             {
-                bool isEncounter = rng.NextDouble() < encounterChance;
-                tile.SetEncounter(isEncounter);
+                bool isEncounter = rng.NextDouble() < encounterChance && EncounterEnemyPool.Length > 0;
+                var enemy = isEncounter ? EncounterEnemyPool[rng.Next(EncounterEnemyPool.Length)] : null;
+                tile.SetEncounter(isEncounter, enemy);
                 if (isEncounter && BoardSession.Instance != null && BoardSession.Instance.ClearedEncounters.Contains(coord))
                 {
                     tile.SetCleared(true);
+                }
+
+                // 인카운터 칸과는 배타적 — 전투와 월드 이벤트가 같은 칸에서 동시에 뜨지 않게 한다.
+                if (!isEncounter)
+                {
+                    tile.SetEventTile(rng.NextDouble() < eventChance);
                 }
             }
 
