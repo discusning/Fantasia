@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56f5a502ff4669949a6b7512dc9d2e80, type: 3}
+  m_Name: "Job_\uC800\uACA9\uC218"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.JobDefinition
+  Id: 2
+  DisplayName: "\uC800\uACA9\uC218"
+  Role: "\uC6D0\uAC70\uB9AC \uB2E8\uC77C \uACF5\uACA9\xB7\uD134 \uC9C0\uC5F0"
+  StartingHP: 76
+  StartingMP: 0
+  StartingFocus: 3
+  StartingLP: 2
+  BasePhysicalAttack: 11
+  BaseMagicAttack: 0
+  BasePhysicalDefense: 3
+  BaseMagicDefense: 3
+  Stats:
+    Strength: 58
+    Speed: 33
+    Vitality: 38
+    Intelligence: 20
+    Luck: 50
+    Perception: 91
+  AllowedWeaponCategories: 040000000500000006000000
+  StartingWeapon: {fileID: 11400000, guid: d2b0e850044afe84fa0d0e59ce7ce960, type: 2}
+  Skills: []
