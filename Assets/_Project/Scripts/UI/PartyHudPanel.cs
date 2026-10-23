@@ -46,6 +46,7 @@ namespace Fantasia.UI
             public Text Stats;
             public readonly List<Image> FocusPips = new();
             public Text Status;  // 카드 위 상태 문구 (행동 중인 캐릭터만)
+            public StatusChipRow Statuses; // 걸린 상태 효과 (이름 배너 오른쪽)
         }
 
         private readonly List<Card> _cards = new();
@@ -133,6 +134,7 @@ namespace Fantasia.UI
             card.Level.text = m.Level.ToString();
             card.Name.text = m.Job.DisplayName;
             card.Lp.text = $"LP {m.CurrentLP}";
+            card.Statuses.Show(StatusChipRow.EntriesFor(m.Statuses, false));
             card.BigHp.text = m.CurrentHP.ToString();
 
             SetBar(card.HpFill, m.CurrentHP, m.MaxHP);
@@ -198,6 +200,7 @@ namespace Fantasia.UI
             var nameFill = UGUIKit.CreateThemedPanel(fill, "NameBanner", new Vector2(0.26f, 0.8f), new Vector2(0.8f, 0.98f), BorderNormal, new Color(0.24f, 0.16f, 0.26f), 1f, UITheme.Current.Banner);
             card.Name = MakeText(nameFill, "Name", new Vector2(0.04f, 0f), Vector2.one, 13, TextAnchor.MiddleLeft, TextLight, bold: true);
             card.Lp = MakeText(fill, "LP", new Vector2(0.81f, 0.8f), new Vector2(0.98f, 0.98f), 12, TextAnchor.MiddleCenter, HpColor, bold: true);
+            card.Statuses = new StatusChipRow(fill, "Status", new Vector2(0.56f, 0.815f), new Vector2(0.8f, 0.965f), 3, 8);
 
             // 큰 HP 숫자 + 퀵 슬롯 4칸 (가운데)
             card.BigHp = MakeText(fill, "BigHp", new Vector2(0.26f, 0.37f), new Vector2(0.47f, 0.8f), 34, TextAnchor.MiddleCenter, HpColor, bold: true);

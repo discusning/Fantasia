@@ -22,6 +22,8 @@ namespace Fantasia.Data
         // 시작 무기 보정을 포함한 값인지 기획 확인 전 (Docs/DevPlan/WorkPlan_M0-M1.md §6).
         public int MaxMPBonus;
         [TextArea] public string CritEffectDescription;    // 예: "크리티컬 시 약한 출혈 3턴"
+        // 기본 무기 공격 크리티컬 시 대상에게 거는 상태 (예: 단검 약한 출혈 3턴). 직업 스킬 공격에는 적용 안 함.
+        public StatusEffectDefinition[] OnCritStatuses = System.Array.Empty<StatusEffectDefinition>();
 
         [Header("개별 자산 값")]
         public EquipmentGrade Grade = EquipmentGrade.Normal;

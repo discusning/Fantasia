@@ -16,9 +16,13 @@ MonoBehaviour:
   DisplayName: "\uC57D\uD55C \uCD9C\uD608"
   Kind: 0
   Icon: {fileID: 0}
+  ShortLabel: "\uCD9C\uD608"
   DurationTurns: 3
   MaxStacks: 1
   ClearedByCombatVictory: 1
   ClearedByGeneralCleanse: 1
+  Effect: 1
+  Magnitude: 2
+  StatPenalty: 0
   RuleDescription: "\uAC1C\uC778 \uD134 \uC2DC\uC791\uB9C8\uB2E4 \uBC29\uC5B4 \uBB34\uC2DC
     2 \uD53C\uD574. HP 1 \uBBF8\uB9CC\uC73C\uB85C \uB0AE\uCD94\uC9C0 \uC54A\uB294\uB2E4."

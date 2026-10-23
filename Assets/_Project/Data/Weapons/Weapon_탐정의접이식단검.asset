@@ -29,6 +29,8 @@ MonoBehaviour:
   MaxMPBonus: 0
   CritEffectDescription: "\uD06C\uB9AC\uD2F0\uCEEC \uC2DC \uC57D\uD55C \uCD9C\uD608
     3\uD134"
+  OnCritStatuses:
+  - {fileID: 11400000, guid: 3e8d562e91054374eabacf689e27685a, type: 2}
   Grade: 0
   WearLevel: 1
   Price: 70

@@ -22,6 +22,9 @@ namespace Fantasia.Data
         public int CurrentFocus { get; private set; }
         public int CurrentLP { get; private set; }
 
+        // 걸린 상태 효과 (D12). 중독처럼 전투 뒤에도 남는 것이 있어 파티원이 직접 갖는다.
+        public StatusSet Statuses { get; } = new();
+
         public PartyMember(JobDefinition job)
         {
             Job = job ?? throw new ArgumentNullException(nameof(job));
@@ -45,14 +48,16 @@ namespace Fantasia.Data
         // 구조화된 수치가 아직 없어 D18(장비 고유효과)/D23(보드 이벤트) 때 반영한다.
         public int MaxFocus => BaseMaxFocus;
 
-        // 직업 스탯 + 착용 무기 보정, 0~99로 제한. 슬롯 확률·속도·회피는 이 값을 쓴다.
-        // 최대 HP·MP는 아직 직업 활력 기준 (무기 계열 중 활력 보정이 있는 것이 없음).
+        // 직업 스탯 + 착용 무기 보정 − 상태 효과(중독 전 스탯·속박 속도), 0~99로 제한. 슬롯 확률·속도·회피는 이 값을 쓴다.
+        // 최대 HP·MP는 아직 직업 활력 기준 — 중독의 활력 감소를 최대 자원에 반영하는 건 D12 2차에서.
         public StatBlock FinalStats
         {
             get
             {
                 var stats = Job.Stats;
                 if (EquippedWeapon != null) stats += EquippedWeapon.WearStatBonus;
+                int all = Statuses.AllStatPenalty;
+                stats += new StatBlock(-all, -all - Statuses.SpeedPenalty, -all, -all, -all, -all);
                 return stats.ClampToCap();
             }
         }
@@ -64,7 +69,7 @@ namespace Fantasia.Data
                 int weaponBonus = EquippedWeapon != null && !EquippedWeapon.Category.IsMagic()
                     ? EquippedWeapon.ComputeAttackBonus()
                     : 0;
-                return Job.BasePhysicalAttack + LevelBonusSteps * 2 + weaponBonus;
+                return Mathf.Max(0, Job.BasePhysicalAttack + LevelBonusSteps * 2 + weaponBonus - Statuses.AttackPenalty);
             }
         }
 
@@ -75,7 +80,7 @@ namespace Fantasia.Data
                 int weaponBonus = EquippedWeapon != null && EquippedWeapon.Category.IsMagic()
                     ? EquippedWeapon.ComputeAttackBonus()
                     : 0;
-                return Job.BaseMagicAttack + LevelBonusSteps * 2 + weaponBonus;
+                return Mathf.Max(0, Job.BaseMagicAttack + LevelBonusSteps * 2 + weaponBonus - Statuses.AttackPenalty);
             }
         }
 

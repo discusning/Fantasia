@@ -27,6 +27,9 @@ MonoBehaviour:
   SlotCount: 2
   SlotSuccessRate: 0.45
   HasEvasionState: 0
+  OnCritStatuses:
+  - {fileID: 11400000, guid: 3e8d562e91054374eabacf689e27685a, type: 2}
+  - {fileID: 11400000, guid: 000fe78694aa87847b28e11dc1e01648, type: 2}
   TraitDescription: "18\uC138\uAE30 \uC720\uB7FD \uB3C4\uC2DC\uC5D0 \uC6B0\uAE00\uAC70\uB9AC\uB294
     \uBCD1\uADE0 \uC950. \uD310\uC815 \uC131\uACF5 \uC2DC [\uC57D\uD55C \uCD9C\uD608](\uB9E4\uD134
     \uC9C0\uC18D -2<\uBC29\uBB34>)\uACFC [\uC18D\uBC15]\uC744 \uBD80\uC5EC\uD568."

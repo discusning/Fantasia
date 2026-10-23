@@ -93,11 +93,30 @@ namespace Fantasia.Combat
             _current = _queue.Advance();
             if (_current == null) { CheckBattleEnd(); return; }
             _current.IsDefending = false; // 방어 효과는 다음 자기 개인 턴 시작 전까지
+
+            // 개인 턴 시작: 지속 피해 → 사망 확인 → 기간 감소 → 행동 선택 (System.md 상태 효과 처리 순서).
+            var start = _current.Statuses.BeginTurn();
+            if (start.Damage > 0)
+            {
+                int dot = StatusSet.ClampDamageOverTime(start.Damage, _current.CurrentHP);
+                _current.TakeDamage(dot);
+                _hud.PopText(_camera, ModelTop(_current), $"-{dot}", BattleHud.SlotFailure);
+                Log($"{_current.DisplayName} 턴 시작 지속 피해 {dot} ({start.Summary}) · HP {_current.CurrentHP}/{_current.MaxHP}");
+            }
+            if (!_current.InBattle) { NextTurn(); return; }
             Log($"[R{_queue.Round}] {_current.DisplayName} 차례 (속도 {_current.Speed}) — 순서: {string.Join(" > ", _queue.Preview(6).Select(x => x.Unit.DisplayName))}");
             _hud.SetTimeline(_queue.Preview(10), _queue.Round);
             _hud.RefreshEnemies(null);
 
-            if (_current.IsAlly)
+            if (_current.IsAlly && start.Confused)
+            {
+                // 혼란: 회복약이 없으면 임의의 적을 기본 공격 (소모품은 D17 — 지금은 항상 공격).
+                _phase = Phase.Resolving;
+                PartyHudPanel.SetActive(_current.Member, "혼란!");
+                _hud.HideActions();
+                StartCoroutine(ConfusedTurn(_current));
+            }
+            else if (_current.IsAlly)
             {
                 _phase = Phase.ChoosingAction;
                 PartyHudPanel.SetActive(_current.Member, "행동 선택 중");
@@ -121,6 +140,20 @@ namespace Fantasia.Combat
             if (candidates.Count == 0) { NextTurn(); yield break; }
             var target = candidates[Random.Range(0, candidates.Count)];
             yield return ResolveAttack(enemy, target, useFocus: false);
+            NextTurn();
+        }
+
+        private IEnumerator ConfusedTurn(BattleUnit ally)
+        {
+            _hud.SetHint($"{ally.DisplayName} 혼란 — 행동을 고를 수 없다");
+            yield return new WaitForSeconds(0.6f);
+            var targets = _enemies.Where(e => e.InBattle).ToList();
+            if (targets.Count > 0)
+            {
+                Log($"{ally.DisplayName} 혼란으로 임의 공격");
+                ally.Member.TrySpendMP(ally.BasicAttackMPCost);
+                yield return ResolveAttack(ally, targets[Random.Range(0, targets.Count)], useFocus: false);
+            }
             NextTurn();
         }
 
@@ -201,6 +234,20 @@ namespace Fantasia.Combat
             Log($"{attacker.DisplayName} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus ? ", 집중 1" : "")}) · 공격 {request.AttackValue}×{request.Coefficient} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : outcome.Damage.ToString(), color);
             if (!target.IsAlive) KnockDown(target);
+
+            // 공격에 붙은 상태 효과는 크리티컬이 실제 명중한 뒤 적용 (System.md).
+            if (outcome.IsCritical && !outcome.Evaded && target.IsAlive)
+            {
+                int line = 1;
+                foreach (var def in attacker.OnCritStatuses)
+                {
+                    var applied = target.Statuses.Apply(def);
+                    if (applied == null) continue;
+                    string stacks = applied.Stacks > 1 ? $" ×{applied.Stacks}" : "";
+                    _hud.PopText(_camera, ModelTop(target) + Vector3.up * (0.45f * line++), def.DisplayName + stacks, BattleHud.StatusColor);
+                    Log($"  → {target.DisplayName}에게 [{def.DisplayName}{stacks}] (남은 {(applied.RemainingTurns < 0 ? "정화 전까지" : applied.RemainingTurns + "턴")})");
+                }
+            }
             _hud.RefreshEnemies(null);
             yield return new WaitForSeconds(0.25f);
         }
@@ -220,6 +267,7 @@ namespace Fantasia.Combat
             if (enemiesLeft && alliesLeft) return false;
 
             _phase = Phase.Finished;
+            foreach (var ally in _allies) ally.Statuses.ClearOnBattleEnd(); // 중독처럼 남는 것만 유지
             _hud.SetTimeline(_queue.Preview(10), _queue.Round);
             Log($"전투 종료 — {(!enemiesLeft ? "승리" : _allies.Any(a => a.IsAlive) ? "퇴각" : "패배")} · 아군 HP {string.Join(", ", _allies.Select(u => $"{u.DisplayName} {u.CurrentHP}/{u.MaxHP}"))}");
             PartyHudPanel.SetActive(null);

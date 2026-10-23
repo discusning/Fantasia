@@ -29,6 +29,7 @@ MonoBehaviour:
   MaxMPBonus: 8
   CritEffectDescription: "\uD06C\uB9AC\uD2F0\uCEEC \uC2DC \uB9C8\uBC95 \uBC29\uC5B4
     -3, 2\uD134"
+  OnCritStatuses: []
   Grade: 0
   WearLevel: 1
   Price: 85

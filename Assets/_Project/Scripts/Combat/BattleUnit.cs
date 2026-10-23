@@ -19,6 +19,7 @@ namespace Fantasia.Combat
         public bool HasRetreated { get; set; } // 전투 중 퇴각 성공
 
         private int _enemyHP;
+        private readonly StatusSet _enemyStatuses = new();
 
         public BattleUnit(PartyMember member, int formationIndex)
         {
@@ -40,7 +41,12 @@ namespace Fantasia.Combat
 
         public int CurrentHP => IsAlly ? Member.CurrentHP : _enemyHP;
         public int MaxHP => IsAlly ? Member.MaxHP : Enemy.MaxHP;
-        public int Speed => IsAlly ? Member.FinalStats.Speed : Enemy.Speed;
+        // 아군은 PartyMember(전투 뒤에도 남는 중독 등), 적은 이 전투 동안만.
+        public StatusSet Statuses => IsAlly ? Member.Statuses : _enemyStatuses;
+
+        // 속도 감소(속박·중독)는 다음 라운드 정렬에 반영된다 (BattleQueue가 라운드 시작 때 읽음).
+        public int Speed => IsAlly ? Member.FinalStats.Speed
+            : Mathf.Max(0, Enemy.Speed - _enemyStatuses.SpeedPenalty - _enemyStatuses.AllStatPenalty);
         public bool HasEvasionState => !IsAlly && Enemy.HasEvasionState;
         public bool IsAlive => CurrentHP > 0;
         public bool InBattle => IsAlive && !HasRetreated;
@@ -49,8 +55,18 @@ namespace Fantasia.Combat
         public int BasicAttackMPCost => IsAlly && Member.EquippedWeapon != null ? Member.EquippedWeapon.BaseAttackMPCost : 0;
         public bool CanBasicAttack => !IsAlly || Member.CurrentMP >= BasicAttackMPCost;
 
-        public AttackRequest BasicAttack(bool useFocus) =>
-            IsAlly ? AttackResolver.FromPartyMember(Member, 1f, useFocus) : AttackResolver.FromEnemy(Enemy);
+        public AttackRequest BasicAttack(bool useFocus)
+        {
+            if (IsAlly) return AttackResolver.FromPartyMember(Member, 1f, useFocus); // 아군 공격력 감소는 PartyMember에 반영됨
+            var request = AttackResolver.FromEnemy(Enemy);
+            request.AttackValue = Mathf.Max(0, request.AttackValue - _enemyStatuses.AttackPenalty);
+            return request;
+        }
+
+        // 이 참가자의 기본 공격이 크리티컬일 때 대상에게 거는 상태 (적 특성 / 무기 계열 효과).
+        public StatusEffectDefinition[] OnCritStatuses =>
+            IsAlly ? (Member.EquippedWeapon != null ? Member.EquippedWeapon.OnCritStatuses : null) ?? System.Array.Empty<StatusEffectDefinition>()
+                   : Enemy.OnCritStatuses ?? System.Array.Empty<StatusEffectDefinition>();
 
         public DefenseProfile Defense() =>
             IsAlly ? AttackResolver.DefenseOf(Member, IsDefending)

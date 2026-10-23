@@ -33,6 +33,7 @@ namespace Fantasia.UI
         public static readonly Color SlotSuccess = new Color(0.3f, 0.65f, 0.4f);
         public static readonly Color SlotFailure = new Color(0.7f, 0.25f, 0.25f);
         public static readonly Color CritColor = new Color(1f, 0.8f, 0.3f);
+        public static readonly Color StatusColor = new Color(0.75f, 0.5f, 0.95f);
 
         // 행동 메뉴 버튼 이벤트 (BattleController가 구독)
         public event Action AttackClicked;
@@ -57,7 +58,7 @@ namespace Fantasia.UI
         private class EnemyBar
         {
             public GameObject Root; public Image Border; public RawImage Portrait; public Text Name; public Text Badge;
-            public Text Hp; public RectTransform HpFill; public readonly List<Text> StatusChips = new(); public BattleUnit Unit;
+            public Text Hp; public RectTransform HpFill; public StatusChipRow Statuses; public BattleUnit Unit;
         }
         private readonly List<EnemyBar> _enemyBars = new();
 
@@ -127,13 +128,6 @@ namespace Fantasia.UI
                 bar.Name.text = bar.Unit.DisplayName;
                 bar.Badge.text = $"{SizeLabel(e.Size)} · {e.SlotCount}슬롯";
 
-                // 상태 칸 — D12 전까지는 상시 특성([회피 상태])만 표시. 아이콘 그림은 StatusEffectDefinition.Icon.
-                for (int s = 0; s < bar.StatusChips.Count; s++)
-                {
-                    bool show = s == 0 && bar.Unit.HasEvasionState;
-                    bar.StatusChips[s].transform.parent.parent.gameObject.SetActive(show); // 라벨 → 칸 안쪽 → 칸 틀
-                    if (show) bar.StatusChips[s].text = "회피";
-                }
             }
             RefreshEnemies(null);
         }
@@ -147,6 +141,7 @@ namespace Fantasia.UI
                 float ratio = bar.Unit.MaxHP > 0 ? Mathf.Clamp01((float)bar.Unit.CurrentHP / bar.Unit.MaxHP) : 0f;
                 bar.HpFill.anchorMax = new Vector2(ratio, 1f);
                 bar.Border.color = bar.Unit == highlighted ? CritColor : Gold;
+                bar.Statuses.Show(StatusChipRow.EntriesFor(bar.Unit.Statuses, bar.Unit.HasEvasionState));
                 bar.Root.GetComponent<CanvasGroup>().alpha = bar.Unit.IsAlive ? 1f : 0.35f;
             }
         }
@@ -314,14 +309,8 @@ namespace Fantasia.UI
                 UITheme.Apply(hpFill, UITheme.Current.BarFill, tint: true);
                 bar.HpFill = (RectTransform)hpFill.transform;
 
-                // 상태 아이콘 칸 (D12에서 StatusEffectDefinition.Icon으로 채운다)
-                for (int s = 0; s < StatusIconSlots; s++)
-                {
-                    float sx = 0.57f + s * 0.105f;
-                    var chip = UGUIKit.CreateThemedPanel(fill, $"Status{s}", new Vector2(sx, 0.05f), new Vector2(sx + 0.095f, 0.32f), Gold, new Color(0.25f, 0.15f, 0.3f), 1f);
-                    bar.StatusChips.Add(Label(chip, "Label", Vector2.zero, Vector2.one, 9, TextAnchor.MiddleCenter, TextLight, bold: true));
-                    chip.parent.gameObject.SetActive(false);
-                }
+                // 상태 칸 — 상시 특성(회피 상태) + 걸린 상태 효과. 그림은 StatusEffectDefinition.Icon.
+                bar.Statuses = new StatusChipRow(fill, "Status", new Vector2(0.57f, 0.05f), new Vector2(0.99f, 0.33f), StatusIconSlots);
 
                 // 적 바를 눌러도 공격 대상 선택 (전장 클릭과 같은 효과)
                 var button = bar.Root.AddComponent<Button>();

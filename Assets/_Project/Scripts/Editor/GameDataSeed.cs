@@ -50,7 +50,21 @@ namespace Fantasia.Editor
             EnsureSmallEnemy("Enemy_가고일유체", "enemy.small.gargoyle_larva", "가고일 유체", "구조물형",
                 hp: 42, speed: 35, physAtk: 10, magAtk: 0, physDef: 6, magDef: 6,
                 "잭 더 리퍼를 숭배하는 정보원. 판정 성공 시 아군의 공격력 감쇠 디버프 부여 [공격력 -3]");
-            EnsureWeakBleed();
+            var bleed = EnsureWeakBleed();
+            var poison = EnsureStatus("Status_중독", "status.poison", "중독", "중독", StatusEffectType.Poison, StatusEffectKind.DamageOverTime,
+                duration: -1, maxStacks: 3, magnitude: 3, statPenalty: 5, clearedByVictory: false,
+                "최대 3스택. 개인 턴 시작마다 스택 × 3 피해, HP 1 미만으로 낮추지 않음. 1스택 이상이면 모든 능력 스탯 −5를 한 번 적용. 전투 밖에서는 월드 개인 턴에 적용.");
+            var confusion = EnsureStatus("Status_혼란", "status.confusion", "혼란", "혼란", StatusEffectType.Confusion, StatusEffectKind.ControlAction,
+                duration: 1, maxStacks: 1, magnitude: 0, statPenalty: 0, clearedByVictory: true,
+                "다음 개인 턴에 50% 확률로 소지한 일반 HP 회복약 1개를 자신에게 사용, 아니면 임의의 적을 기본 공격. 약이 없으면 기본 공격.");
+            var bind = EnsureStatus("Status_속박", "status.bind", "속박", "속박", StatusEffectType.Bind, StatusEffectKind.StatModifier,
+                duration: 2, maxStacks: 1, magnitude: 15, statPenalty: 0, clearedByVictory: true,
+                "속도 −15. 별도 속도 감소와 같으면 큰 감소값 하나만 적용.");
+            // 기간은 System.md에 없어 2턴으로 가정 (Docs/DevPlan 기획 확인 항목).
+            var attackDown = EnsureStatus("Status_공격력감소", "status.attack_down", "공격력 감소", "공↓", StatusEffectType.AttackDown, StatusEffectKind.StatModifier,
+                duration: 2, maxStacks: 1, magnitude: 3, statPenalty: 0, clearedByVictory: true,
+                "공격력 −3 (가고일 유체 특성). 기간 미정 — 2턴 가정.");
+            LinkCritStatuses(bleed, poison, confusion, bind, attackDown);
             UIThemeSetup.EnsureAsset();
             AssetDatabase.SaveAssets();
             Debug.Log("[GameDataSeed] 샘플 자산 생성/갱신 완료 (1차 3직업: 명탐정·역병 의사·저격수 + 시작 무기, 현장 검증, 1막 소형 적 4종, 약한 출혈)");
@@ -259,6 +273,51 @@ namespace Fantasia.Editor
             return e;
         }
 
+        private static StatusEffectDefinition EnsureStatus(string assetName, string id, string displayName, string shortLabel,
+            StatusEffectType effect, StatusEffectKind kind, int duration, int maxStacks, int magnitude, int statPenalty, bool clearedByVictory, string rule)
+        {
+            var se = LoadOrCreate<StatusEffectDefinition>(StatusDir, assetName);
+            se.Id = id;
+            se.DisplayName = displayName;
+            se.ShortLabel = shortLabel;
+            se.Kind = kind;
+            se.Effect = effect;
+            se.DurationTurns = duration;
+            se.MaxStacks = maxStacks;
+            se.Magnitude = magnitude;
+            se.StatPenalty = statPenalty;
+            se.ClearedByCombatVictory = clearedByVictory;
+            se.ClearedByGeneralCleanse = true;
+            se.RuleDescription = rule;
+            EditorUtility.SetDirty(se);
+            return se;
+        }
+
+        // 1막 소형 적 4종 특성 (System.md "소형 적") + 단검 계열 크리티컬 효과 (System.md 무기 계열 표).
+        // 그림자 사냥개의 [방해함](턴 밀기)은 상태가 아니라 행동 순서 기능이라 별도.
+        private static void LinkCritStatuses(StatusEffectDefinition bleed, StatusEffectDefinition poison, StatusEffectDefinition confusion,
+            StatusEffectDefinition bind, StatusEffectDefinition attackDown)
+        {
+            void Set(string enemyAsset, params StatusEffectDefinition[] statuses)
+            {
+                var e = AssetDatabase.LoadAssetAtPath<EnemyDefinition>($"{EnemyDir}/{enemyAsset}.asset");
+                if (e == null) return;
+                e.OnCritStatuses = statuses;
+                EditorUtility.SetDirty(e);
+            }
+            Set("Enemy_그림자사냥개", confusion);
+            Set("Enemy_연성독거미유체", poison);
+            Set("Enemy_역병쥐", bleed, bind);
+            Set("Enemy_가고일유체", attackDown);
+
+            var dagger = AssetDatabase.LoadAssetAtPath<WeaponDefinition>($"{WeaponDir}/Weapon_탐정의접이식단검.asset");
+            if (dagger != null)
+            {
+                dagger.OnCritStatuses = new[] { bleed };
+                EditorUtility.SetDirty(dagger);
+            }
+        }
+
         private static StatusEffectDefinition EnsureWeakBleed()
         {
             var se = LoadOrCreate<StatusEffectDefinition>(StatusDir, "Status_약한출혈");
@@ -269,6 +328,10 @@ namespace Fantasia.Editor
             se.MaxStacks = 1;
             se.ClearedByCombatVictory = true;
             se.ClearedByGeneralCleanse = true;
+            se.Effect = StatusEffectType.WeakBleed;
+            se.Magnitude = 2;
+            se.StatPenalty = 0;
+            se.ShortLabel = "출혈";
             se.RuleDescription = "개인 턴 시작마다 방어 무시 2 피해. HP 1 미만으로 낮추지 않는다.";
             EditorUtility.SetDirty(se);
             return se;
