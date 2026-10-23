@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cadb93409b9b09848bc3ea12b6e10f7e, type: 3}
+  m_Name: "Status_\uC601\uC810\uC870\uC815"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.StatusEffectDefinition
+  Id: status.accuracy_up
+  DisplayName: "\uC601\uC810 \uC870\uC815"
+  Kind: 1
+  Icon: {fileID: 0}
+  ShortLabel: "\uC601\uC810"
+  DurationTurns: 3
+  MaxStacks: 1
+  ClearedByCombatVictory: 1
+  ClearedByGeneralCleanse: 1
+  Effect: 8
+  Magnitude: 15
+  StatPenalty: 0
+  RuleDescription: "\uB2E4\uC74C \uBB34\uAE30 \uACF5\uACA9\uC758 \uC2AC\uB86F\uBCC4
+    \uC131\uACF5\uB960 +15%p. \uACF5\uACA9\uD558\uBA74 \uC18C\uBAA8, \uC790\uC2E0\uC758
+    \uB2E4\uC74C 2\uD134 \uC548\uC5D0 \uACF5\uACA9\uD558\uC9C0 \uC54A\uC73C\uBA74
+    \uC0AC\uB77C\uC9C4\uB2E4."

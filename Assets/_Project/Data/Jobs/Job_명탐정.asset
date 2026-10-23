@@ -36,3 +36,6 @@ MonoBehaviour:
   StartingWeapon: {fileID: 11400000, guid: ebedb25b276dece42a2e77e6b1a285a7, type: 2}
   Skills:
   - {fileID: 11400000, guid: f13bb4e9aba3d3f4c989871365f46725, type: 2}
+  - {fileID: 11400000, guid: 5d187201acf93ff47b5d561fe35ea067, type: 2}
+  - {fileID: 11400000, guid: 291cee07f27d3b84eb6c6785b95c9ed5, type: 2}
+  - {fileID: 11400000, guid: 5793403f07b860341bad52cb088d0334, type: 2}

@@ -85,8 +85,17 @@ namespace Fantasia.Data
         }
 
         // 방어력은 1차 구현 범위에서 장비 방어구 보정이 아직 없어 직업 기본값 그대로 노출한다 (D17/D18에서 확장).
-        public int FinalPhysicalDefense => Job.BasePhysicalDefense;
-        public int FinalMagicDefense => Job.BaseMagicDefense;
+        public int FinalPhysicalDefense => Mathf.Max(0, Job.BasePhysicalDefense - Statuses.DefensePenalty);
+        public int FinalMagicDefense => Mathf.Max(0, Job.BaseMagicDefense - Statuses.DefensePenalty);
+
+        // 이 직업이 가진 패시브 값 합 (없으면 0) — 예: 현장 검증 기습 +0.1.
+        public float PassiveValue(PassiveType type)
+        {
+            float sum = 0f;
+            if (Job.Skills == null) return sum;
+            foreach (var s in Job.Skills) if (s != null && s.Type == SkillType.Passive && s.Passive == type) sum += s.PassiveValue;
+            return sum;
+        }
 
         public bool IsAlive => CurrentHP > 0;
 

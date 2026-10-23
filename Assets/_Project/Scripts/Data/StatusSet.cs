@@ -92,5 +92,8 @@ namespace Fantasia.Data
         public int AllStatPenalty => Find(StatusEffectType.Poison)?.Definition.StatPenalty ?? 0;
         public int SpeedPenalty => Find(StatusEffectType.Bind)?.Definition.Magnitude ?? 0;
         public int AttackPenalty => Find(StatusEffectType.AttackDown)?.Definition.Magnitude ?? 0;
+        public int DefensePenalty => Find(StatusEffectType.DefenseDown)?.Definition.Magnitude ?? 0;
+        public bool EvasionRevealed => Has(StatusEffectType.EvasionRevealed);
+        public float AccuracyBonus => (Find(StatusEffectType.AccuracyUp)?.Definition.Magnitude ?? 0) / 100f;
     }
 }

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cadb93409b9b09848bc3ea12b6e10f7e, type: 3}
+  m_Name: "Status_\uBC29\uC5B4\uAC10\uC18C"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.StatusEffectDefinition
+  Id: status.defense_down
+  DisplayName: "\uBC29\uC5B4 \uAC10\uC18C"
+  Kind: 1
+  Icon: {fileID: 0}
+  ShortLabel: "\uBC29\u2193"
+  DurationTurns: 2
+  MaxStacks: 1
+  ClearedByCombatVictory: 1
+  ClearedByGeneralCleanse: 1
+  Effect: 6
+  Magnitude: 4
+  StatPenalty: 0
+  RuleDescription: "\uBB3C\uB9AC\xB7\uB9C8\uBC95 \uBC29\uC5B4\uB825 \u22124. \uB300\uC0C1\uC758
+    2\uAC1C \uAC1C\uC778 \uD134 \uB3D9\uC548 (\uC57D\uC810 \uAC04\uD30C). \uC911\uCCA9\uB418\uC9C0
+    \uC54A\uB294\uB2E4."

@@ -22,6 +22,21 @@ MonoBehaviour:
   HPCost: 0
   MPCost: 0
   CooldownTurns: 0
+  Effect: 0
+  Coefficient: 1
+  UsesMagic: 0
+  SlotCount: 0
+  RollStat: 3
+  PierceRatio: 0
+  HealFlat: 0
+  HealMagicRatio: 0
+  AppliedStatuses: []
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  CleansedStatuses: 
+  CleanseNeedsFullSuccess: 0
+  Passive: 1
+  PassiveValue: 0.1
   EffectDescription: "\uC870\uC6B0 \uD654\uBA74\uC5D0 \uC801 HP\xB7\uC18D\uB3C4\xB7\uC591\uCABD
     \uBC29\uC5B4\uB825\uC744 \uD45C\uC2DC\uD55C\uB2E4. \uBA85\uD0D0\uC815\uC774 \uC870\uC6B0\uB97C
     \uC2DC\uC791\uD558\uBA74 \uAE30\uC2B5 \uC2AC\uB86F \uC131\uACF5\uB960 +10%p."

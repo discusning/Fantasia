@@ -40,8 +40,15 @@ namespace Fantasia.UI
         public event Action DefendClicked;
         public event Action RetreatClicked;
         public event Action<BattleUnit> EnemyBarClicked;
+        public event Action<Fantasia.Data.SkillDefinition> SkillChosen;
 
         public bool UseFocus => _focusToggle != null && _focusToggle.isOn;
+
+        // 자동 플레이 점검용 — 스킬 버튼을 누른 것과 같다 (스킬 메뉴 스크린샷).
+        public void DevOpenSkills()
+        {
+            if (!_skillPanel.activeSelf) ToggleSkills();
+        }
 
         // 자동 플레이 점검용 — "추가 집중" 토글을 누른 것과 같다.
         public void DevSetFocus(bool on)
@@ -63,6 +70,10 @@ namespace Fantasia.UI
         private readonly List<EnemyBar> _enemyBars = new();
 
         private GameObject _actionPanel;
+        private GameObject _skillPanel;
+        private readonly List<(Button button, Image icon, Text name, Text sub)> _skillSlots = new();
+        private readonly List<Fantasia.Data.SkillDefinition> _shownSkills = new();
+        private BattleUnit _actionActor;
         private Text _actorText;
         private Text _hintText;
         private Button _attackButton, _skillButton, _itemButton, _defendButton, _retreatButton;
@@ -154,7 +165,9 @@ namespace Fantasia.UI
             _attackButton.interactable = actor.CanBasicAttack;
             _defendButton.interactable = true;
             _retreatButton.interactable = true;
-            _skillButton.interactable = false; // D11 직업 스킬
+            _actionActor = actor;
+            _skillButton.interactable = System.Linq.Enumerable.Any(actor.ActiveSkills());
+            _skillPanel.SetActive(false);
             _itemButton.interactable = false;  // D17 소모품·퀵 슬롯
             _focusToggle.interactable = actor.Member.CurrentFocus > 0;
             _focusToggle.isOn = false;
@@ -163,7 +176,57 @@ namespace Fantasia.UI
                 : $"MP 부족 — 기본 공격에 MP {actor.BasicAttackMPCost} 필요");
         }
 
-        public void HideActions() => _actionPanel.SetActive(false);
+        public void HideActions()
+        {
+            _actionPanel.SetActive(false);
+            _skillPanel.SetActive(false);
+        }
+
+        // 스킬 버튼 → 이 캐릭터의 액티브 스킬 펼치기. 못 쓰는 스킬은 이유와 함께 비활성.
+        private void ToggleSkills()
+        {
+            if (_actionActor == null) return;
+            if (_skillPanel.activeSelf) { _skillPanel.SetActive(false); return; }
+
+            _shownSkills.Clear();
+            _shownSkills.AddRange(_actionActor.ActiveSkills());
+            for (int i = 0; i < _skillSlots.Count; i++)
+            {
+                var slot = _skillSlots[i];
+                bool has = i < _shownSkills.Count;
+                slot.button.gameObject.SetActive(has);
+                if (!has) continue;
+
+                var skill = _shownSkills[i];
+                string reason = _actionActor.CannotUseReason(skill);
+                slot.button.interactable = reason == null;
+                slot.icon.enabled = skill.Icon != null;
+                slot.icon.sprite = skill.Icon;
+                slot.name.text = skill.DisplayName;
+                slot.sub.text = reason ?? SkillCostText(skill);
+                slot.sub.color = reason == null ? TextDim : SlotFailure;
+            }
+            _skillPanel.SetActive(true);
+            SetHint("스킬을 고르세요. 마우스를 올리면 설명이 나옵니다.");
+        }
+
+        public static string SkillCostText(Fantasia.Data.SkillDefinition skill)
+        {
+            var parts = new List<string>();
+            if (skill.FocusCost > 0) parts.Add($"집중 {skill.FocusCost}");
+            if (skill.MPCost > 0) parts.Add($"MP {skill.MPCost}");
+            if (skill.HPCost > 0) parts.Add($"HP {skill.HPCost}");
+            if (skill.CooldownTurns > 0) parts.Add($"재사용 {skill.CooldownTurns}턴");
+            return parts.Count > 0 ? string.Join(" · ", parts) : "비용 없음";
+        }
+
+        private void DescribeSkill(int index)
+        {
+            if (index >= _shownSkills.Count || _actionActor == null) return;
+            var skill = _shownSkills[index];
+            string reason = _actionActor.CannotUseReason(skill);
+            SetHint($"{skill.DisplayName} — {skill.EffectDescription}{(reason != null ? $" ({reason})" : "")}");
+        }
 
         public void SetHint(string text) => _hintText.text = text;
 
@@ -256,6 +319,7 @@ namespace Fantasia.UI
             BuildTimeline(canvasGO.transform);
             BuildEnemyBars(canvasGO.transform);
             BuildActionPanel(canvasGO.transform);
+            BuildSkillPanel(canvasGO.transform);
             BuildRollPanel(canvasGO.transform);
             BuildResultPanel(canvasGO.transform);
         }
@@ -345,9 +409,36 @@ namespace Fantasia.UI
             _attackButton.onClick.AddListener(() => AttackClicked?.Invoke());
             _defendButton.onClick.AddListener(() => DefendClicked?.Invoke());
             _retreatButton.onClick.AddListener(() => RetreatClicked?.Invoke());
+            _skillButton.onClick.AddListener(ToggleSkills);
 
             _focusToggle = BuildFocusToggle(panel, new Vector2(0.8f, 0.08f), new Vector2(0.98f, 0.62f));
             _actionPanel.SetActive(false);
+        }
+
+        // 스킬 고르기 칸 — 행동 메뉴 바로 위, 최대 3개 (System.md 1차 3직업은 액티브 3개씩).
+        private void BuildSkillPanel(Transform parent)
+        {
+            var panel = UGUIKit.CreateThemedPanel(parent, "SkillPanel", new Vector2(0.26f, 0.395f), new Vector2(0.74f, 0.5f), Gold, PanelFill, 2f);
+            _skillPanel = panel.parent.gameObject;
+            for (int i = 0; i < 3; i++)
+            {
+                float x0 = 0.015f + i * 0.33f;
+                var button = UGUIKit.CreateThemedButton(panel, $"Skill{i}", new Vector2(x0, 0.1f), new Vector2(x0 + 0.315f, 0.9f), "", ButtonFill, 12);
+                var fill = button.targetGraphic.transform;
+                var icon = UGUIKit.CreateImage(fill, "Icon", new Vector2(0.03f, 0.1f), new Vector2(0.22f, 0.9f), Color.white);
+                icon.preserveAspect = true;
+                icon.enabled = false;
+                var name = Label(fill, "Name", new Vector2(0.24f, 0.45f), new Vector2(0.98f, 0.98f), 13, TextAnchor.MiddleLeft, TextLight, bold: true);
+                var sub = Label(fill, "Sub", new Vector2(0.24f, 0.02f), new Vector2(0.98f, 0.48f), 10, TextAnchor.MiddleLeft, TextDim, bold: false);
+                int index = i;
+                button.onClick.AddListener(() => { if (index < _shownSkills.Count) SkillChosen?.Invoke(_shownSkills[index]); });
+                var trigger = button.gameObject.AddComponent<EventTrigger>();
+                var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                entry.callback.AddListener(_ => DescribeSkill(index));
+                trigger.triggers.Add(entry);
+                _skillSlots.Add((button, icon, name, sub));
+            }
+            _skillPanel.SetActive(false);
         }
 
         // "추가 집중" — 켜면 이번 공격의 슬롯 1개를 확정 성공 (집중력 1 소모, System.md).

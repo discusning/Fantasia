@@ -23,6 +23,9 @@ namespace Fantasia.Data
         Confusion,  // 혼란 — 다음 개인 턴 행동 강제 (회복약 없으면 임의의 적 기본 공격)
         Bind,       // 속박 — 속도 감소
         AttackDown, // 공격력(·마력) 감소
+        DefenseDown,     // 물리·마법 방어 감소 (약점 간파)
+        EvasionRevealed, // [회피 상태] 일시 해제 (장막 걷기·성수)
+        AccuracyUp,      // 다음 무기 공격 슬롯 성공률 +Magnitude%p, 공격하면 소모 (영점 조정)
     }
 
     // 상태 효과 정의 (System.md "버프와 디버프 > 상태 효과 수치와 처리 순서" 표,

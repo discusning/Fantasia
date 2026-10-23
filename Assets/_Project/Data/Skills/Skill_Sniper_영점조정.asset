@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ba55eb73fa7c4c419fc14a0efbcc029, type: 3}
+  m_Name: "Skill_Sniper_\uC601\uC810\uC870\uC815"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.SkillDefinition
+  Id: skill.sniper.zero_in
+  DisplayName: "\uC601\uC810 \uC870\uC815"
+  OwnerJob: 2
+  Type: 1
+  Target: 1
+  Icon: {fileID: 0}
+  FocusCost: 1
+  HPCost: 0
+  MPCost: 0
+  CooldownTurns: 3
+  Effect: 4
+  Coefficient: 1
+  UsesMagic: 0
+  SlotCount: 0
+  RollStat: 3
+  PierceRatio: 0
+  HealFlat: 0
+  HealMagicRatio: 0
+  AppliedStatuses:
+  - {fileID: 11400000, guid: 0e68e764dd0b8fc4692b7e7eb7b2d858, type: 2}
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  CleansedStatuses: 
+  CleanseNeedsFullSuccess: 0
+  Passive: 0
+  PassiveValue: 0
+  EffectDescription: "\uB2E4\uC74C \uBB34\uAE30 \uACF5\uACA9\uC758 \uC2AC\uB86F\uBCC4
+    \uC131\uACF5\uB960 +15%p. \uD589\uB3D9\uC744 \uC18C\uBAA8\uD558\uBA70 \uC790\uC2E0\uC758
+    \uB2E4\uC74C 2\uD134 \uC548\uC5D0 \uACF5\uACA9\uD558\uC9C0 \uC54A\uC73C\uBA74
+    \uC0AC\uB77C\uC9C4\uB2E4."

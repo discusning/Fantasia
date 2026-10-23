@@ -34,4 +34,8 @@ MonoBehaviour:
     Perception: 91
   AllowedWeaponCategories: 040000000500000006000000
   StartingWeapon: {fileID: 11400000, guid: d2b0e850044afe84fa0d0e59ce7ce960, type: 2}
-  Skills: []
+  Skills:
+  - {fileID: 11400000, guid: 62f4764c213629d42a3a98183c087b9f, type: 2}
+  - {fileID: 11400000, guid: 4f0d107ae4258154296b8d7a386fe58b, type: 2}
+  - {fileID: 11400000, guid: 791b36e8d6e18ea4dba481a963e0a676, type: 2}
+  - {fileID: 11400000, guid: a772256b44302534b8f95c359e97466a, type: 2}

@@ -144,7 +144,8 @@ namespace Fantasia.UI
                     break;
                 case Choice.Ambush:
                     _descriptionText.text = $"인지 판정. 모든 슬롯이 성공하면 첫 라운드에 아군이 먼저 행동하고, 실패하면 적이 먼저 행동합니다.";
-                    ShowRollOdds("기습 확률", EncounterRules.AmbushSlotChance(_enemy, HeroStat(StatKind.Perception)), StatKind.Perception);
+                    ShowRollOdds(AmbushBonus > 0f ? $"기습 확률 (현장 검증 +{AmbushBonus * 100f:0}%p)" : "기습 확률",
+                        EncounterRules.AmbushSlotChance(_enemy, HeroStat(StatKind.Perception), AmbushBonus), StatKind.Perception);
                     break;
                 case Choice.Sneak:
                     if (!canAvoid)
@@ -170,6 +171,9 @@ namespace Fantasia.UI
         }
 
         private int HeroStat(StatKind kind) => _hero != null ? _hero.FinalStats.Get(kind) : 0;
+
+        // 판정 캐릭터의 기습 패시브 (명탐정 현장 검증 +10%p).
+        private float AmbushBonus => _hero != null ? _hero.PassiveValue(PassiveType.AmbushSlotBonus) : 0f;
 
         private void ShowRollOdds(string title, float slotChance, StatKind stat)
         {
@@ -210,7 +214,7 @@ namespace Fantasia.UI
                     Finish(EncounterRules.ResolveRetreatBeforeCombat(_enemy));
                     break;
                 case Choice.Ambush:
-                    StartCoroutine(RevealRoll(EncounterRules.RollAmbush(_enemy, HeroStat(StatKind.Perception))));
+                    StartCoroutine(RevealRoll(EncounterRules.RollAmbush(_enemy, HeroStat(StatKind.Perception), 0, AmbushBonus)));
                     break;
                 case Choice.Sneak:
                     StartCoroutine(RevealRoll(EncounterRules.RollSneak(_enemy, HeroStat(StatKind.Speed))));

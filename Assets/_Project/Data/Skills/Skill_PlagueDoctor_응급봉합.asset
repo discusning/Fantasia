@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ba55eb73fa7c4c419fc14a0efbcc029, type: 3}
+  m_Name: "Skill_PlagueDoctor_\uC751\uAE09\uBD09\uD569"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.SkillDefinition
+  Id: skill.plague_doctor.emergency_suture
+  DisplayName: "\uC751\uAE09 \uBD09\uD569"
+  OwnerJob: 1
+  Type: 1
+  Target: 2
+  Icon: {fileID: 0}
+  FocusCost: 0
+  HPCost: 0
+  MPCost: 12
+  CooldownTurns: 1
+  Effect: 2
+  Coefficient: 1
+  UsesMagic: 0
+  SlotCount: 2
+  RollStat: 3
+  PierceRatio: 0
+  HealFlat: 30
+  HealMagicRatio: 0.5
+  AppliedStatuses: []
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  CleansedStatuses: 01000000
+  CleanseNeedsFullSuccess: 1
+  Passive: 0
+  PassiveValue: 0
+  EffectDescription: "HP\uB97C 30 + floor(0.5M) \uD68C\uBCF5. 2\uC2AC\uB86F \uC9C0\uB825
+    \uD310\uC815\uC744 \uC804\uBD80 \uC131\uACF5\uD558\uBA74 \uCD9C\uD608\uB3C4 \uC81C\uAC70\uD55C\uB2E4.
+    \uAE30\uBCF8 \uD68C\uBCF5\uC740 \uD655\uC815."

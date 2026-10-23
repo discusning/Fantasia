@@ -40,8 +40,9 @@ namespace Fantasia.World
         }
 
         // 기습·몰래 회피의 슬롯 1개 확률 (UI 확률표 표시용 — 실제 판정과 같은 공식).
-        public static float AmbushSlotChance(EnemyDefinition enemy, int perceptionStat) =>
-            SlotCheck.FinalSlotChance(enemy.SlotCount, perceptionStat);
+        // slotBonus: 명탐정 "현장 검증" 같은 기습 보정 (+0.1 = +10%p).
+        public static float AmbushSlotChance(EnemyDefinition enemy, int perceptionStat, float slotBonus = 0f) =>
+            SlotCheck.FinalSlotChance(enemy.SlotCount, perceptionStat, slotBonus);
 
         public static float SneakSlotChance(EnemyDefinition enemy, int speedStat) =>
             SlotCheck.FinalSlotChance(enemy.SlotCount, speedStat);
@@ -50,10 +51,10 @@ namespace Fantasia.World
         public static EncounterOutcome ResolveAmbush(EnemyDefinition enemy, int perceptionStat, int focusSlots = 0) =>
             RollAmbush(enemy, perceptionStat, focusSlots).Outcome;
 
-        public static Roll RollAmbush(EnemyDefinition enemy, int perceptionStat, int focusSlots = 0)
+        public static Roll RollAmbush(EnemyDefinition enemy, int perceptionStat, int focusSlots = 0, float slotBonus = 0f)
         {
             if (enemy == null) throw new ArgumentNullException(nameof(enemy));
-            var result = SlotCheck.Roll(enemy.SlotCount, perceptionStat, Math.Min(focusSlots, 1));
+            var result = SlotCheck.Roll(enemy.SlotCount, perceptionStat, Math.Min(focusSlots, 1), slotBonus);
             return new Roll(result.AllSucceeded ? EncounterOutcome.AmbushSuccess : EncounterOutcome.AmbushFailure, result);
         }
 

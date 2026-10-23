@@ -87,7 +87,7 @@ namespace Fantasia.Core
             // ── 3. 전투 ──
             yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투 관리자");
             var battle = FindFirstObjectByType<BattleController>();
-            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false;
+            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false;
             float deadline = Time.time + 180f;
 
             while (!battle.DevFinished && Time.time < deadline)
@@ -98,8 +98,26 @@ namespace Fantasia.Core
                     if (!shotFirstTurn) { shotFirstTurn = true; yield return Shot("battle_first_turn"); }
 
                     var actor = battle.DevCurrent;
-                    // 한 번은 방어(역병 의사), 나머지는 공격 — 집중력이 있으면 추가 집중을 켠다.
-                    if (!defended && actor.Member.Job.Id == Fantasia.Data.JobId.PlagueDoctor)
+                    // 스킬을 쓸 상황이면 스킬(D11), 아니면 기본 공격 — 집중력이 남으면 추가 집중을 켠다.
+                    var (skill, target) = ChooseSkill(battle, actor);
+                    if (skill != null)
+                    {
+                        if (!shotSkillMenu)
+                        {
+                            shotSkillMenu = true;
+                            battle.DevHud.DevOpenSkills();
+                            yield return new WaitForSeconds(0.2f);
+                            yield return Shot("battle_skill_menu");
+                        }
+                        battle.DevUseSkill(skill, target, focus: actor.Member.CurrentFocus > skill.FocusCost);
+                        if (!shotSkill)
+                        {
+                            shotSkill = true;
+                            yield return new WaitForSeconds(0.6f);
+                            yield return Shot($"battle_skill_{skill.Id.Split('.').Last()}");
+                        }
+                    }
+                    else if (!defended && actor.Member.Job.Id == Fantasia.Data.JobId.PlagueDoctor && actor.Member.CurrentMP < 12)
                     {
                         defended = true;
                         battle.DevDefend();
@@ -136,6 +154,41 @@ namespace Fantasia.Core
             yield return Shot("board_after_battle");
             NoteParty("보드 복귀 후");
             Note("자동 플레이 완료");
+        }
+
+        // 사람이 할 법한 스킬 사용 — 쓸 수 있는(비용·쿨다운 OK) 스킬 중 상황에 맞는 것 하나. 없으면 (null, null).
+        private static (Fantasia.Data.SkillDefinition, BattleUnit) ChooseSkill(BattleController battle, BattleUnit actor)
+        {
+            Fantasia.Data.SkillDefinition Usable(string id) =>
+                actor.ActiveSkills().FirstOrDefault(s => s.Id == id && actor.CannotUseReason(s) == null);
+
+            var enemies = battle.DevEnemies.Where(e => e.InBattle).ToList();
+            var allies = battle.DevAllies.Where(a => a.InBattle).ToList();
+            if (enemies.Count == 0) return (null, null);
+            var evasive = enemies.FirstOrDefault(e => e.HasEvasionState);
+            var weakest = enemies.OrderBy(e => e.CurrentHP).First();
+
+            switch (actor.Member.Job.Id)
+            {
+                case Fantasia.Data.JobId.Detective:
+                    if (evasive != null && Usable("skill.detective.lift_the_veil") is { } veil) return (veil, evasive);
+                    if (Usable("skill.detective.pinpoint_breach") is { } breach && !weakest.HasEvasionState) return (breach, weakest);
+                    if (Usable("skill.detective.expose_weakness") is { } expose && !weakest.Statuses.Has(Fantasia.Data.StatusEffectType.DefenseDown)) return (expose, weakest);
+                    break;
+                case Fantasia.Data.JobId.PlagueDoctor:
+                    var hurt = allies.OrderBy(a => (float)a.CurrentHP / a.MaxHP).First();
+                    if ((float)hurt.CurrentHP / hurt.MaxHP < 0.75f && Usable("skill.plague_doctor.emergency_suture") is { } suture) return (suture, hurt);
+                    var afflicted = allies.FirstOrDefault(a => a.Statuses.Has(Fantasia.Data.StatusEffectType.Poison) || a.Statuses.Has(Fantasia.Data.StatusEffectType.Confusion));
+                    if (afflicted != null && Usable("skill.plague_doctor.purge_plague") is { } purge) return (purge, afflicted);
+                    if (enemies.Count >= 2 && Usable("skill.plague_doctor.black_miasma") is { } miasma) return (miasma, null);
+                    break;
+                case Fantasia.Data.JobId.Sniper:
+                    if (!actor.Statuses.Has(Fantasia.Data.StatusEffectType.AccuracyUp) && Usable("skill.sniper.zero_in") is { } zero && actor.Member.CurrentFocus >= 2) return (zero, actor);
+                    if (Usable("skill.sniper.piercing_round") is { } pierce && !weakest.HasEvasionState) return (pierce, weakest);
+                    if (Usable("skill.sniper.suppressing_fire") is { } suppress && !weakest.HasEvasionState) return (suppress, weakest);
+                    break;
+            }
+            return (null, null);
         }
 
         private void NoteParty(string label)
