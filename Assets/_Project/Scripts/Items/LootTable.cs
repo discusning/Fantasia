@@ -16,7 +16,7 @@ namespace Fantasia.Items
         }
     }
 
-    // Weighted drop table for a single pick (e.g. CombatTestController.PossibleLoot).
+    // Weighted drop table for a single pick (e.g. BattleController.PossibleLoot).
     // Not per-slot rolling like Battle Brothers (separate roll per equipment
     // slot) — one weighted pick across the whole table is enough until real
     // drop design (GDD 6.7) is settled. See Docs/References/GameDesignInspiration_2026-09-10.md.

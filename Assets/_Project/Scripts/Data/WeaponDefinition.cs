@@ -4,7 +4,6 @@ namespace Fantasia.Data
 {
     // 무기 정의 (System.md "무기" 절). 슬롯 수·기본 보너스 B·착용 보정은 계열의
     // 고정값이고, 등급·착용 레벨은 개별 무기 자산이 갖는다.
-    // 기존 Fantasia.Combat.WeaponDefinition(구 프로토타입, 균등 슬롯 확률)과는 별개다.
     [CreateAssetMenu(fileName = "Weapon", menuName = "Fantasia/Data/Weapon Definition")]
     public class WeaponDefinition : ScriptableObject
     {

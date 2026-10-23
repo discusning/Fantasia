@@ -13,8 +13,11 @@ namespace Fantasia.UI
 
         // Lazy, not a field initializer — GetBuiltinResource isn't allowed to
         // run during MonoBehaviour construction/deserialization.
+        // UITheme에 글꼴이 지정돼 있으면 그걸 쓴다 (한글 글꼴 교체 지점).
         private static Font _uiFont;
-        public static Font UIFont => _uiFont ??= Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        public static Font UIFont => _uiFont ??= UITheme.Current.Font != null
+            ? UITheme.Current.Font
+            : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         public static RectTransform CreateRect(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax)
         {
@@ -57,6 +60,35 @@ namespace Fantasia.UI
             innerGO.AddComponent<Image>().color = fillColor;
 
             return innerRect;
+        }
+
+        // CreateBorderedPanel + UITheme 스프라이트. 테마에 틀/바탕 그림이 있으면 입히고(틀은 색을 곱해
+        // 아군·적·강조 구분을 유지), 없으면 단색 그대로. 새 UI는 이걸 써서 아트 교체가 되게 한다.
+        public static Transform CreateThemedPanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Color borderColor, Color fillColor, float insetPx, Sprite fillSprite = null)
+        {
+            var fill = CreateBorderedPanel(parent, name, anchorMin, anchorMax, borderColor, fillColor, insetPx);
+            var theme = UITheme.Current;
+            UITheme.Apply(fill.parent.GetComponent<Image>(), theme.PanelFrame, tint: true);
+            UITheme.Apply(fill.GetComponent<Image>(), fillSprite != null ? fillSprite : theme.PanelFill);
+            return fill;
+        }
+
+        // 테마 버튼 그림 + (있으면) 아이콘. 아이콘이 있으면 글자는 아래쪽 작은 캡션이 된다.
+        public static Button CreateThemedButton(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, string label, Color color, int fontSize, Sprite icon = null)
+        {
+            var button = CreateButton(parent, name, anchorMin, anchorMax, label, color, fontSize);
+            UITheme.Apply((Image)button.targetGraphic, UITheme.Current.Button);
+            if (icon != null)
+            {
+                var fill = button.targetGraphic.transform;
+                var iconImage = CreateImage(fill, "Icon", new Vector2(0.2f, 0.32f), new Vector2(0.8f, 0.95f), Color.white);
+                iconImage.sprite = icon;
+                iconImage.preserveAspect = true;
+                var labelRect = (RectTransform)fill.Find("Label");
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = new Vector2(1f, 0.32f);
+            }
+            return button;
         }
 
         public static Text CreateText(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, string content, int fontSize, TextAnchor alignment)

@@ -17,6 +17,7 @@ MonoBehaviour:
   OwnerJob: 0
   Type: 0
   Target: 0
+  Icon: {fileID: 0}
   FocusCost: 0
   HPCost: 0
   MPCost: 0

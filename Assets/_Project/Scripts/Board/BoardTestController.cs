@@ -59,6 +59,7 @@ namespace Fantasia.Board
         // D08 조우 — 인카운터 칸에 도착하면 바로 전투로 넘기지 않고 EncounterPanel에서
         // 싸우기/기습/몰래 지나가기/후퇴를 고른다. 후퇴는 직전에 밟았던 칸으로 돌아간다.
         private HexCoord _lastSafeCoord;
+        private EnemyDefinition _pendingEnemy;
         private string _encounterResultMessage;
 
         private void Start()
@@ -78,9 +79,20 @@ namespace Fantasia.Board
         }
 
         // Public so editor tooling can build the HUD for a headless screenshot (Start() doesn't run there).
+        // 파티는 BoardSession에 두어 전투를 다녀와도 HP·집중력이 유지된다.
         public void BuildTestParty()
         {
+            BoardSession.EnsureExists();
+            if (BoardSession.Instance.Party != null && BoardSession.Instance.Party.Members.Count > 0)
+            {
+                _testParty = BoardSession.Instance.Party;
+                _testHero = _testParty.Members[0];
+                PartyHudPanel.Show(_testParty, _testHero);
+                return;
+            }
+
             _testParty = new Party();
+            BoardSession.Instance.Party = _testParty;
             var jobs = TestPartyJobs.Length > 0 ? TestPartyJobs : LoadDefaultTestPartyJobs();
             foreach (var job in jobs)
             {
@@ -207,6 +219,35 @@ namespace Fantasia.Board
             _awaitingSelection = true;
         }
 
+        // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 키보드·마우스 대신 같은 굴림·이동 코드를 부른다 ─────
+        public bool DevIsIdle => !_isMoving && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen;
+        public bool DevAwaitingSelection => _awaitingSelection;
+
+        public void DevRoll() => RollAndHighlight();
+
+        // 이동 가능한 칸 중 아직 안 깬 인카운터가 있으면 그 칸, 없으면 가장 가까운 인카운터에 제일 다가가는 칸.
+        public void DevMoveTowardEncounter()
+        {
+            if (!_awaitingSelection) return;
+            var encounters = new List<HexCoord>();
+            foreach (var tile in _board.Tiles)
+                if (tile.IsEncounter && !tile.IsCleared && tile.Enemy != null) encounters.Add(tile.Coordinate);
+
+            HexCoord best = _currentCoord;
+            int bestDistance = int.MaxValue;
+            foreach (var coord in _reachability.ReachableTiles)
+            {
+                int d = int.MaxValue;
+                foreach (var e in encounters) d = Mathf.Min(d, coord.DistanceTo(e));
+                if (d < bestDistance) { bestDistance = d; best = coord; }
+            }
+
+            var path = _reachability.GetPathTo(best);
+            _board.ClearHighlights();
+            _awaitingSelection = false;
+            StartCoroutine(WalkPath(path));
+        }
+
         private void TrySelectTile()
         {
             var cam = Camera.main;
@@ -255,6 +296,7 @@ namespace Fantasia.Board
                 && landedTile.Enemy != null)
             {
                 _encounterResultMessage = null;
+                _pendingEnemy = landedTile.Enemy;
                 EncounterPanel.Show(landedTile.Enemy, _testHero, OnEncounterResolved);
                 yield break;
             }
@@ -262,14 +304,20 @@ namespace Fantasia.Board
             TryGrantEventBonusMove(landedTile);
         }
 
-        private void EnterCombat()
+        // 조우한 적 + 같은 구역 소형 적 1마리 (프로토타입 편성 — 실제 조우 조합은 D13·P06 기획).
+        // 기습 성공/실패는 BattleQueue가 첫 라운드 순서에 반영한다.
+        private void EnterCombat(EncounterOutcome opening)
         {
+            var setup = new Fantasia.Combat.BattleSetup { Opening = opening };
+            setup.Enemies.Add(_pendingEnemy);
+            var pool = _board.EncounterEnemyPool;
+            if (pool.Length > 0) setup.Enemies.Add(pool[Random.Range(0, pool.Length)]);
+            BoardSession.Instance.PendingBattle = setup;
             BoardSession.Instance.PendingEncounterCoord = _currentCoord;
             SceneManager.LoadScene(CombatSceneName);
         }
 
         // EncounterPanel이 판정(슬롯 공개 연출 포함)을 끝낸 뒤 호출한다.
-        // 기습 성공/실패의 첫 라운드 선공 반영은 전투 씬 교체(D09) 때 연결 — 지금 전투 씬은 구 프로토타입.
         private void OnEncounterResolved(EncounterOutcome outcome)
         {
             _encounterResultMessage = EncounterPanel.OutcomeMessage(outcome);
@@ -284,7 +332,7 @@ namespace Fantasia.Board
                     BoardSession.Instance.PlayerPosition = _currentCoord;
                     break;
                 default:
-                    EnterCombat();
+                    EnterCombat(outcome);
                     break;
             }
         }

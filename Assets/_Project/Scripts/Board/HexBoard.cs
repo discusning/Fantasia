@@ -112,6 +112,7 @@ namespace Fantasia.Board
         }
 
         public bool TryGetTile(HexCoord coord, out HexTile tile) => _tiles.TryGetValue(coord, out tile);
+        public IEnumerable<HexTile> Tiles => _tiles.Values;
 
         public Vector3 CoordToWorld(HexCoord coord) => transform.TransformPoint(coord.ToWorldPosition(tileSize));
 

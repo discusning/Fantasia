@@ -1,0 +1,446 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using Fantasia.Combat;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+namespace Fantasia.UI
+{
+    // 전투 화면 UI (참고: Docs/Concept_Image/Concept/Fantasia_인터페이스_사진원본/01_포더킹1_실제_스크린샷/
+    // 05_턴제_전투와_공격대상_선택_한국어.jpg). 하단 파티 카드는 PartyHudPanel을 그대로 쓰고, 여기서는
+    //   ① 상단 행동 순서 타임라인  ② 상단 적 HP 바  ③ 행동 메뉴 + 판정 미리보기
+    //   ④ 슬롯 판정 연출  ⑤ 피해 숫자  ⑥ 승리·패배 창 을 그린다.
+    // 틀·버튼·게이지·아이콘 그림은 UITheme, 초상은 PortraitStudio(데이터의 Model/Portrait) — 아트가
+    // 들어오면 코드 수정 없이 바뀐다. 전투 진행은 BattleController가 이 클래스의 메서드를 부른다.
+    public class BattleHud : MonoBehaviour
+    {
+        private const int TimelineLength = 10;
+        private const int MaxEnemyBars = 3;
+        private const int StatusIconSlots = 4;
+        private const float SecondsPerSlot = 0.3f;
+
+        private static readonly Color Gold = new Color(0.72f, 0.6f, 0.38f);
+        private static readonly Color AllyBorder = new Color(0.4f, 0.62f, 0.95f);
+        private static readonly Color EnemyBorder = new Color(0.85f, 0.3f, 0.3f);
+        private static readonly Color PanelFill = new Color(0.07f, 0.06f, 0.08f, 0.93f);
+        private static readonly Color ButtonFill = new Color(0.36f, 0.12f, 0.14f);
+        private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
+        private static readonly Color TextDim = new Color(0.62f, 0.6f, 0.56f);
+        private static readonly Color HpColor = new Color(0.85f, 0.25f, 0.25f);
+        private static readonly Color SlotUnknown = new Color(0.22f, 0.2f, 0.24f);
+        public static readonly Color SlotSuccess = new Color(0.3f, 0.65f, 0.4f);
+        public static readonly Color SlotFailure = new Color(0.7f, 0.25f, 0.25f);
+        public static readonly Color CritColor = new Color(1f, 0.8f, 0.3f);
+
+        // 행동 메뉴 버튼 이벤트 (BattleController가 구독)
+        public event Action AttackClicked;
+        public event Action DefendClicked;
+        public event Action RetreatClicked;
+        public event Action<BattleUnit> EnemyBarClicked;
+
+        public bool UseFocus => _focusToggle != null && _focusToggle.isOn;
+
+        // 자동 플레이 점검용 — "추가 집중" 토글을 누른 것과 같다.
+        public void DevSetFocus(bool on)
+        {
+            if (_focusToggle != null && _focusToggle.interactable) _focusToggle.isOn = on;
+        }
+
+        private RectTransform _canvasRect;
+
+        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public RectTransform Rect; }
+        private readonly List<TimelineEntry> _timeline = new();
+        private Text _roundText;
+
+        private class EnemyBar
+        {
+            public GameObject Root; public Image Border; public RawImage Portrait; public Text Name; public Text Badge;
+            public Text Hp; public RectTransform HpFill; public readonly List<Text> StatusChips = new(); public BattleUnit Unit;
+        }
+        private readonly List<EnemyBar> _enemyBars = new();
+
+        private GameObject _actionPanel;
+        private Text _actorText;
+        private Text _hintText;
+        private Button _attackButton, _skillButton, _itemButton, _defendButton, _retreatButton;
+        private Toggle _focusToggle;
+
+        private GameObject _rollPanel;
+        private Text _rollTitle;
+        private Text _rollResult;
+        private RectTransform _rollSlotRow;
+        private readonly List<Image> _rollSlots = new();
+        private readonly List<Text> _rollSlotLabels = new();
+
+        private GameObject _resultPanel;
+        private Text _resultTitle;
+        private Text _resultBody;
+        private Action _onResultContinue;
+
+        public static BattleHud Create()
+        {
+            var hud = new GameObject("BattleHud").AddComponent<BattleHud>();
+            hud.Build();
+            return hud;
+        }
+
+        // UI 위에 마우스가 있는지 — 전장 클릭(대상 선택)과 겹치지 않게.
+        public static bool PointerOverUI => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
+        // ───────────── ① 타임라인 ─────────────
+        public void SetTimeline(IReadOnlyList<BattleQueue.Entry> entries, int currentRound)
+        {
+            _roundText.text = $"라운드 {currentRound}";
+            int prevRound = currentRound;
+            for (int i = 0; i < _timeline.Count; i++)
+            {
+                var slot = _timeline[i];
+                bool has = i < entries.Count;
+                slot.Root.SetActive(has);
+                if (!has) continue;
+
+                var unit = entries[i].Unit;
+                slot.Portrait.texture = PortraitStudio.TextureFor(unit.Definition);
+                slot.Border.color = unit.IsAlly ? AllyBorder : EnemyBorder;
+                // 다음 라운드가 시작되는 칸에 라운드 표시 (속도 변화는 이 칸부터 반영된다).
+                bool newRound = entries[i].Round != prevRound;
+                slot.Round.gameObject.SetActive(newRound);
+                slot.Round.text = $"R{entries[i].Round}";
+                prevRound = entries[i].Round;
+            }
+        }
+
+        // ───────────── ② 적 HP 바 ─────────────
+        public void SetEnemies(IReadOnlyList<BattleUnit> enemies)
+        {
+            for (int i = 0; i < _enemyBars.Count; i++)
+            {
+                var bar = _enemyBars[i];
+                bar.Unit = i < enemies.Count ? enemies[i] : null;
+                bar.Root.SetActive(bar.Unit != null);
+                if (bar.Unit == null) continue;
+
+                var e = bar.Unit.Enemy;
+                bar.Portrait.texture = PortraitStudio.TextureFor(e);
+                bar.Name.text = bar.Unit.DisplayName;
+                bar.Badge.text = $"{SizeLabel(e.Size)} · {e.SlotCount}슬롯";
+
+                // 상태 칸 — D12 전까지는 상시 특성([회피 상태])만 표시. 아이콘 그림은 StatusEffectDefinition.Icon.
+                for (int s = 0; s < bar.StatusChips.Count; s++)
+                {
+                    bool show = s == 0 && bar.Unit.HasEvasionState;
+                    bar.StatusChips[s].transform.parent.parent.gameObject.SetActive(show); // 라벨 → 칸 안쪽 → 칸 틀
+                    if (show) bar.StatusChips[s].text = "회피";
+                }
+            }
+            RefreshEnemies(null);
+        }
+
+        public void RefreshEnemies(BattleUnit highlighted)
+        {
+            foreach (var bar in _enemyBars)
+            {
+                if (bar.Unit == null) continue;
+                bar.Hp.text = bar.Unit.CurrentHP.ToString();
+                float ratio = bar.Unit.MaxHP > 0 ? Mathf.Clamp01((float)bar.Unit.CurrentHP / bar.Unit.MaxHP) : 0f;
+                bar.HpFill.anchorMax = new Vector2(ratio, 1f);
+                bar.Border.color = bar.Unit == highlighted ? CritColor : Gold;
+                bar.Root.GetComponent<CanvasGroup>().alpha = bar.Unit.IsAlive ? 1f : 0.35f;
+            }
+        }
+
+        // ───────────── ③ 행동 메뉴 ─────────────
+        public void ShowActions(BattleUnit actor)
+        {
+            _actionPanel.SetActive(true);
+            _actorText.text = $"{actor.DisplayName}의 차례";
+            _attackButton.interactable = actor.CanBasicAttack;
+            _defendButton.interactable = true;
+            _retreatButton.interactable = true;
+            _skillButton.interactable = false; // D11 직업 스킬
+            _itemButton.interactable = false;  // D17 소모품·퀵 슬롯
+            _focusToggle.interactable = actor.Member.CurrentFocus > 0;
+            _focusToggle.isOn = false;
+            SetHint(actor.CanBasicAttack
+                ? "행동을 고르세요. 공격은 대상 적을 클릭합니다."
+                : $"MP 부족 — 기본 공격에 MP {actor.BasicAttackMPCost} 필요");
+        }
+
+        public void HideActions() => _actionPanel.SetActive(false);
+
+        public void SetHint(string text) => _hintText.text = text;
+
+        // ───────────── ④ 슬롯 판정 연출 ─────────────
+        public IEnumerator PlayRoll(string title, SlotCheck.Result slots, bool focusUsed, string resultText, Color resultColor)
+        {
+            _rollPanel.SetActive(true);
+            _rollTitle.text = title;
+            _rollResult.text = "";
+            BuildRollSlots(slots.SlotCount);
+
+            // 집중력 확정 슬롯은 맨 앞에서 바로 성공으로, 나머지는 결과 개수만큼 섞어서 하나씩 공개.
+            int forced = focusUsed ? 1 : 0;
+            var outcome = new bool[slots.SlotCount];
+            for (int i = 0; i < slots.SuccessCount; i++) outcome[i] = true;
+            for (int i = slots.SlotCount - 1; i > forced; i--)
+            {
+                int j = UnityEngine.Random.Range(forced, i + 1);
+                (outcome[i], outcome[j]) = (outcome[j], outcome[i]);
+            }
+
+            for (int i = 0; i < slots.SlotCount; i++)
+            {
+                yield return new WaitForSeconds(i < forced ? 0.1f : SecondsPerSlot);
+                _rollSlots[i].color = outcome[i] ? SlotSuccess : SlotFailure;
+                _rollSlotLabels[i].text = i < forced ? "집중" : outcome[i] ? "성공" : "실패";
+            }
+
+            _rollResult.text = resultText;
+            _rollResult.color = resultColor;
+            yield return new WaitForSeconds(0.7f);
+            _rollPanel.SetActive(false);
+        }
+
+        // ───────────── ⑤ 피해 숫자 ─────────────
+        public void PopText(Camera cam, Vector3 worldPos, string text, Color color)
+        {
+            var label = UGUIKit.CreateText(_canvasRect, "Popup", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), text, 30, TextAnchor.MiddleCenter);
+            label.color = color;
+            label.fontStyle = FontStyle.Bold;
+            var outline = label.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            var rect = (RectTransform)label.transform;
+            rect.sizeDelta = new Vector2(220f, 44f);
+            rect.anchorMin = rect.anchorMax = Vector2.zero;
+
+            Vector2 screen = cam.WorldToScreenPoint(worldPos);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRect, screen, null, out var local);
+            rect.anchoredPosition = local + _canvasRect.rect.size * 0.5f;
+            StartCoroutine(FloatAndFade(label, rect));
+        }
+
+        private static IEnumerator FloatAndFade(Text label, RectTransform rect)
+        {
+            var start = rect.anchoredPosition;
+            var color = label.color;
+            for (float t = 0f; t < 1.1f; t += Time.deltaTime)
+            {
+                rect.anchoredPosition = start + Vector2.up * (t * 50f);
+                label.color = new Color(color.r, color.g, color.b, Mathf.Clamp01(1.6f - t * 1.4f));
+                yield return null;
+            }
+            Destroy(label.gameObject);
+        }
+
+        // ───────────── ⑥ 결과 창 ─────────────
+        public void ShowResult(string title, string body, Action onContinue)
+        {
+            HideActions();
+            _resultTitle.text = title;
+            _resultBody.text = body;
+            _onResultContinue = onContinue;
+            _resultPanel.SetActive(true);
+        }
+
+        // ───────────── 구성 ─────────────
+        private void Build()
+        {
+            var canvasGO = new GameObject("BattleCanvas");
+            canvasGO.transform.SetParent(transform, false);
+            var canvas = canvasGO.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 5;
+            canvasGO.AddComponent<GraphicRaycaster>();
+            var scaler = canvasGO.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280, 720);
+            _canvasRect = (RectTransform)canvasGO.transform;
+
+            BuildTimeline(canvasGO.transform);
+            BuildEnemyBars(canvasGO.transform);
+            BuildActionPanel(canvasGO.transform);
+            BuildRollPanel(canvasGO.transform);
+            BuildResultPanel(canvasGO.transform);
+        }
+
+        private void BuildTimeline(Transform parent)
+        {
+            var strip = UGUIKit.CreateThemedPanel(parent, "Timeline", new Vector2(0.27f, 0.915f), new Vector2(0.73f, 0.995f), Gold, PanelFill, 1.5f, UITheme.Current.TimelineFrame);
+            _roundText = Label(strip, "Round", new Vector2(0f, 0f), new Vector2(0.11f, 1f), 11, TextAnchor.MiddleCenter, TextDim, bold: true);
+
+            // 첫 칸(지금 차례)은 크게, 나머지는 작게.
+            float x = 0.12f;
+            for (int i = 0; i < TimelineLength; i++)
+            {
+                float w = i == 0 ? 0.105f : 0.078f;
+                var entry = new TimelineEntry();
+                var fill = UGUIKit.CreateThemedPanel(strip, $"Turn{i}", new Vector2(x, i == 0 ? 0.02f : 0.12f), new Vector2(x + w, i == 0 ? 0.98f : 0.88f),
+                    AllyBorder, new Color(0.13f, 0.12f, 0.15f), i == 0 ? 3f : 2f, UITheme.Current.PortraitFrame);
+                entry.Rect = (RectTransform)fill.parent;
+                entry.Root = entry.Rect.gameObject;
+                entry.Border = entry.Root.GetComponent<Image>();
+                entry.Portrait = UGUIKit.CreateRect(fill, "Portrait", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
+                entry.Round = Label(entry.Rect, "RoundMark", new Vector2(0f, -0.55f), new Vector2(1f, 0f), 10, TextAnchor.MiddleCenter, Gold, bold: true);
+                entry.Round.gameObject.SetActive(false);
+                _timeline.Add(entry);
+                x += w + 0.008f;
+            }
+        }
+
+        private void BuildEnemyBars(Transform parent)
+        {
+            for (int i = 0; i < MaxEnemyBars; i++)
+            {
+                float x0 = 0.03f + i * 0.325f;
+                var bar = new EnemyBar();
+                var fill = UGUIKit.CreateThemedPanel(parent, $"EnemyBar{i}", new Vector2(x0, 0.79f), new Vector2(x0 + 0.29f, 0.895f), Gold, PanelFill, 1.5f);
+                var outer = (RectTransform)fill.parent;
+                bar.Root = outer.gameObject;
+                bar.Border = outer.GetComponent<Image>();
+                bar.Root.AddComponent<CanvasGroup>();
+
+                var portraitFill = UGUIKit.CreateThemedPanel(fill, "Portrait", new Vector2(0.01f, 0.06f), new Vector2(0.2f, 0.94f), EnemyBorder, new Color(0.13f, 0.12f, 0.15f), 1.5f, UITheme.Current.PortraitFrame);
+                bar.Portrait = UGUIKit.CreateRect(portraitFill, "Image", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
+
+                bar.Name = Label(fill, "Name", new Vector2(0.23f, 0.55f), new Vector2(0.72f, 0.95f), 13, TextAnchor.MiddleLeft, TextLight, bold: true);
+                bar.Badge = Label(fill, "Badge", new Vector2(0.23f, 0.05f), new Vector2(0.55f, 0.32f), 10, TextAnchor.MiddleLeft, TextDim, bold: false);
+                bar.Hp = Label(fill, "Hp", new Vector2(0.73f, 0.35f), new Vector2(0.99f, 1f), 26, TextAnchor.MiddleRight, HpColor, bold: true);
+
+                var back = UGUIKit.CreateImage(fill, "HpBar", new Vector2(0.23f, 0.36f), new Vector2(0.98f, 0.52f), new Color(0.16f, 0.15f, 0.17f));
+                UITheme.Apply(back, UITheme.Current.BarBack);
+                var hpFill = UGUIKit.CreateImage(back.transform, "Fill", Vector2.zero, Vector2.one, HpColor);
+                UITheme.Apply(hpFill, UITheme.Current.BarFill, tint: true);
+                bar.HpFill = (RectTransform)hpFill.transform;
+
+                // 상태 아이콘 칸 (D12에서 StatusEffectDefinition.Icon으로 채운다)
+                for (int s = 0; s < StatusIconSlots; s++)
+                {
+                    float sx = 0.57f + s * 0.105f;
+                    var chip = UGUIKit.CreateThemedPanel(fill, $"Status{s}", new Vector2(sx, 0.05f), new Vector2(sx + 0.095f, 0.32f), Gold, new Color(0.25f, 0.15f, 0.3f), 1f);
+                    bar.StatusChips.Add(Label(chip, "Label", Vector2.zero, Vector2.one, 9, TextAnchor.MiddleCenter, TextLight, bold: true));
+                    chip.parent.gameObject.SetActive(false);
+                }
+
+                // 적 바를 눌러도 공격 대상 선택 (전장 클릭과 같은 효과)
+                var button = bar.Root.AddComponent<Button>();
+                button.targetGraphic = bar.Border;
+                var captured = bar;
+                button.onClick.AddListener(() => { if (captured.Unit != null) EnemyBarClicked?.Invoke(captured.Unit); });
+                _enemyBars.Add(bar);
+            }
+        }
+
+        private void BuildActionPanel(Transform parent)
+        {
+            var panel = UGUIKit.CreateThemedPanel(parent, "ActionPanel", new Vector2(0.26f, 0.255f), new Vector2(0.74f, 0.39f), Gold, PanelFill, 2f);
+            _actionPanel = panel.parent.gameObject;
+
+            _actorText = Label(panel, "Actor", new Vector2(0.02f, 0.68f), new Vector2(0.2f, 0.98f), 13, TextAnchor.MiddleLeft, Gold, bold: true);
+            _hintText = Label(panel, "Hint", new Vector2(0.2f, 0.68f), new Vector2(0.99f, 0.98f), 10, TextAnchor.MiddleRight, TextLight, bold: false);
+
+            var theme = UITheme.Current;
+            var defs = new (string label, Sprite icon)[]
+            {
+                ("공격", theme.AttackIcon), ("스킬", theme.SkillIcon), ("소모품", theme.ItemIcon), ("방어", theme.DefendIcon), ("퇴각", theme.RetreatIcon),
+            };
+            var buttons = new Button[defs.Length];
+            for (int i = 0; i < defs.Length; i++)
+            {
+                float x0 = 0.02f + i * 0.155f;
+                buttons[i] = UGUIKit.CreateThemedButton(panel, $"{defs[i].label}Button", new Vector2(x0, 0.08f), new Vector2(x0 + 0.145f, 0.62f), defs[i].label, ButtonFill, 13, defs[i].icon);
+                buttons[i].GetComponentInChildren<Text>().color = TextLight;
+            }
+            (_attackButton, _skillButton, _itemButton, _defendButton, _retreatButton) = (buttons[0], buttons[1], buttons[2], buttons[3], buttons[4]);
+            _attackButton.onClick.AddListener(() => AttackClicked?.Invoke());
+            _defendButton.onClick.AddListener(() => DefendClicked?.Invoke());
+            _retreatButton.onClick.AddListener(() => RetreatClicked?.Invoke());
+
+            _focusToggle = BuildFocusToggle(panel, new Vector2(0.8f, 0.08f), new Vector2(0.98f, 0.62f));
+            _actionPanel.SetActive(false);
+        }
+
+        // "추가 집중" — 켜면 이번 공격의 슬롯 1개를 확정 성공 (집중력 1 소모, System.md).
+        private Toggle BuildFocusToggle(Transform parent, Vector2 min, Vector2 max)
+        {
+            var fill = UGUIKit.CreateThemedPanel(parent, "FocusToggle", min, max, Gold, new Color(0.15f, 0.13f, 0.1f), 1.5f, UITheme.Current.Button);
+            var toggle = fill.parent.gameObject.AddComponent<Toggle>();
+            var check = UGUIKit.CreateImage(fill, "On", new Vector2(0.06f, 0.3f), new Vector2(0.26f, 0.7f), CritColor);
+            var checkSprite = UITheme.Current.FocusToggleIcon != null ? UITheme.Current.FocusToggleIcon : UITheme.Current.FocusPip;
+            if (!UITheme.Apply(check, checkSprite, tint: true))
+                check.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            toggle.graphic = check;
+            toggle.targetGraphic = fill.GetComponent<Image>();
+            Label(fill, "Label", new Vector2(0.3f, 0f), new Vector2(1f, 1f), 11, TextAnchor.MiddleLeft, TextLight, bold: true).text = "추가 집중\n(슬롯 1 확정)";
+            toggle.isOn = false;
+            return toggle;
+        }
+
+        private void BuildRollPanel(Transform parent)
+        {
+            var panel = UGUIKit.CreateThemedPanel(parent, "RollPanel", new Vector2(0.03f, 0.58f), new Vector2(0.31f, 0.77f), Gold, PanelFill, 2f);
+            _rollPanel = panel.parent.gameObject;
+            _rollTitle = Label(panel, "Title", new Vector2(0.03f, 0.72f), new Vector2(0.97f, 0.97f), 13, TextAnchor.MiddleCenter, TextLight, bold: true);
+            _rollSlotRow = UGUIKit.CreateRect(panel, "Slots", new Vector2(0.05f, 0.3f), new Vector2(0.95f, 0.72f));
+            _rollResult = Label(panel, "Result", new Vector2(0.03f, 0.03f), new Vector2(0.97f, 0.3f), 16, TextAnchor.MiddleCenter, TextLight, bold: true);
+            _rollPanel.SetActive(false);
+        }
+
+        private void BuildRollSlots(int count)
+        {
+            foreach (Transform child in _rollSlotRow) Destroy(child.gameObject);
+            _rollSlots.Clear();
+            _rollSlotLabels.Clear();
+
+            const float size = 34f, gap = 22f;
+            float total = count * size + (count - 1) * gap;
+            for (int i = 0; i < count; i++)
+            {
+                var icon = UGUIKit.CreateImage(_rollSlotRow, $"Slot{i}", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), SlotUnknown);
+                var rect = icon.rectTransform;
+                rect.sizeDelta = new Vector2(size, size);
+                rect.anchoredPosition = new Vector2(-total / 2f + size / 2f + i * (size + gap), 0f);
+                if (!UITheme.Apply(icon, UITheme.Current.SlotIcon, tint: true)) rect.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                icon.color = SlotUnknown;
+
+                var label = UGUIKit.CreateText(_rollSlotRow, $"SlotLabel{i}", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), "?", 11, TextAnchor.MiddleCenter);
+                label.rectTransform.sizeDelta = new Vector2(size + 16f, size);
+                label.rectTransform.anchoredPosition = rect.anchoredPosition;
+                label.color = TextLight;
+                label.fontStyle = FontStyle.Bold;
+                _rollSlots.Add(icon);
+                _rollSlotLabels.Add(label);
+            }
+        }
+
+        private void BuildResultPanel(Transform parent)
+        {
+            var dim = UGUIKit.CreateImage(parent, "ResultRoot", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.5f));
+            _resultPanel = dim.gameObject;
+            var panel = UGUIKit.CreateThemedPanel(dim.transform, "ResultCard", new Vector2(0.35f, 0.38f), new Vector2(0.65f, 0.66f), Gold, PanelFill, 2.5f);
+            _resultTitle = Label(panel, "Title", new Vector2(0.05f, 0.66f), new Vector2(0.95f, 0.95f), 26, TextAnchor.MiddleCenter, CritColor, bold: true);
+            _resultBody = Label(panel, "Body", new Vector2(0.06f, 0.3f), new Vector2(0.94f, 0.66f), 12, TextAnchor.MiddleCenter, TextLight, bold: false);
+            var button = UGUIKit.CreateThemedButton(panel, "Continue", new Vector2(0.3f, 0.07f), new Vector2(0.7f, 0.25f), "보드로 돌아가기", ButtonFill, 13);
+            button.GetComponentInChildren<Text>().color = TextLight;
+            button.onClick.AddListener(() => _onResultContinue?.Invoke());
+            _resultPanel.SetActive(false);
+        }
+
+        private static Text Label(Transform parent, string name, Vector2 min, Vector2 max, int size, TextAnchor align, Color color, bool bold)
+        {
+            var text = UGUIKit.CreateText(parent, name, min, max, "", size, align);
+            text.color = color;
+            if (bold) text.fontStyle = FontStyle.Bold;
+            return text;
+        }
+
+        private static string SizeLabel(Fantasia.Data.EnemySize size) => size switch
+        {
+            Fantasia.Data.EnemySize.Small => "소형",
+            Fantasia.Data.EnemySize.Medium => "중형",
+            Fantasia.Data.EnemySize.Large => "대형",
+            _ => "보스",
+        };
+    }
+}

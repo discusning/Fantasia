@@ -57,7 +57,7 @@ namespace Fantasia.Combat
     }
 
     // D10 공통 전투 계산 (System.md "자원·행동·피해의 공통 정의" + "공격·조우·회피 확률표").
-    // 기존 WeaponAttackResolver(구 프로토타입)는 전투 씬 교체(단계 3) 때 제거한다.
+    // 전투 씬(BattleController)이 이 계산을 쓴다.
     public static class AttackResolver
     {
         public const int UnarmedSlotCount = 2;

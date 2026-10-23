@@ -7,7 +7,8 @@ namespace Fantasia.UI
 {
     // 화면 하단 파티 HUD — 3인 파티 카드를 가로로 나란히 (참고: Docs/Concept_Image/Concept/판타지아 보드판 컨셉.jpg).
     // 카드 한 장: 초상(+레벨) · 이름 · LP · 큰 HP 숫자 · 퀵 슬롯 4칸 · HP/MP 바 · 6대 스탯, 위에 집중력 표시.
-    // 초상은 PortraitView + PortraitStage(3D 렌더) — JobDefinition.PortraitModel에 모델 프리팹만 넣으면 그대로 바뀐다.
+    // 초상은 PortraitView + PortraitStudio(3D 렌더) — JobDefinition.Model에 모델 프리팹만 넣으면 그대로 바뀐다.
+    // 틀·게이지·집중 칸 그림은 UITheme에서 온다.
     //
     // 씬마다 새로 만든다(DontDestroyOnLoad 아님) — 전투 씬은 자체 UI를 쓸 예정이라
     // 보드 HUD가 따라가지 않게. 수치는 매 프레임 PartyMember에서 다시 읽어 항상 최신 상태다.
@@ -44,14 +45,13 @@ namespace Fantasia.UI
             public Text MpText;
             public Text Stats;
             public readonly List<Image> FocusPips = new();
-            public int Index;
-            public PortraitStage Stage;    // 초상 3D 촬영장 — 직업이 바뀔 때만 다시 만든다
-            public JobDefinition StageJob;
+            public Text Status;  // 카드 위 상태 문구 (행동 중인 캐릭터만)
         }
 
         private readonly List<Card> _cards = new();
         private Party _party;
         private PartyMember _active;
+        private string _statusText;
         private bool _initialized;
 
         public static void EnsureExists()
@@ -69,18 +69,26 @@ namespace Fantasia.UI
             Instance.Refresh();
         }
 
+        // 전투처럼 차례가 바뀌는 곳에서 — 강조할 캐릭터와 그 카드 위 문구 (예: "행동 선택 중").
+        public static void SetActive(PartyMember active, string status = null)
+        {
+            if (Instance == null) return;
+            Instance._active = active;
+            Instance._statusText = status;
+            Instance.Refresh();
+        }
+
         private void Awake() => Initialize();
 
         private void OnDestroy()
         {
-            foreach (var card in _cards) card.Stage?.Dispose();
             if (Instance == this) Instance = null;
         }
 
         // 에디터 미리보기용 — Play 모드가 아니면 촬영 카메라가 자동으로 안 돈다.
         public void RenderPortraitsNow()
         {
-            foreach (var card in _cards) card.Stage?.RenderNow();
+            PortraitStudio.RenderAllNow();
         }
 
         private void Initialize()
@@ -117,13 +125,9 @@ namespace Fantasia.UI
         {
             bool active = m == _active;
             card.Border.color = active ? BorderActive : BorderNormal;
-            if (card.StageJob != m.Job)
-            {
-                card.Stage?.Dispose();
-                card.Stage = new PortraitStage(transform, card.Index, m.Job);
-                card.StageJob = m.Job;
-            }
-            card.Portrait.Set(m.Job.Portrait, card.Stage.Texture);
+            card.Portrait.Set(m.Job.Portrait, PortraitStudio.TextureFor(m.Job));
+            card.Status.gameObject.SetActive(active && !string.IsNullOrEmpty(_statusText));
+            card.Status.text = _statusText;
             card.Portrait.SetHighlighted(active);
 
             card.Level.text = m.Level.ToString();
@@ -178,8 +182,8 @@ namespace Fantasia.UI
 
         private Card BuildCard(Transform parent, int index, Vector2 anchorMin, Vector2 anchorMax)
         {
-            var card = new Card { Index = index };
-            var fill = UGUIKit.CreateBorderedPanel(parent, $"PartyCard{index}", anchorMin, anchorMax, BorderNormal, CardFill, 2f);
+            var card = new Card();
+            var fill = UGUIKit.CreateThemedPanel(parent, $"PartyCard{index}", anchorMin, anchorMax, BorderNormal, CardFill, 2f);
             var outer = (RectTransform)fill.parent;
             card.Root = outer.gameObject;
             card.Border = outer.GetComponent<Image>();
@@ -191,7 +195,7 @@ namespace Fantasia.UI
             card.Level = MakeText(levelFill, "Value", Vector2.zero, Vector2.one, 16, TextAnchor.MiddleCenter, TextLight, bold: true);
 
             // 이름 배너 + LP (위)
-            var nameFill = UGUIKit.CreateBorderedPanel(fill, "NameBanner", new Vector2(0.26f, 0.8f), new Vector2(0.8f, 0.98f), BorderNormal, new Color(0.24f, 0.16f, 0.26f), 1f);
+            var nameFill = UGUIKit.CreateThemedPanel(fill, "NameBanner", new Vector2(0.26f, 0.8f), new Vector2(0.8f, 0.98f), BorderNormal, new Color(0.24f, 0.16f, 0.26f), 1f, UITheme.Current.Banner);
             card.Name = MakeText(nameFill, "Name", new Vector2(0.04f, 0f), Vector2.one, 13, TextAnchor.MiddleLeft, TextLight, bold: true);
             card.Lp = MakeText(fill, "LP", new Vector2(0.81f, 0.8f), new Vector2(0.98f, 0.98f), 12, TextAnchor.MiddleCenter, HpColor, bold: true);
 
@@ -200,7 +204,7 @@ namespace Fantasia.UI
             for (int q = 0; q < QuickSlotCount; q++)
             {
                 float x0 = 0.49f + q * 0.123f;
-                var slot = UGUIKit.CreateBorderedPanel(fill, $"QuickSlot{q}", new Vector2(x0, 0.43f), new Vector2(x0 + 0.11f, 0.76f), BorderNormal, new Color(0.13f, 0.12f, 0.14f), 1f);
+                var slot = UGUIKit.CreateThemedPanel(fill, $"QuickSlot{q}", new Vector2(x0, 0.43f), new Vector2(x0 + 0.11f, 0.76f), BorderNormal, new Color(0.13f, 0.12f, 0.14f), 1f);
                 MakeText(slot, "Key", new Vector2(0.06f, 0f), new Vector2(1f, 0.4f), 9, TextAnchor.LowerLeft, TextDim, bold: false).text = (q + 1).ToString();
             }
 
@@ -218,7 +222,8 @@ namespace Fantasia.UI
                 var rt = (RectTransform)pip.transform;
                 rt.sizeDelta = new Vector2(11f, 11f);
                 rt.anchoredPosition = new Vector2(f * 17f, 11f);
-                rt.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                if (UITheme.Apply(pip, UITheme.Current.FocusPip, tint: true)) rt.localRotation = Quaternion.identity;
+                else rt.localRotation = Quaternion.Euler(0f, 0f, 45f);
                 card.FocusPips.Add(pip);
             }
             var focusLabel = MakeText(outer, "FocusLabel", new Vector2(0.26f, 1f), new Vector2(0.26f, 1f), 12, TextAnchor.MiddleRight, FocusOn, bold: true);
@@ -226,13 +231,21 @@ namespace Fantasia.UI
             ((RectTransform)focusLabel.transform).anchoredPosition = new Vector2(-26f, 11f);
             focusLabel.text = "집중";
 
+            // 행동 중일 때 카드 위에 뜨는 상태 문구 (예: "행동 선택 중")
+            card.Status = MakeText(outer, "Status", new Vector2(0.5f, 1f), new Vector2(1f, 1f), 13, TextAnchor.MiddleRight, TextLight, bold: true);
+            ((RectTransform)card.Status.transform).sizeDelta = new Vector2(0f, 22f);
+            ((RectTransform)card.Status.transform).anchoredPosition = new Vector2(-6f, 12f);
+            card.Status.gameObject.SetActive(false);
+
             return card;
         }
 
         private static (RectTransform fill, Text label) BuildBar(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Color color)
         {
             var back = UGUIKit.CreateImage(parent, name, anchorMin, anchorMax, BarBack);
+            UITheme.Apply(back, UITheme.Current.BarBack);
             var fill = UGUIKit.CreateImage(back.transform, "Fill", Vector2.zero, Vector2.one, color);
+            UITheme.Apply(fill, UITheme.Current.BarFill, tint: true);
             var label = MakeText(back.transform, "Value", Vector2.zero, Vector2.one, 10, TextAnchor.MiddleCenter, TextLight, bold: true);
             return ((RectTransform)fill.transform, label);
         }

@@ -5,7 +5,6 @@ namespace Fantasia.Combat
 {
     // 슬롯 판정 공통 엔진 (System.md "공격·조우·회피 확률표"). 무기 공격 크리티컬,
     // 기습·몰래 회피·퇴각처럼 "슬롯 전부 성공 여부"가 필요한 모든 판정이 이걸 공유한다.
-    // 기존 Fantasia.Combat.WeaponAttackResolver(구 프로토타입, 균등 1/N 확률)와는 별개다.
     public static class SlotCheck
     {
         public const float MinChance = 0.05f;

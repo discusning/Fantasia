@@ -15,7 +15,9 @@ namespace Fantasia.Data
         [TextArea] public string TypeTag; // 망령형/키메라형/야수형/구조물형/인간형 등
 
         [Header("아트")]
-        // 비워두면 조우 창이 크기 배지(소형/중형…)를 대신 그린다. 사용법은 JobDefinition.Portrait와 같다.
+        // 적 3D 모델 프리팹 — 전투 필드·초상 공용. 비우면 임시 인형 (JobDefinition.Model과 같은 규칙).
+        public GameObject Model;
+        // 2D 초상 그림 — 넣으면 3D보다 우선. 조우 창 마름모 안에도 이 그림이 들어간다.
         public Sprite Portrait;
 
         [Header("전투 수치")]
@@ -31,6 +33,8 @@ namespace Fantasia.Data
         [Range(0f, 1f)] public float SlotSuccessRate; // System.md 보완 스탯 표 (예: 45%)
 
         [Header("특성")]
+        // [회피 상태] 패시브 — 크리티컬이 아니면 모든 공격을 회피 (그림자 사냥개 등, System.md 확률표).
+        public bool HasEvasionState;
         [TextArea] public string TraitDescription;
         public string DeploymentAct; // 배치 구간, 예: "1막"
     }

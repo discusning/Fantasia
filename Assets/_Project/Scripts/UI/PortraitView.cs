@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace Fantasia.UI
 {
     // 캐릭터 초상 한 칸. 기본은 3D 모델 렌더(PortraitStage가 찍은 RenderTexture)를 보여주고,
-    // 2D 초상 그림(Sprite)이 있으면 그걸 우선한다 — 데이터의 PortraitModel/Portrait 칸만 채우면
+    // 2D 초상 그림(Sprite)이 있으면 그걸 우선한다 — 데이터의 Model/Portrait 칸만 채우면
     // 코드 수정 없이 바뀐다. 파티 HUD에서 먼저 쓰고, 이후 전투 타임라인 등에서도 재사용한다.
     public class PortraitView
     {
@@ -23,6 +23,7 @@ namespace Fantasia.UI
             Root = (RectTransform)fill.parent;
             Root.sizeDelta = new Vector2(size, size);
             _border = Root.GetComponent<Image>();
+            UITheme.Apply(_border, UITheme.Current.PortraitFrame, tint: true);
             _normalBorder = borderColor;
 
             var modelRect = UGUIKit.CreateRect(fill, "Model", Vector2.zero, Vector2.one);

@@ -30,6 +30,8 @@ namespace Fantasia.Data
         public JobId OwnerJob;
         public SkillType Type;
         public SkillTarget Target;
+        // 전투 행동 메뉴의 스킬 버튼 그림. 비우면 이름 글자 버튼.
+        public Sprite Icon;
 
         [Header("비용·재사용")]
         public int FocusCost;

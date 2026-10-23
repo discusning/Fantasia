@@ -16,6 +16,8 @@ MonoBehaviour:
   DisplayName: "\uADF8\uB9BC\uC790 \uC0AC\uB0E5\uAC1C"
   Size: 0
   TypeTag: "\uB9DD\uB839\uD615"
+  Model: {fileID: 0}
+  Portrait: {fileID: 0}
   MaxHP: 32
   Speed: 62
   PhysicalAttack: 5
@@ -24,6 +26,7 @@ MonoBehaviour:
   MagicDefense: 10
   SlotCount: 2
   SlotSuccessRate: 0.45
+  HasEvasionState: 1
   TraitDescription: "[\uD68C\uD53C \uC0C1\uD0DC] \uD328\uC2DC\uBE0C \uBCF4\uC720.
     \uACF5\uACA9 \uD310\uC815 \uC131\uACF5 \uC2DC \uB300\uC0C1\uC5D0\uAC8C [\uD63C\uB780]\uC744
     \uBD80\uC5EC\uD558\uBA70 \uD0C0\uC784\uB77C\uC778\uC744 [\uBC29\uD574\uD568]

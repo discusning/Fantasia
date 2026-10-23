@@ -191,6 +191,12 @@ namespace Fantasia.UI
             _oddsBodyText.text = message;
         }
 
+        // 자동 플레이 점검용 — 0 싸우기, 1 기습, 2 몰래 지나가기, 3 후퇴 (버튼과 같은 처리).
+        public static void DevChoose(int index)
+        {
+            if (IsOpen) Instance.OnChoose((Choice)index);
+        }
+
         private void OnChoose(Choice choice)
         {
             if (_rolling || _enemy == null) return;

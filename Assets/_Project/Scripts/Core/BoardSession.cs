@@ -29,6 +29,11 @@ namespace Fantasia.Core
         public HashSet<HexCoord> ClearedEncounters { get; } = new HashSet<HexCoord>();
         public HexCoord? PendingEncounterCoord { get; set; }
 
+        // 보드·전투가 같이 쓰는 3인 파티 (HP·집중력 등이 씬을 넘어 유지된다).
+        public Fantasia.Data.Party Party { get; set; }
+        // 조우 → 전투 씬으로 넘기는 적 구성·기습 결과. 전투 씬이 읽고 비운다.
+        public Fantasia.Combat.BattleSetup PendingBattle { get; set; }
+
         // Fixed slot array (not a growing list) so a specific grid position
         // can be targeted directly — StatusInventoryPanel's drag/drop needs
         // "move to slot index" and "swap these two slots", which a compact
@@ -190,7 +195,7 @@ namespace Fantasia.Core
                 // Uncapped frame rate on a scene full of 3D objects can pin a
                 // low-end GPU and crash the editor. This is the one place
                 // every scene's Start() reaches before anything else runs
-                // (see BoardTestController/CombatTestController.Start(),
+                // (see BoardTestController/BattleController.Start(),
                 // ItemAcquiredToast.Awake()), so cap it once here rather than
                 // per-scene.
                 Application.targetFrameRate = 60;

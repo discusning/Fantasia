@@ -14,9 +14,10 @@ namespace Fantasia.Data
         [TextArea] public string Role; // 역할 한 줄 (예: "근접 공격·수사·약점 분석")
 
         [Header("아트")]
-        // 초상 칸에 띄울 3D 모델 프리팹. 비워두면 기본 도형으로 조립한 임시 인형을 쓴다
-        // (UI/PlaceholderFigure). 정면이 +Z를 보도록 만든 프리팹을 넣으면 된다 (UI/PortraitStage).
-        public GameObject PortraitModel;
+        // 캐릭터 3D 모델 프리팹 — 전투 필드와 초상 칸(PortraitStage)이 같이 쓴다. 비워두면 기본 도형으로
+        // 조립한 임시 인형(UI/PlaceholderFigure). 정면이 +Z를 보도록 만든 프리팹을 넣으면 된다.
+        [UnityEngine.Serialization.FormerlySerializedAs("PortraitModel")]
+        public GameObject Model;
         // 2D 초상 그림이 따로 생기면 여기에 — 넣으면 3D 모델보다 우선한다.
         // Texture Type을 Sprite (2D and UI)로 임포트할 것.
         public Sprite Portrait;

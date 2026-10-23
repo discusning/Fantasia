@@ -23,6 +23,8 @@ namespace Fantasia.Data
         public string Id;
         public string DisplayName;
         public StatusEffectKind Kind;
+        // 적 HP 바·파티 카드의 상태 아이콘 칸에 쓰는 그림. 비우면 이름 앞 글자 배지로 대신한다.
+        public Sprite Icon;
 
         [Header("기간")]
         public int DurationTurns; // -1 = 정화 전까지, 0 = 즉시(스턴 등)

@@ -60,3 +60,6 @@ crashlytics-build.properties
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local player builds (테스트 빌드·자동 플레이 결과)
+/Builds/

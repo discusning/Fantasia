@@ -41,9 +41,19 @@ namespace Fantasia.Editor
             EnsureSniper(pistol);
 
             EnsureShadowHound();
+            EnsureSmallEnemy("Enemy_연성독거미유체", "enemy.small.alchemic_spider_larva", "연성 독거미(유체)", "키메라형",
+                hp: 36, speed: 44, physAtk: 0, magAtk: 6, physDef: 3, magDef: 5,
+                "연금술 시약과 독거미가 융합된 키메라. 판정 성공 시 [중독](1스택, 매턴 3 피해/속도 -5)을 부여함.");
+            EnsureSmallEnemy("Enemy_역병쥐", "enemy.small.plague_rat", "역병 쥐", "야수형",
+                hp: 28, speed: 66, physAtk: 8, magAtk: 0, physDef: 4, magDef: 1,
+                "18세기 유럽 도시에 우글거리는 병균 쥐. 판정 성공 시 [약한 출혈](매턴 지속 -2<방무>)과 [속박]을 부여함.");
+            EnsureSmallEnemy("Enemy_가고일유체", "enemy.small.gargoyle_larva", "가고일 유체", "구조물형",
+                hp: 42, speed: 35, physAtk: 10, magAtk: 0, physDef: 6, magDef: 6,
+                "잭 더 리퍼를 숭배하는 정보원. 판정 성공 시 아군의 공격력 감쇠 디버프 부여 [공격력 -3]");
             EnsureWeakBleed();
+            UIThemeSetup.EnsureAsset();
             AssetDatabase.SaveAssets();
-            Debug.Log("[GameDataSeed] 샘플 자산 생성/갱신 완료 (1차 3직업: 명탐정·역병 의사·저격수 + 시작 무기, 현장 검증, 그림자 사냥개, 약한 출혈)");
+            Debug.Log("[GameDataSeed] 샘플 자산 생성/갱신 완료 (1차 3직업: 명탐정·역병 의사·저격수 + 시작 무기, 현장 검증, 1막 소형 적 4종, 약한 출혈)");
         }
 
         private static T LoadOrCreate<T>(string dir, string name) where T : ScriptableObject
@@ -203,6 +213,30 @@ namespace Fantasia.Editor
             return j;
         }
 
+        // System.md "소형 적" + "기존 일반 적의 보완 스탯" 표 (1막 소형 4종 공통: 2슬롯·45%).
+        private static EnemyDefinition EnsureSmallEnemy(string assetName, string id, string displayName, string typeTag,
+            int hp, int speed, int physAtk, int magAtk, int physDef, int magDef, string trait)
+        {
+            var e = LoadOrCreate<EnemyDefinition>(EnemyDir, assetName);
+            e.Id = id;
+            e.DisplayName = displayName;
+            e.Size = EnemySize.Small;
+            e.TypeTag = typeTag;
+            e.MaxHP = hp;
+            e.Speed = speed;
+            e.PhysicalAttack = physAtk;
+            e.MagicAttack = magAtk;
+            e.PhysicalDefense = physDef;
+            e.MagicDefense = magDef;
+            e.SlotCount = 2;
+            e.SlotSuccessRate = 0.45f;
+            e.HasEvasionState = false;
+            e.TraitDescription = trait;
+            e.DeploymentAct = "1막";
+            EditorUtility.SetDirty(e);
+            return e;
+        }
+
         private static EnemyDefinition EnsureShadowHound()
         {
             var e = LoadOrCreate<EnemyDefinition>(EnemyDir, "Enemy_그림자사냥개");
@@ -218,6 +252,7 @@ namespace Fantasia.Editor
             e.MagicDefense = 10;
             e.SlotCount = 2;
             e.SlotSuccessRate = 0.45f;
+            e.HasEvasionState = true;
             e.TraitDescription = "[회피 상태] 패시브 보유. 공격 판정 성공 시 대상에게 [혼란]을 부여하며 타임라인을 [방해함] 위치로 밀어냄.";
             e.DeploymentAct = "1막";
             EditorUtility.SetDirty(e);

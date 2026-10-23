@@ -71,7 +71,14 @@ namespace Fantasia.Editor
 
             var boardGO = new GameObject("BoardManager");
             var hexBoard = boardGO.AddComponent<HexBoard>();
-            hexBoard.EncounterEnemyPool = shadowHound != null ? new[] { shadowHound } : System.Array.Empty<EnemyDefinition>();
+            // 1막 소형 적 4종 (System.md 소형 적) — 인카운터 칸마다 이 중 하나.
+            hexBoard.EncounterEnemyPool = System.Array.FindAll(new[]
+            {
+                shadowHound,
+                AssetDatabase.LoadAssetAtPath<EnemyDefinition>("Assets/_Project/Data/Enemies/Enemy_연성독거미유체.asset"),
+                AssetDatabase.LoadAssetAtPath<EnemyDefinition>("Assets/_Project/Data/Enemies/Enemy_역병쥐.asset"),
+                AssetDatabase.LoadAssetAtPath<EnemyDefinition>("Assets/_Project/Data/Enemies/Enemy_가고일유체.asset"),
+            }, e => e != null);
             var boardTestController = boardGO.AddComponent<BoardTestController>();
             boardTestController.PlaceholderLandmarks = PlaceholderDataSetup.EnsureLandmarks();
             boardTestController.TestHeroJob = detectiveJob;

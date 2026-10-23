@@ -119,6 +119,14 @@ namespace Fantasia.Data
             // 부활 횟수(LP)는 레벨업으로 회복하지 않는다.
         }
 
+        // 마법 무기 기본 공격·스킬 MP. 부족하면 쓰지 않고 false.
+        public bool TrySpendMP(int amount)
+        {
+            if (amount < 0 || amount > CurrentMP) return false;
+            CurrentMP -= amount;
+            return true;
+        }
+
         // 스킬 비용·추가 집중(슬롯 확정) 공용. 부족하면 아무것도 쓰지 않고 false.
         public bool TrySpendFocus(int amount)
         {

@@ -15,6 +15,8 @@ MonoBehaviour:
   Id: 0
   DisplayName: "\uBA85\uD0D0\uC815"
   Role: "\uADFC\uC811 \uACF5\uACA9\xB7\uC218\uC0AC\xB7\uC57D\uC810 \uBD84\uC11D"
+  Model: {fileID: 0}
+  Portrait: {fileID: 0}
   StartingHP: 108
   StartingMP: 0
   StartingFocus: 3

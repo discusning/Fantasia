@@ -1,44 +1,68 @@
 using Fantasia.Combat;
 using Fantasia.Core;
+using Fantasia.Data;
 using Fantasia.Items;
+using Fantasia.UI;
+using Fantasia.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Fantasia.Editor
 {
-    // Combat needs its own camera treatment — a low, close battle-line view,
-    // nothing like the overworld's 3/4 top-down board (see the reference in
-    // Docs/Concept_Image/Concept). Kept as a separate scene/scaffold so the two
-    // viewpoints don't get tangled together.
+    // 전투 씬 — 보드의 3/4 탑다운과 다른 낮은 대치 구도 (참고: Fantasia_인터페이스_사진원본/
+    // 01_포더킹1_실제_스크린샷/05_턴제_전투와_공격대상_선택_한국어.jpg). 참가자·UI는 BattleController가
+    // Play 때 BoardSession.PendingBattle로 직접 만들어서, 씬에는 바닥·조명·카메라·관리자만 저장한다.
     public static class CombatTestSceneSetup
     {
         private const string ScenePath = "Assets/_Project/Scenes/Combat/CombatTest.unity";
-        private const float LineSpacing = 2f;
-        private const float SideOffset = 4f;
-        private const int CombatantsPerSide = 3;
 
         [MenuItem("Fantasia/Setup Combat Test Scene")]
         public static void CreateScene()
         {
             BuildScene();
-            // Unlike the board (which regenerates tiles procedurally on Play),
-            // combatants have no spawner yet — bake them into the saved scene.
-            SpawnCombatantsAndManager();
+            SpawnManager();
             EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
             BuildSettingsUtility.EnsureInBuildSettings(ScenePath);
-            Debug.Log("전투 테스트 씬 생성 완료: " + ScenePath + " — Play 후 화면 버튼으로 테스트하세요.");
+            Debug.Log("전투 테스트 씬 생성 완료: " + ScenePath + " — 보드에서 조우하거나 이 씬을 바로 Play.");
         }
 
-        // -executeMethod entry point for headless camera-framing verification.
+        // -executeMethod: 씬을 만들어 저장한 뒤, Play 첫 화면(기습 성공 → 아군 차례, 첫 적 조준 중)을 재현해 찍는다.
         public static void CreateSceneAndCapture()
         {
-            var cam = BuildScene();
-            SpawnCombatantsAndManager();
+            GameDataSeed.SeedAll();
+            CreateScene();
+
+            BoardSession.EnsureExists();
+            var session = BoardSession.Instance;
+            session.Party = null; // BattleController 기본 3인
+            session.PendingBattle = new BattleSetup { Opening = EncounterOutcome.AmbushSuccess };
+            foreach (var name in new[] { "Enemy_그림자사냥개", "Enemy_역병쥐", "Enemy_가고일유체" })
+                session.PendingBattle.Enemies.Add(AssetDatabase.LoadAssetAtPath<EnemyDefinition>($"Assets/_Project/Data/Enemies/{name}.asset"));
+
+            var controller = Object.FindFirstObjectByType<BattleController>();
+            controller.Begin();
+            controller.PreviewTargeting();
+
+            var cam = Camera.main;
+            PortraitStudio.RenderAllNow();
+            ToCamera(Object.FindFirstObjectByType<PartyHudPanel>(), cam, 2f);
+            ToCamera(Object.FindFirstObjectByType<BattleHud>(), cam, 1f);
+            Canvas.ForceUpdateCanvases();
             EditorScreenshotUtility.Capture(cam, "combat_test_screenshot.png");
         }
 
-        private static Camera BuildScene()
+        private static void ToCamera(Component owner, Camera cam, float distance)
+        {
+            if (owner == null) return;
+            var canvas = owner.GetComponentInChildren<Canvas>(true);
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = cam;
+            canvas.planeDistance = distance;
+        }
+
+        private static void BuildScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -47,54 +71,39 @@ namespace Fantasia.Editor
             light.type = LightType.Directional;
             light.intensity = 1.2f;
             light.color = new Color(1f, 0.85f, 0.7f);
-            lightGO.transform.rotation = Quaternion.Euler(35f, -50f, 0f);
+            lightGO.transform.rotation = Quaternion.Euler(40f, -40f, 0f);
 
             var groundGO = GameObject.CreatePrimitive(PrimitiveType.Plane);
             groundGO.name = "Arena Ground";
+            groundGO.transform.localScale = new Vector3(3f, 1f, 3f);
             groundGO.GetComponent<Renderer>().sharedMaterial =
-                new Material(Shader.Find("Standard")) { color = new Color(0.55f, 0.42f, 0.35f) };
+                new Material(Shader.Find("Standard")) { color = new Color(0.45f, 0.35f, 0.3f) };
 
             var cameraGO = new GameObject("Main Camera");
             cameraGO.tag = "MainCamera";
             var cam = cameraGO.AddComponent<Camera>();
             cameraGO.AddComponent<AudioListener>();
-            cam.fieldOfView = 55f;
+            cam.fieldOfView = 36f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.2f, 0.16f, 0.2f);
 
-            // Low, close, over-the-shoulder angle from just behind the party
-            // line, looking across the battle line at the enemies.
-            cameraGO.transform.position = new Vector3(-SideOffset - 1.5f, 2f, -5.5f);
-            cameraGO.transform.LookAt(new Vector3(SideOffset - 1.5f, 1.1f, 0.5f));
+            // 아군 줄 바로 뒤·위에서 적 줄을 비스듬히 내려다보는 구도. 아래 1/4은 파티 카드, 위는 타임라인·적 HP 바.
+            cameraGO.transform.position = new Vector3(-9f, 7.5f, -12.5f);
+            cameraGO.transform.LookAt(new Vector3(1.6f, -0.4f, 0.6f));
 
             EditorSceneManager.SaveScene(scene, ScenePath);
-            EditorSceneManager.OpenScene(ScenePath);
-
-            return GameObject.Find("Main Camera").GetComponent<Camera>();
         }
 
-        private static void SpawnCombatantsAndManager()
+        private static void SpawnManager()
         {
-            SpawnLine(-SideOffset, new Color(0.25f, 0.4f, 0.85f), "Party", facesRight: true);
-            SpawnLine(SideOffset, new Color(0.8f, 0.25f, 0.25f), "Enemy", facesRight: false);
-            var combatManager = new GameObject("CombatManager").AddComponent<CombatTestController>();
+            var controller = new GameObject("BattleManager").AddComponent<BattleController>();
             var items = PlaceholderDataSetup.EnsureItems();
-            combatManager.PossibleLoot = System.Array.ConvertAll(items,
-                item => new LootEntry(item, LootTable.DefaultWeight(item.Category)));
+            controller.PossibleLoot = System.Array.ConvertAll(items, item => new LootEntry(item, LootTable.DefaultWeight(item.Category)));
+
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();
-        }
-
-        private static void SpawnLine(float x, Color color, string label, bool facesRight)
-        {
-            var positions = BattleFormation.Line(CombatantsPerSide, LineSpacing);
-            var material = new Material(Shader.Find("Standard")) { color = color };
-
-            for (int i = 0; i < CombatantsPerSide; i++)
-            {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                go.name = $"{label} {i + 1}";
-                go.transform.position = new Vector3(x, 1f, positions[i].z);
-                go.transform.rotation = Quaternion.LookRotation(facesRight ? Vector3.right : Vector3.left);
-                go.GetComponent<Renderer>().sharedMaterial = material;
-            }
+            var eventSystem = new GameObject("EventSystem");
+            eventSystem.AddComponent<EventSystem>();
+            eventSystem.AddComponent<StandaloneInputModule>();
         }
     }
 }
