@@ -1,114 +1,96 @@
-# Fantasia
+# Fantasia (판타지아, 가제)
 
-유한대학교 게임콘텐츠, 게임엔진, 팀플
+유한대학교 게임콘텐츠 · 게임엔진 팀 프로젝트 — Unity 3D 턴제 보드 RPG (로그라이크)
 
-3D 턴제 보드게임. *For the King*(헥스 보드 이동, 주사위 판정, 파티 대형 기반 전투, 캠프 사이클)에서 시스템적 영감을 받아 제작 중.
+> **1774년 런던에서 시작하는 18세기 오컬트 판타지.** 탐정 사무소의 명탐정이 연쇄 살인사건을 쫓다
+> 영생을 위해 "잭 더 리퍼"의 강림을 준비하는 교단 **붉은 밤**의 영혼 수확망과 마주한다.
+> 런던 → 베르사유 → 로마 제국 3막, 열린 결말. (모티브: *For the King* — 헥스 보드 + 슬롯 판정 전투)
+
+## 게임 한눈에 보기
+
+| 항목 | 내용 |
+|---|---|
+| 플레이 | 솔로 1명이 3인 파티 조작 — 1차 직업: **명탐정 · 역병 의사 · 저격수** (추가 5직업은 후속) |
+| 보드 | 주사위 1~6 이동, 인카운터·이벤트 칸, 도시 거점 |
+| 조우 | 싸우기 / 기습(인지) / 몰래 지나가기(속도) / 후퇴 |
+| 전투 | 아군·적 통합 **속도 큐**, 무기 **슬롯 판정**(2·3·4슬롯, 전부 성공 = 크리티컬 → 방어 무시 2배), 집중력으로 슬롯 1개 확정 |
+| 자원 | HP · MP · 집중력 · **LP(부활 횟수)** — LP 0에서 HP 0이면 영구 사망 |
+| 성장 | 레벨 1~10, 무기 10계열 × 등급 6단계, 상태이상·직업 스킬 |
+| 1막 목표 | 새 게임부터 런던 보스 **검시관 아벨 모로** 처치 + 다음 지역 단서 확보까지 |
 
 ## 문서
 
-**기획**
-- 게임 디자인 문서(뼈대): [`Docs/GDD/GDD.md`](Docs/GDD/GDD.md)
-- 시스템 기획 원문: [`Docs/Planning/System.md`](Docs/Planning/System.md)
-- 스토리 기획 원문: [`Docs/Planning/Story.md`](Docs/Planning/Story.md)
+| 문서 | 내용 |
+|---|---|
+| [`Docs/GDD/GDD.md`](Docs/GDD/GDD.md) | 게임 디자인 요약 (기획서 기준) |
+| [`Docs/Planning/System.md`](Docs/Planning/System.md) | **시스템 기획 원문** (2026-10-21 확정 — 수치는 이 문서가 기준) |
+| [`Docs/Planning/Story.md`](Docs/Planning/Story.md) | 스토리 기획 원문 (1~3막) |
+| [`Docs/DevPlan/WorkPlan_M0-M1.md`](Docs/DevPlan/WorkPlan_M0-M1.md) | 개발 작업 계획·진행 기록·기획 확인 필요 항목 |
+| [`Docs/진행일지/`](Docs/진행일지/) | 날짜별 작업 요약 |
+| [`Docs/References/`](Docs/References/) | 리서치 자료 (모티브 참고용 — 그대로 복제 금지) |
 
-**리서치 / 참고 자료** (전부 모티브 참고용 — 그대로 복제 금지)
-- For the King 시스템 리서치 노트: [`Docs/References/ForTheKing_SystemNotes.md`](Docs/References/ForTheKing_SystemNotes.md)
-- 게임 디자인 레퍼런스 조사: [`Docs/References/GameDesignInspiration_2026-09-10.md`](Docs/References/GameDesignInspiration_2026-09-10.md)
-- Unity 개발/최적화 자료조사: [`Docs/References/UnityOptimization_2026-09-10.md`](Docs/References/UnityOptimization_2026-09-10.md)
-- 지형지물 정보창 UI 리서치(10개 게임 사례): [`Docs/References/LandmarkUI_Research_2026-09-13.md`](Docs/References/LandmarkUI_Research_2026-09-13.md)
-- 검토 중인 무료 Unity 에셋 목록(미다운로드): [`Docs/References/UnityAssets.md`](Docs/References/UnityAssets.md)
+## 개발 진행 현황 (개발 업무 D01~D30 기준)
 
-**작업 기록**
-- 진행일지(날짜별, 무엇을 왜 바꿨는지): [`Docs/진행일지/`](Docs/진행일지/)
+| 상태 | 업무 |
+|---|---|
+| ✅ 구현·검증 | D03 데이터 구조·검증 · D04 파티·자원·레벨 · D08 조우 판정 · D09 전투 순서 · D10 슬롯·피해·회피 · D11 3직업 스킬 12개 · D12 상태이상 1차(9종) · D13 1막 소형 적 4종 |
+| 🟡 일부 | D01 (테스트 빌드 ✅, URP 미정) · D05/D06 (규칙만 — 보드 맵·파티 이동 방식 기획 확인 중) · D26 (전투·조우·파티 UI) · D29 (전투 로그·자동 플레이·빌드) |
+| ⬜ 다음 | D21 쓰러짐·부활 → D19 전리품·경험치 → D17 인벤토리·소모품 → D14 1막 보스 → D20 상점 · D22 퀘스트 · D27 저장 |
 
-## Unity 프로젝트 열기
-프로젝트는 이미 생성되어 저장소에 커밋되어 있습니다 (Unity **6000.5.9f1**, 명령줄 배치 모드로 생성). 팀원은 새로 만들 필요 없이 그대로 열면 됩니다.
+자세한 내용과 기획 확인 대기 항목은 [작업 계획서](Docs/DevPlan/WorkPlan_M0-M1.md) 참고.
 
-1. Unity Hub 설치 후, Editor 버전 **6000.5.9f1** 설치 (다른 버전으로 열면 `Library/`가 재생성되며 임포트 시간이 오래 걸릴 수 있습니다).
-2. Unity Hub → **Add** → 클론한 `fantasia` 폴더 선택 → 프로젝트 열기.
-3. 최초 오픈 시 에셋 임포트가 진행됩니다 (`Library/`는 gitignore 대상이라 로컬에서 새로 생성됨).
-4. 기본값 확인: **Asset Serialization = Force Text**가 기본으로 적용되어 있습니다 (`ProjectSettings/EditorSettings.asset`). 이 Unity 버전부터는 meta 파일이 항상 보이는 방식(Visible Meta Files)만 지원하므로 별도 설정이 필요 없습니다.
-5. **렌더 파이프라인 미정 상태**: 현재는 Built-in Render Pipeline으로 생성되어 있고, URP는 아직 패키지로 추가하지 않았습니다. URP로 전환하기로 확정되면 Package Manager에서 `Universal RP` 설치 후 `Edit > Render Pipeline > Universal Render Pipeline > Upgrade Project Materials`로 마이그레이션하세요.
-6. 기본 씬(`Assets/Scenes/SampleScene` 등)이 남아있다면 정리하고, `Assets/_Project` 구조를 기준으로 작업하세요.
+## 실행·테스트
+
+**프로젝트 열기**: Unity **6000.5.9f1** 설치 → Unity Hub → Add → `fantasia` 폴더. (Built-in 렌더 파이프라인, URP 전환은 미정)
+
+**플레이**: `Overworld/BoardTest` 씬 Play → **Space** 주사위 → 초록 칸 클릭 이동 → 주황(인카운터) 칸 도착 시 조우 창 → 전투 씬 → 승리 후 보드 복귀.
+씬 내용이 이상하면 메뉴 `Fantasia > Setup Board Test Scene` / `Setup Combat Test Scene`으로 다시 만든다 (기존 씬 덮어씀).
+
+**Fantasia 메뉴**
+
+| 메뉴 | 용도 |
+|---|---|
+| `Data > Seed Sample Game Data` | 기획서 수치로 직업·무기·적·스킬·상태 데이터 생성/갱신 |
+| `Data > Validate Game Data` | 필수값·중복 ID·잘못된 참조 검사 |
+| `Data > Run ... Self-Test` | 전투 계산·순서·상태·스킬·조우 등을 System.md 수치와 대조 (콘솔에 "전부 통과") |
+| `Build > Windows Test Build` | `Builds/Windows/Fantasia.exe` 생성 |
+
+**자동 플레이 점검**: `Builds/Windows/Fantasia.exe -autoplay -autoplay-out <폴더> [-autoplay-enemy <적 Id>]`
+→ 보드 이동부터 전투·복귀까지 자동 진행하고 단계별 스크린샷 + 전투 로그(`autoplay_log.txt`)를 남긴다.
+
+## 아트 넣는 곳 (코드 수정 없이 교체)
+
+| 넣을 것 | 위치 |
+|---|---|
+| 패널·배너·버튼·게이지·슬롯·집중 칸·행동 아이콘·대상 표시·한글 글꼴 | `Assets/_Project/Resources/UITheme.asset` |
+| 캐릭터·적 3D 모델 (전투 필드·초상 공용, 정면 +Z) | 직업·적 데이터의 **Model** |
+| 2D 초상 (넣으면 3D보다 우선) | 직업·적 데이터의 **Portrait** |
+| 상태이상·스킬 아이콘 | 상태·스킬 데이터의 **Icon** |
+
+비어 있으면 단색 도형과 임시 인형으로 그린다.
 
 ## 폴더 구조
 
 ```
-fantasia/
-├── Assets/
-│   ├── _Project/              # 우리가 만드는 모든 콘텐츠 (언더스코어로 최상단 정렬)
-│   │   ├── Scripts/
-│   │   │   ├── Core/          # 게임/씬 매니저, 상태 머신, 부트스트랩
-│   │   │   ├── Board/         # 헥스 보드, 이동, POI, 챕터 진행
-│   │   │   ├── Combat/        # 턴 순서, 액션, 포커스 리소스
-│   │   │   ├── Dice/          # 범용 확률 판정 모듈 (전투/이벤트/캠프 공용)
-│   │   │   ├── Characters/    # 파티원 스탯/성장
-│   │   │   ├── Items/         # 인벤토리, 장비, 상점
-│   │   │   ├── Events/        # 텍스트 이벤트/인카운터
-│   │   │   ├── Camp/          # 야영, 자원 소비
-│   │   │   ├── Quests/        # 퀘스트/챕터 목표
-│   │   │   ├── SaveSystem/    # 세이브/로드
-│   │   │   ├── UI/            # UI 로직
-│   │   │   ├── Utils/         # 공용 유틸리티
-│   │   │   └── Editor/        # 커스텀 에디터 툴 (Editor 전용 asmdef)
-│   │   ├── Prefabs/           # Characters / Enemies / Environment / UI / VFX
-│   │   ├── Art/                # Models / Materials / Textures / Animations
-│   │   ├── Audio/              # Music / SFX / Voice
-│   │   ├── Scenes/             # MainMenu / Overworld / Combat / Dialogue / Town
-│   │   ├── Data/                # ScriptableObject 데이터 (Characters/Items/Landmarks/Enemies/Events/Boards)
-│   │   └── UI/                  # Fonts / Sprites
-│   ├── Plugins/                # 네이티브/서드파티 플러그인
-│   └── ThirdParty/             # 에셋스토어 등 외부 에셋 (직접 수정 X)
-├── Docs/                        # 기획 문서 (Unity에는 임포트되지 않음, 루트에 위치)
-│   ├── GDD/
-│   ├── References/               # 시스템 리서치/디자인 참고/최적화 자료 (모두 영문 폴더명, 내용은 한국어)
-│   └── Concept_Image/           # 컨셉/참고 이미지
-│       ├── Concept/             # 자체 제작 컨셉 아트
-│       └── Images/              # 외부 참고 자료 이미지
-├── .gitignore                   # Unity 표준 gitignore
-├── .gitattributes               # meta 파일 텍스트 처리 + Git LFS 패턴
-└── README.md
+Assets/_Project/
+├── Scripts/
+│   ├── Data/      # 데이터 정의(직업·적·무기·스킬·상태) + 파티·상태 런타임
+│   ├── Combat/    # 전투 진행·순서·판정·적 AI
+│   ├── World/     # 이동·월드 시계·조우 규칙
+│   ├── Board/     # 헥스 보드·보드 테스트
+│   ├── UI/        # 조우 창·전투 HUD·파티 HUD·초상·테마
+│   ├── Core/      # 세션(씬 간 유지)·자동 플레이 점검
+│   └── Editor/    # 시드·검증·셀프테스트·씬 생성·빌드
+├── Data/          # ScriptableObject 데이터 자산 (Jobs/Weapons/Enemies/Skills/StatusEffects)
+├── Resources/     # UITheme
+└── Scenes/        # Overworld/BoardTest · Combat/CombatTest · Dialogue/DialogueTest
+Docs/              # 기획·계획·리서치 (Unity 임포트 대상 아님)
 ```
 
-`Docs/`는 `Assets/` 바깥(프로젝트 루트)에 있어 Unity 에디터가 임포트하지 않습니다.
+## 협업 규칙
 
-## 스크립트 아키텍처 메모
-- `Assets/_Project/Scripts/`에 `Fantasia.Scripts` 런타임 어셈블리 정의(asmdef)를 배치해 컴파일 시간을 단축했습니다.
-- `Scripts/Editor/`는 별도 `Fantasia.Scripts.Editor` asmdef로 분리(Editor 플랫폼 전용) — 런타임 빌드에 에디터 코드가 섞이지 않도록 함.
-- 기능이 늘어나면 `Board`, `Combat` 등 모듈별로 asmdef를 추가로 쪼개는 것을 권장 (현재는 단일 어셈블리로 시작, 과도한 초기 분리는 지양).
-- 게임 데이터(캐릭터 스탯, 아이템, 이벤트 등)는 하드코딩 대신 `Data/` 아래 ScriptableObject로 관리 — 디자이너가 코드 수정 없이 콘텐츠 추가 가능.
-
-## 구현 현황 / 테스트 방법
-아직 아트/애니메이션 없이 로직만 먼저 만드는 단계입니다. Unity Editor 상단 메뉴 **Fantasia**에서 실행:
-
-- **Setup Board Test Scene** — 헥스 보드(`Scripts/Board`) 생성. Play 버튼으로 테스트:
-  - **이동**: Space로 주사위 굴려 이동 범위(초록) 확인 → 클릭하면 굴린 만큼의 타일을 한 칸씩 밟으며 이동(순간이동 아님). 어두운 타일은 진입 불가(장애물, `HexBoard.obstacleChance`), **주황 타일은 인카운터**(`HexBoard.encounterChance`) — 밟고 도착하면 자동으로 `CombatTest` 씬으로 전환됩니다.
-  - **I 키 — 스테이터스/인벤토리 창** (`Scripts/UI/StatusInventoryPanel.cs`, 참고: `Docs/Concept_Image/Images/Fantasia_Status_Inventory.png`): 캐릭1/2/3 탭으로 캐릭터 전환, 아이템 드래그로 위치 교환/버리기, 더블클릭 사용, 우클릭 장비 착용.
-  - **퀘스트 추적 UI** (화면 우측, 항상 표시 — `Scripts/UI/QuestTrackerPanel.cs`, 참고: `Docs/Concept_Image/Concept/판타지아_UI(지형 오브젝트, 퀘스트).png`): 메인 1개 + 서브 여러 개 동시 표시 가능, 메인이 항상 맨 위 고정되고 서브는 그 아래로 쌓임. 제목 색으로 메인(금색)/서브(실버) 구분 + 은은한 반짝임 효과. 각 줄 제목 오른쪽 끝의 **"달성!" 버튼**을 누르면 해당 퀘스트가 완료 처리됨(`BoardSession.CompleteQuest`) — 실제 완료 조건은 아직 없어 플레이어가 직접 누르는 수동 방식. 실제 퀘스트 콘텐츠는 아직 없어 더미 데이터로 UI/메커니즘만 검증하는 단계.
-  - **지형지물 정보창** (`Ctrl+우클릭` — `Scripts/UI/LandmarkInfoPanel.cs`, 참고: `Docs/References/LandmarkUI_Research_2026-09-13.md`): 보드 위 고정 위치의 지형지물 타일 3종(성소/감옥/유적)을 Ctrl+우클릭하면 정보 팝업 표시. 아직 3D 모델이 없어 타일 색+배지 글자로 종류를 구분하는 placeholder 단계.
-  - **대화창 프로토타입** (`Scripts/UI/DialoguePanel.cs`, `Scripts/UI/DialogueStageController.cs`, 참고: `Docs/Concept_Image/Concept/판타지아_UI(대화).png`): 더미 서브 퀘스트를 퀘스트 창의 "달성!" 버튼으로 완료하면 전용 **대화 씬(`DialogueTest`)**으로 전환됩니다 — 3D 대화 상대가 있는 공간으로 이동한 뒤(아직 모델이 없어 캡슐로 대체) 화면 하단에 VN 스타일 대화창이 뜨고, 대사마다 화자가 바뀔 수 있습니다(대화창 상단에 화자 이름 표시, 현재 말하는 캐릭터만 밝게 강조하고 나머지는 어둡게). 기본은 화면에 캐릭터 1명만 등장(대부분의 대화가 그렇듯) — 플레이어 자신의 대사("개발자")는 초상화 없이 텍스트로만 표시됩니다. 2명 이상이 동시에 필요한 특정 장면은 그때그때 추가하는 방식(`DialogueStageController`는 캐릭터 수와 무관하게 동작). 우상단 **"스킵" 버튼**은 항상 존재하며 대화를 완전히 닫지 않고 마지막 줄(다음 중요 지점)까지만 건너뜁니다(Ren'Py 등 VN의 "스킵은 다음 선택지 전에 멈춘다" 관례 참고). 마지막 줄이 퀘스트 제안이면 **"수락"/"거절"** 버튼이, 아니면 평범한 **"닫기"** 버튼만 뜹니다(퀘스트 제안이 없는 대화에 수락/거절이 뜨면 어색하다는 판단 — WoW의 "거절 버튼이 없는 강제 퀘스트" 불만 사례 참고). 닫히면 자동으로 `BoardTest`로 복귀합니다. 캐릭터 초상화는 아직 없는 최소 단계(GDD 6.6 참고). 더미 퀘스트 2개가 서로 이어져 있어 두 마무리를 모두 실제 플레이로 볼 수 있습니다 — "1차 개발 완성"은 퀘스트 제안(수락/거절)으로 끝나고, 수락해서 생기는 "2차 개발 완성"은 완료하면 제안 없이 평범하게 "닫기"로 끝납니다.
-- **Setup Dialogue Test Scene** — 위 대화창 프로토타입이 이동하는 대화 전용 씬(`Scripts/Editor/DialogueTestSceneSetup.cs`) 생성. 단독으로 열어서 확인할 수도 있고, 보통은 보드에서 퀘스트를 완료하면 자동으로 전환됩니다.
-- **Setup Combat Test Scene** — 파티(파랑) vs 적(빨강) 3:3 전투 프로토타입(`Scripts/Combat`). Speed 기반 턴 큐 + 무기 슬롯 롤 판정을 화면 버튼(공격/포커스 소모/턴 넘기기)으로 직접 테스트 가능. 오버월드와 다른 로우앵글 대치 구도(참고: `Docs/Concept_Image/Concept/판타지아 전투 화면.jpg`). 승리하면 "보드로 돌아가기" 버튼으로 오버월드에 복귀 — 밟았던 인카운터 타일이 청록색(클리어됨)으로 바뀌고 재도전이 발동하지 않습니다.
-- **Run Combat Slot-Roll Self-Test** / **Run Turn Queue Self-Test** / **Run Pathfinding Self-Test** / **Run Board Session Self-Test** — 각각 슬롯 판정 확률, 자동 전투 진행, 이동 경로 계산, 보드 재생성 결정성/인카운터 클리어 유지를 화면 없이 시뮬레이션해 콘솔에 결과 출력.
-
-세 테스트 씬(오버월드/전투/대화) 모두 화면 우상단에 씬 전환 버튼(`Scripts/Core/DevSceneNav.cs`)이 있어 Play 중에 자유롭게 오갈 수 있습니다. 시작 씬은 `Overworld/BoardTest`(Build Settings 0번)입니다.
-
-플레이어 위치와 클리어한 인카운터는 `Scripts/Core/BoardSession.cs`(씬 전환에도 살아남는 세션, `DevSceneNav`와 같은 패턴)에 저장됩니다. 보드는 씬을 나갔다 돌아와도 매번 같은 시드로 재생성되므로 레이아웃이 그대로 유지됩니다(캐릭터 스탯/인벤토리 등 다른 데이터는 아직 세션에 연결되지 않음 — 기획 확정 후 진행 예정).
-
-각 `Setup ...` 메뉴는 해당 테스트 씬을 처음부터 다시 만듭니다(기존 씬 내용 덮어씀) — 씬 안에서 수동으로 손댄 게 있다면 재실행 전 백업하세요.
-
-캐릭터/아이템 데이터는 아직 실제 기획값이 아니라 UI 작업용 placeholder입니다 (`Data/Characters`, `Data/Items`, `Scripts/Editor/PlaceholderDataSetup.cs`에서 생성). Canvas UI를 쓰기 위해 `com.unity.ugui` 패키지를 추가했습니다(기본 명령줄 프로젝트 생성 시 빠져 있었음).
-
-**Play 모드 프레임 제한(60 FPS)**: 저사양 GPU에서 3D 오브젝트가 많은 씬을 프레임 제한 없이 돌리면 에디터가 과부하로 죽을 수 있어, `BoardSession` 초기화 시점(모든 테스트 씬의 `Start()`가 가장 먼저 거치는 지점)에 `Application.targetFrameRate = 60`을 걸어뒀습니다(`Scripts/Core/BoardSession.cs`). 콘텐츠(모델/이펙트)가 늘어날수록 필요하면 더 낮추되, 프로토타입 초반처럼 무제한으로 되돌리지 않는 것을 기본 방침으로 합니다.
-
-## 협업 / 버전 관리
-- 기본 브랜치: `main`.
-- 팀원 각자 로컬에서 `git config --global user.name/user.email` 설정 필요.
-- **바이너리 에셋을 추가하기 전에** 저장소 안에서 `git lfs install`을 한 번 실행하세요. `.gitattributes`에 모델/텍스처/오디오용 LFS 패턴이 이미 설정되어 있습니다 (Unity 프로젝트에서 바이너리를 LFS 없이 먼저 커밋하면 나중에 히스토리 재작성 없이는 되돌리기 어렵습니다).
-  - Public 저장소 + 무료 플랜 조합이라면 GitHub 기준 LFS 무료 할당량이 저장소당 월 1GB(용량/대역폭)입니다. 팀 작업으로 3D 에셋이 늘어나면 데이터 팩 구매/플랜 전환이 필요할 수 있습니다.
-- 라이선스: [`LICENSE`](LICENSE) — GPLv3.
-- Force Text / meta 파일 설정은 위 "Unity 프로젝트 열기" 4번 참고.
-- **의미 없는 씬/에셋 diff는 커밋하지 않기**: `Setup Board Test Scene` 같은 씬 재생성 메뉴를 실행하면 Unity가 GameObject `fileID`를 매번 새로 부여해서, 실제 내용(오브젝트 목록, 필드 값)은 동일한데 수백 줄짜리 diff만 생기는 경우가 있습니다.
-  - 커밋 전에 `git diff`로 확인해서 **오브젝트 이름/개수/필드 값이 실제로 같고 `fileID` 숫자만 바뀐 경우엔 커밋하지 말고** `git checkout -- <파일>`로 되돌리세요.
-  - 반대로 위치·수치·오브젝트 추가/삭제 등 실제 내용이 달라졌다면 정상적으로 커밋합니다.
-  - 이 판단이 애매하면 `git diff` 결과를 보고 "이름이 같은 오브젝트 쌍의 필드 값이 1:1로 같은지"만 확인하면 됩니다.
+- 기본 브랜치 `main` · 라이선스 [GPLv3](LICENSE)
+- 바이너리 에셋 추가 전 `git lfs install` (`.gitattributes`에 LFS 패턴 설정됨)
+- **fileID만 바뀐 씬 diff는 커밋하지 않는다** — `git diff`로 오브젝트·값이 같으면 `git checkout -- <파일>`
+- 코드는 에디터·게임에서 동작 확인 후 커밋
+- 수치는 `Docs/Planning/System.md`가 기준 — 다른 문서와 다르면 System.md를 따른다
