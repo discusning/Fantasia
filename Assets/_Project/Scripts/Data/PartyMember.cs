@@ -156,7 +156,37 @@ namespace Fantasia.Data
 
         public void Heal(int amount)
         {
+            if (IsPermanentlyDead) return;
             CurrentHP = Mathf.Min(MaxHP, CurrentHP + amount);
+        }
+
+        // ── D21 쓰러짐·부활·영구 사망 (System.md "레벨·기본 자원" + "패배 시 약탈") ──
+        // HP 0 = 쓰러짐. LP가 있으면 1을 써서 부활할 수 있고, 없으면 영구 사망. LP 0이어도 HP가 남으면 생존.
+        public bool IsPermanentlyDead { get; private set; }
+        public bool IsDowned => CurrentHP <= 0 && !IsPermanentlyDead;
+
+        public bool TrySpendLP()
+        {
+            if (CurrentLP <= 0) return false;
+            CurrentLP--;
+            return true;
+        }
+
+        // 부활: 최대 HP의 ratio만큼(최소 1)으로 복귀. 출혈·화상·중독은 제거, 저주 등은 유지.
+        // MP·집중력·다른 상태는 자동으로 초기화하지 않는다. LP 차감은 호출부(TrySpendLP)에서.
+        public void Revive(float hpRatio)
+        {
+            if (IsPermanentlyDead) return;
+            CurrentHP = Mathf.Max(1, Mathf.FloorToInt(MaxHP * hpRatio));
+            Statuses.Remove(StatusEffectType.WeakBleed);
+            Statuses.Remove(StatusEffectType.Poison);
+            // 화상은 상태 2차 구현 때 여기 추가
+        }
+
+        public void MarkPermanentlyDead()
+        {
+            CurrentHP = 0;
+            IsPermanentlyDead = true;
         }
     }
 }

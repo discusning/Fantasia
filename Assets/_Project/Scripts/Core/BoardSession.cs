@@ -33,6 +33,21 @@ namespace Fantasia.Core
         public Fantasia.Data.Party Party { get; set; }
         // 조우 → 전투 씬으로 넘기는 적 구성·기습 결과. 전투 씬이 읽고 비운다.
         public Fantasia.Combat.BattleSetup PendingBattle { get; set; }
+        // 조우 칸에 들어오기 직전 칸 — 전원 퇴각·전원 쓰러짐 뒤 돌아가는 "직전 안전 타일" (D21).
+        public HexCoord LastSafeCoord { get; set; }
+
+        // 전원 영구 사망 → 플레이 종료 후 처음부터 (파티·진행·인벤토리·보드 시드 초기화).
+        public void ResetForNewGame()
+        {
+            Party = null;
+            PendingBattle = null;
+            PendingEncounterCoord = null;
+            PlayerPosition = default;
+            LastSafeCoord = default;
+            ClearedEncounters.Clear();
+            for (int i = 0; i < Inventory.Length; i++) Inventory[i] = null;
+            BoardSeed = Random.Range(int.MinValue, int.MaxValue);
+        }
 
         // Fixed slot array (not a growing list) so a specific grid position
         // can be targeted directly — StatusInventoryPanel's drag/drop needs

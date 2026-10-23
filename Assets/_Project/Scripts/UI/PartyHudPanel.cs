@@ -132,7 +132,7 @@ namespace Fantasia.UI
             card.Portrait.SetHighlighted(active);
 
             card.Level.text = m.Level.ToString();
-            card.Name.text = m.Job.DisplayName;
+            card.Name.text = m.IsPermanentlyDead ? $"{m.Job.DisplayName} (사망)" : m.IsDowned ? $"{m.Job.DisplayName} (쓰러짐)" : m.Job.DisplayName;
             card.Lp.text = $"LP {m.CurrentLP}";
             card.Statuses.Show(StatusChipRow.EntriesFor(m.Statuses, false));
             card.BigHp.text = m.CurrentHP.ToString();

@@ -24,6 +24,18 @@ namespace Fantasia.Data
 
         public IEnumerable<PartyMember> AliveMembers => _members.Where(m => m.IsAlive);
 
+        // 영구 사망하지 않은 파티원 (쓰러진 사람 포함). 전원 영구 사망이면 플레이 종료.
+        public IEnumerable<PartyMember> LivingMembers => _members.Where(m => !m.IsPermanentlyDead);
+        public bool IsWipedOut => _members.All(m => m.IsPermanentlyDead);
+
+        // 약탈 (패배 시 1회) — 소지 Cent의 percent%, 소수점 버림. 지갑 0이면 손실 0.
+        public int LoseCentPercent(int percent)
+        {
+            int loss = Cent * percent / 100;
+            Cent -= loss;
+            return loss;
+        }
+
         // 경험치는 살아 있는 파티원에게 각각 동일하게 지급한다 (System.md "레벨·기본 자원").
         public void GrantExperienceToSurvivors(int amount)
         {

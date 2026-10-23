@@ -42,9 +42,11 @@ namespace Fantasia.Combat
         private BattleUnit _hovered;
         private BattleSetup _setup;
 
-        // 지금 고르는 행동 — null이면 기본 공격. 대상 진영은 _targetAllies.
+        // 지금 고르는 행동 — null이면 기본 공격(또는 _reviving이면 부활). 대상 진영은 _targetAllies.
         private SkillDefinition _pendingSkill;
         private bool _targetAllies;
+        private bool _reviving; // D21 전투 중 부활 — 대상은 쓰러진(LP 남은) 아군
+        private readonly Dictionary<BattleUnit, Quaternion> _standingRotation = new();
 
         // 전투 로그 (D29 "재현 가능한 전투 로그") — 콘솔 [Battle] 줄 + 구독자(자동 플레이 점검 등).
         public static event System.Action<string> Logged;
@@ -75,6 +77,7 @@ namespace Fantasia.Combat
             _hud.AttackClicked += OnAttackClicked;
             _hud.DefendClicked += OnDefendClicked;
             _hud.RetreatClicked += OnRetreatClicked;
+            _hud.ReviveClicked += OnReviveClicked;
             _hud.EnemyBarClicked += OnUnitPicked;
             _hud.SkillChosen += OnSkillChosen;
             _hud.SetEnemies(_enemies);
@@ -126,7 +129,7 @@ namespace Fantasia.Combat
             {
                 _phase = Phase.ChoosingAction;
                 PartyHudPanel.SetActive(_current.Member, "행동 선택 중");
-                _hud.ShowActions(_current);
+                _hud.ShowActions(_current, CanRevive());
             }
             else
             {
@@ -195,17 +198,47 @@ namespace Fantasia.Combat
 
         private string TargetingHint()
         {
+            if (_reviving) return "부활 — 쓰러진 아군을 클릭하세요 (LP 1 소모, HP 30%) (우클릭: 취소)";
             string what = _pendingSkill != null ? _pendingSkill.DisplayName : "공격";
             return _targetAllies ? $"{what} — 대상 아군을 클릭하세요 (우클릭: 취소)" : $"{what} — 대상 적을 클릭하세요 (우클릭: 취소)";
         }
 
+        // 지금 고르는 행동의 대상이 될 수 있는지 — 부활은 쓰러진(LP 남은) 아군, 나머지는 전투 중인 해당 진영.
+        private bool IsValidTarget(BattleUnit unit)
+        {
+            if (unit == null) return false;
+            if (_reviving) return unit.IsAlly && unit.Member.IsDowned && unit.Member.CurrentLP > 0;
+            return unit.InBattle && unit.IsAlly == _targetAllies;
+        }
+
         private void OnUnitPicked(BattleUnit unit)
         {
-            if (_phase != Phase.ChoosingTarget || unit == null || !unit.InBattle || unit.IsAlly != _targetAllies) return;
+            if (_phase != Phase.ChoosingTarget || !IsValidTarget(unit)) return;
             StartCoroutine(PlayerAct(unit));
         }
 
-        // 비용 지불 → 쿨다운 → 효과. 기본 공격·스킬 공용 (target: 단일 대상, 전체 대상이면 null).
+        // ── D21 전투 중 부활: 살아 있는 아군의 행동 1회 + 대상 LP 1 → HP 30% (대상 LP 0이면 불가) ──
+        private bool CanRevive() => _allies.Any(a => a.IsAlly && a.Member.IsDowned && a.Member.CurrentLP > 0 && !a.HasRetreated);
+
+        private void OnReviveClicked()
+        {
+            if (_phase != Phase.ChoosingAction || !CanRevive()) return;
+            _pendingSkill = null;
+            _reviving = true;
+            BeginTargeting(allies: true);
+        }
+
+        private IEnumerator ResolveRevive(BattleUnit reviver, BattleUnit target)
+        {
+            target.Member.TrySpendLP();
+            target.Member.Revive(DefeatRules.InBattleReviveHpRatio);
+            StandUp(target);
+            Log($"{reviver.DisplayName} → {target.DisplayName} 부활 (LP 1 소모, 남은 LP {target.Member.CurrentLP}) · HP {target.CurrentHP}/{target.MaxHP} · 출혈·중독 제거 — 다음 라운드부터 행동");
+            _hud.PopText(_camera, ModelTop(target), $"부활 +{target.CurrentHP}", BattleHud.SlotSuccess);
+            yield return new WaitForSeconds(0.7f);
+        }
+
+        // 비용 지불 → 쿨다운 → 효과. 기본 공격·스킬·부활 공용 (target: 단일 대상, 전체 대상이면 null).
         private IEnumerator PlayerAct(BattleUnit target)
         {
             _phase = Phase.Resolving;
@@ -214,6 +247,14 @@ namespace Fantasia.Combat
             var actor = _current;
             var skill = _pendingSkill;
             _pendingSkill = null;
+
+            if (_reviving)
+            {
+                _reviving = false;
+                yield return ResolveRevive(actor, target);
+                NextTurn();
+                yield break;
+            }
 
             if (skill == null)
             {
@@ -423,13 +464,23 @@ namespace Fantasia.Combat
         private static Color ResultColor(AttackOutcome outcome) =>
             outcome.Evaded ? BattleHud.SlotFailure : outcome.IsCritical ? BattleHud.CritColor : BattleHud.SlotSuccess;
 
+        // 쓰러짐 연출. 적은 대상 선택에서 빠지게 콜라이더를 끄고, 아군은 부활 대상으로 클릭할 수 있게 둔다.
         private void KnockDown(BattleUnit unit)
         {
             if (!_models.TryGetValue(unit, out var model)) return;
-            model.transform.rotation *= Quaternion.Euler(0f, 0f, 90f);
-            foreach (var col in model.GetComponents<Collider>()) col.enabled = false;
+            if (!_standingRotation.ContainsKey(unit)) _standingRotation[unit] = model.transform.rotation;
+            model.transform.rotation = _standingRotation[unit] * Quaternion.Euler(0f, 0f, 90f);
+            if (!unit.IsAlly) foreach (var col in model.GetComponents<Collider>()) col.enabled = false;
         }
 
+        private void StandUp(BattleUnit unit)
+        {
+            if (_models.TryGetValue(unit, out var model) && _standingRotation.TryGetValue(unit, out var rotation))
+                model.transform.rotation = rotation;
+        }
+
+        // ── 전투 종료 (D21, System.md "패배 시 약탈") ──
+        // 승리: 적 전멸 / 퇴각: 쓰러지지 않은 아군이 모두 이탈 / 패배: 아군 전원 쓰러짐.
         private bool CheckBattleEnd()
         {
             if (_phase == Phase.Finished) return true;
@@ -440,7 +491,8 @@ namespace Fantasia.Combat
             _phase = Phase.Finished;
             foreach (var ally in _allies) ally.Statuses.ClearOnBattleEnd(); // 중독처럼 남는 것만 유지
             _hud.SetTimeline(_queue.Preview(10), _queue.Round);
-            Log($"전투 종료 — {(!enemiesLeft ? "승리" : _allies.Any(a => a.IsAlive) ? "퇴각" : "패배")} · 라운드 {_queue.Round} · 아군 HP {string.Join(", ", _allies.Select(u => $"{u.DisplayName} {u.CurrentHP}/{u.MaxHP}"))}");
+            bool wiped = enemiesLeft && !_allies.Any(a => a.IsAlive);
+            Log($"전투 종료 — {(!enemiesLeft ? "승리" : wiped ? "패배(전원 쓰러짐)" : "퇴각")} · 라운드 {_queue.Round} · 아군 HP {string.Join(", ", _allies.Select(u => $"{u.DisplayName} {u.CurrentHP}/{u.MaxHP} LP {u.Member.CurrentLP}"))}");
             PartyHudPanel.SetActive(null);
             HideMarker();
             var session = BoardSession.Instance;
@@ -448,20 +500,66 @@ namespace Fantasia.Combat
             if (!enemiesLeft)
             {
                 if (session.PendingEncounterCoord.HasValue) session.ClearedEncounters.Add(session.PendingEncounterCoord.Value);
+                string downed = SettleDowned(DefeatRules.PostBattleReviveHpRatio);
                 string loot = GrantLoot(session);
-                _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}\n(경험치·보상 표는 D19에서)", ReturnToBoard);
+                _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}\n(경험치·보상 표는 D19에서)", ReturnToBoard);
             }
-            else if (_allies.Any(a => a.IsAlive))
+            else if (!wiped)
             {
-                _hud.ShowResult("퇴각", "파티가 전투에서 이탈했다.\n조우는 그대로 남는다.", ReturnToBoard);
+                // 전원 이탈 → 직전 안전 타일. 단일·전원 이탈은 약탈 없음.
+                string downed = SettleDowned(DefeatRules.PostBattleReviveHpRatio);
+                session.PlayerPosition = session.LastSafeCoord;
+                Log("  → 전원 이탈: 직전 안전 타일로 이동 (약탈 없음)");
+                _hud.ShowResult("퇴각", $"파티가 전투에서 이탈해 직전 안전 타일로 물러났다.\n조우는 그대로 남는다.{downed}", ReturnToBoard);
             }
             else
             {
-                // D21(LP 부활·안전 타일 HP 50%·약탈) 전까지 임시 처리.
-                foreach (var ally in _allies) if (!ally.IsAlive) ally.Member.Heal(1);
-                _hud.ShowResult("패배", "파티가 쓰러졌다.\n(임시: HP 1로 보드 복귀 — LP 부활·약탈은 D21)", ReturnToBoard);
+                // 전원 쓰러짐: 약탈 1회(인원수만큼 반복하지 않음) → LP 남은 캐릭터는 LP 1로 안전 타일에서 HP 50% 복귀,
+                // LP 없는 캐릭터는 영구 사망. 아무도 복귀하지 못하면 플레이 종료.
+                int percent = DefeatRules.RollPlunderPercent();
+                int lost = session.Party.LoseCentPercent(percent);
+                Log($"  → 약탈 판정: 소지 Cent의 {percent}% → {lost} Cent 손실 (남은 {session.Party.Cent})");
+                string downed = SettleDowned(DefeatRules.WipeReturnHpRatio);
+
+                if (session.Party.IsWipedOut)
+                {
+                    Log("  → 전원 영구 사망 — 플레이 종료");
+                    _hud.ShowResult("게임 오버", $"파티 전원이 영구 사망했다.{downed}\n처음부터 다시 시작한다.", RestartGame, "처음부터 다시");
+                }
+                else
+                {
+                    session.PlayerPosition = session.LastSafeCoord;
+                    _hud.ShowResult("패배", $"파티가 쓰러졌다. 약탈 {lost} Cent ({percent}%).{downed}\n직전 안전 타일에서 다시 일어났다.", ReturnToBoard);
+                }
             }
             return true;
+        }
+
+        // 쓰러진 아군 정리: LP가 있으면 1을 써서 hpRatio로 복귀, 없으면 영구 사망. 결과 창에 붙일 문구를 돌려준다.
+        private string SettleDowned(float hpRatio)
+        {
+            var lines = new List<string>();
+            foreach (var ally in _allies.Where(a => a.Member.IsDowned))
+            {
+                if (ally.Member.TrySpendLP())
+                {
+                    ally.Member.Revive(hpRatio);
+                    lines.Add($"{ally.DisplayName}: LP 1 소모 → HP {ally.CurrentHP} (남은 LP {ally.Member.CurrentLP})");
+                }
+                else
+                {
+                    ally.Member.MarkPermanentlyDead();
+                    lines.Add($"{ally.DisplayName}: LP 없음 → 영구 사망");
+                }
+                Log("  → " + lines[^1]);
+            }
+            return lines.Count > 0 ? "\n" + string.Join("\n", lines) : "";
+        }
+
+        private void RestartGame()
+        {
+            BoardSession.Instance.ResetForNewGame();
+            SceneManager.LoadScene(BoardSceneName);
         }
 
         private string GrantLoot(BoardSession session)
@@ -497,7 +595,16 @@ namespace Fantasia.Combat
         }
 
         public void DevDefend() => OnDefendClicked();
-        public void DevContinue() => ReturnToBoard();
+
+        // 부활 버튼 → 쓰러진 아군 클릭과 같은 순서.
+        public bool DevCanRevive => CanRevive();
+        public void DevRevive(BattleUnit target)
+        {
+            if (_phase != Phase.ChoosingAction) return;
+            OnReviveClicked();
+            if (_phase == Phase.ChoosingTarget) OnUnitPicked(target);
+        }
+        public void DevContinue() => _hud.DevPressResult(); // 결과 창 버튼 (보드로 / 처음부터 다시)
 
         private void ReturnToBoard()
         {
@@ -514,15 +621,16 @@ namespace Fantasia.Combat
             {
                 _phase = Phase.ChoosingAction;
                 _pendingSkill = null;
+                _reviving = false;
                 HideMarker();
-                _hud.ShowActions(_current);
+                _hud.ShowActions(_current, CanRevive());
                 return;
             }
 
             BattleUnit hovered = null;
             if (!BattleHud.PointerOverUI && _camera != null &&
                 Physics.Raycast(_camera.ScreenPointToRay(Input.mousePosition), out var hit) &&
-                _targets.TryGetValue(hit.collider, out var unit) && unit.InBattle && unit.IsAlly == _targetAllies)
+                _targets.TryGetValue(hit.collider, out var unit) && IsValidTarget(unit))
             {
                 hovered = unit;
             }
@@ -578,12 +686,14 @@ namespace Fantasia.Combat
         // ───────────── 전장 구성 ─────────────
         private void SpawnUnits(Party party)
         {
-            var allyPositions = BattleFormation.Line(party.Members.Count, LineSpacing);
-            for (int i = 0; i < party.Members.Count; i++)
+            // 영구 사망한 파티원은 전투에 나오지 않는다.
+            var living = party.LivingMembers.ToList();
+            var allyPositions = BattleFormation.Line(living.Count, LineSpacing);
+            for (int i = 0; i < living.Count; i++)
             {
-                var unit = new BattleUnit(party.Members[i], i);
+                var unit = new BattleUnit(living[i], i);
                 _allies.Add(unit);
-                // 쓰러진 채로 들어온 아군(HP 0)은 행동 큐에서 빠진다 — D21 부활 전까지.
+                // 쓰러진 채로 들어온 아군(HP 0)은 행동 큐에서 빠지고, 다른 아군이 부활시킬 수 있다.
                 SpawnModel(unit, new Vector3(-LineX, 0f, allyPositions[i].z), Vector3.right);
                 if (!unit.IsAlive) KnockDown(unit);
             }

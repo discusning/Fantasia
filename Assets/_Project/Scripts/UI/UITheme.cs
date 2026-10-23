@@ -37,6 +37,7 @@ namespace Fantasia.UI
         public Sprite ItemIcon;
         public Sprite DefendIcon;
         public Sprite RetreatIcon;
+        public Sprite ReviveIcon;
         public Sprite FocusToggleIcon;
 
         [Header("전장")]

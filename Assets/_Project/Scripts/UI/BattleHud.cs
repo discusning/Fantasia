@@ -39,10 +39,14 @@ namespace Fantasia.UI
         public event Action AttackClicked;
         public event Action DefendClicked;
         public event Action RetreatClicked;
+        public event Action ReviveClicked;
         public event Action<BattleUnit> EnemyBarClicked;
         public event Action<Fantasia.Data.SkillDefinition> SkillChosen;
 
         public bool UseFocus => _focusToggle != null && _focusToggle.isOn;
+
+        // 자동 플레이 점검용 — 결과 창 버튼을 누른 것과 같다.
+        public void DevPressResult() => _onResultContinue?.Invoke();
 
         // 자동 플레이 점검용 — 스킬 버튼을 누른 것과 같다 (스킬 메뉴 스크린샷).
         public void DevOpenSkills()
@@ -76,7 +80,7 @@ namespace Fantasia.UI
         private BattleUnit _actionActor;
         private Text _actorText;
         private Text _hintText;
-        private Button _attackButton, _skillButton, _itemButton, _defendButton, _retreatButton;
+        private Button _attackButton, _skillButton, _itemButton, _defendButton, _reviveButton, _retreatButton;
         private Toggle _focusToggle;
 
         private GameObject _rollPanel;
@@ -89,6 +93,7 @@ namespace Fantasia.UI
         private GameObject _resultPanel;
         private Text _resultTitle;
         private Text _resultBody;
+        private Text _resultButtonLabel;
         private Action _onResultContinue;
 
         public static BattleHud Create()
@@ -158,13 +163,15 @@ namespace Fantasia.UI
         }
 
         // ───────────── ③ 행동 메뉴 ─────────────
-        public void ShowActions(BattleUnit actor)
+        // canRevive: 쓰러진 아군 중 LP가 남은 사람이 있으면 "부활" 활성 (D21).
+        public void ShowActions(BattleUnit actor, bool canRevive = false)
         {
             _actionPanel.SetActive(true);
             _actorText.text = $"{actor.DisplayName}의 차례";
             _attackButton.interactable = actor.CanBasicAttack;
             _defendButton.interactable = true;
             _retreatButton.interactable = true;
+            _reviveButton.interactable = canRevive;
             _actionActor = actor;
             _skillButton.interactable = System.Linq.Enumerable.Any(actor.ActiveSkills());
             _skillPanel.SetActive(false);
@@ -293,12 +300,13 @@ namespace Fantasia.UI
         }
 
         // ───────────── ⑥ 결과 창 ─────────────
-        public void ShowResult(string title, string body, Action onContinue)
+        public void ShowResult(string title, string body, Action onContinue, string buttonLabel = "보드로 돌아가기")
         {
             HideActions();
             _resultTitle.text = title;
             _resultBody.text = body;
             _onResultContinue = onContinue;
+            _resultButtonLabel.text = buttonLabel;
             _resultPanel.SetActive(true);
         }
 
@@ -396,18 +404,19 @@ namespace Fantasia.UI
             var theme = UITheme.Current;
             var defs = new (string label, Sprite icon)[]
             {
-                ("공격", theme.AttackIcon), ("스킬", theme.SkillIcon), ("소모품", theme.ItemIcon), ("방어", theme.DefendIcon), ("퇴각", theme.RetreatIcon),
+                ("공격", theme.AttackIcon), ("스킬", theme.SkillIcon), ("소모품", theme.ItemIcon), ("방어", theme.DefendIcon), ("부활", theme.ReviveIcon), ("퇴각", theme.RetreatIcon),
             };
             var buttons = new Button[defs.Length];
             for (int i = 0; i < defs.Length; i++)
             {
-                float x0 = 0.02f + i * 0.155f;
-                buttons[i] = UGUIKit.CreateThemedButton(panel, $"{defs[i].label}Button", new Vector2(x0, 0.08f), new Vector2(x0 + 0.145f, 0.62f), defs[i].label, ButtonFill, 13, defs[i].icon);
+                float x0 = 0.02f + i * 0.128f;
+                buttons[i] = UGUIKit.CreateThemedButton(panel, $"{defs[i].label}Button", new Vector2(x0, 0.08f), new Vector2(x0 + 0.12f, 0.62f), defs[i].label, ButtonFill, 13, defs[i].icon);
                 buttons[i].GetComponentInChildren<Text>().color = TextLight;
             }
-            (_attackButton, _skillButton, _itemButton, _defendButton, _retreatButton) = (buttons[0], buttons[1], buttons[2], buttons[3], buttons[4]);
+            (_attackButton, _skillButton, _itemButton, _defendButton, _reviveButton, _retreatButton) = (buttons[0], buttons[1], buttons[2], buttons[3], buttons[4], buttons[5]);
             _attackButton.onClick.AddListener(() => AttackClicked?.Invoke());
             _defendButton.onClick.AddListener(() => DefendClicked?.Invoke());
+            _reviveButton.onClick.AddListener(() => ReviveClicked?.Invoke());
             _retreatButton.onClick.AddListener(() => RetreatClicked?.Invoke());
             _skillButton.onClick.AddListener(ToggleSkills);
 
@@ -503,6 +512,7 @@ namespace Fantasia.UI
             _resultBody = Label(panel, "Body", new Vector2(0.06f, 0.3f), new Vector2(0.94f, 0.66f), 12, TextAnchor.MiddleCenter, TextLight, bold: false);
             var button = UGUIKit.CreateThemedButton(panel, "Continue", new Vector2(0.3f, 0.07f), new Vector2(0.7f, 0.25f), "보드로 돌아가기", ButtonFill, 13);
             button.GetComponentInChildren<Text>().color = TextLight;
+            _resultButtonLabel = button.GetComponentInChildren<Text>();
             button.onClick.AddListener(() => _onResultContinue?.Invoke());
             _resultPanel.SetActive(false);
         }

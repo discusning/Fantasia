@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Fantasia.Core;
 using Fantasia.Data;
 using Fantasia.UI;
@@ -86,7 +87,7 @@ namespace Fantasia.Board
             if (BoardSession.Instance.Party != null && BoardSession.Instance.Party.Members.Count > 0)
             {
                 _testParty = BoardSession.Instance.Party;
-                _testHero = _testParty.Members[0];
+                _testHero = FirstLivingMember(_testParty);
                 PartyHudPanel.Show(_testParty, _testHero);
                 return;
             }
@@ -100,9 +101,13 @@ namespace Fantasia.Board
             }
             if (_testParty.Members.Count == 0) return;
 
-            _testHero = _testParty.Members[0];
+            _testHero = FirstLivingMember(_testParty);
             PartyHudPanel.Show(_testParty, _testHero);
         }
+
+        // 조우 판정을 맡는 캐릭터 — 편성 순서대로 첫 번째 생존자 (영구 사망·쓰러짐 제외, 없으면 첫 번째).
+        private static PartyMember FirstLivingMember(Party party) =>
+            party.Members.FirstOrDefault(m => m.IsAlive) ?? party.Members[0];
 
         // 씬이 Setup Board Test Scene 재실행 전 버전이라 TestPartyJobs가 비어 있어도 3인이 나오게 —
         // 에디터에서만 시드된 직업 자산을 직접 읽는다 (빌드에서는 명탐정 1명으로 폴백).
@@ -318,6 +323,7 @@ namespace Fantasia.Board
             if (pool.Length > 0) setup.Enemies.Add(forced != null ? forced : pool[Random.Range(0, pool.Length)]);
             BoardSession.Instance.PendingBattle = setup;
             BoardSession.Instance.PendingEncounterCoord = _currentCoord;
+            BoardSession.Instance.LastSafeCoord = _lastSafeCoord;
             SceneManager.LoadScene(CombatSceneName);
         }
 

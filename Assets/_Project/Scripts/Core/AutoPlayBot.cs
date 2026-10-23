@@ -54,6 +54,7 @@ namespace Fantasia.Core
             yield return new WaitForSeconds(1f);
             var board = FindFirstObjectByType<BoardTestController>();
             yield return Shot("board_start");
+            ApplyStartOverrides();
             NoteParty("보드 시작");
 
             for (int turn = 1; turn <= 20 && !EncounterPanel.IsOpen; turn++)
@@ -87,7 +88,7 @@ namespace Fantasia.Core
             // ── 3. 전투 ──
             yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투 관리자");
             var battle = FindFirstObjectByType<BattleController>();
-            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false;
+            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false;
             float deadline = Time.time + 180f;
 
             while (!battle.DevFinished && Time.time < deadline)
@@ -100,7 +101,19 @@ namespace Fantasia.Core
                     var actor = battle.DevCurrent;
                     // 스킬을 쓸 상황이면 스킬(D11), 아니면 기본 공격 — 집중력이 남으면 추가 집중을 켠다.
                     var (skill, target) = ChooseSkill(battle, actor);
-                    if (skill != null)
+                    var downed = battle.DevAllies.FirstOrDefault(a => a.Member.IsDowned && a.Member.CurrentLP > 0);
+                    if (battle.DevCanRevive && downed != null && !Environment.GetCommandLineArgs().Contains("-autoplay-no-revive"))
+                    {
+                        // 쓰러진 동료가 있으면 먼저 부활 (D21)
+                        battle.DevRevive(downed);
+                        if (!shotRevive)
+                        {
+                            shotRevive = true;
+                            yield return new WaitForSeconds(0.4f);
+                            yield return Shot("battle_revive");
+                        }
+                    }
+                    else if (skill != null)
                     {
                         if (!shotSkillMenu)
                         {
@@ -196,7 +209,23 @@ namespace Fantasia.Core
             var party = BoardSession.Instance != null ? BoardSession.Instance.Party : null;
             if (party == null) { Note($"{label}: 파티 없음"); return; }
             Note($"{label}: " + string.Join(", ", party.Members.Select(m =>
-                $"{m.Job.DisplayName} HP {m.CurrentHP}/{m.MaxHP} MP {m.CurrentMP}/{m.MaxMP} 집중 {m.CurrentFocus}/{m.MaxFocus}")));
+                $"{m.Job.DisplayName}{(m.IsPermanentlyDead ? "(사망)" : m.IsDowned ? "(쓰러짐)" : "")} HP {m.CurrentHP}/{m.MaxHP} MP {m.CurrentMP}/{m.MaxMP} 집중 {m.CurrentFocus}/{m.MaxFocus} LP {m.CurrentLP}"))
+                + $" · Cent {party.Cent} · 위치 {BoardSession.Instance.PlayerPosition.Q},{BoardSession.Instance.PlayerPosition.R}");
+        }
+
+        // 패배·부활 점검용 시작 상태: -autoplay-hp N (전원 HP를 N으로), -autoplay-lp N (전원 LP를 N 이하로).
+        private void ApplyStartOverrides()
+        {
+            var party = BoardSession.Instance != null ? BoardSession.Instance.Party : null;
+            if (party == null) return;
+            var args = Environment.GetCommandLineArgs();
+            int hpIndex = Array.IndexOf(args, "-autoplay-hp");
+            if (hpIndex >= 0 && hpIndex + 1 < args.Length && int.TryParse(args[hpIndex + 1], out int hp))
+                foreach (var m in party.Members) m.TakeDamage(Mathf.Max(0, m.CurrentHP - hp));
+            int lpIndex = Array.IndexOf(args, "-autoplay-lp");
+            if (lpIndex >= 0 && lpIndex + 1 < args.Length && int.TryParse(args[lpIndex + 1], out int lp))
+                foreach (var m in party.Members) while (m.CurrentLP > lp && m.TrySpendLP()) { }
+            if (hpIndex >= 0 || lpIndex >= 0) Note($"시작 상태 조정: HP {(hpIndex >= 0 ? args[hpIndex + 1] : "-")} · LP {(lpIndex >= 0 ? args[lpIndex + 1] : "-")}");
         }
 
         private IEnumerator WaitFor(Func<bool> condition, float timeout, string what)
