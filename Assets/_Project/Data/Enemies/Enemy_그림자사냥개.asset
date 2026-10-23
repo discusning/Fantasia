@@ -29,6 +29,8 @@ MonoBehaviour:
   HasEvasionState: 1
   OnCritStatuses:
   - {fileID: 11400000, guid: e7465f8bc07c1be458a205c797ce1fa4, type: 2}
+  OnCritTurnShift: 1
+  Targeting: 0
   TraitDescription: "[\uD68C\uD53C \uC0C1\uD0DC] \uD328\uC2DC\uBE0C \uBCF4\uC720.
     \uACF5\uACA9 \uD310\uC815 \uC131\uACF5 \uC2DC \uB300\uC0C1\uC5D0\uAC8C [\uD63C\uB780]\uC744
     \uBD80\uC5EC\uD558\uBA70 \uD0C0\uC784\uB77C\uC778\uC744 [\uBC29\uD574\uD568]

@@ -220,6 +220,9 @@ namespace Fantasia.Board
         }
 
         // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 키보드·마우스 대신 같은 굴림·이동 코드를 부른다 ─────
+        // 자동 플레이 점검에서 특정 적 조합을 강제할 때 (예: 그림자 사냥개 특성 확인). 평소엔 null.
+        public static string DevForcedEnemyId;
+
         public bool DevIsIdle => !_isMoving && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen;
         public bool DevAwaitingSelection => _awaitingSelection;
 
@@ -309,9 +312,10 @@ namespace Fantasia.Board
         private void EnterCombat(EncounterOutcome opening)
         {
             var setup = new Fantasia.Combat.BattleSetup { Opening = opening };
-            setup.Enemies.Add(_pendingEnemy);
             var pool = _board.EncounterEnemyPool;
-            if (pool.Length > 0) setup.Enemies.Add(pool[Random.Range(0, pool.Length)]);
+            var forced = System.Array.Find(pool, e => e != null && e.Id == DevForcedEnemyId);
+            setup.Enemies.Add(forced != null ? forced : _pendingEnemy);
+            if (pool.Length > 0) setup.Enemies.Add(forced != null ? forced : pool[Random.Range(0, pool.Length)]);
             BoardSession.Instance.PendingBattle = setup;
             BoardSession.Instance.PendingEncounterCoord = _currentCoord;
             SceneManager.LoadScene(CombatSceneName);

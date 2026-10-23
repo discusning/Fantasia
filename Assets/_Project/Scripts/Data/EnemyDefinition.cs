@@ -37,6 +37,10 @@ namespace Fantasia.Data
         public bool HasEvasionState;
         // 공격 판정 성공(크리티컬) 시 대상에게 거는 상태 (D13 특성 — 기획자가 데이터로 조정).
         public StatusEffectDefinition[] OnCritStatuses = System.Array.Empty<StatusEffectDefinition>();
+        // 크리티컬 명중 시 대상의 턴을 민다 (그림자 사냥개: 방해함).
+        public TurnShift OnCritTurnShift;
+        // 공격 대상 고르는 규칙 (기본 무작위).
+        public EnemyTargeting Targeting;
         [TextArea] public string TraitDescription;
         public string DeploymentAct; // 배치 구간, 예: "1막"
     }

@@ -9,13 +9,16 @@ namespace Fantasia.Combat
     //   같은 진영은 편성 순서. 속도 버프·디버프는 다음 라운드 정렬에 반영된다(라운드 중 재정렬 없음).
     // - 각 참가자는 라운드마다 행동 1회. 쓰러지거나 퇴각한 참가자는 건너뛴다.
     // - 기습 성공: 첫 라운드만 아군 전원이 적보다 먼저 / 기습 실패: 적 전원이 먼저.
-    // 돌격·방해함·초기화(턴 위치 이동)는 기획이 "다시 생각해볼 예정"이라 아직 넣지 않았다.
+    // - 방해함·초기화(Shift): 아직 행동하지 않은 대상의 이번 라운드 위치를 뒤로 민다. 같은 대상에게
+    //   라운드당 합계 1회, 추가 행동·행동 삭제 없음. 이미 행동했으면 효과 없음(다음 라운드 누적 지연 금지).
+    //   돌격(앞으로 당기기)은 쓰는 스킬이 생길 때 추가. 기획이 "턴의 변화"를 다시 검토할 예정이라 규칙은 여기 한 곳.
     public class BattleQueue
     {
         private readonly List<BattleUnit> _units;
         private readonly EncounterOutcome _opening;
         private List<BattleUnit> _round = new();
         private int _index = -1;
+        private readonly HashSet<BattleUnit> _shiftedThisRound = new();
 
         public int Round { get; private set; }
         public BattleUnit Current => _index >= 0 && _index < _round.Count ? _round[_index] : null;
@@ -44,6 +47,29 @@ namespace Fantasia.Combat
             Round++;
             _round = ComputeOrder(_units, Round, _opening);
             _index = 0;
+            _shiftedThisRound.Clear();
+        }
+
+        // 방해함/초기화. 실제로 밀렸으면 true (이미 행동함·이번 라운드 이미 밀림·더 뒤로 갈 곳 없음이면 false).
+        public bool Shift(BattleUnit target, Fantasia.Data.TurnShift shift)
+        {
+            if (shift == Fantasia.Data.TurnShift.None || target == null) return false;
+            int pos = _round.IndexOf(target);
+            if (pos <= _index || _shiftedThisRound.Contains(target)) return false; // 이미 행동했거나 지금 행동 중
+
+            // 남은 큐 = 지금 차례 다음부터 (대상 포함).
+            int remainingStart = _index + 1;
+            int remainingCount = _round.Count - remainingStart;
+            int offset = shift == Fantasia.Data.TurnShift.Reset
+                ? remainingCount - 1
+                : (int)System.Math.Ceiling(remainingCount * 2.0 / 3.0) - 1; // 남은 큐의 2/3 위치
+            int newPos = remainingStart + System.Math.Max(0, offset);
+            if (newPos <= pos) return false; // 이미 그보다 뒤 — 앞으로 당기지 않는다
+
+            _round.RemoveAt(pos);
+            _round.Insert(newPos, target);
+            _shiftedThisRound.Add(target);
+            return true;
         }
 
         public static List<BattleUnit> ComputeOrder(IEnumerable<BattleUnit> units, int round, EncounterOutcome opening)

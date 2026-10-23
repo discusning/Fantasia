@@ -68,6 +68,9 @@ namespace Fantasia.Combat
             IsAlly ? (Member.EquippedWeapon != null ? Member.EquippedWeapon.OnCritStatuses : null) ?? System.Array.Empty<StatusEffectDefinition>()
                    : Enemy.OnCritStatuses ?? System.Array.Empty<StatusEffectDefinition>();
 
+        public TurnShift OnCritTurnShift =>
+            IsAlly ? (Member.EquippedWeapon != null ? Member.EquippedWeapon.OnCritTurnShift : TurnShift.None) : Enemy.OnCritTurnShift;
+
         public DefenseProfile Defense() =>
             IsAlly ? AttackResolver.DefenseOf(Member, IsDefending)
                    : AttackResolver.DefenseOf(Enemy, _enemyHP, HasEvasionState, IsDefending);

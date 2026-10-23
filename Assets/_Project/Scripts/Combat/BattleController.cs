@@ -135,10 +135,9 @@ namespace Fantasia.Combat
         {
             _hud.SetHint($"{enemy.DisplayName}의 차례");
             yield return new WaitForSeconds(0.6f);
-            // D13 전까지: 살아 있는 아군 중 무작위 1명에게 기본 공격.
-            var candidates = _allies.Where(a => a.InBattle).ToList();
-            if (candidates.Count == 0) { NextTurn(); yield break; }
-            var target = candidates[Random.Range(0, candidates.Count)];
+            // 1막 소형 적: 기본 공격만, 대상은 데이터의 Targeting 규칙 (EnemyAI).
+            var target = EnemyAI.ChooseTarget(enemy, _allies);
+            if (target == null) { NextTurn(); yield break; }
             yield return ResolveAttack(enemy, target, useFocus: false);
             NextTurn();
         }
@@ -246,6 +245,17 @@ namespace Fantasia.Combat
                     string stacks = applied.Stacks > 1 ? $" ×{applied.Stacks}" : "";
                     _hud.PopText(_camera, ModelTop(target) + Vector3.up * (0.45f * line++), def.DisplayName + stacks, BattleHud.StatusColor);
                     Log($"  → {target.DisplayName}에게 [{def.DisplayName}{stacks}] (남은 {(applied.RemainingTurns < 0 ? "정화 전까지" : applied.RemainingTurns + "턴")})");
+                }
+
+                // 턴 밀기 (방해함·초기화) — 아직 행동하지 않은 대상만, 같은 대상 라운드당 1회.
+                var shift = attacker.OnCritTurnShift;
+                if (shift != TurnShift.None)
+                {
+                    string shiftName = shift == TurnShift.Delay ? "방해함" : "초기화";
+                    bool moved = _queue.Shift(target, shift);
+                    if (moved) _hud.PopText(_camera, ModelTop(target) + Vector3.up * (0.45f * line), shiftName, BattleHud.StatusColor);
+                    Log($"  → {target.DisplayName} [{shiftName}] {(moved ? "— 이번 라운드 차례가 뒤로 밀림" : "— 효과 없음(이미 행동함·이번 라운드 이미 밀림·이미 남은 큐 뒤쪽)")}");
+                    _hud.SetTimeline(_queue.Preview(10), _queue.Round);
                 }
             }
             _hud.RefreshEnemies(null);

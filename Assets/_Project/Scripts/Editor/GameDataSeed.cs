@@ -294,7 +294,8 @@ namespace Fantasia.Editor
         }
 
         // 1막 소형 적 4종 특성 (System.md "소형 적") + 단검 계열 크리티컬 효과 (System.md 무기 계열 표).
-        // 그림자 사냥개의 [방해함](턴 밀기)은 상태가 아니라 행동 순서 기능이라 별도.
+        // 그림자 사냥개의 [방해함]은 상태가 아니라 행동 순서 기능이라 OnCritTurnShift로 따로 둔다.
+        // 적 대상 선택(Targeting)은 System.md에 적별 규칙이 없어 기본 무작위 그대로 — 기획이 정하면 데이터에서.
         private static void LinkCritStatuses(StatusEffectDefinition bleed, StatusEffectDefinition poison, StatusEffectDefinition confusion,
             StatusEffectDefinition bind, StatusEffectDefinition attackDown)
         {
@@ -306,6 +307,8 @@ namespace Fantasia.Editor
                 EditorUtility.SetDirty(e);
             }
             Set("Enemy_그림자사냥개", confusion);
+            var hound = AssetDatabase.LoadAssetAtPath<EnemyDefinition>($"{EnemyDir}/Enemy_그림자사냥개.asset");
+            if (hound != null) { hound.OnCritTurnShift = TurnShift.Delay; EditorUtility.SetDirty(hound); } // [방해함]
             Set("Enemy_연성독거미유체", poison);
             Set("Enemy_역병쥐", bleed, bind);
             Set("Enemy_가고일유체", attackDown);

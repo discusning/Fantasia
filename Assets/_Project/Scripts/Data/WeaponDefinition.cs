@@ -24,6 +24,8 @@ namespace Fantasia.Data
         [TextArea] public string CritEffectDescription;    // 예: "크리티컬 시 약한 출혈 3턴"
         // 기본 무기 공격 크리티컬 시 대상에게 거는 상태 (예: 단검 약한 출혈 3턴). 직업 스킬 공격에는 적용 안 함.
         public StatusEffectDefinition[] OnCritStatuses = System.Array.Empty<StatusEffectDefinition>();
+        // 기본 무기 공격 크리티컬 시 대상의 턴을 민다 (양손검·대검 계열: 방해함).
+        public TurnShift OnCritTurnShift;
 
         [Header("개별 자산 값")]
         public EquipmentGrade Grade = EquipmentGrade.Normal;
