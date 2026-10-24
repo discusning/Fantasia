@@ -29,6 +29,20 @@ namespace Fantasia.Combat
             _opening = opening;
         }
 
+
+        // ── 전투 저장 (BattleSnapshot) ──
+        public IReadOnlyList<BattleUnit> RoundOrder => _round;
+        public int Index => _index;
+        public IEnumerable<BattleUnit> ShiftedThisRound => _shiftedThisRound;
+
+        public void Restore(int round, List<BattleUnit> order, int index, IEnumerable<BattleUnit> shifted)
+        {
+            Round = round;
+            _round = order;
+            _index = index;
+            _shiftedThisRound.Clear();
+            foreach (var u in shifted) _shiftedThisRound.Add(u);
+        }
         // 다음 행동할 참가자로 넘어간다. 라운드가 끝나면 새 라운드를 정렬한다. 아무도 없으면 null.
         public BattleUnit Advance()
         {

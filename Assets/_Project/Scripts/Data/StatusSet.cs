@@ -54,8 +54,16 @@ namespace Fantasia.Data
 
         public void Remove(StatusEffectType effect) => _active.RemoveAll(a => a.Effect == effect);
 
+        // D27 불러오기 — 저장된 상태를 그대로 (기간·스택)
+        public void Restore(StatusEffectDefinition definition, int remainingTurns, int stacks)
+        {
+            if (definition == null) return;
+            _active.Add(new Active { Definition = definition, RemainingTurns = remainingTurns, Stacks = stacks });
+        }
+
         // 전투가 끝날 때 — 승리로 지워지는 것만 지우고 중독처럼 남는 건 유지.
         public void ClearOnBattleEnd() => _active.RemoveAll(a => a.Definition.ClearedByCombatVictory);
+        public void ClearAll() => _active.Clear(); // 전투 저장 복원용
 
         // 개인 턴 시작: 지속 피해 합계와 혼란 여부를 계산한 뒤 기간을 1 줄인다.
         public TurnStart BeginTurn()

@@ -17,7 +17,7 @@ namespace Fantasia.Combat
     // 행동한다. 공격 판정·피해는 D10 AttackResolver, 상태는 D12 StatusSet, 스킬은 D11 SkillDefinition.
     //
     // 소모품(D17)은 행동 메뉴·퀵 슬롯에서 쓰고(개인 행동 1회), 승리 보상(D19)은 LootRules.
-    public class BattleController : MonoBehaviour
+    public partial class BattleController : MonoBehaviour
     {
         private const string BoardSceneName = "BoardTest";
         private const float LineX = 2.6f;
@@ -65,7 +65,9 @@ namespace Fantasia.Combat
 
             var session = BoardSession.Instance;
             session.Party ??= DefaultParty();
-            _setup = session.PendingBattle ?? DefaultSetup();
+            // 저장된 전투가 있으면 그 진입 정보로 (전투 진입·진행 중 저장에서 이어하기 — Save.md 5)
+            var snap = ReadSnapshot(session.BattleSnapshotJson);
+            _setup = SetupFromSnapshot(snap, session) ?? session.PendingBattle ?? DefaultSetup();
             session.PendingBattle = null;
 
             SpawnUnits(session.Party);
@@ -73,12 +75,14 @@ namespace Fantasia.Combat
             _hud = BattleHud.Create();
             _hud.AttackClicked += OnAttackClicked;
             _hud.DefendClicked += OnDefendClicked;
+            _hud.InterruptClicked += OnInterruptClicked;
             _hud.RetreatClicked += OnRetreatClicked;
             _hud.ReviveClicked += OnReviveClicked;
             _hud.EnemyBarClicked += OnUnitPicked;
             _hud.SkillChosen += OnSkillChosen;
             _hud.ItemChosen += OnItemChosen;
             _hud.SetEnemies(_enemies);
+            CaseLogPanel.EnsureExists(new Vector2(-10f, -6f));
 
             PartyHudPanel.Show(session.Party, null);
             PartyHudPanel.QuickSlotClicked += OnQuickSlotClicked;
@@ -89,7 +93,81 @@ namespace Fantasia.Combat
                 + $" · 적 {string.Join(", ", _enemies.Select(u => $"{u.DisplayName}(HP {u.CurrentHP}, 속도 {u.Speed})"))}");
             if (_setup.Opening == EncounterOutcome.AmbushSuccess || _setup.Opening == EncounterOutcome.AmbushFailure)
                 _hud.SetHint(EncounterPanel.OutcomeMessage(_setup.Opening));
+            if (snap != null && snap.started)
+            {
+                // 진행 중 저장에서 이어하기: 그 개인 턴 시작 상태 → 확정된 행동이 있으면 그대로 다시 실행 (도주 처리 아님)
+                ApplySnapshot(snap);
+                _current = FromRef(snap.current);
+                Log($"전투 이어하기 — 라운드 {_queue.Round} · {_current?.DisplayName} 차례{(snap.pending.kind != BattleSnapshot.CommandKind.None ? $" · 확정된 행동 {snap.pending.kind}" : "")}");
+                MusicPlayer.Play(_enemies.Any(e => ActOneStory.IsActOneBoss(e.Enemy)) ? MusicIds.BossAbel : MusicIds.Battle, 0f);
+                if (_current == null || !_current.InBattle) { NextTurn(); return; }
+                BeginCurrentTurn(snap.currentConfused);
+                if (snap.pending.kind != BattleSnapshot.CommandKind.None && _current.IsAlly) ReplayCommand(snap.pending);
+                return;
+            }
+            StartCoroutine(Opening());
+        }
+
+        // ───────────── 전투 시작 연출 (Boss_Abel_v1.0 04·05) ─────────────
+        // 최초 진입: 필드 음악 0.4초 페이드아웃 → 보스 0.8초 밝기 강조 + 이름 배너 1.8초 → 전투 전 대화 → 첫 턴.
+        // 재도전(같은 플레이에서 이미 봄): 배너 1초 → 전투 (대화 생략). [연출 건너뛰기]는 화면 재생만 생략하고 첫 턴은 한 번만 시작.
+        private bool _skipIntro;
+
+        private IEnumerator Opening()
+        {
+            var boss = _enemies.FirstOrDefault(e => ActOneStory.IsActOneBoss(e.Enemy));
+            if (boss == null)
+            {
+                MusicPlayer.Play(MusicIds.Battle);
+                _introDone = true;
+                NextTurn();
+                yield break;
+            }
+
+            var session = BoardSession.Instance;
+            bool first = session.StoryFlags.Add(ActOneStory.FlagIntroSeen); // 최초 등장 확인
+            _skipIntro = false;
+            _hud.HideActions();
+            MusicPlayer.Stop(0.4f);
+            yield return new WaitForSeconds(0.4f);
+            MusicPlayer.Play(MusicIds.BossAbel, 0f); // 필드 음악이 꺼진 뒤 한 번만 시작, 전투 중 반복
+
+            float bannerSeconds = first ? 1.8f : 1f;
+            _hud.ShowBossBanner(ActOneStory.BossBannerAct, ActOneStory.BossBannerName, bannerSeconds, () => _skipIntro = true);
+            StartCoroutine(Highlight(boss, 0.8f));
+            for (float t = 0f; t < bannerSeconds && !_skipIntro; t += Time.deltaTime) yield return null;
+            _hud.HideBossBanner();
+
+            if (first && !_skipIntro)
+            {
+                DialoguePanel.Play(ActOneStory.BeforeBattle, skipCloses: true);
+                while (DialoguePanel.IsOpen) yield return null;
+            }
+            Log($"보스 등장 연출 — {(first ? "최초" : "재도전")}{(_skipIntro ? " (건너뜀)" : "")}");
+            _introDone = true;
             NextTurn();
+        }
+
+        // 보스 모델을 잠깐 밝게 (등장 강조)
+        private IEnumerator Highlight(BattleUnit unit, float seconds)
+        {
+            if (!_models.TryGetValue(unit, out var model)) yield break;
+            var renderers = model.GetComponentsInChildren<Renderer>();
+            var originals = renderers.Select(r => r.material.color).ToArray();
+            for (float t = 0f; t < seconds; t += Time.deltaTime)
+            {
+                float k = 1f + 0.8f * Mathf.Sin(Mathf.PI * t / seconds);
+                for (int i = 0; i < renderers.Length; i++) renderers[i].material.color = originals[i] * k;
+                yield return null;
+            }
+            for (int i = 0; i < renderers.Length; i++) renderers[i].material.color = originals[i];
+        }
+
+        private IEnumerator PlayDialogueThen(DialoguePanel.DialogueLine[] lines, System.Action then)
+        {
+            DialoguePanel.Play(lines, skipCloses: true);
+            while (DialoguePanel.IsOpen) yield return null;
+            then();
         }
 
         // ───────────── 턴 진행 ─────────────
@@ -112,11 +190,18 @@ namespace Fantasia.Combat
                 Log($"{_current.DisplayName} 턴 시작 지속 피해 {dot} ({start.Summary}) · HP {_current.CurrentHP}/{_current.MaxHP}");
             }
             if (!_current.InBattle) { NextTurn(); return; }
+            BeginCurrentTurn(start.Confused);
+        }
+
+        // 개인 턴 시작 처리(지속 피해·쿨다운) 뒤 — 저장하고 행동 선택·적 행동으로. 이어하기도 여기서 시작.
+        private void BeginCurrentTurn(bool confused)
+        {
+            SaveBattle($"전투 R{_queue.Round} {_current.DisplayName} 차례", confused: confused);
             Log($"[R{_queue.Round}] {_current.DisplayName} 차례 (속도 {_current.Speed}) — 순서: {string.Join(" > ", _queue.Preview(6).Select(x => x.Unit.DisplayName))}");
             _hud.SetTimeline(_queue.Preview(10), _queue.Round);
             _hud.RefreshEnemies(null);
 
-            if (_current.IsAlly && start.Confused)
+            if (_current.IsAlly && confused)
             {
                 // 혼란: 50% 확률로 소지한 일반 HP 회복약 1개를 자신에게, 아니면 임의의 적을 기본 공격 (약이 없으면 공격).
                 _phase = Phase.Resolving;
@@ -128,7 +213,7 @@ namespace Fantasia.Combat
             {
                 _phase = Phase.ChoosingAction;
                 PartyHudPanel.SetActive(_current.Member, "행동 선택 중");
-                _hud.RetreatBlocked = EscapeBlocked; _hud.ShowActions(_current, CanRevive());
+                ShowAllyActions();
             }
             else
             {
@@ -183,19 +268,27 @@ namespace Fantasia.Combat
                     break;
 
                 case EnemyActionKind.Announce:
-                    // 예고는 피해 없음 (보스 공통 규칙). 다음 행동과 막는 법을 보여준다.
+                    // 예고는 피해 없음 (보스 공통 규칙). HP 바 아래 예고는 실행·저지·사망·전투 종료까지 유지, 하단 알림은 2초.
                     var pending = boss.Boss.Pending;
-                    string counter = pending != null && pending.CancelMinCoefficient > 0f
-                        ? $" — 그 전에 계수 {pending.CancelMinCoefficient:0.#}배 이상 공격 기술을 맞히면 취소" : "";
-                    string next = pending != null ? $"다음 행동: {pending.FollowUp.Name}" : "";
-                    Log($"{boss.DisplayName} 예고 [{action.Name}] {next}{counter}");
-                    _hud.SetHint($"예고! {boss.DisplayName} [{action.Name}] {next}{counter}");
+                    string next = pending != null ? $"다음 보스 행동: {pending.FollowUp.Name}" : "";
+                    Log($"{boss.DisplayName} 예고 [{action.Name}] {next}");
+                    RefreshBossTelegraph();
+                    _hud.ShowNotice($"예고! {boss.DisplayName} [{action.Name}] — {next}", 2f);
                     yield return new WaitForSeconds(1.2f);
+                    break;
+
+                case EnemyActionKind.Fizzle:
+                    // 저지당한 봉합: 예정된 회복 차례를 "봉합 실패"로 소모 (즉시 일반 공격으로 바꾸지 않음) / 아군 차례 보장으로 미룸
+                    Log($"{boss.DisplayName} [{action.Name}] — {action.Description}");
+                    RefreshBossTelegraph();
+                    yield return new WaitForSeconds(0.9f);
                     break;
 
                 case EnemyActionKind.SelfHeal:
                     int healed = boss.HealEnemy(action.HealAmount);
                     Log($"{boss.DisplayName} [{action.Name}] HP +{healed} · HP {boss.CurrentHP}/{boss.MaxHP}");
+                    RefreshBossTelegraph();
+                    _hud.ShowNotice($"{boss.DisplayName} [{action.Name}] HP +{healed}", 2f);
                     _hud.PopText(_camera, ModelTop(boss), $"+{healed}", BattleHud.SlotSuccess);
                     _hud.RefreshEnemies(null);
                     yield return new WaitForSeconds(0.7f);
@@ -223,21 +316,84 @@ namespace Fantasia.Combat
                 var defense = ally.Defense();
                 var outcome = AttackResolver.Compute(request, defense, slots, Fantasia.Dice.DiceRoller.RollChance(defense.EvasionChance));
                 ApplyHit(boss, ally, request, outcome, false, action.OnCritStatuses, TurnShift.None, null);
+                // 봉인된 수은: 명중하면 확정 상태 (크리티컬이어도 추가 없음, 회피하면 없음)
+                if (!outcome.Evaded && ally.IsAlive && action.OnHitStatuses != null && action.OnHitStatuses.Length > 0) ApplyStatuses(ally, action.OnHitStatuses, 1);
             }
             yield return new WaitForSeconds(0.3f);
         }
 
-        // 예고 중인 보스의 후속 행동을 계수 높은 공격 기술로 맞혀 취소 (아벨 모로 금지된 봉합: 1.2A 이상)
+        // 예고 중인 보스의 후속 행동을 계수 높은 공격 기술로 맞혀 취소 (아벨 모로 금지된 봉합: 1.2A 이상 + 실제 HP 피해 1 이상).
+        // 0.9A 저지 사격·일반 공격·회피/피해 0 공격은 취소하지 않는다. 크리티컬 배율은 더하지 않는다 (Boss_Abel_v1.0).
         private void TryCancelBossFollowUp(BattleUnit target, SkillDefinition skill)
         {
             if (target == null || target.Boss == null || skill == null || _lastOutcomeEvaded) return;
-            if (!BossBrain.TryCancel(target.Boss, skill.Coefficient)) return;
-            Log($"  → {target.DisplayName}의 [{target.Boss.Pending.FollowUp.Name}] 저지! ({skill.DisplayName} {skill.Coefficient:0.##}배)");
-            _hud.PopText(_camera, ModelTop(target) + Vector3.up * 0.9f, "저지!", BattleHud.CritColor);
-            _hud.SetHint($"{target.DisplayName}의 {target.Boss.Pending.FollowUp.Name}을(를) 막았다!");
+            var pending = target.Boss.Pending;
+            if (!BossBrain.TryCancel(target.Boss, skill.Coefficient, _lastDamageDealt)) return;
+            Log($"  → {target.DisplayName}의 [{pending.FollowUp.Name}] 저지! ({skill.DisplayName} {skill.Coefficient:0.##}배)");
+            AnnounceSealStopped(target, pending);
+        }
+
+        // 「봉합 방해」 전용 행동: 예고 중 아군 개인 턴에만, 행동 1회·집중력 0·MP 0, 판정 없이 취소, 피해 0.
+        private BattleUnit InterruptibleBoss => _enemies.FirstOrDefault(e => e.IsAlive && e.Boss != null && BossBrain.CanInterrupt(e.Boss));
+
+        private void OnInterruptClicked()
+        {
+            if (_phase != Phase.ChoosingAction) return; // 두 번 눌러도 한 번만 (행동하면 페이즈가 바뀜)
+            var boss = InterruptibleBoss;
+            if (boss == null) return;
+            var pending = boss.Boss.Pending;
+            SaveBattle("전투 행동 확정 — 봉합 방해", CommandFor(BattleSnapshot.CommandKind.Interrupt));
+            if (!BossBrain.TryInterrupt(boss.Boss)) return;
+            _phase = Phase.Resolving;
+            _hud.HideActions();
+            Log($"{_current.DisplayName} [{pending.InterruptName}] → {boss.DisplayName}의 [{pending.FollowUp.Name}] 저지 (집중력 0)");
+            AnnounceSealStopped(boss, pending);
+            StartCoroutine(FinishInterrupt());
+        }
+
+        private IEnumerator FinishInterrupt()
+        {
+            yield return new WaitForSeconds(0.8f);
+            NextTurn();
+        }
+
+        private void AnnounceSealStopped(BattleUnit boss, EnemyThresholdAction pending)
+        {
+            RefreshBossTelegraph();
+            _hud.PopText(_camera, ModelTop(boss) + Vector3.up * 0.9f, "저지!", BattleHud.CritColor);
+            _hud.FlashBossTelegraph(boss, $"{pending.Announce.Name} 저지 성공", 1.5f);
+            _hud.ShowNotice($"{boss.DisplayName}의 {pending.Announce.Name} 저지 성공 — 다음 보스 행동은 {(string.IsNullOrEmpty(pending.FailedName) ? "실패" : pending.FailedName)}", 2f);
+        }
+
+        // 보스 예고 표시 갱신 — HP 바 아래 (시간으로 사라지지 않음) + 타임라인 표식. 실행·저지·사망·전투 종료 때 해제.
+        private void RefreshBossTelegraph()
+        {
+            foreach (var e in _enemies.Where(u => u.Boss != null))
+            {
+                var p = e.Boss.Pending;
+                if (!e.IsAlive || _phase == Phase.Finished || p == null || e.Boss.PendingCancelled) { _hud.SetBossTelegraph(e, null); continue; }
+                string counter = string.Join("\n", new[]
+                {
+                    !string.IsNullOrEmpty(p.InterruptName) ? $"대응: {p.InterruptName}(행동 1회·집중력 0)" : null,
+                    p.CancelMinCoefficient > 0f ? $"또는 {p.CancelMinCoefficient:0.#}배 이상 공격 기술 — {p.CounterHint}" : null,
+                }.Where(s => s != null));
+                _hud.SetBossTelegraph(e, $"{p.Announce.Name} 예고 중 | 다음 보스 행동: {p.FollowUp.Description}\n{counter}");
+            }
+            _hud.SetTimeline(_queue.Preview(10), _queue.Round);
+        }
+
+        // 아군 행동 메뉴 열기 — 예고 중이면 「봉합 방해」 버튼도 (집중력이 없어도 활성)
+        private void ShowAllyActions()
+        {
+            foreach (var e in _enemies.Where(u => u.IsAlive && u.Boss != null)) BossBrain.NotifyAllyCommandTurn(e.Boss);
+            _hud.RetreatBlocked = EscapeBlocked;
+            _hud.ShowActions(_current, CanRevive());
+            var boss = InterruptibleBoss;
+            _hud.SetInterrupt(boss != null ? boss.Boss.Pending.InterruptName : null);
         }
 
         private bool _lastOutcomeEvaded;
+        private int _lastDamageDealt;
 
         // 보스 봉쇄: 전투 중 퇴각·탈출권 불가 (System.md "주요 보스는 … 전투 중 퇴각을 막는다")
         private bool EscapeBlocked => _enemies.Any(e => e.IsAlive && e.Enemy.BlocksEscape);
@@ -248,7 +404,7 @@ namespace Fantasia.Combat
             yield return new WaitForSeconds(0.6f);
             var potion = Inventory.Consumables.Select(s => s.Definition)
                 .FirstOrDefault(d => d.Effect == ConsumableEffect.RestoreHP && d.UsableIn(UseContext.Battle));
-            if (potion != null && Random.value < 0.5f)
+            if (potion != null && GameRandom.Value < 0.5f)
             {
                 Log($"{ally.DisplayName} 혼란으로 회복약 사용");
                 yield return ResolveItem(ally, ally, potion);
@@ -260,7 +416,7 @@ namespace Fantasia.Combat
             {
                 Log($"{ally.DisplayName} 혼란으로 임의 공격");
                 ally.Member.TrySpendMP(ally.BasicAttackMPCost);
-                yield return ResolveAttack(ally, targets[Random.Range(0, targets.Count)], ally.BasicAttack(false), false, ally.OnCritStatuses, ally.OnCritTurnShift, null);
+                yield return ResolveAttack(ally, targets[GameRandom.Range(0, targets.Count)], ally.BasicAttack(false), false, ally.OnCritStatuses, ally.OnCritTurnShift, null);
             }
             NextTurn();
         }
@@ -410,6 +566,10 @@ namespace Fantasia.Combat
         // 비용 지불 → 쿨다운 → 효과. 기본 공격·스킬·부활 공용 (target: 단일 대상, 전체 대상이면 null).
         private IEnumerator PlayerAct(BattleUnit target)
         {
+            // 행동 확정 → 저장 (결과 계산·표시 전). 이어하면 이 행동을 같은 난수로 다시 실행
+            var kind = _reviving ? BattleSnapshot.CommandKind.Revive : _pendingItem != null ? BattleSnapshot.CommandKind.Item
+                : _pendingSkill == null ? BattleSnapshot.CommandKind.Attack : BattleSnapshot.CommandKind.Skill;
+            SaveBattle($"전투 행동 확정 — {kind}", CommandFor(kind, target, _pendingSkill, _pendingItem));
             _phase = Phase.Resolving;
             _hud.HideActions();
             HideMarker();
@@ -479,6 +639,7 @@ namespace Fantasia.Combat
         private void OnDefendClicked()
         {
             if (_phase != Phase.ChoosingAction) return;
+            SaveBattle("전투 행동 확정 — 방어", CommandFor(BattleSnapshot.CommandKind.Defend));
             _current.IsDefending = true;
             Log($"{_current.DisplayName} 방어 (물리·마법 방어 +{AttackResolver.DefendActionBonus})");
             _hud.PopText(_camera, ModelTop(_current), "방어 +8", BattleHud.SlotSuccess);
@@ -495,6 +656,7 @@ namespace Fantasia.Combat
 
         private IEnumerator PlayerRetreat()
         {
+            SaveBattle("전투 행동 확정 — 퇴각", CommandFor(BattleSnapshot.CommandKind.Retreat));
             _phase = Phase.Resolving;
             _hud.HideActions();
             int speed = _current.Member.FinalStats.Speed;
@@ -557,6 +719,7 @@ namespace Fantasia.Combat
         {
             if (!outcome.Evaded) target.TakeDamage(outcome.AppliedDamage);
             _lastOutcomeEvaded = outcome.Evaded;
+            _lastDamageDealt = outcome.Evaded ? 0 : outcome.AppliedDamage;
             string result = ResultText(outcome);
             Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus ? ", 집중 1" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : outcome.Damage.ToString(), ResultColor(outcome));
@@ -648,6 +811,7 @@ namespace Fantasia.Combat
         // 쓰러짐 연출. 적은 대상 선택에서 빠지게 콜라이더를 끄고, 아군은 부활 대상으로 클릭할 수 있게 둔다.
         private void KnockDown(BattleUnit unit)
         {
+            if (unit.Boss != null) { unit.Boss.Pending = null; RefreshBossTelegraph(); } // 쓰러진 보스는 예고 해제·실행 안 함
             if (!_models.TryGetValue(unit, out var model)) return;
             if (!_standingRotation.ContainsKey(unit)) _standingRotation[unit] = model.transform.rotation;
             model.transform.rotation = _standingRotation[unit] * Quaternion.Euler(0f, 0f, 90f);
@@ -670,6 +834,8 @@ namespace Fantasia.Combat
             if (enemiesLeft && alliesLeft) return false;
 
             _phase = Phase.Finished;
+            BoardSession.Instance.BattleSnapshotJson = null; // 전투 끝 — 이어하기는 보드에서
+            RefreshBossTelegraph(); // 전투 종료 → 예고 해제
             foreach (var ally in _allies) ally.Statuses.ClearOnBattleEnd(); // 중독처럼 남는 것만 유지
             _hud.SetTimeline(_queue.Preview(10), _queue.Round);
             bool wiped = enemiesLeft && !_allies.Any(a => a.IsAlive);
@@ -683,9 +849,19 @@ namespace Fantasia.Combat
                 if (session.PendingEncounterCoord.HasValue) session.ClearedEncounters.Add(session.PendingEncounterCoord.Value);
                 if (session.PendingReaperFight) session.Hunt.ReaperKilled = true; // D24 피의 사냥 사신 처치 → 보드에서 성공 처리
                 // 경험치는 끝까지 서 있던 캐릭터만 → 그다음 쓰러진 아군 정리
+                bool actBoss = _enemies.Any(en => ActOneStory.IsActOneBoss(en.Enemy)) && !session.StoryFlags.Contains(ActOneStory.FlagBossDefeated);
+                if (actBoss) MusicPlayer.Stop(0.7f); // 처치 직후 보스 음악 0.7초에 걸쳐 종료
                 string loot = GrantRewards(session);
                 string downed = SettleDowned(DefeatRules.PostBattleReviveHpRatio);
-                _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard);
+                if (actBoss)
+                {
+                    // Boss_Abel_v1.0 처치 후 순서: 처치·최초 보상·증거품·퀘스트 갱신(중복 없이) → 처치 후 대화 → 보상 창 → 월드 복귀
+                    session.StoryFlags.Add(ActOneStory.FlagRewardGiven);
+                    ActOneStory.MarkBossDefeated(session);
+                    SaveGame.Checkpoint("보스 처치·보상·증거품"); // 보상 확정 → 저장 → 대화·보상 창
+                    StartCoroutine(PlayDialogueThen(ActOneStory.AfterBattle, () => _hud.ShowResult("승리", $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard)));
+                }
+                else { SaveGame.Checkpoint("전투 승리·보상"); _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
             }
             else if (!wiped)
             {
@@ -693,6 +869,7 @@ namespace Fantasia.Combat
                 string downed = SettleDowned(DefeatRules.PostBattleReviveHpRatio);
                 session.PlayerPosition = session.LastSafeCoord;
                 Log("  → 전원 이탈: 직전 안전 타일로 이동 (약탈 없음)");
+                SaveGame.Checkpoint("전투 퇴각");
                 _hud.ShowResult("퇴각", $"파티가 전투에서 이탈해 직전 안전 타일로 물러났다.\n조우는 그대로 남는다.{downed}", ReturnToBoard);
             }
             else
@@ -707,11 +884,13 @@ namespace Fantasia.Combat
                 if (session.Party.IsWipedOut)
                 {
                     Log("  → 전원 영구 사망 — 플레이 종료");
+                    SaveGame.EndRun(session); // Save.md 1: 회차 종료 기록을 먼저 저장한 뒤 게임 오버 표시
                     _hud.ShowResult("게임 오버", $"파티 전원이 영구 사망했다.{downed}\n처음부터 다시 시작한다.", RestartGame, "처음부터 다시");
                 }
                 else
                 {
                     session.PlayerPosition = session.LastSafeCoord;
+                    SaveGame.Checkpoint("전투 패배");
                     _hud.ShowResult("패배", $"파티가 쓰러졌다. 약탈 {lost} Cent ({percent}%).{downed}\n직전 안전 타일에서 다시 일어났다.", ReturnToBoard);
                 }
             }
@@ -742,7 +921,8 @@ namespace Fantasia.Combat
         private void RestartGame()
         {
             BoardSession.Instance.ResetForNewGame();
-            SceneManager.LoadScene(BoardSceneName);
+            // 메인 메뉴가 빌드에 있으면 메뉴로 (게임 오버 화면은 문구 기획 후)
+            SceneManager.LoadScene(Application.CanStreamedLevelBeLoaded(Fantasia.UI.MainMenuController.SceneName) ? Fantasia.UI.MainMenuController.SceneName : BoardSceneName);
         }
 
         // D19 승리 보상: Cent(첫 칸) + 추가 칸 아이템, 생존 캐릭터별 경험치. 인벤토리가 차서 못 받은 것은
@@ -751,7 +931,7 @@ namespace Fantasia.Combat
         {
             var party = session.Party;
             var levels = party.Members.ToDictionary(m => m, m => m.Level);
-            var rewards = LootRules.Roll(_setup.Enemies, party, ItemCatalog.Current, new System.Random());
+            var rewards = LootRules.Roll(_setup.Enemies, party, ItemCatalog.Current, GameRandom.NewSystemRandom());
             LootRules.Apply(rewards, party);
             session.PendingLoot.AddRange(rewards.Overflow);
             LastRewards = rewards;
@@ -786,6 +966,7 @@ namespace Fantasia.Combat
         public BattleHud DevHud => _hud;
         public IReadOnlyList<BattleUnit> DevAllies => _allies;
         public IReadOnlyList<BattleUnit> DevEnemies => _enemies;
+        public int DevRound => _queue != null ? _queue.Round : 0;
 
         public void DevAttack(bool focus)
         {
@@ -835,6 +1016,10 @@ namespace Fantasia.Combat
         // ───────────── 대상 선택 (전장 클릭) ─────────────
         private void Update()
         {
+            if (SaveErrorPanel.IsOpen) return; // 저장 실패 — 재시도 성공까지 진행 일시정지
+            // 사건 기록 (Q) — 전투 중엔 열람만
+            if (Input.GetKeyDown(KeyCode.Q) && !DialoguePanel.IsOpen) CaseLogPanel.Toggle();
+            if (CaseLogPanel.IsOpen) return;
             if (_phase != Phase.ChoosingTarget) return;
 
             if (Input.GetMouseButtonDown(1))
@@ -844,7 +1029,7 @@ namespace Fantasia.Combat
                 _pendingItem = null;
                 _reviving = false;
                 HideMarker();
-                _hud.RetreatBlocked = EscapeBlocked; _hud.ShowActions(_current, CanRevive());
+                ShowAllyActions();
                 return;
             }
 

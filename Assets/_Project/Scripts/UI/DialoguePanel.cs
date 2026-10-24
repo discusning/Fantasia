@@ -133,6 +133,10 @@ namespace Fantasia.UI
         private QuestOffer? _pendingOffer;
 
         private bool _initialized;
+        private bool _skipCloses;
+        private Text _skipLabel;
+        // 대화를 닫은 프레임 — 같은 프레임의 Space가 보드 주사위로 새지 않게
+        public static int LastClosedFrame { get; private set; } = -1;
 
         public static void EnsureExists()
         {
@@ -140,10 +144,21 @@ namespace Fantasia.UI
             new GameObject("DialoguePanel").AddComponent<DialoguePanel>().Initialize();
         }
 
-        public static void Play(DialogueLine[] lines, QuestOffer? offer = null)
+        // skipCloses: [건너뛰기]가 마지막 줄로 가지 않고 바로 끝낸다 (보스 연출 대사 — 선택지 없음)
+        public static void Play(DialogueLine[] lines, QuestOffer? offer = null, bool skipCloses = false)
         {
             EnsureExists();
+            Instance._skipCloses = skipCloses && !offer.HasValue;
+            if (Instance._skipLabel != null) Instance._skipLabel.text = Instance._skipCloses ? "연출 건너뛰기" : "스킵";
             Instance.PlayInternal(lines, offer);
+        }
+
+        // 클릭(다음 버튼) 또는 Space·Enter로 다음 줄
+        private void Update()
+        {
+            if (!IsOpen) return;
+            bool showingOffer = _offer.HasValue && _lineIndex == _lines.Length - 1;
+            if (!showingOffer && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return))) Advance();
         }
 
         private void Awake() => Initialize();
@@ -233,10 +248,13 @@ namespace Fantasia.UI
         // that on the player's behalf.
         private void Skip()
         {
+            if (_skipCloses) { CloseAndReturn(); return; }
             if (_lineIndex >= _lines.Length - 1) return;
             _lineIndex = _lines.Length - 1;
             ShowCurrentLine();
         }
+
+        public static void DevAdvance() { if (IsOpen) Instance.Advance(); }
 
         private void Advance()
         {
@@ -266,6 +284,7 @@ namespace Fantasia.UI
         private void CloseAndReturn()
         {
             _root.SetActive(false);
+            LastClosedFrame = Time.frameCount;
 
             // Only leave the dialogue space if that's actually where we
             // are — Play(lines) can also be called directly (e.g. tests)
@@ -282,6 +301,7 @@ namespace Fantasia.UI
             canvasGO.transform.SetParent(transform, false);
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 20; // 전투 HUD·보드 창 위에
             canvasGO.AddComponent<GraphicRaycaster>();
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
@@ -328,7 +348,8 @@ namespace Fantasia.UI
             // Always present (every dialogue can be skipped), separate
             // corner from the advance/offer buttons so it can't be
             // mistaken for "confirm."
-            var skipButton = UGUIKit.CreateButton(inner, "SkipButton", new Vector2(0.84f, 0.86f), new Vector2(0.97f, 0.98f), "스킵", new Color(0.18f, 0.18f, 0.2f), 10);
+            var skipButton = UGUIKit.CreateButton(inner, "SkipButton", new Vector2(0.8f, 0.86f), new Vector2(0.97f, 0.98f), "스킵", new Color(0.18f, 0.18f, 0.2f), 10);
+            _skipLabel = skipButton.GetComponentInChildren<Text>();
             skipButton.onClick.AddListener(Skip);
 
             _root = outerRect.gameObject;

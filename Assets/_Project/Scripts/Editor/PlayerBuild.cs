@@ -13,19 +13,27 @@ namespace Fantasia.Editor
     {
         private const string OutputPath = "Builds/Windows/Fantasia.exe";
 
+        private const string ReleaseOutputPath = "Builds/WindowsRelease/Fantasia.exe";
+
         [MenuItem("Fantasia/Build/Windows Test Build")]
-        public static void BuildWindows()
+        public static void BuildWindows() => Build(OutputPath, BuildOptions.Development);
+
+        // 배포용 — 개발 빌드가 아니라서 F9 불러오기 등 개발 기능이 꺼진다 (Save.md 2)
+        [MenuItem("Fantasia/Build/Windows Release Build")]
+        public static void BuildWindowsRelease() => Build(ReleaseOutputPath, BuildOptions.None);
+
+        private static void Build(string outputPath, BuildOptions options)
         {
             EnsureRuntimeShaders();
             var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
-            Directory.CreateDirectory(Path.GetDirectoryName(OutputPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = scenes,
-                locationPathName = OutputPath,
+                locationPathName = outputPath,
                 target = BuildTarget.StandaloneWindows64,
-                options = BuildOptions.Development,
+                options = options,
             });
 
             var summary = report.summary;

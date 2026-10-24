@@ -349,6 +349,7 @@ namespace Fantasia.UI
             if (_member.TryEquip(item, _party.Inventory, out string why)) Say($"{_member.Job.DisplayName} — {item.DisplayName} 장착");
             else Say(why);
             ClearSelection();
+            SaveGame.Checkpoint("인벤토리 변경");
             Refresh();
         }
 
@@ -359,6 +360,7 @@ namespace Fantasia.UI
             if (_member.TryUnequip(_selectedSlot.Value, _party.Inventory, out string why)) Say($"{item.DisplayName} 해제 → 인벤토리");
             else Say(why);
             ClearSelection();
+            SaveGame.Checkpoint("인벤토리 변경");
             Refresh();
         }
 
@@ -369,6 +371,7 @@ namespace Fantasia.UI
             else if (_selectedConsumable != null) { Say($"{_selectedConsumable.DisplayName} 1개 버림"); inv.RemoveConsumable(_selectedConsumable); }
             else if (_selectedPending >= 0 && _selectedPending < Pending.Count) { Say($"{Pending[_selectedPending].Name} 버림"); Pending.RemoveAt(_selectedPending); }
             ClearSelection();
+            SaveGame.Checkpoint("인벤토리 변경");
             Refresh();
         }
 
@@ -378,6 +381,7 @@ namespace Fantasia.UI
             var drop = Pending[_selectedPending];
             if (LootRules.TryAdd(_party.Inventory, drop)) { Pending.RemoveAt(_selectedPending); Say($"{drop.Name} 받음"); ClearSelection(); }
             else Say("인벤토리가 가득 참 — 먼저 장비를 버리거나 정리하세요");
+            SaveGame.Checkpoint("인벤토리 변경");
             Refresh();
         }
 
@@ -395,6 +399,7 @@ namespace Fantasia.UI
             int bonus = session.PendingAmbushBonus;
             var result = ConsumableRules.UseInWorld(def, target, session.Party, session.UsedWorldItemThisTurn, ref bonus);
             session.PendingAmbushBonus = bonus;
+            SaveGame.Checkpoint("아이템 사용");
             if (Instance != null) { Instance.Say(result.Message); Instance.Refresh(); }
             Debug.Log("[Inventory] " + result.Message);
             if (result.EndsAllyTurn) { Close(); AllyTurnEndRequested?.Invoke(); }

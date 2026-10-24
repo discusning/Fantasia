@@ -148,6 +148,11 @@ namespace Fantasia.Combat
             else _enemyHP = Mathf.Max(0, _enemyHP - amount);
         }
 
+
+        // ── 전투 저장 (BattleSnapshot) ──
+        public IEnumerable<KeyValuePair<SkillDefinition, int>> Cooldowns => _cooldowns;
+        public void RestoreCooldown(SkillDefinition skill, int left) { if (skill != null) _cooldowns[skill] = left; }
+        public void RestoreEnemyHP(int hp) { if (!IsAlly) _enemyHP = Mathf.Clamp(hp, 0, Enemy.MaxHP); }
         // 적 자가 회복 (보스 금지된 봉합 등) — 최대 HP를 넘지 않음. 회복량을 돌려준다.
         public int HealEnemy(int amount)
         {

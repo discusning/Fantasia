@@ -40,6 +40,7 @@ namespace Fantasia.UI
         public event Action DefendClicked;
         public event Action RetreatClicked;
         public event Action ReviveClicked;
+        public event Action InterruptClicked; // 보스 예고 중 전용 행동 (봉합 방해)
         public event Action<BattleUnit> EnemyBarClicked;
         public event Action<Fantasia.Data.SkillDefinition> SkillChosen;
         public event Action<Fantasia.Data.ConsumableDefinition> ItemChosen;
@@ -65,7 +66,7 @@ namespace Fantasia.UI
 
         private RectTransform _canvasRect;
 
-        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public RectTransform Rect; }
+        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public RectTransform Rect; }
         private readonly List<TimelineEntry> _timeline = new();
         private Text _roundText;
 
@@ -73,6 +74,7 @@ namespace Fantasia.UI
         {
             public GameObject Root; public Image Border; public RawImage Portrait; public Text Name; public Text Badge;
             public Text Hp; public RectTransform HpFill; public StatusChipRow Statuses; public BattleUnit Unit;
+            public GameObject Telegraph; public Text TelegraphText; public float FlashUntil;
         }
         private readonly List<EnemyBar> _enemyBars = new();
 
@@ -131,6 +133,7 @@ namespace Fantasia.UI
                 bool newRound = entries[i].Round != prevRound;
                 slot.Round.gameObject.SetActive(newRound);
                 slot.Round.text = $"R{entries[i].Round}";
+                slot.Mark.gameObject.SetActive(unit.Boss != null && unit.Boss.HasPending && unit.IsAlive);
                 prevRound = entries[i].Round;
             }
         }
@@ -281,6 +284,100 @@ namespace Fantasia.UI
 
         public void SetHint(string text) => _hintText.text = text;
 
+        // ── 보스 예고 (Boss_Abel_v1.0 예고 UI) ──
+        private Button _interruptButton;
+        private GameObject _notice;
+        private Text _noticeText;
+        private float _noticeUntil;
+
+        // 예고 중 전용 행동 버튼. null이면 숨김. 집중력이 없어도 활성.
+        public void SetInterrupt(string label)
+        {
+            _interruptButton.gameObject.SetActive(!string.IsNullOrEmpty(label));
+            if (!string.IsNullOrEmpty(label)) _interruptButton.GetComponentInChildren<Text>().text = $"{label} (집중력 0)";
+        }
+
+        // HP 바 아래 예고 — null이면 해제. 시간으로 사라지지 않는다 (잠깐 띄운 "저지 성공"은 끝까지 보여준 뒤 반영).
+        public void SetBossTelegraph(BattleUnit boss, string text)
+        {
+            var bar = _enemyBars.Find(b => b.Unit == boss);
+            if (bar == null || Time.time < bar.FlashUntil) return;
+            bar.Telegraph.SetActive(!string.IsNullOrEmpty(text));
+            bar.TelegraphText.text = text ?? "";
+        }
+
+        public void FlashBossTelegraph(BattleUnit boss, string text, float seconds)
+        {
+            var bar = _enemyBars.Find(b => b.Unit == boss);
+            if (bar == null) return;
+            bar.FlashUntil = 0f;
+            SetBossTelegraph(boss, text);
+            bar.FlashUntil = Time.time + seconds;
+            StartCoroutine(EndFlash(bar, seconds));
+        }
+
+        private IEnumerator EndFlash(EnemyBar bar, float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            if (Time.time + 0.01f < bar.FlashUntil) yield break; // 그새 다른 표시가 덮음
+            bar.FlashUntil = 0f;
+            var p = bar.Unit != null && bar.Unit.Boss != null ? bar.Unit.Boss : null;
+            if (p == null || !p.HasPending || !bar.Unit.IsAlive) { bar.Telegraph.SetActive(false); bar.TelegraphText.text = ""; }
+        }
+
+        // 하단 알림 (예고·결과 각 2초) — HP 바 아래 예고의 보조
+        public void ShowNotice(string text, float seconds)
+        {
+            _noticeText.text = text;
+            _notice.SetActive(true);
+            _noticeUntil = Time.time + seconds;
+        }
+
+        private void Update()
+        {
+            if (_notice != null && _notice.activeSelf && Time.time >= _noticeUntil) _notice.SetActive(false);
+        }
+
+        // ── 보스 이름 배너 (등장 연출) + [연출 건너뛰기] ──
+        private GameObject _banner;
+        private Text _bannerAct, _bannerName;
+        private Action _onBannerSkip;
+
+        public void ShowBossBanner(string act, string name, float seconds, Action onSkip)
+        {
+            _bannerAct.text = act;
+            _bannerName.text = name;
+            _onBannerSkip = onSkip;
+            _banner.SetActive(true);
+        }
+
+        public void HideBossBanner() => _banner.SetActive(false);
+
+        private void BuildBanner(Transform parent)
+        {
+            var band = UGUIKit.CreateImage(parent, "BossBanner", new Vector2(0f, 0.5f), new Vector2(1f, 0.66f), new Color(0.05f, 0.02f, 0.02f, 0.88f));
+            _banner = band.gameObject;
+            _bannerAct = Label(band.transform, "Act", new Vector2(0.2f, 0.62f), new Vector2(0.8f, 0.95f), 14, TextAnchor.MiddleCenter, CritColor, bold: true);
+            _bannerName = Label(band.transform, "Name", new Vector2(0.15f, 0.08f), new Vector2(0.85f, 0.65f), 34, TextAnchor.MiddleCenter, TextLight, bold: true);
+            var skip = UGUIKit.CreateThemedButton(band.transform, "Skip", new Vector2(0.84f, 0.1f), new Vector2(0.98f, 0.4f), "연출 건너뛰기", ButtonFill, 11);
+            skip.onClick.AddListener(() => _onBannerSkip?.Invoke());
+            _banner.SetActive(false);
+        }
+
+        // 자동 플레이 점검용
+        public bool DevBannerVisible => _banner != null && _banner.activeSelf;
+        public string DevTelegraphText(BattleUnit boss) { var bar = _enemyBars.Find(b => b.Unit == boss); return bar != null && bar.Telegraph.activeSelf ? bar.TelegraphText.text : null; }
+        public bool DevInterruptVisible => _interruptButton != null && _interruptButton.gameObject.activeInHierarchy;
+        public void DevPressInterrupt() => InterruptClicked?.Invoke();
+
+        private void BuildNotice(Transform parent)
+        {
+            var fill = UGUIKit.CreateThemedPanel(parent, "Notice", new Vector2(0.3f, 0.4f), new Vector2(0.7f, 0.45f), CritColor, new Color(0.1f, 0.08f, 0.08f, 0.92f), 1.5f);
+            _notice = fill.parent.gameObject;
+            _noticeText = Label(fill, "Text", new Vector2(0.02f, 0f), new Vector2(0.98f, 1f), 12, TextAnchor.MiddleCenter, TextLight, bold: true);
+            _notice.SetActive(false);
+        }
+
         // ───────────── ④ 슬롯 판정 연출 ─────────────
         public IEnumerator PlayRoll(string title, SlotCheck.Result slots, bool focusUsed, string resultText, Color resultColor)
         {
@@ -375,6 +472,8 @@ namespace Fantasia.UI
             BuildItemPanel(canvasGO.transform);
             BuildRollPanel(canvasGO.transform);
             BuildResultPanel(canvasGO.transform);
+            BuildNotice(canvasGO.transform);
+            BuildBanner(canvasGO.transform);
         }
 
         private void BuildTimeline(Transform parent)
@@ -396,6 +495,10 @@ namespace Fantasia.UI
                 entry.Portrait = UGUIKit.CreateRect(fill, "Portrait", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
                 entry.Round = Label(entry.Rect, "RoundMark", new Vector2(0f, -0.55f), new Vector2(1f, 0f), 10, TextAnchor.MiddleCenter, Gold, bold: true);
                 entry.Round.gameObject.SetActive(false);
+                // 예고 중인 보스 표식
+                entry.Mark = Label(entry.Rect, "TelegraphMark", new Vector2(0.55f, 0.55f), new Vector2(1.15f, 1.2f), 14, TextAnchor.MiddleCenter, CritColor, bold: true);
+                entry.Mark.text = "!";
+                entry.Mark.gameObject.SetActive(false);
                 _timeline.Add(entry);
                 x += w + 0.008f;
             }
@@ -429,6 +532,15 @@ namespace Fantasia.UI
                 // 상태 칸 — 상시 특성(회피 상태) + 걸린 상태 효과. 그림은 StatusEffectDefinition.Icon.
                 bar.Statuses = new StatusChipRow(fill, "Status", new Vector2(0.57f, 0.05f), new Vector2(0.99f, 0.33f), StatusIconSlots);
 
+                // 보스 예고 — HP 바 바로 아래, 실행·저지·사망·전투 종료까지 유지 (Boss_Abel_v1.0 예고 UI)
+                var tele = UGUIKit.CreateThemedPanel(parent, $"EnemyTelegraph{i}", new Vector2(x0, 0.665f), new Vector2(x0 + 0.29f, 0.785f), CritColor, new Color(0.18f, 0.08f, 0.08f, 0.95f), 1.5f);
+                bar.Telegraph = tele.parent.gameObject;
+                bar.TelegraphText = Label(tele, "Text", new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.96f), 10, TextAnchor.MiddleLeft, TextLight, bold: false);
+                bar.TelegraphText.resizeTextForBestFit = true;
+                bar.TelegraphText.resizeTextMinSize = 8;
+                bar.TelegraphText.resizeTextMaxSize = 11;
+                bar.Telegraph.SetActive(false);
+
                 // 적 바를 눌러도 공격 대상 선택 (전장 클릭과 같은 효과)
                 var button = bar.Root.AddComponent<Button>();
                 button.targetGraphic = bar.Border;
@@ -444,7 +556,11 @@ namespace Fantasia.UI
             _actionPanel = panel.parent.gameObject;
 
             _actorText = Label(panel, "Actor", new Vector2(0.02f, 0.68f), new Vector2(0.2f, 0.98f), 13, TextAnchor.MiddleLeft, Gold, bold: true);
-            _hintText = Label(panel, "Hint", new Vector2(0.2f, 0.68f), new Vector2(0.99f, 0.98f), 10, TextAnchor.MiddleRight, TextLight, bold: false);
+            _hintText = Label(panel, "Hint", new Vector2(0.45f, 0.68f), new Vector2(0.99f, 0.98f), 10, TextAnchor.MiddleRight, TextLight, bold: false);
+            // 보스 예고 중에만 보이는 전용 행동 (봉합 방해 — 집중력 0, 행동 1회)
+            _interruptButton = UGUIKit.CreateThemedButton(panel, "InterruptButton", new Vector2(0.2f, 0.67f), new Vector2(0.44f, 0.97f), "", new Color(0.55f, 0.35f, 0.12f), 11);
+            _interruptButton.onClick.AddListener(() => InterruptClicked?.Invoke());
+            _interruptButton.gameObject.SetActive(false);
 
             var theme = UITheme.Current;
             var defs = new (string label, Sprite icon)[]

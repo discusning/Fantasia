@@ -18,6 +18,7 @@ namespace Fantasia.Editor
             var session = BoardSession.Instance;
             session.ClearedEncounters.Clear();
             session.UsedMapTiles.Clear();
+            session.StoryFlags.Clear();
             int e = 0;
 
             var first = Build(out var map);
@@ -38,17 +39,23 @@ namespace Fantasia.Editor
             session.ClearedEncounters.Add(enemyCoord);
             session.ClearedEncounters.Add(map.TileAt("M11").Coord); // 런던 보스
             session.UsedMapTiles.Add(map.TileAt("S16").Coord);
+            var bossOnly = Build(out _);
+            e += Check(bossOnly.TryGetTile(map.TileAt("K12").Coord, out var exitB) && exitB.IsBlocked, "보스 처치만으로는 K12 잠김 (제임스 보고 전)");
+            Object.DestroyImmediate(bossOnly.gameObject);
+            session.StoryFlags.Add(Fantasia.Core.ActOneStory.FlagReported); // 제임스 보고 = 1막 완료
             var third = Build(out _);
             e += Check(third.TryGetTile(enemyCoord, out var t2) && t2.IsCleared, "P04 클리어 유지");
-            e += Check(third.TryGetTile(map.TileAt("K12").Coord, out var exit2) && !exit2.IsBlocked, "런던 보스 처치 → K12 개방");
+            // 이번 버전은 1막까지 — 보고 뒤에도 K12는 2막 구현 전까지 잠김 ("2막 베르사유 — 추후 공개", 세이브 추가 수정안 1)
+            e += Check(third.TryGetTile(map.TileAt("K12").Coord, out var exit2) && exit2.IsBlocked == !HexBoard.Act2Available, "보고 후 K12: 2막 전엔 잠김");
             e += Check(third.TryGetTile(map.TileAt("K26").Coord, out var exit3) && exit3.IsBlocked, "베르사유 출구 K26은 그대로 잠김");
             e += Check(third.TryGetTile(map.TileAt("S16").Coord, out var rec) && rec.IsUsed, "회복 칸 S16 사용 기록 유지");
             var reach = third.ComputeReachability(map.TileAt("L11").Coord, 2);
-            e += Check(reach.Contains(map.TileAt("J12").Coord), "열린 출구로 L11 → J12 (베르사유) 이동 가능");
+            e += Check(reach.Contains(map.TileAt("J12").Coord) == HexBoard.Act2Available, "2막 전엔 L11 → J12 (베르사유) 이동 불가");
             Object.DestroyImmediate(third.gameObject);
 
             session.ClearedEncounters.Clear();
             session.UsedMapTiles.Clear();
+            session.StoryFlags.Clear();
             if (e == 0) Debug.Log("[BoardSession] 통과 — 월드맵 재생성·클리어·출구 개방·사용 기록 유지");
             else Debug.LogError($"[BoardSession] {e}건 실패");
         }

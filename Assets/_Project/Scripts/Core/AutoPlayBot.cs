@@ -24,6 +24,13 @@ namespace Fantasia.Core
         private static void Boot()
         {
             if (!Environment.GetCommandLineArgs().Contains("-autoplay")) return;
+            // 자동 플레이는 사용자 저장을 건드리지 않게 별도 파일 (매번 새로)
+            SaveGame.FileName = "save_autoplay.json";
+            if (SaveGame.HasSave) File.Delete(SaveGame.SavePath);
+            // 강제 종료 재현: 앞선 실행이 남긴 저장 파일로 시작 (-autoplay-resume <파일>)
+            var bootArgs = Environment.GetCommandLineArgs();
+            int resumeIndex = Array.IndexOf(bootArgs, "-autoplay-resume");
+            if (resumeIndex >= 0 && resumeIndex + 1 < bootArgs.Length && File.Exists(bootArgs[resumeIndex + 1])) File.Copy(bootArgs[resumeIndex + 1], SaveGame.SavePath, true);
             var go = new GameObject("AutoPlayBot");
             DontDestroyOnLoad(go);
             go.AddComponent<AutoPlayBot>();
@@ -38,17 +45,122 @@ namespace Fantasia.Core
             BattleController.Logged += line => Note("  " + line);
             int forceIndex = Array.IndexOf(args, "-autoplay-enemy");
             if (forceIndex >= 0 && forceIndex + 1 < args.Length) BoardTestController.DevForcedEnemyId = args[forceIndex + 1];
-            Note($"자동 플레이 시작 {DateTime.Now:yyyy-MM-dd HH:mm:ss} · 해상도 {Screen.width}x{Screen.height}");
+            int seedIndex = Array.IndexOf(args, "-autoplay-seed");
+            if (seedIndex >= 0 && seedIndex + 1 < args.Length && int.TryParse(args[seedIndex + 1], out int seed)) { Seed = seed; GameRandom.Seed(seed); }
+            if (args.Contains("-autoplay-temp-boss")) BoardTestController.DevAllowTempBosses = true;
+            Note($"자동 플레이 시작 {DateTime.Now:yyyy-MM-dd HH:mm:ss} · 해상도 {Screen.width}x{Screen.height}{(Seed >= 0 ? $" · 시드 {Seed}" : "")}");
 
-            yield return Play();
+            // 저장 점검: 이 이름의 저장 지점이 처음 오면 그 순간의 저장 파일을 복사 (= 그때 게임이 꺼진 상태)
+            int snapIndex = Array.IndexOf(args, "-autoplay-snap-at");
+            string snapAt = snapIndex >= 0 && snapIndex + 1 < args.Length ? args[snapIndex + 1] : null;
+            bool snapped = false;
+            SaveGame.Saved += reason =>
+            {
+                if (snapAt == null || snapped || !reason.Contains(snapAt)) return;
+                snapped = true;
+                File.Copy(SaveGame.SavePath, Path.Combine(_outDir, "snapshot.json"), true);
+                Note($"[스냅샷] '{reason}' 시점 저장 파일 복사");
+            };
+
+            if (args.Contains("-autoplay-resume")) yield return ResumeRun();
+            else if (args.Contains("-autoplay-menu")) yield return MenuRun();
+            else yield return Play();
 
             File.WriteAllText(Path.Combine(_outDir, "autoplay_log.txt"), _log.ToString(), Encoding.UTF8);
             yield return new WaitForSeconds(0.5f);
             Application.Quit();
         }
 
+        // 메뉴 점검 (-autoplay-menu): 메인 메뉴 표시(최근 전멸 기록 등) → 설정 화면 → 새 게임 → 저장 실패 일시정지·재시도
+        private IEnumerator MenuRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            Note($"메인 메뉴: {menu.DevContinueInfo.Replace("\n", " / ")}");
+            yield return Shot("menu");
+            SettingsPanel.Open();
+            yield return new WaitForSeconds(0.3f);
+            float before = GameSettings.Current.master;
+            SettingsPanel.DevStepVolume(0, -1);
+            Note($"설정: 전체 볼륨 {before:0.0} → {GameSettings.Current.master:0.0} · AudioListener {AudioListener.volume:0.0} · 설정 파일 {(File.Exists(Path.Combine(Application.persistentDataPath, "settings.json")) ? "저장됨" : "없음")}");
+            yield return Shot("settings");
+            SettingsPanel.DevStepVolume(0, +1);
+            SettingsPanel.DevClose();
+
+            // 저장 실패: 임시 파일 자리에 폴더를 만들어 쓰기를 막는다 → 경고·일시정지 → 막힌 것 풀고 재시도 → 재개
+            string blocker = SaveGame.SavePath + ".tmp";
+            Directory.CreateDirectory(blocker);
+            menu.DevOpenPartySelect();
+            yield return new WaitForSecondsRealtime(0.5f);
+            menu.OnDepart(); // 새 게임 저장 → 실패
+            yield return new WaitForSecondsRealtime(0.8f);
+            Note($"저장 실패 창 {(SaveErrorPanel.IsOpen ? "열림" : "안 열림")} · timeScale {Time.timeScale}");
+            yield return Shot("save_error");
+            SaveErrorPanel.DevRetry(); // 아직 막힘 → 계속 일시정지
+            yield return new WaitForSecondsRealtime(0.3f);
+            Note($"막힌 채 재시도 → 창 {(SaveErrorPanel.IsOpen ? "유지" : "닫힘")} · timeScale {Time.timeScale}");
+            Directory.Delete(blocker);
+            SaveErrorPanel.DevRetry();
+            yield return new WaitForSecondsRealtime(0.5f);
+            Note($"풀고 재시도 → 창 {(SaveErrorPanel.IsOpen ? "유지" : "닫힘")} · timeScale {Time.timeScale} · 저장 파일 {(SaveGame.HasSave ? "있음" : "없음")}");
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("board_k12_notice");
+            Note("자동 플레이 완료");
+        }
+
+        // 저장 점검 2단계: 메인 메뉴 이어하기 → 복원된 상태·다시 실행된 결과를 기록
+        private IEnumerator ResumeRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            yield return Shot("resume_menu");
+            var menu = FindFirstObjectByType<MainMenuController>();
+            Note($"이어하기 정보: {menu.DevContinueInfo.Replace("\n", " / ")}");
+            menu.OnContinue();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null || FindFirstObjectByType<BattleController>() != null, 10f, "이어하기 씬");
+            yield return new WaitForSeconds(1.5f);
+            var board = FindFirstObjectByType<BoardTestController>();
+            var battle = FindFirstObjectByType<BattleController>();
+            if (board != null)
+            {
+                Note($"이어하기 → 보드 · 월드 라운드 {board.DevWorldRound} · 위치 {board.DevPosition} · 칸 선택 대기 {board.DevAwaitingSelection} · 주사위 {board.DevLastRoll}");
+                yield return Shot("resume_board");
+            }
+            else if (battle != null)
+            {
+                // 확정된 행동이 다시 실행되는 것을 기다림 (로그에 결과가 남는다)
+                float end = Time.time + 12f;
+                while (Time.time < end && !battle.DevFinished && !battle.DevAwaitingPlayer) { if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance(); yield return null; }
+                yield return Shot("resume_battle");
+                Note($"이어하기 → 전투 · 라운드 {battle.DevRound} · 아군 HP {string.Join("/", battle.DevAllies.Select(a => a.CurrentHP))} · 적 HP {string.Join("/", battle.DevEnemies.Select(e => e.CurrentHP))}");
+            }
+            Note("자동 플레이 완료");
+        }
+
         private IEnumerator Play()
         {
+            // ── 0. 메인 메뉴 → 파티 구성 → 출발 (메뉴 씬이 빌드 첫 씬일 때) ──
+            var menu = FindFirstObjectByType<MainMenuController>();
+            if (menu != null)
+            {
+                yield return new WaitForSeconds(1f);
+                yield return Shot("main_menu");
+                menu.DevOpenPartySelect();
+                yield return new WaitForSeconds(0.8f);
+                yield return Shot("party_select");
+                string before = menu.DevPartyNames;
+                menu.DevCycle(0, +1); // 1번 칸 직업을 바꾸면 그 직업이 있던 칸과 자리 교환
+                Note($"파티 구성: {before} → 1번 ▶ → {menu.DevPartyNames}");
+                yield return new WaitForSeconds(0.5f);
+                yield return Shot("party_select_swapped");
+                menu.DevCycle(0, -1);
+                menu.OnDepart();
+                if (Seed >= 0) GameRandom.Seed(Seed); // 새 게임이 난수를 새로 정하므로 같은 시드로 다시
+                Note($"출발: {menu.DevPartyNames}");
+            }
+
             // ── 1. 보드 ──
             yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드 씬 로드");
             yield return new WaitForSeconds(1f);
@@ -62,6 +174,46 @@ namespace Fantasia.Core
             bool bossRun = args.Contains("-autoplay-boss");
             bool huntRun = args.Contains("-autoplay-hunt");
             bool shotHunt = false, shotSky = false;
+
+            // ── D27 저장 점검 (-autoplay-save): 상점에서 사고 숙박 → 다음 아군 턴 자동 저장 → 값 바꾸기 → 불러오기 → 비교 ──
+            if (args.Contains("-autoplay-save"))
+            {
+                var saveParty = BoardSession.Instance.Party;
+                board.DevOpenShop();
+                yield return WaitFor(() => ShopPanel.IsOpen, 3f, "상점 열기");
+                ShopPanel.Instance.DevSelectRow(1);
+                ShopPanel.Instance.DevAct(); // 생명의 영약 1개
+                saveParty.AddCent(100);
+                int saveRound = board.DevWorldRound;
+                ShopPanel.Instance.DevSelectTab(3); ShopPanel.Instance.DevSelectRow(0);
+                ShopPanel.Instance.DevAct(); // 숙박 → 아군 턴 종료 → 적 턴 → 다음 아군 턴 시작에 자동 저장
+                yield return WaitFor(() => board.DevWorldRound > saveRound && board.DevIsIdle, 10f, "숙박 후 턴 진행");
+                yield return new WaitForSeconds(0.5f);
+                var s = BoardSession.Instance;
+                var london = Fantasia.Data.ItemCatalog.Current.ShopAtHub("S05");
+                var elixirEntry = london.Entries.First(x => x.DisplayName == "생명의 영약");
+                string Snapshot() => $"라운드 {s.World.WorldRound} · 위치 {board.DevPosition} · Cent {s.Party.Cent} · G {s.BloodTrail} · S {s.SoulHarvest} · " +
+                                     $"HP {string.Join("/", s.Party.Members.Select(m => m.CurrentHP))} · 영약 {s.Party.Inventory.Consumables.Sum(c => c.Count)}개 보유 · 상점 영약 재고 {Fantasia.Items.ShopRules.StockOf(s.Shop, london, elixirEntry)}";
+                string saved = Snapshot();
+                Note($"저장 파일 {(SaveGame.HasSave ? "있음" : "없음")}: {SaveGame.SavePath}");
+                Note("저장 시점: " + saved);
+                // 저장 뒤에 진행이 바뀐 것처럼
+                s.Party.AddCent(999);
+                s.BloodTrail = 77;
+                s.Party.Members[0].TakeDamage(30);
+                Note("바꾼 뒤: " + Snapshot());
+                var oldBoard = board;
+                board.DevLoadLastSave();
+                yield return WaitFor(() => { var b = FindFirstObjectByType<BoardTestController>(); return b != null && b != oldBoard && b.DevIsIdle; }, 10f, "불러오기 후 보드");
+                board = FindFirstObjectByType<BoardTestController>();
+                yield return new WaitForSeconds(0.8f);
+                string loaded = Snapshot();
+                Note("불러온 뒤: " + loaded);
+                Note(loaded == saved ? "저장 점검: 일치" : "저장 점검: 불일치!");
+                yield return Shot("save_after_load");
+                Note("자동 플레이 완료");
+                yield break;
+            }
 
             // ── D20 상점 점검 (-autoplay-shop): 런던 거점에서 탭별 화면·구입·판매·숙박 ──
             if (args.Contains("-autoplay-shop"))
@@ -121,7 +273,17 @@ namespace Fantasia.Core
                     else board.DevMoveAvoidingEncounters();
                 }
                 else board.DevMoveTowardEncounter(bossRun);
-                yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen || board.DevAwaitingSelection, 15f, "이동");
+                yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen || board.DevAwaitingSelection || ConfirmPanel.IsOpen, 15f, "이동");
+                if (ConfirmPanel.IsOpen)
+                {
+                    // 1막 보스 권장 레벨 경고 → 진입
+                    yield return new WaitForSeconds(0.3f);
+                    yield return Shot("boss_level_warning");
+                    Note("보스 권장 레벨 경고 → 진입");
+                    ConfirmPanel.DevChoose(true);
+                    yield return WaitFor(() => EncounterPanel.IsOpen, 5f, "경고 뒤 조우 창");
+                    break;
+                }
                 if (BoardSession.Instance.SoulHarvest >= Fantasia.World.BloodHuntRules.RedSkyThreshold && !shotSky)
                 {
                     shotSky = true;
@@ -151,10 +313,41 @@ namespace Fantasia.Core
             yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투 관리자");
             var battle = FindFirstObjectByType<BattleController>();
             bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false, usedItem = false;
+            bool shotBanner = false, shotIntro = false, shotTelegraph = false, focusZeroed = false;
+            bool kit = args.Contains("-autoplay-kit"), forceInterrupt = args.Contains("-autoplay-interrupt"), focusZero = args.Contains("-autoplay-focus0");
+            int downs = 0, healsUsed = 0, interrupts = 0;
+            var wasDowned = new System.Collections.Generic.HashSet<BattleUnit>();
+            int focusBefore = battle.DevAllies.Sum(a => a.Member.CurrentFocus);
             float deadline = Time.time + 180f;
 
             while (!battle.DevFinished && Time.time < deadline)
             {
+                // 보스 등장 연출: 배너 → 전투 전 대화 (Space와 같은 다음 줄)
+                if (!shotBanner && battle.DevHud.DevBannerVisible) { shotBanner = true; yield return new WaitForSeconds(0.3f); yield return Shot("boss_banner"); }
+                if (DialoguePanel.IsOpen)
+                {
+                    if (!shotIntro) { shotIntro = true; yield return new WaitForSeconds(0.3f); yield return Shot("boss_intro_dialogue"); }
+                    DialoguePanel.DevAdvance();
+                    yield return new WaitForSeconds(0.15f);
+                    continue;
+                }
+                foreach (var a in battle.DevAllies) if (a.Member.IsDowned && wasDowned.Add(a)) downs++; else if (!a.Member.IsDowned) wasDowned.Remove(a);
+                var telegraphBoss = battle.DevEnemies.FirstOrDefault(e => e.Boss != null && e.Boss.HasPending && e.IsAlive);
+                if (telegraphBoss != null && focusZero && !focusZeroed)
+                {
+                    // 조건 C: 예고 시점에 아군 집중력 전원 0
+                    focusZeroed = true;
+                    foreach (var a in battle.DevAllies) a.Member.TrySpendFocus(a.Member.CurrentFocus);
+                    Note("  (점검: 예고 시점 아군 집중력 전원 0)");
+                }
+                if (telegraphBoss != null && !shotTelegraph && battle.DevAwaitingPlayer)
+                {
+                    shotTelegraph = true;
+                    yield return new WaitForSeconds(0.4f);
+                    yield return Shot("boss_telegraph");
+                    Note($"  예고 UI: {battle.DevHud.DevTelegraphText(telegraphBoss)?.Replace("\n", " / ")} · 봉합 방해 버튼 {(battle.DevHud.DevInterruptVisible ? "보임" : "없음")}");
+                }
+
                 if (battle.DevAwaitingPlayer)
                 {
                     yield return new WaitForSeconds(0.3f);
@@ -164,11 +357,36 @@ namespace Fantasia.Core
                     // 스킬을 쓸 상황이면 스킬(D11), 아니면 기본 공격 — 집중력이 남으면 추가 집중을 켠다.
                     var (skill, target) = ChooseSkill(battle, actor);
                     var downed = battle.DevAllies.FirstOrDefault(a => a.Member.IsDowned && a.Member.CurrentLP > 0);
-                    // 다친 동료가 있으면 회복 소모품 한 번 (D17)
+                    // 다친 동료가 있으면 회복 소모품 한 번 (D17) — 플레이테스트 준비물(-autoplay-kit)이면 HP 50% 아래마다
                     var potionTarget = battle.DevAllies.Where(a => a.InBattle).OrderBy(a => (float)a.CurrentHP / a.MaxHP).FirstOrDefault();
                     var potion = BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition)
                         .FirstOrDefault(d => d.Effect == Fantasia.Data.ConsumableEffect.RestoreHP);
-                    if (battle.DevCanRevive && downed != null && !Environment.GetCommandLineArgs().Contains("-autoplay-no-revive"))
+                    var poisoned = battle.DevAllies.Where(a => a.InBattle).FirstOrDefault(a => a.Statuses.All.Any(s => s.Effect == Fantasia.Data.StatusEffectType.Poison && s.Stacks >= 2));
+                    var antidote = BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition).FirstOrDefault(d => d.Id == Fantasia.Data.ConsumableIds.Antidote);
+                    bool breakerReady = skill != null && telegraphBoss != null && target == telegraphBoss && skill.Coefficient >= telegraphBoss.Boss.Pending.CancelMinCoefficient;
+                    if (telegraphBoss != null && battle.DevHud.DevInterruptVisible && (forceInterrupt || !breakerReady))
+                    {
+                        // 봉합 방해: 저지 기술이 없거나(집중력·쿨다운) 점검으로 강제할 때
+                        interrupts++;
+                        Note($"  {actor.DisplayName} → 봉합 방해 (집중력 {actor.Member.CurrentFocus})");
+                        battle.DevHud.DevPressInterrupt();
+                        yield return new WaitForSeconds(0.5f);
+                        yield return Shot("boss_interrupt");
+                    }
+                    else if (kit && antidote != null && poisoned != null && Fantasia.Items.ConsumableRules.CanUseOn(antidote, poisoned.Member, out _))
+                    {
+                        healsUsed++;
+                        Note($"  해독제 → {poisoned.DisplayName}");
+                        battle.DevUseItem(antidote, poisoned);
+                    }
+                    else if (kit && potion != null && potionTarget != null && (float)potionTarget.CurrentHP / potionTarget.MaxHP < 0.5f
+                             && Fantasia.Items.ConsumableRules.CanUseOn(potion, potionTarget.Member, out _))
+                    {
+                        healsUsed++;
+                        Note($"  {potion.DisplayName} → {potionTarget.DisplayName} (HP {potionTarget.CurrentHP}/{potionTarget.MaxHP})");
+                        battle.DevUseItem(potion, potionTarget);
+                    }
+                    else if (battle.DevCanRevive && downed != null && !Environment.GetCommandLineArgs().Contains("-autoplay-no-revive"))
                     {
                         // 쓰러진 동료가 있으면 먼저 부활 (D21)
                         battle.DevRevive(downed);
@@ -183,6 +401,7 @@ namespace Fantasia.Core
                              && Fantasia.Items.ConsumableRules.CanUseOn(potion, potionTarget.Member, out _))
                     {
                         usedItem = true;
+                        healsUsed++;
                         battle.DevHud.DevOpenItems();
                         yield return new WaitForSeconds(0.2f);
                         yield return Shot("battle_item_menu");
@@ -200,6 +419,7 @@ namespace Fantasia.Core
                             yield return new WaitForSeconds(0.2f);
                             yield return Shot("battle_skill_menu");
                         }
+                        if (skill.Effect == Fantasia.Data.SkillEffect.Heal || skill.Effect == Fantasia.Data.SkillEffect.Cleanse) healsUsed++;
                         bool bossNow = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null) && !(target != null && target.Boss != null && target.Boss.HasPending);
                         battle.DevUseSkill(skill, target, focus: actor.Member.CurrentFocus > skill.FocusCost + (bossNow ? 1 : 0));
                         if (!shotSkill)
@@ -239,6 +459,27 @@ namespace Fantasia.Core
             }
             if (!battle.DevFinished) { Note("실패: 전투가 180초 안에 끝나지 않음"); yield return Shot("battle_timeout"); yield break; }
 
+            // 보스 처치 후 대화 → 보상 창
+            bool bossBattle = battle.DevEnemies.Any(e => e.Boss != null);
+            yield return new WaitForSeconds(0.5f);
+            bool shotOutro = false;
+            while (DialoguePanel.IsOpen)
+            {
+                if (!shotOutro) { shotOutro = true; yield return Shot("boss_after_dialogue"); }
+                DialoguePanel.DevAdvance();
+                yield return new WaitForSeconds(0.15f);
+            }
+            if (bossBattle)
+            {
+                // 플레이테스트 기록 (Boss_Abel_v1.0 "개발팀에서 함께 남길 결과")
+                bool won = battle.DevEnemies.All(e => !e.IsAlive);
+                Note($"보스전 결과: {(won ? "승리" : "패배")} · 라운드 {battle.DevRound} · 다운 {downs} · LP 소모 {battle.DevAllies.Sum(a => a.Member.Job.StartingLP - a.Member.CurrentLP)}"
+                     + $" · 회복/해독 {healsUsed} · 봉합 방해 {interrupts} · 레벨 {string.Join("/", battle.DevAllies.Select(a => a.Member.Level))}"
+                     + $" · 남은 HP {string.Join("/", battle.DevAllies.Select(a => $"{a.CurrentHP}"))} · 남은 집중력 {string.Join("/", battle.DevAllies.Select(a => a.Member.CurrentFocus))} (시작 합 {focusBefore})"
+                     + $" · 시드 {Seed}");
+                if (args.Contains("-autoplay-batch")) { yield return Shot("battle_result"); Note("자동 플레이 완료"); yield break; }
+            }
+
             // ── 4. 결과 → 보드 복귀 ──
             yield return new WaitForSeconds(0.8f);
             yield return Shot("battle_result");
@@ -252,6 +493,40 @@ namespace Fantasia.Core
             {
                 var exit = hexBoard.Map.TileAt("K12").Coord;
                 Note($"런던 출구 K12: {(hexBoard.IsExitOpen(exit) ? "열림" : "잠김")} · 퀘스트 물건: {string.Join(", ", BoardSession.Instance.KeyItems)}");
+
+                // 1막 마무리: 사건 기록(증거품) → 런던 거점에서 제임스 보고 → 1막 완료·K12 해금
+                if (ActOneStory.NeedsReport(BoardSession.Instance))
+                {
+                    Note($"진행 퀘스트: {string.Join(", ", BoardSession.Instance.Quests.Select(q => q.Title))}");
+                    CaseLogPanel.DevOpen(2);
+                    yield return new WaitForSeconds(0.4f);
+                    yield return Shot("case_log_evidence");
+                    CaseLogPanel.DevClose();
+                    board = FindFirstObjectByType<BoardTestController>();
+                    yield return WaitFor(() => board.DevIsIdle, 15f, "보고 전 대기");
+                    board.DevReportToJames();
+                    yield return WaitFor(() => DialoguePanel.IsOpen, 3f, "제임스 대화");
+                    yield return new WaitForSeconds(0.3f);
+                    yield return Shot("james_report");
+                    while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); yield return new WaitForSeconds(0.2f); }
+                    yield return new WaitForSeconds(0.5f);
+                    Note($"제임스 보고 → K12 {(hexBoard.IsExitOpen(exit) ? "열림" : "잠김")} · 회차 상태 {BoardSession.Instance.Run} · 진행: {string.Join(", ", BoardSession.Instance.Quests.Select(q => q.Title))}");
+                    // 1막 클리어 결과 화면 → 메인 메뉴 → 이어하기 = 결과 화면
+                    yield return WaitFor(() => ActClearPanel.IsOpen, 3f, "클리어 결과 화면");
+                    yield return Shot("act1_clear");
+                    ActClearPanel.DevClose();
+                    yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+                    yield return new WaitForSeconds(1f);
+                    var clearMenu = FindFirstObjectByType<MainMenuController>();
+                    Note($"클리어 뒤 메뉴: {clearMenu.DevContinueInfo.Replace("\n", " / ")}");
+                    yield return Shot("menu_after_clear");
+                    clearMenu.OnContinue();
+                    yield return new WaitForSeconds(0.5f);
+                    Note($"클리어 뒤 이어하기 → 결과 화면 {(ActClearPanel.IsOpen ? "열림" : "안 열림")} · Cent {BoardSession.Instance.Party?.Cent}");
+                    yield return Shot("continue_after_clear");
+                    Note("자동 플레이 완료");
+                    yield break;
+                }
             }
 
             // ── 5. 인벤토리·장비 창 (D17) ──
@@ -355,7 +630,32 @@ namespace Fantasia.Core
             int soulIndex = Array.IndexOf(args, "-autoplay-soul");
             if (soulIndex >= 0 && soulIndex + 1 < args.Length && int.TryParse(args[soulIndex + 1], out int soul)) BoardSession.Instance.SoulHarvest = soul;
             if (trailIndex >= 0 || soulIndex >= 0) Note($"시작 G {BoardSession.Instance.BloodTrail} · S {BoardSession.Instance.SoulHarvest}");
+
+            // 보스 플레이테스트 (Boss_Abel_v1.0 3쪽): 레벨, 준비물(일반 HP 회복약 3·해독제 3·집중의 향초 1), HP·MP 최대·집중력 3
+            int levelIndex = Array.IndexOf(args, "-autoplay-level");
+            if (levelIndex >= 0 && levelIndex + 1 < args.Length && int.TryParse(args[levelIndex + 1], out int level))
+            {
+                foreach (var m in party.Members)
+                {
+                    while (m.Level < level) m.GrantExperience(m.ExperienceToNextLevel);
+                    m.Heal(m.MaxHP);
+                    m.RestoreMP(m.MaxMP);
+                    m.RestoreFocus(m.MaxFocus);
+                }
+                Note($"시작 레벨 {level}: {string.Join(", ", party.Members.Select(m => $"{m.Job.DisplayName} Lv{m.Level} HP {m.CurrentHP} 집중 {m.CurrentFocus}"))}");
+            }
+            if (args.Contains("-autoplay-kit") && Fantasia.Data.ItemCatalog.Current is { } catalog)
+            {
+                party.Inventory.AddConsumable(catalog.Consumable(Fantasia.Data.ConsumableIds.LifeElixir), 3);
+                party.Inventory.AddConsumable(catalog.Consumable(Fantasia.Data.ConsumableIds.Antidote), 3);
+                party.Inventory.AddConsumable(catalog.Consumable(Fantasia.Data.ConsumableIds.FocusCandle), 1);
+                Note("준비물: 생명의 영약 3 · 해독제 3 · 집중의 향초 1");
+            }
+            if (args.Contains("-autoplay-fast")) Time.timeScale = 4f; // 반복 점검용 4배속
         }
+
+        // 같은 시드 비교용 (-autoplay-seed N)
+        private static int Seed = -1;
 
         private IEnumerator WaitFor(Func<bool> condition, float timeout, string what)
         {

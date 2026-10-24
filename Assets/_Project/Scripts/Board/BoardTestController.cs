@@ -73,10 +73,13 @@ namespace Fantasia.Board
             LandmarkInfoPanel.EnsureExists();
             DialoguePanel.EnsureExists();
             EncounterPanel.EnsureExists();
+            CaseLogPanel.EnsureExists(new Vector2(-10f, -74f)); // 상단 바 바로 아래 오른쪽
             _board = GetComponent<HexBoard>();
+            _hasSave = SaveGame.HasSave;
+            if (_board.UsesWorldMap) MusicPlayer.Play(MusicIds.FieldLondon); // 월드 복귀 시 지역 음악 (☆ 지역별 곡은 런던만 정의)
             PlaceAtStartIfNew();
             _currentCoord = BoardSession.Instance.PlayerPosition;
-            _lastSafeCoord = _currentCoord;
+            _lastSafeCoord = Clock.HasRolledThisTurn ? BoardSession.Instance.LastSafeCoord : _currentCoord; // 이동 뒤 저장에서 이어하면 직전 칸 유지
             BuildTestParty();
             SpawnToken();
             if (Camera.main != null && _board.UsesWorldMap) BoardCameraRig.Attach(Camera.main, _token);
@@ -85,6 +88,14 @@ namespace Fantasia.Board
             if (_board.UsesWorldMap) gameObject.AddComponent<BoardSkyTint>();
             ResolveReaperFightResult();
             RefreshReaperFigures();
+            PlaceExitNotice();
+
+            // 1막 클리어 상태로 들어오면 (개발용 F9 등) 결과 화면 → 메인 메뉴
+            if (BoardSession.Instance.Run == BoardSession.RunState.ActCleared)
+            {
+                ActClearPanel.Show(SaveGame.Capture(BoardSession.Instance), "메인 메뉴로", () => SceneManager.LoadScene(MainMenuController.SceneName));
+                return;
+            }
 
             // 전투로 끝난 아군 턴이면 돌아오자마자 적 턴 진행, 아니면 지금 페이즈 표시.
             if (BoardSession.Instance.AllyTurnEndedByBattle)
@@ -95,6 +106,33 @@ namespace Fantasia.Board
             else
             {
                 RefreshTopBar(announce: true);
+                if (Clock.Phase == WorldPhase.EnemyTurn) StartCoroutine(EndAllyTurn()); // 적 턴 중 저장에서 이어하기
+                else if (!Clock.HasRolledThisTurn) AutoSave();
+                else ResumeAllyTurn();
+            }
+        }
+
+        // 아군 턴 도중 저장에서 이어하기 (Save.md 3): 확정된 주사위 → 같은 이동력으로 칸 선택부터 / 이동 완료 → 도착 처리부터
+        private void ResumeAllyTurn()
+        {
+            var s = BoardSession.Instance;
+            if (s.PendingBonusMove > 0)
+            {
+                _lastEventBonus = s.PendingBonusMove;
+                HighlightReachable(_lastEventBonus);
+                Debug.Log($"[SaveGame] 이어하기 — 이벤트 칸 추가 이동 {_lastEventBonus}");
+            }
+            else if (s.PendingMovePoints >= 0)
+            {
+                _lastRoll = s.PendingMovePoints;
+                HighlightReachable(_lastRoll);
+                Debug.Log($"[SaveGame] 이어하기 — 주사위 {_lastRoll} 확정 상태, 칸 선택부터");
+                if (!_reachability.ReachableTiles.Any()) { _awaitingSelection = false; _board.ClearHighlights(); StartCoroutine(EndAllyTurnAfter(1.2f)); }
+            }
+            else
+            {
+                Debug.Log("[SaveGame] 이어하기 — 이동 완료 상태, 도착 처리부터");
+                StartCoroutine(Arrive());
             }
         }
 
@@ -254,10 +292,15 @@ namespace Fantasia.Board
 
         private void Update()
         {
+            if (SaveErrorPanel.IsOpen) return; // 저장 실패 — 재시도 성공까지 진행 일시정지
+            if (Input.GetKeyDown(KeyCode.Q) && !EncounterPanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen) CaseLogPanel.Toggle();
+            if (CaseLogPanel.IsOpen || ConfirmPanel.IsOpen || ActClearPanel.IsOpen) return;
             if (Input.GetKeyDown(KeyCode.I) && !EncounterPanel.IsOpen) InventoryPanel.Toggle(_testParty, Leader);
             if (InventoryPanel.IsOpen || Fantasia.UI.ShopPanel.IsOpen) return;
             // 거점 칸에서 B: 상점 (아군 턴, 이동·턴 처리 중이 아닐 때)
             if (Input.GetKeyDown(KeyCode.B) && !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && Clock.Phase == WorldPhase.AllyTurn) OpenShopHere();
+            // F9: 마지막 자동 저장 불러오기 (메인 메뉴의 "이어하기"가 생기기 전 임시)
+            if (Input.GetKeyDown(KeyCode.F9) && !_isMoving && !_turnEnding && !EncounterPanel.IsOpen) LoadLastSave();
             if (LandmarkInfoPanel.IsOpen || DialoguePanel.IsOpen || EncounterPanel.IsOpen) return;
 
             // Ctrl+Right-click = "just look" (info popup only), independent
@@ -271,7 +314,7 @@ namespace Fantasia.Board
 
             if (_isMoving || _turnEnding) return;
 
-            if (Input.GetKeyDown(KeyCode.Space)) TryRoll();
+            if (Input.GetKeyDown(KeyCode.Space) && Time.frameCount != DialoguePanel.LastClosedFrame) TryRoll(); // 대화를 닫은 Space가 주사위로 새지 않게
 
             if (_awaitingSelection && Input.GetMouseButtonDown(0)) TrySelectTile();
         }
@@ -297,7 +340,18 @@ namespace Fantasia.Board
             _lastEventBonus = -1;
             _worldMessage = null;
             _lastRoll = MovementRules.RollMovePoints(pursuedByReaper: Hunt.Active); // 피의 사냥 중 주사위 −2 (☆)
+            // 결과 확정 → 저장 → 표시 (Save.md: 주사위 2가 나오면 껐다 켜도 2인 상태로 칸 선택부터)
+            BoardSession.Instance.PendingMovePoints = _lastRoll;
+            SaveGame.Checkpoint($"주사위 확정 — {_lastRoll}");
             HighlightReachable(_lastRoll);
+            // 이동력 0(피의 사냥 −2로 1·2) 또는 갈 칸이 없으면 제자리 — 멈추지 않게 아군 턴을 바로 끝낸다
+            if (!_reachability.ReachableTiles.Any())
+            {
+                _awaitingSelection = false;
+                _board.ClearHighlights();
+                _encounterResultMessage = _lastRoll == 0 ? "이동력 0 — 사신에게 쫓겨 움직이지 못했다" : "갈 수 있는 칸이 없다";
+                StartCoroutine(EndAllyTurnAfter(1.2f));
+            }
         }
 
         private void HighlightReachable(int movePoints)
@@ -330,6 +384,8 @@ namespace Fantasia.Board
             var path = _reachability.GetPathTo(target);
             _board.ClearHighlights();
             _awaitingSelection = false;
+            BoardSession.Instance.PendingMovePoints = -1; // 칸을 골랐으면 확정된 이동력 소모
+            BoardSession.Instance.PendingBonusMove = -1;
             StartCoroutine(WalkPath(path));
         }
 
@@ -354,7 +410,14 @@ namespace Fantasia.Board
 
             _isMoving = false;
             BoardSession.Instance.PlayerPosition = _currentCoord;
+            BoardSession.Instance.LastSafeCoord = _lastSafeCoord;
+            SaveGame.Checkpoint("이동 완료"); // Save.md 3 — 도착 처리(조우·칸 효과)보다 먼저
+            yield return Arrive();
+        }
 
+        // 도착 처리 — 이동 직후, 또는 이동 완료 저장에서 이어할 때 (조우 창·칸 효과·보고·턴 종료)
+        private IEnumerator Arrive()
+        {
             // 피의 사냥 사신이 있는 칸에 도착 → 그 사신과 조우
             if (Hunt.Active && Hunt.Reapers.Contains(_currentCoord) && ReaperEnemy != null)
             {
@@ -366,12 +429,41 @@ namespace Fantasia.Board
             if (_board.TryGetTile(_currentCoord, out var landedTile) && landedTile.IsEncounter && !landedTile.IsCleared
                 && landedTile.Enemy != null)
             {
+                // 정식 보스가 아직 없는 보스 칸(베르사유·로마)은 "개발 중" — 임시 전투로 진행·막 완료 처리하지 않음 (Boss_Abel_v1.0 07)
+                if (landedTile.IsBoss && !landedTile.Enemy.IsBoss && !DevAllowTempBosses)
+                {
+                    _encounterResultMessage = $"{landedTile.MapLabel} — 이 지역의 보스는 개발 중입니다";
+                    StartCoroutine(EndAllyTurn());
+                    yield break;
+                }
+                // 1막 보스 권장 레벨 경고 (진입 제한은 없음): [진입] [돌아가기]
+                if (ActOneStory.IsActOneBoss(landedTile.Enemy) && _testParty.LivingMembers.Any(m => m.Level < ActOneStory.RecommendedLevel))
+                {
+                    bool? enter = null;
+                    ConfirmPanel.Show(ActOneStory.LevelWarning, "진입", "돌아가기", () => enter = true, () => enter = false);
+                    while (enter == null) yield return null;
+                    if (enter == false)
+                    {
+                        // 돌아가기: 직전 칸으로 물러나고 아군 턴 종료 (☆ 불이익 없음)
+                        _currentCoord = _lastSafeCoord;
+                        _token.position = TokenSurfacePosition(_currentCoord);
+                        BoardSession.Instance.PlayerPosition = _currentCoord;
+                        StartCoroutine(EndAllyTurn());
+                        yield break;
+                    }
+                }
                 _encounterResultMessage = null;
                 _pendingEnemy = landedTile.Enemy;
                 _pendingIsReaper = false;
+                // 판정 결과가 이미 확정·저장된 상태에서 이어하면 창 없이 그 결과로 (Save.md)
+                if (BoardSession.Instance.PendingEncounterOutcome >= 0) { OnEncounterResolved((EncounterOutcome)BoardSession.Instance.PendingEncounterOutcome); yield break; }
                 EncounterPanel.Show(landedTile.Enemy, Leader, OnEncounterResolved);
                 yield break;
             }
+
+            // 1막: 보스 처치 뒤 런던 거점에 오면 제임스에게 보고 → 1막 완료·베르사유 해금 (그다음 상점)
+            if (_board.UsesWorldMap && ActOneStory.NeedsReport(BoardSession.Instance) && _board.Map.TileAt(ActOneStory.HubLabel).Coord.Equals(_currentCoord))
+                yield return ReportToJames();
 
             HandleMapTile(landedTile);
 
@@ -400,7 +492,7 @@ namespace Fantasia.Board
                     ItemAcquiredToast.Show("회복 칸: 파티 HP 회복");
                     break;
                 case MapTileKind.Treasure when !tile.IsUsed:
-                    var drop = Fantasia.Combat.LootRules.RollDrop(_testParty, ItemCatalog.Current, new System.Random());
+                    var drop = Fantasia.Combat.LootRules.RollDrop(_testParty, ItemCatalog.Current, GameRandom.NewSystemRandom());
                     session.UsedMapTiles.Add(tile.Coordinate);
                     tile.SetUsed(true);
                     if (drop.HasValue)
@@ -411,9 +503,87 @@ namespace Fantasia.Board
                     }
                     break;
             }
+            if (tile.MapKind == MapTileKind.Recovery || tile.MapKind == MapTileKind.Treasure) SaveGame.Checkpoint("칸 효과");
         }
 
         private const float RecoveryTileHpRatio = 0.3f;
+
+        // ── D27 저장·불러오기: 아군 턴이 시작될 때 자동 저장, F9로 마지막 저장 불러오기 ──
+        private bool _hasSave;
+        public string LastSaveMessage { get; private set; }
+
+        private void AutoSave()
+        {
+            if (_testParty == null || _testParty.IsWipedOut) return;
+            bool ok = SaveGame.Checkpoint($"아군 턴 시작 — {Clock.WorldRound}라운드");
+            _hasSave |= ok;
+            LastSaveMessage = ok ? $"자동 저장 — {Clock.WorldRound}라운드" : "자동 저장 실패";
+        }
+
+        // F9 불러오기는 개발용 (에디터·개발 빌드만, 배포 빌드에서는 동작 안 함 — Save.md 2)
+        public static bool DevLoadAllowed => Application.isEditor || Debug.isDebugBuild;
+
+        private void LoadLastSave()
+        {
+            if (!DevLoadAllowed) return;
+            string error = SaveGame.Apply(SaveGame.ReadFile(), BoardSession.Instance, ItemCatalog.Current);
+            if (error != null)
+            {
+                _worldMessage = "불러오기 실패: " + error;
+                Debug.LogWarning("[SaveGame] " + _worldMessage);
+                return;
+            }
+            Debug.Log("[SaveGame] 불러오기 — 보드 다시 열기");
+            SceneManager.LoadScene(BoardSession.Instance.BattleSnapshotJson != null ? CombatSceneName : SceneManager.GetActiveScene().name); // 전투 중 저장이면 전투로
+        }
+
+        // K12 위 안내 글 — 이번 버전은 1막까지 (세이브 추가 수정안 1)
+        private void PlaceExitNotice()
+        {
+            if (!_board.UsesWorldMap || HexBoard.Act2Available) return;
+            var coord = _board.Map.TileAt("K12").Coord;
+            var go = new GameObject("ExitNotice_K12");
+            go.transform.SetParent(transform, false);
+            go.transform.position = _board.CoordToWorld(coord) + Vector3.up * 1.6f;
+            var text = go.AddComponent<TextMesh>();
+            text.text = "2막 베르사유\n추후 공개";
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.characterSize = 0.12f;
+            text.fontSize = 48;
+            text.color = new Color(0.95f, 0.85f, 0.55f);
+            text.font = Fantasia.UI.UGUIKit.UIFont;
+            go.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
+            go.AddComponent<FaceCamera>();
+        }
+
+        private class FaceCamera : MonoBehaviour
+        {
+            private void LateUpdate()
+            {
+                if (Camera.main != null) transform.rotation = Quaternion.LookRotation(transform.position - Camera.main.transform.position);
+            }
+        }
+
+        // ── 1막 마무리: 제임스에게 보고 (Boss_Abel_v1.0 05) — 대사 생략·재접속에도 같은 결과 ──
+        private IEnumerator ReportToJames()
+        {
+            DialoguePanel.Play(ActOneStory.ReportToJames, skipCloses: true);
+            while (DialoguePanel.IsOpen) yield return null;
+            // 세이브 추가 수정안 1: 보고 완료 → 클리어 저장 → 결과 화면 → 메인 메뉴 (K12·베르사유는 2막 구현 때)
+            ActOneStory.CompleteReport(BoardSession.Instance);
+            SaveGame.Checkpoint("1막 클리어 (제임스 보고)");
+            _board.RefreshExits();
+            _worldMessage = "1막 클리어 — 다음 목적지 베르사유 (2막에서 공개)";
+            Debug.Log("[Story] " + _worldMessage);
+            bool closed = false;
+            ActClearPanel.Show(SaveGame.Capture(BoardSession.Instance), "메인 메뉴로", () => closed = true);
+            while (!closed) yield return null;
+            SceneManager.LoadScene(MainMenuController.SceneName);
+        }
+
+        // 개발용: 정식 보스가 없는 보스 칸의 임시 소형 적 전투 허용 (내부 동선 점검 — 자동 플레이 -autoplay-temp-boss)
+        public static bool DevAllowTempBosses;
 
         // ── D20 도시 상점: 거점 칸에서 열림 (도착하면 자동, 아군 턴 중 B) ──
         private void OpenShopHere()
@@ -454,6 +624,7 @@ namespace Fantasia.Board
                 session.PendingEncounterCoord = null;
                 session.LastSafeCoord = _lastSafeCoord;
                 session.AllyTurnEndedByBattle = true;
+                SaveBattleEntry(setup);
                 SceneManager.LoadScene(CombatSceneName);
                 return;
             }
@@ -463,19 +634,40 @@ namespace Fantasia.Board
             setup.Enemies.Add(first);
             // 보스는 단독 (D14). 보스 데이터가 없는 보스 칸은 임시로 소형 적 3마리 — 처치하면 지역 출구가 열린다
             int extra = first != null && first.IsBoss ? 0 : _board.TryGetTile(_currentCoord, out var here) && here.IsBoss ? 2 : 1;
-            for (int i = 0; i < extra && pool.Length > 0; i++) setup.Enemies.Add(forced != null ? forced : pool[Random.Range(0, pool.Length)]);
+            for (int i = 0; i < extra && pool.Length > 0; i++) setup.Enemies.Add(forced != null ? forced : pool[GameRandom.Range(0, pool.Length)]);
             // 전리품 장비 레벨 = 지역 (런던 1 · 베르사유 4 · 로마 7)
             if (_board.UsesWorldMap) Fantasia.Combat.LootRules.CurrentZoneWearLevel = ZoneWearLevel(_board.Map.RegionOf(_currentCoord));
             session.PendingBattle = setup;
             session.PendingEncounterCoord = _currentCoord;
             session.LastSafeCoord = _lastSafeCoord;
             session.AllyTurnEndedByBattle = true;
+            SaveBattleEntry(setup);
             SceneManager.LoadScene(CombatSceneName);
+        }
+
+        // 전투 진입 저장 (조우 결과 확정 뒤, 전투 씬 전) — 이어하면 같은 적·같은 개시·같은 난수로 전투 시작
+        private void SaveBattleEntry(Fantasia.Combat.BattleSetup setup)
+        {
+            var s = BoardSession.Instance;
+            var snap = new Fantasia.Combat.BattleSnapshot
+            {
+                started = false,
+                enemyIds = setup.Enemies.Where(e => e != null).Select(e => e.Id).ToList(),
+                opening = (int)setup.Opening,
+                hasEncounterCoord = s.PendingEncounterCoord.HasValue,
+                coordQ = s.PendingEncounterCoord?.Q ?? 0,
+                coordR = s.PendingEncounterCoord?.R ?? 0,
+                reaperFight = s.PendingReaperFight,
+                zoneWearLevel = Fantasia.Combat.LootRules.CurrentZoneWearLevel,
+            };
+            s.BattleSnapshotJson = JsonUtility.ToJson(snap);
+            SaveGame.Checkpoint("전투 진입");
         }
 
         // EncounterPanel이 판정(슬롯 공개 연출 포함)을 끝낸 뒤 호출한다.
         private void OnEncounterResolved(EncounterOutcome outcome)
         {
+            BoardSession.Instance.PendingEncounterOutcome = -1; // 처리함
             _encounterResultMessage = EncounterPanel.OutcomeMessage(outcome);
             switch (outcome)
             {
@@ -501,13 +693,24 @@ namespace Fantasia.Board
             if (landedTile == null || !landedTile.IsEventTile || !Clock.TryConsumeEventBonus()) return false;
 
             _lastEventBonus = MovementRules.RollEventBonusMove();
-            if (_lastEventBonus <= 0) return false;
+            if (_lastEventBonus <= 0) { SaveGame.Checkpoint("이벤트 칸 — 추가 이동 0"); return false; }
 
+            BoardSession.Instance.PendingBonusMove = _lastEventBonus;
+            SaveGame.Checkpoint($"이벤트 칸 — 추가 이동 {_lastEventBonus}");
             HighlightReachable(_lastEventBonus);
+            if (!_reachability.ReachableTiles.Any()) { _awaitingSelection = false; _board.ClearHighlights(); return false; } // 갈 칸 없으면 보너스 없이 턴 종료
             return true;
         }
 
         // 아군 턴 종료 → 적 턴(월드 처리) → 다음 아군 턴 시작(중독 등 보드 지속 피해).
+        private IEnumerator EndAllyTurnAfter(float seconds)
+        {
+            _turnEnding = true; // 기다리는 동안 다른 입력 막기 (EndAllyTurn이 다시 켬)
+            yield return new WaitForSeconds(seconds);
+            _turnEnding = false;
+            yield return EndAllyTurn();
+        }
+
         private IEnumerator EndAllyTurn()
         {
             _turnEnding = true;
@@ -515,6 +718,9 @@ namespace Fantasia.Board
             _awaitingSelection = false;
 
             Clock.EndAllyTurn();
+            BoardSession.Instance.PendingMovePoints = -1;
+            BoardSession.Instance.PendingBonusMove = -1;
+            SaveGame.Checkpoint("아군 턴 종료"); // 적 턴 처리 전 — 이어하면 적 턴부터 한 번만 처리
             RefreshTopBar(announce: true);
             var enemyLog = WorldTurnRules.RunEnemyTurn(Clock);
             enemyLog.AddRange(RunBloodHuntEnemyTurn());
@@ -538,6 +744,7 @@ namespace Fantasia.Board
             foreach (var line in lines) Debug.Log("[World] " + line);
             RefreshTopBar(announce: true);
             _turnEnding = false;
+            if (caught < 0) AutoSave();
             if (caught >= 0 && ReaperEnemy != null) ShowReaperEncounter();
         }
 
@@ -547,7 +754,7 @@ namespace Fantasia.Board
             var session = BoardSession.Instance;
             int g = session.BloodTrail, s = session.SoulHarvest;
             var log = BloodHuntRules.OnEnemyTurn(Hunt, ref g, ref s, _testParty, _board.UsesWorldMap ? _board.Map : null,
-                _currentCoord, new System.Random(), out var victim);
+                _currentCoord, GameRandom.NewSystemRandom(), out var victim);
             session.BloodTrail = g;
             session.SoulHarvest = s;
             foreach (var line in log)
@@ -599,13 +806,18 @@ namespace Fantasia.Board
         public static string DevForcedEnemyId;
 
         // 새 아군 턴을 시작할 수 있는 상태 (이동·창·적 턴 연출이 모두 끝났고 아직 안 굴림).
-        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen
+        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen && !CaseLogPanel.IsOpen && !ConfirmPanel.IsOpen
                                  && Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn;
         public bool DevAwaitingSelection => _awaitingSelection;
         public int DevWorldRound => Clock.WorldRound;
+        public HexCoord DevPosition => _currentCoord;
+        public int DevLastRoll => _lastRoll;
 
         public void DevRoll() => TryRoll();
         public void DevOpenShop() => OpenShopHere();
+        public void DevLoadLastSave() => LoadLastSave();
+        // 런던 거점으로 옮겨 제임스 보고 (자동 플레이 점검용)
+        public void DevReportToJames() { DevTeleport(ActOneStory.HubLabel); StartCoroutine(ReportToJames()); }
 
         // 자동 플레이: 월드맵 칸 이름(예: "M10")으로 파티를 옮긴다
         public void DevTeleport(string label)
@@ -687,7 +899,7 @@ namespace Fantasia.Board
                 GUI.Label(new Rect(10, top + 106, 400, 24), $"이벤트 칸 추가 이동: +{_lastEventBonus}칸 (이번 턴 1회)");
             }
             GUI.Label(new Rect(10, top + 58, 600, 24), _board != null && _board.UsesWorldMap ? "카메라: WASD·방향키 이동, 휠 줌, F 파티로" : "Ctrl+우클릭: 지형지물 정보 확인");
-            GUI.Label(new Rect(10, top + 82, 600, 24), "I 키·파티 초상 클릭: 인벤토리·장비 / 퀵 슬롯 클릭: 소모품 사용" + (OnHubTile ? " / B: 상점" : ""));
+            GUI.Label(new Rect(10, top + 82, 600, 24), "I 키·파티 초상 클릭: 인벤토리·장비 / 퀵 슬롯 클릭: 소모품 사용" + (OnHubTile ? " / B: 상점" : "") + (_hasSave && DevLoadAllowed ? " / F9: 불러오기(개발)" : "") + (SaveGame.LastError != null ? " / 저장 실패!" : ""));
 
             if (!EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage))
             {

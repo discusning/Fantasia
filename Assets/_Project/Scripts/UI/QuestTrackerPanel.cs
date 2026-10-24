@@ -180,9 +180,8 @@ namespace Fantasia.UI
             outerRect.pivot = new Vector2(1f, 1f);
             outerRect.anchoredPosition = new Vector2(-RightMargin, -TopMargin - index * (RowHeight + RowGap));
 
-            // Title takes the left ~60% of the row so the achieve button
-            // (right end, per feedback) has room without overlapping it.
-            var title = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.66f, 0.92f), "", 10, TextAnchor.MiddleLeft);
+            // 개발용 "달성!" 버튼은 실제 퀘스트(ActOneStory) 도입으로 제거 — 제목이 줄 전체를 쓴다.
+            var title = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.92f, 0.92f), "", 10, TextAnchor.MiddleLeft);
             title.color = MainQuestColor;
             title.fontStyle = FontStyle.Bold;
 
@@ -197,20 +196,7 @@ namespace Fantasia.UI
             outerRect.gameObject.SetActive(false);
             var row = new QuestRow { Root = outerRect.gameObject, Title = title, Objective = objective };
 
-            // Player-driven completion — clicking marks whichever quest
-            // currently sits in this row as done (BoardSession.CompleteQuest),
-            // which also fires DialoguePanel's dummy dialogue for the one
-            // test quest it's wired to.
-            var achieveButton = UGUIKit.CreateButton(inner, "AchieveButton", new Vector2(0.68f, 0.64f), new Vector2(0.95f, 0.9f), "달성!", new Color(0.25f, 0.4f, 0.25f), 8);
-            achieveButton.onClick.AddListener(() => CompleteRow(row));
-
             return row;
-        }
-
-        private static void CompleteRow(QuestRow row)
-        {
-            if (string.IsNullOrEmpty(row.CurrentTitle)) return;
-            BoardSession.Instance.CompleteQuest(row.CurrentTitle);
         }
     }
 }

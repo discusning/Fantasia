@@ -229,6 +229,9 @@ namespace Fantasia.UI
         private IEnumerator RevealRoll(EncounterRules.Roll roll)
         {
             _rolling = true;
+            // 기습·몰래 지나가기 결과 확정 → 저장 → 공개 (Save.md: 껐다 켜도 같은 결과)
+            if (Fantasia.Core.BoardSession.Instance != null) Fantasia.Core.BoardSession.Instance.PendingEncounterOutcome = (int)roll.Outcome;
+            Fantasia.Core.SaveGame.Checkpoint($"조우 판정 확정 — {roll.Outcome}");
             foreach (var button in _buttons.Values) button.interactable = false;
 
             int n = roll.Slots.SlotCount;

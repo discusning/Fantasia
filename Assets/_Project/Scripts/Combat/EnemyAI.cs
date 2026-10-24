@@ -20,7 +20,7 @@ namespace Fantasia.Combat
                 EnemyTargeting.LowestHPRatio => candidates.OrderBy(a => (float)a.CurrentHP / Mathf.Max(1, a.MaxHP)).ThenBy(a => a.FormationIndex).First(),
                 EnemyTargeting.HighestAttack => candidates.OrderByDescending(a => Mathf.Max(a.Member.FinalPhysicalAttack, a.Member.FinalMagicAttack)).ThenBy(a => a.FormationIndex).First(),
                 EnemyTargeting.Front => candidates.OrderBy(a => a.FormationIndex).First(),
-                _ => candidates[Random.Range(0, candidates.Count)],
+                _ => candidates[Fantasia.Core.GameRandom.Range(0, candidates.Count)],
             };
         }
     }

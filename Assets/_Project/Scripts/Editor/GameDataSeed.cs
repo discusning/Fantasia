@@ -71,6 +71,8 @@ namespace Fantasia.Editor
             SeedSkills(skill, poison);
             ItemDataSeed.SeedAll();
             ShopDataSeed.SeedAll();
+            SeedSaveLookups();
+            EnsureMusicLibrary();
             UIThemeSetup.EnsureAsset();
             AssetDatabase.SaveAssets();
             Debug.Log("[GameDataSeed] 샘플 자산 생성/갱신 완료 (1차 3직업: 명탐정·역병 의사·저격수 + 시작 무기, 현장 검증, 1막 소형 적 4종, 약한 출혈)");
@@ -390,7 +392,8 @@ namespace Fantasia.Editor
             return e;
         }
 
-        // D14 1막 보스 (System.md "보스급 > 검시관 아벨 모로"). 기본 패턴: 해부의 일격 → 해부의 일격 → 봉인된 수은.
+        // D14 1막 보스 (System.md "보스급 > 검시관 아벨 모로" + Boss_Abel_v1.0.md 기획 확정 2026-10-25).
+        // 기본 패턴: 해부의 일격 → 해부의 일격 → 봉인된 수은. HP 300 · 공격력 24 · 마력 30, HP 60% 이하에서 금지된 봉합(HP 60) 1회.
         private static EnemyDefinition EnsureAbelMoreau(StatusEffectDefinition bleed, StatusEffectDefinition poison)
         {
             var e = LoadOrCreate<EnemyDefinition>(EnemyDir, "Enemy_검시관아벨모로");
@@ -398,36 +401,39 @@ namespace Fantasia.Editor
             e.DisplayName = "검시관 아벨 모로";
             e.Size = EnemySize.Boss;
             e.TypeTag = "인간형";
-            e.MaxHP = 180;
+            e.MaxHP = 300;
             e.Speed = 58;
-            e.PhysicalAttack = 18;
-            e.MagicAttack = 24;
+            e.PhysicalAttack = 24;
+            e.MagicAttack = 30;
             e.PhysicalDefense = 6;
             e.MagicDefense = 10;
             e.SlotCount = 4;
             e.SlotSuccessRate = 0.32f;
             e.HasEvasionState = false;
-            e.Targeting = EnemyTargeting.Random;
+            e.Targeting = EnemyTargeting.LowestHPRatio; // 단일 공격: 현재 HP 비율이 가장 낮은 아군, 동률은 편성 순서
             e.DeploymentAct = "1막";
             e.FixedRewardCent = 180;
             e.FixedRewardExp = 100;
             e.BlocksEscape = true;
             e.KeyItemRewards = new[] { "검시 기록", "붉은 룬 조각" };
-            e.TraitDescription = "폐검시소의 검시관. 해부의 일격 → 해부의 일격 → 봉인된 수은을 반복한다. HP 60% 이하가 되면 금지된 봉합(자가 회복)을 예고 — 1.2배 이상 공격 기술로 저지.";
+            e.TraitDescription = "폐검시소의 검시관. 해부의 일격 → 해부의 일격 → 봉인된 수은을 반복한다. HP 60% 이하가 되면 금지된 봉합(HP 60 회복)을 예고 — 봉합 방해(집중력 0) 또는 1.2배 이상 공격 기술로 저지.";
 
             var dissect = new EnemyAction { Name = "해부의 일격", Kind = EnemyActionKind.Attack, Coefficient = 1.0f, OnCritStatuses = new[] { bleed },
                 Description = "물리 1.0A 단일. 크리티컬이면 약한 출혈 3턴." };
-            var mercury = new EnemyAction { Name = "봉인된 수은", Kind = EnemyActionKind.AreaAttack, Coefficient = 0.8f, UsesMagic = true, OnCritStatuses = new[] { poison },
-                Description = "마법 0.8M 모든 아군. 크리티컬이면 중독 1스택." };
+            var mercury = new EnemyAction { Name = "봉인된 수은", Kind = EnemyActionKind.AreaAttack, Coefficient = 0.8f, UsesMagic = true, OnHitStatuses = new[] { poison },
+                Description = "마법 0.8M 모든 아군. 명중하면 중독 1스택 (크리티컬이어도 1스택, 회피하면 없음)." };
             e.Pattern = new[] { dissect, dissect, mercury };
             e.Thresholds = new[]
             {
                 new EnemyThresholdAction
                 {
                     HpRatio = 0.6f,
-                    Announce = new EnemyAction { Name = "금지된 봉합", Kind = EnemyActionKind.Announce, Description = "다음 행동이 자가 HP 30 회복임을 예고." },
-                    FollowUp = new EnemyAction { Name = "봉합 회복", Kind = EnemyActionKind.SelfHeal, HealAmount = 30, Description = "자가 HP 30 회복." },
+                    Announce = new EnemyAction { Name = "금지된 봉합", Kind = EnemyActionKind.Announce, Description = "다음 보스 행동이 자가 HP 60 회복임을 예고 (피해 없음)." },
+                    FollowUp = new EnemyAction { Name = "봉합 회복", Kind = EnemyActionKind.SelfHeal, HealAmount = 60, Description = "자가 HP 60 회복 (최대 HP 이하)." },
                     CancelMinCoefficient = 1.2f,
+                    InterruptName = "봉합 방해",
+                    FailedName = "봉합 실패",
+                    CounterHint = "일점 돌파(1.3배)·관통탄(1.2배)",
                 },
             };
             EditorUtility.SetDirty(e);
@@ -521,6 +527,31 @@ namespace Fantasia.Editor
             se.RuleDescription = "개인 턴 시작마다 방어 무시 2 피해. HP 1 미만으로 낮추지 않는다.";
             EditorUtility.SetDirty(se);
             return se;
+        }
+
+
+        // D28 음악 ID 목록 (곡은 비어 있음 — 임시 트랙을 받으면 Inspector에서 Clip만 연결)
+        private static void EnsureMusicLibrary()
+        {
+            var lib = LoadOrCreate<Fantasia.Core.MusicLibrary>("Assets/_Project/Resources", "MusicLibrary");
+            foreach (var id in new[] { Fantasia.Core.MusicIds.FieldLondon, Fantasia.Core.MusicIds.Battle, Fantasia.Core.MusicIds.BossAbel })
+                if (lib.Find(id) == null) lib.Tracks = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Append(lib.Tracks, new Fantasia.Core.MusicLibrary.Entry { Id = id }));
+            EditorUtility.SetDirty(lib);
+        }
+        // D27 저장 파일은 직업·상태를 Id로만 적는다 → 불러올 때 찾을 표를 카탈로그에 둔다
+        private static void SeedSaveLookups()
+        {
+            var catalog = ItemCatalog.Current;
+            if (catalog == null) return;
+            T[] All<T>() where T : ScriptableObject =>
+                System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(AssetDatabase.FindAssets($"t:{typeof(T).Name}", new[] { "Assets/_Project/Data" }),
+                    g => AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(g))));
+            catalog.Jobs = All<JobDefinition>();
+            catalog.Statuses = All<StatusEffectDefinition>();
+            catalog.Enemies = All<EnemyDefinition>();
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[GameDataSeed] 저장 조회표 — 직업 {catalog.Jobs.Length}, 상태 {catalog.Statuses.Length}");
         }
     }
 }

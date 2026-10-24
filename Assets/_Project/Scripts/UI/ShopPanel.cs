@@ -315,6 +315,7 @@ namespace Fantasia.UI
                 GearItem g => ShopRules.SellGear(_party, g),
                 _ => new ShopResult(false, ""),
             };
+            if (result.Ok) SaveGame.Checkpoint("상점 거래"); // 저장 → 표시
             _message.text = result.Message;
             _message.color = result.Ok ? Gold : Bad;
             Debug.Log("[Shop] " + result.Message);

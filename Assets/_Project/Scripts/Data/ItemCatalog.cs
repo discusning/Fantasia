@@ -12,6 +12,10 @@ namespace Fantasia.Data
         public ArmorDefinition[] Armors = System.Array.Empty<ArmorDefinition>();
         public ConsumableDefinition[] Consumables = System.Array.Empty<ConsumableDefinition>();
         public CityShopDefinition[] Shops = System.Array.Empty<CityShopDefinition>(); // D20 도시 상점 (Editor/ShopDataSeed)
+        // D27 불러오기용 조회표 (Editor/GameDataSeed가 채움)
+        public JobDefinition[] Jobs = System.Array.Empty<JobDefinition>();
+        public StatusEffectDefinition[] Statuses = System.Array.Empty<StatusEffectDefinition>();
+        public EnemyDefinition[] Enemies = System.Array.Empty<EnemyDefinition>();
 
         public CityShopDefinition ShopAtHub(string hubLabel) => Shops.FirstOrDefault(s => s != null && s.HubLabel == hubLabel);
 
@@ -21,6 +25,9 @@ namespace Fantasia.Data
         public ConsumableDefinition Consumable(string id) => Consumables.FirstOrDefault(c => c != null && c.Id == id);
         public WeaponDefinition Weapon(string id) => Weapons.FirstOrDefault(w => w != null && w.Id == id);
         public ArmorDefinition Armor(string id) => Armors.FirstOrDefault(a => a != null && a.Id == id);
+        public JobDefinition Job(JobId id) => Jobs.FirstOrDefault(j => j != null && j.Id == id);
+        public StatusEffectDefinition Status(string id) => Statuses.FirstOrDefault(s => s != null && s.Id == id);
+        public EnemyDefinition Enemy(string id) => Enemies.FirstOrDefault(e => e != null && e.Id == id);
     }
 
     // 자주 찾는 소모품 Id (ItemDataSeed와 같은 값)

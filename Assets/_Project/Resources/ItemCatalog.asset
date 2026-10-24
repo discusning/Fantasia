@@ -101,3 +101,24 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b1d43d9667afac94dba096d741dda228, type: 2}
   - {fileID: 11400000, guid: ff5102d79847e434381b313217446ffd, type: 2}
   - {fileID: 11400000, guid: 24bd8a2d901f897499fc957d3ebb94f2, type: 2}
+  Jobs:
+  - {fileID: 11400000, guid: ca688683dc713e74da6c97e2be1f187d, type: 2}
+  - {fileID: 11400000, guid: 5c2eb7385a05eee46a77f9521a3de673, type: 2}
+  - {fileID: 11400000, guid: 75b2b2a715fbbc94c8e90eb08bd99b2c, type: 2}
+  Statuses:
+  - {fileID: 11400000, guid: 09a979f5de7708b4786207e4689d7042, type: 2}
+  - {fileID: 11400000, guid: 2c3fa95a3fe1ccd499745950f0c672e0, type: 2}
+  - {fileID: 11400000, guid: e4a306815d3e28544837b807f8589e63, type: 2}
+  - {fileID: 11400000, guid: 000fe78694aa87847b28e11dc1e01648, type: 2}
+  - {fileID: 11400000, guid: 3e8d562e91054374eabacf689e27685a, type: 2}
+  - {fileID: 11400000, guid: 0e68e764dd0b8fc4692b7e7eb7b2d858, type: 2}
+  - {fileID: 11400000, guid: f3ba454659a364e4fabc35395c02dfb3, type: 2}
+  - {fileID: 11400000, guid: 74c85e7ee8cc8bc49b27f597f7fa5aa9, type: 2}
+  - {fileID: 11400000, guid: e7465f8bc07c1be458a205c797ce1fa4, type: 2}
+  Enemies:
+  - {fileID: 11400000, guid: d747161b15e041d47995dbb1ea963ff1, type: 2}
+  - {fileID: 11400000, guid: 291548a2d573a4c4fa5fe4d4e4a8ebfe, type: 2}
+  - {fileID: 11400000, guid: 0ab50a03991215740bea9ff8dac13213, type: 2}
+  - {fileID: 11400000, guid: 0530980251cdc904d99cbaa3b1d8ad72, type: 2}
+  - {fileID: 11400000, guid: 996c67b0bb95380418b2a8f51123e19a, type: 2}
+  - {fileID: 11400000, guid: 23ac426f7219a6a489e1329d3986df6b, type: 2}

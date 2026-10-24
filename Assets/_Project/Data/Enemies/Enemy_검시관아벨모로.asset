@@ -18,10 +18,10 @@ MonoBehaviour:
   TypeTag: "\uC778\uAC04\uD615"
   Model: {fileID: 0}
   Portrait: {fileID: 0}
-  MaxHP: 180
+  MaxHP: 300
   Speed: 58
-  PhysicalAttack: 18
-  MagicAttack: 24
+  PhysicalAttack: 24
+  MagicAttack: 30
   PhysicalDefense: 6
   MagicDefense: 10
   SlotCount: 4
@@ -29,12 +29,13 @@ MonoBehaviour:
   HasEvasionState: 0
   OnCritStatuses: []
   OnCritTurnShift: 0
-  Targeting: 0
+  Targeting: 2
   TraitDescription: "\uD3D0\uAC80\uC2DC\uC18C\uC758 \uAC80\uC2DC\uAD00. \uD574\uBD80\uC758
     \uC77C\uACA9 \u2192 \uD574\uBD80\uC758 \uC77C\uACA9 \u2192 \uBD09\uC778\uB41C
     \uC218\uC740\uC744 \uBC18\uBCF5\uD55C\uB2E4. HP 60% \uC774\uD558\uAC00 \uB418\uBA74
-    \uAE08\uC9C0\uB41C \uBD09\uD569(\uC790\uAC00 \uD68C\uBCF5)\uC744 \uC608\uACE0
-    \u2014 1.2\uBC30 \uC774\uC0C1 \uACF5\uACA9 \uAE30\uC220\uB85C \uC800\uC9C0."
+    \uAE08\uC9C0\uB41C \uBD09\uD569(HP 60 \uD68C\uBCF5)\uC744 \uC608\uACE0 \u2014
+    \uBD09\uD569 \uBC29\uD574(\uC9D1\uC911\uB825 0) \uB610\uB294 1.2\uBC30 \uC774\uC0C1
+    \uACF5\uACA9 \uAE30\uC220\uB85C \uC800\uC9C0."
   DeploymentAct: "1\uB9C9"
   FixedRewardCent: 180
   FixedRewardExp: 100
@@ -46,6 +47,7 @@ MonoBehaviour:
     HealAmount: 0
     OnCritStatuses:
     - {fileID: 11400000, guid: 3e8d562e91054374eabacf689e27685a, type: 2}
+    OnHitStatuses: []
     Description: "\uBB3C\uB9AC 1.0A \uB2E8\uC77C. \uD06C\uB9AC\uD2F0\uCEEC\uC774\uBA74
       \uC57D\uD55C \uCD9C\uD608 3\uD134."
   - Name: "\uD574\uBD80\uC758 \uC77C\uACA9"
@@ -55,6 +57,7 @@ MonoBehaviour:
     HealAmount: 0
     OnCritStatuses:
     - {fileID: 11400000, guid: 3e8d562e91054374eabacf689e27685a, type: 2}
+    OnHitStatuses: []
     Description: "\uBB3C\uB9AC 1.0A \uB2E8\uC77C. \uD06C\uB9AC\uD2F0\uCEEC\uC774\uBA74
       \uC57D\uD55C \uCD9C\uD608 3\uD134."
   - Name: "\uBD09\uC778\uB41C \uC218\uC740"
@@ -62,10 +65,12 @@ MonoBehaviour:
     Coefficient: 0.8
     UsesMagic: 1
     HealAmount: 0
-    OnCritStatuses:
+    OnCritStatuses: []
+    OnHitStatuses:
     - {fileID: 11400000, guid: 74c85e7ee8cc8bc49b27f597f7fa5aa9, type: 2}
-    Description: "\uB9C8\uBC95 0.8M \uBAA8\uB4E0 \uC544\uAD70. \uD06C\uB9AC\uD2F0\uCEEC\uC774\uBA74
-      \uC911\uB3C5 1\uC2A4\uD0DD."
+    Description: "\uB9C8\uBC95 0.8M \uBAA8\uB4E0 \uC544\uAD70. \uBA85\uC911\uD558\uBA74
+      \uC911\uB3C5 1\uC2A4\uD0DD (\uD06C\uB9AC\uD2F0\uCEEC\uC774\uC5B4\uB3C4 1\uC2A4\uD0DD,
+      \uD68C\uD53C\uD558\uBA74 \uC5C6\uC74C)."
   Thresholds:
   - HpRatio: 0.6
     Announce:
@@ -75,17 +80,22 @@ MonoBehaviour:
       UsesMagic: 0
       HealAmount: 0
       OnCritStatuses: []
-      Description: "\uB2E4\uC74C \uD589\uB3D9\uC774 \uC790\uAC00 HP 30 \uD68C\uBCF5\uC784\uC744
-        \uC608\uACE0."
+      OnHitStatuses: []
+      Description: "\uB2E4\uC74C \uBCF4\uC2A4 \uD589\uB3D9\uC774 \uC790\uAC00 HP
+        60 \uD68C\uBCF5\uC784\uC744 \uC608\uACE0 (\uD53C\uD574 \uC5C6\uC74C)."
     FollowUp:
       Name: "\uBD09\uD569 \uD68C\uBCF5"
       Kind: 3
       Coefficient: 1
       UsesMagic: 0
-      HealAmount: 30
+      HealAmount: 60
       OnCritStatuses: []
-      Description: "\uC790\uAC00 HP 30 \uD68C\uBCF5."
+      OnHitStatuses: []
+      Description: "\uC790\uAC00 HP 60 \uD68C\uBCF5 (\uCD5C\uB300 HP \uC774\uD558)."
     CancelMinCoefficient: 1.2
+    InterruptName: "\uBD09\uD569 \uBC29\uD574"
+    FailedName: "\uBD09\uD569 \uC2E4\uD328"
+    CounterHint: "\uC77C\uC810 \uB3CC\uD30C(1.3\uBC30)\xB7\uAD00\uD1B5\uD0C4(1.2\uBC30)"
   BlocksEscape: 1
   KeyItemRewards:
   - "\uAC80\uC2DC \uAE30\uB85D"

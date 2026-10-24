@@ -59,8 +59,33 @@ namespace Fantasia.Core
         public List<Fantasia.Combat.LootDrop> PendingLoot { get; } = new();
         // 퀘스트 물건 (보스 확정 보상 — 검시 기록·붉은 룬 조각 등). 퀘스트 시스템(D22) 전까지 이름만 보관
         public List<string> KeyItems { get; } = new();
+        // 스토리 진행 플래그 (ActOneStory — 보스 최초 등장·처치·보상·제임스 보고 등). 저장 대상
+        public HashSet<string> StoryFlags { get; } = new();
         // 월드 회복약·정화약은 아군 턴마다 파티원별 1회 (☆ 개발 임시 — System.md "이동 종료 전 1회"를 파티 턴에 맞춤)
         public HashSet<Fantasia.Data.PartyMember> UsedWorldItemThisTurn { get; } = new();
+
+        public void RestoreBoardSeed(int seed) => BoardSeed = seed; // D27 불러오기
+
+        // ── 회차·저장 (Save.md) ──
+        public enum RunState { Active, Ended, ActCleared }
+        public string RunId { get; set; } = "";
+        public RunState Run { get; set; } = RunState.Active;
+        // 누적 플레이 시간 (메인 메뉴·창 비활성 시간 제외 — Save.md 36 기본안)
+        public float PlaySeconds { get; set; }
+        // 주사위 확정 뒤 아직 칸을 고르지 않은 이동력 (재접속하면 같은 값으로 선택부터) / 이벤트 칸 추가 이동
+        public int PendingMovePoints { get; set; } = -1;
+        public int PendingBonusMove { get; set; } = -1;
+        // 조우 판정(기습·몰래 지나가기) 결과가 확정됐지만 아직 처리 전 (EncounterOutcome, -1 없음)
+        public int PendingEncounterOutcome { get; set; } = -1;
+        // 진행 중인 전투 스냅숏 (Save.md 5 — 전투 중 종료 시 마지막 확정 상태에서 재개). 전투가 끝나면 null
+        public string BattleSnapshotJson { get; set; }
+
+        private void Update()
+        {
+            if (Party == null || !Application.isFocused || Run != RunState.Active) return;
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == Fantasia.UI.MainMenuController.SceneName) return;
+            PlaySeconds += Time.unscaledDeltaTime;
+        }
 
         // 전원 영구 사망 → 플레이 종료 후 처음부터 (파티·진행·인벤토리·보드 시드 초기화).
         public void ResetForNewGame()
@@ -82,10 +107,21 @@ namespace Fantasia.Core
             UsedWorldItemThisTurn.Clear();
             PendingLoot.Clear();
             KeyItems.Clear();
+            StoryFlags.Clear();
+            ResetQuests();
             ClearedEncounters.Clear();
             UsedMapTiles.Clear();
             HasPlayerPosition = false;
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
+            // 새 회차: 회차 ID·게임 난수 새로
+            RunId = System.Guid.NewGuid().ToString("N");
+            Run = RunState.Active;
+            PlaySeconds = 0f;
+            PendingMovePoints = -1;
+            BattleSnapshotJson = null;
+            PendingBonusMove = -1;
+            PendingEncounterOutcome = -1;
+            GameRandom.Seed(Random.Range(int.MinValue, int.MaxValue));
         }
 
         // Real quests (GDD content, not yet designed) will replace this —
@@ -108,6 +144,28 @@ namespace Fantasia.Core
 
         private readonly List<QuestEntry> _quests = new List<QuestEntry>();
         public IReadOnlyList<QuestEntry> Quests => _quests;
+        // 완료한 퀘스트 (사건 기록 창 [완료] 탭). 저장 대상
+        private readonly List<QuestEntry> _completedQuests = new List<QuestEntry>();
+        public IReadOnlyList<QuestEntry> CompletedQuests => _completedQuests;
+
+        // 새 게임: 진행 퀘스트를 1막 시작 상태로
+        public void ResetQuests()
+        {
+            _quests.Clear();
+            _completedQuests.Clear();
+            _quests.Add(new QuestEntry(ActOneStory.QuestCase, ActOneStory.QuestCaseObjective, QuestType.Main));
+            QuestChanged?.Invoke();
+        }
+
+        // D27 불러오기
+        public void RestoreQuests(IEnumerable<QuestEntry> active, IEnumerable<QuestEntry> completed)
+        {
+            _quests.Clear();
+            _completedQuests.Clear();
+            _quests.AddRange(active);
+            _completedQuests.AddRange(completed);
+            QuestChanged?.Invoke();
+        }
 
         public event System.Action QuestChanged;
 
@@ -141,6 +199,7 @@ namespace Fantasia.Core
                 {
                     var completed = _quests[i];
                     _quests.RemoveAt(i);
+                    _completedQuests.Add(completed);
                     QuestChanged?.Invoke();
                     QuestCompleted?.Invoke(completed);
                     return true;
@@ -188,15 +247,11 @@ namespace Fantasia.Core
                 // per-scene.
                 Application.targetFrameRate = 60;
 
-                // Dummy quests so the right-side tracker UI has something to
-                // show before real quest content exists — see QuestTrackerPanel.
-                // Both Main and Sub seeded together so the multi-quest
-                // stacking layout gets exercised in real Play mode, not just
-                // one type at a time.
-                SetQuest("게임 완성시키기", "판타지아를 끝까지 만들어라", QuestType.Main);
-                SetQuest("1차 개발 완성", "판타지아 프로토타입 1차 개발을 마무리하라", QuestType.Sub);
+                // 1막 시작 퀘스트 (ActOneStory) — 예전 더미 퀘스트 대신
+                ResetQuests();
             }
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
+            if (string.IsNullOrEmpty(RunId)) RunId = System.Guid.NewGuid().ToString("N");
         }
     }
 }

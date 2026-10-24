@@ -126,6 +126,17 @@ namespace Fantasia.Board
             }
         }
 
+        // 진행이 바뀌었을 때 출구 칸 막힘 다시 계산
+        public void RefreshExits()
+        {
+            if (Map == null) return;
+            foreach (var t in Map.Tiles.Values)
+                if (t.Kind == MapTileKind.Exit && TryGetTile(t.Coord, out var tile)) tile.SetBlocked(!IsExitOpen(t.Coord));
+        }
+
+        // 2막(베르사유) 진입 지원 여부 — 이번 버전은 1막 클리어까지 (K12 잠금, "2막 베르사유 — 추후 공개")
+        public const bool Act2Available = false;
+
         // 그 지역 보스를 처치했으면 지역에 맞닿은 출구가 열린다.
         public bool IsExitOpen(HexCoord exit)
         {
@@ -136,6 +147,8 @@ namespace Fantasia.Board
                 int region = Map.RegionOf(exit.Neighbor(d));
                 if (region < 0) continue;
                 var boss = Map.TilesInRegion(region).FirstOrDefault(t => t.Kind == MapTileKind.Boss);
+                // 런던(구역 0) 출구 K12: 이번 버전은 1막까지 — 2막 구현 전엔 잠금 (세이브 추가 수정안), 2막 뒤엔 보고 후 개방
+                if (region == 0 && (!Act2Available || !session.StoryFlags.Contains(Fantasia.Core.ActOneStory.FlagReported))) continue;
                 if (boss.Kind == MapTileKind.Boss && session.ClearedEncounters.Contains(boss.Coord)) return true;
             }
             return false;
@@ -155,7 +168,7 @@ namespace Fantasia.Board
                 MapTileKind.Event => "이벤트",
                 MapTileKind.Recovery => "회복",
                 MapTileKind.Treasure => "보물",
-                MapTileKind.Exit => "출구",
+                MapTileKind.Exit => t.Label == "K12" && !Act2Available ? "2막 베르사유 — 추후 공개" : "출구",
                 _ => null,
             };
             return kind == null ? t.Label : $"{t.Label} {(regionName != null ? regionName + " · " : "")}{kind}";

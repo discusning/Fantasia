@@ -256,5 +256,19 @@ namespace Fantasia.Data
             CurrentHP = 0;
             IsPermanentlyDead = true;
         }
+
+        // ── D27 불러오기: 저장된 값을 그대로 (장비를 먼저 입힌 뒤 자원 — 최대치 계산이 장비에 따라 달라짐) ──
+        public void RestoreEquipped(GearSlot slot, GearItem item) => _equipped[(int)slot] = item;
+
+        public void RestoreState(int level, int experience, int hp, int mp, int focus, int lp, bool permanentlyDead)
+        {
+            Level = Mathf.Clamp(level, 1, MaxLevel);
+            Experience = Mathf.Max(0, experience);
+            CurrentHP = Mathf.Clamp(hp, 0, MaxHP);
+            CurrentMP = Mathf.Clamp(mp, 0, MaxMP);
+            CurrentFocus = Mathf.Clamp(focus, 0, MaxFocus);
+            CurrentLP = Mathf.Clamp(lp, 0, MaxLP);
+            IsPermanentlyDead = permanentlyDead;
+        }
     }
 }

@@ -32,6 +32,15 @@ namespace Fantasia.World
             return true;
         }
 
+        // D27 불러오기
+        public void Restore(int worldRound, WorldPhase phase, bool rolled, bool eventBonusUsed)
+        {
+            WorldRound = worldRound;
+            Phase = phase;
+            HasRolledThisTurn = rolled;
+            EventBonusUsedThisTurn = eventBonusUsed;
+        }
+
         public void EndAllyTurn()
         {
             if (Phase == WorldPhase.AllyTurn) Phase = WorldPhase.EnemyTurn;

@@ -63,6 +63,7 @@ namespace Fantasia.Data
             }
         }
 
+        public void RestoreCent(int amount) => Cent = Math.Max(0, amount); // D27 불러오기
         public void AddCent(int amount) => Cent = Math.Max(0, Cent + amount);
 
         public void SpendCent(int amount)
