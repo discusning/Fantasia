@@ -220,6 +220,7 @@ namespace Fantasia.Board
         {
             InventoryPanel.WorldUseAllowed = () => WorldItemUseAllowed;
             InventoryPanel.AllyTurnEndRequested += OnItemEndedAllyTurn;
+            Fantasia.UI.ShopPanel.AllyTurnEndRequested += OnItemEndedAllyTurn;
             PartyHudPanel.CardClicked += OnCardClicked;
             PartyHudPanel.QuickSlotClicked += OnBoardQuickSlot;
         }
@@ -227,6 +228,7 @@ namespace Fantasia.Board
         private void OnDestroy()
         {
             InventoryPanel.AllyTurnEndRequested -= OnItemEndedAllyTurn;
+            Fantasia.UI.ShopPanel.AllyTurnEndRequested -= OnItemEndedAllyTurn;
             PartyHudPanel.CardClicked -= OnCardClicked;
             PartyHudPanel.QuickSlotClicked -= OnBoardQuickSlot;
         }
@@ -253,7 +255,9 @@ namespace Fantasia.Board
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.I) && !EncounterPanel.IsOpen) InventoryPanel.Toggle(_testParty, Leader);
-            if (InventoryPanel.IsOpen) return;
+            if (InventoryPanel.IsOpen || Fantasia.UI.ShopPanel.IsOpen) return;
+            // 거점 칸에서 B: 상점 (아군 턴, 이동·턴 처리 중이 아닐 때)
+            if (Input.GetKeyDown(KeyCode.B) && !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && Clock.Phase == WorldPhase.AllyTurn) OpenShopHere();
             if (LandmarkInfoPanel.IsOpen || DialoguePanel.IsOpen || EncounterPanel.IsOpen) return;
 
             // Ctrl+Right-click = "just look" (info popup only), independent
@@ -372,6 +376,9 @@ namespace Fantasia.Board
             HandleMapTile(landedTile);
 
             // 이벤트 칸 추가 이동이 생기면 한 번 더 움직이고, 아니면 아군 턴 종료.
+            // 거점 도착으로 상점이 열렸으면 닫을 때까지 기다림 (서비스·제작을 쓰면 상점이 아군 턴을 끝냄)
+            while (Fantasia.UI.ShopPanel.IsOpen) yield return null;
+            if (_turnEnding || Clock.Phase != WorldPhase.AllyTurn) yield break;
             if (!TryGrantEventBonusMove(landedTile)) StartCoroutine(EndAllyTurn());
         }
 
@@ -383,7 +390,7 @@ namespace Fantasia.Board
             switch (tile.MapKind)
             {
                 case MapTileKind.Hub:
-                    _encounterResultMessage = $"{tile.MapLabel} — 안전 지대 (상점·서비스는 준비 중)";
+                    OpenShopHere();
                     break;
                 case MapTileKind.Recovery when !tile.IsUsed:
                     foreach (var m in _testParty.AliveMembers) m.Heal(Mathf.CeilToInt(m.MaxHP * RecoveryTileHpRatio));
@@ -407,6 +414,30 @@ namespace Fantasia.Board
         }
 
         private const float RecoveryTileHpRatio = 0.3f;
+
+        // ── D20 도시 상점: 거점 칸에서 열림 (도착하면 자동, 아군 턴 중 B) ──
+        private void OpenShopHere()
+        {
+            if (!_board.UsesWorldMap || !_board.TryGetTile(_currentCoord, out var tile) || tile.MapKind != MapTileKind.Hub) return;
+            var (row, col) = WorldMapData.AxialToOffset(_currentCoord);
+            var shop = ItemCatalog.Current != null ? ItemCatalog.Current.ShopAtHub(WorldMapData.Label(row, col)) : null;
+            if (shop == null)
+            {
+                _encounterResultMessage = $"{tile.MapLabel} — 안전 지대";
+                return;
+            }
+            Fantasia.UI.ShopPanel.Open(shop, _testParty, ShopStages, () => Clock.WorldRound - 1);
+        }
+
+        // 판매 단계: 2막 = 런던 보스(M11) 처치, 고성 = 베르사유 보스(I25) 처치
+        private (bool act2, bool castle) ShopStages()
+        {
+            var cleared = BoardSession.Instance.ClearedEncounters;
+            bool Cleared(string label) => _board.UsesWorldMap && cleared.Contains(_board.Map.TileAt(label).Coord);
+            return (Cleared("M11"), Cleared("I25"));
+        }
+
+        private bool OnHubTile => _board != null && _board.UsesWorldMap && _board.TryGetTile(_currentCoord, out var t) && t.MapKind == MapTileKind.Hub;
 
         // 조우한 적 + 같은 구역 소형 적 1마리 (프로토타입 편성 — 실제 조우 조합은 D13·P06 기획).
         // 기습 성공/실패는 BattleQueue가 첫 라운드 순서에 반영한다. 전투가 이 아군 턴의 마지막 행동.
@@ -491,6 +522,9 @@ namespace Fantasia.Board
             yield return new WaitForSeconds(EnemyTurnSeconds);
 
             Clock.EndEnemyTurn();
+            // D20 상점 재입고: 완료 월드 라운드 3·6·9…
+            if (ItemCatalog.Current != null && Fantasia.Items.ShopRules.TryRestock(BoardSession.Instance.Shop, ItemCatalog.Current.Shops, Clock.WorldRound - 1))
+                enemyLog.Add("도시 상점 재입고");
             BoardSession.Instance.UsedWorldItemThisTurn.Clear();
             var allyLog = WorldTurnRules.BeginAllyTurn(_testParty);
             var lines = enemyLog.Concat(allyLog).ToList();
@@ -565,12 +599,13 @@ namespace Fantasia.Board
         public static string DevForcedEnemyId;
 
         // 새 아군 턴을 시작할 수 있는 상태 (이동·창·적 턴 연출이 모두 끝났고 아직 안 굴림).
-        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen
+        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen
                                  && Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn;
         public bool DevAwaitingSelection => _awaitingSelection;
         public int DevWorldRound => Clock.WorldRound;
 
         public void DevRoll() => TryRoll();
+        public void DevOpenShop() => OpenShopHere();
 
         // 자동 플레이: 월드맵 칸 이름(예: "M10")으로 파티를 옮긴다
         public void DevTeleport(string label)
@@ -634,7 +669,7 @@ namespace Fantasia.Board
 
         private void OnGUI()
         {
-            if (InventoryPanel.IsOpen) return; // 개발용 안내 글자가 창 위에 겹치지 않게
+            if (InventoryPanel.IsOpen || Fantasia.UI.ShopPanel.IsOpen) return; // 개발용 안내 글자가 창 위에 겹치지 않게
             float top = Screen.height * 0.13f; // 보드 상단 바·지역명 배너 아래
             string rollHint = Clock.Phase != WorldPhase.AllyTurn ? "적 턴 진행 중..."
                 : Clock.HasRolledThisTurn ? $"주사위: {_lastRoll}" : "Space로 주사위 굴리기";
@@ -652,7 +687,7 @@ namespace Fantasia.Board
                 GUI.Label(new Rect(10, top + 106, 400, 24), $"이벤트 칸 추가 이동: +{_lastEventBonus}칸 (이번 턴 1회)");
             }
             GUI.Label(new Rect(10, top + 58, 600, 24), _board != null && _board.UsesWorldMap ? "카메라: WASD·방향키 이동, 휠 줌, F 파티로" : "Ctrl+우클릭: 지형지물 정보 확인");
-            GUI.Label(new Rect(10, top + 82, 500, 24), "I 키·파티 초상 클릭: 인벤토리·장비 / 퀵 슬롯 클릭: 소모품 사용");
+            GUI.Label(new Rect(10, top + 82, 600, 24), "I 키·파티 초상 클릭: 인벤토리·장비 / 퀵 슬롯 클릭: 소모품 사용" + (OnHubTile ? " / B: 상점" : ""));
 
             if (!EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage))
             {

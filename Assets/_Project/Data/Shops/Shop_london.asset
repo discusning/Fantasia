@@ -1,0 +1,167 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd5f11d666fef8c41806f0edff7f53f8, type: 3}
+  m_Name: Shop_london
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.CityShopDefinition
+  Id: city.london
+  DisplayName: "\uB7F0\uB358"
+  HubLabel: S05
+  Landmark: "\uADF8\uB9AC\uB2C8\uCE58 \uC804\uB9DD\uB300\xB7\uC218\uC0AC\uB300 \uC0C1\uC810"
+  Entries:
+  - Item: {fileID: 11400000, guid: 15b4ed3769c47344c85987941a9ddda8, type: 2}
+    MaxStock: 5
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 7f615cab391a545499a391df20018c2a, type: 2}
+    MaxStock: 3
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 206c47e10c7ac2148ad83ac959a766b5, type: 2}
+    MaxStock: 3
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 2e6a9b895169280499c0b6db43402f6e, type: 2}
+    MaxStock: 3
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 167262dabfdc94b43af0a57f42fa69b4, type: 2}
+    MaxStock: 3
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: cdbb1860b242c6b49bb46e4e2081c399, type: 2}
+    MaxStock: 2
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: c1082472a0037dc42b3c8ced2d704487, type: 2}
+    MaxStock: 2
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 7fa7bb898e78e4946ae8f63ad4af17aa, type: 2}
+    MaxStock: 2
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: dad5eeaaf50bd944dbb2f7bea63150f5, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 01c7b8c4f9423db4894291574392fcc1, type: 2}
+    MaxStock: 2
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: df38a00afe244a5409b57f1442e7e759, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 545d473679e709147b21d4563dbb28a9, type: 2}
+    MaxStock: 8
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 10b5abded8652214e8828024a4fbc24b, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 09239b4f68999af48b5126afab680aa9, type: 2}
+    MaxStock: 2
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 66e416600fdfe3c41ab6b4dd7d3bc2e2, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 4cd74c53f33e63640a237f0fa58d1ef2, type: 2}
+    MaxStock: 2
+    Stage: 1
+    Limited: 0
+  - Item: {fileID: 11400000, guid: d05254276b48e754a9457d277a04ef4a, type: 2}
+    MaxStock: 2
+    Stage: 1
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 6693f71f21d9a8d46bd45a4286ea1c70, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 1
+  - Item: {fileID: 11400000, guid: ebedb25b276dece42a2e77e6b1a285a7, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 1f2331f8207d0c342b5a01544c2caa24, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 840e29cb9f73be44ca3ca3cec60f0405, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 20ce2689ae186a54a9684267489e52c4, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: f72b96e242fa2064eab81e976ea649c5, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: d2b0e850044afe84fa0d0e59ce7ce960, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: b9b1dfa19622a2448ab93500657e846a, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: b054934836a506c4dbcc9623ddd811f7, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 63a1b8413fa47f342a325e9ff6d9f30e, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 2c6d9c2ce48d0f54faa7a0267d5351b3, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: e468265c1a5091846bd453db64b0aee6, type: 2}
+    MaxStock: 1
+    Stage: 1
+    Limited: 0
+  - Item: {fileID: 11400000, guid: fa2f3f15a6dd7474899a3013f49b3e83, type: 2}
+    MaxStock: 1
+    Stage: 1
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 1f1ece18ef170c5429345dfa5e7d7cab, type: 2}
+    MaxStock: 1
+    Stage: 1
+    Limited: 0
+  - Item: {fileID: 11400000, guid: 207dd1650dd25d345937bccf9aa5aa64, type: 2}
+    MaxStock: 2
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: b9fc93560c64ff34ea3ddc6b975d6cec, type: 2}
+    MaxStock: 2
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: d36a1f2ca9289f64da41b6859bd2a856, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: c6507d168f0ab5b45a2de26c7466555d, type: 2}
+    MaxStock: 1
+    Stage: 0
+    Limited: 0
+  - Item: {fileID: 11400000, guid: a46c947e804cbc44ebbba0be0df33be3, type: 2}
+    MaxStock: 1
+    Stage: 1
+    Limited: 0
+  - Item: {fileID: 11400000, guid: a4ea155310c99e94ca97b8a1b7a3d0a6, type: 2}
+    MaxStock: 1
+    Stage: 1
+    Limited: 0

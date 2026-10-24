@@ -63,6 +63,46 @@ namespace Fantasia.Core
             bool huntRun = args.Contains("-autoplay-hunt");
             bool shotHunt = false, shotSky = false;
 
+            // ── D20 상점 점검 (-autoplay-shop): 런던 거점에서 탭별 화면·구입·판매·숙박 ──
+            if (args.Contains("-autoplay-shop"))
+            {
+                var shopParty = BoardSession.Instance.Party;
+                board.DevOpenShop();
+                yield return WaitFor(() => ShopPanel.IsOpen, 3f, "상점 열기");
+                var shopUi = ShopPanel.Instance;
+                shopUi.DevSelectRow(1);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("shop_supplies");
+                int shopCent = shopParty.Cent;
+                shopUi.DevAct(); shopUi.DevAct(); // 생명의 영약 2개
+                Note($"상점: 생명의 영약 2개 구입 → Cent {shopCent} → {shopParty.Cent}");
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("shop_after_buy");
+                shopUi.DevSelectTab(1); shopUi.DevSelectRow(1);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("shop_weapons");
+                Note($"상점 무기 탭 {shopUi.DevRowCount}종 표시");
+                shopUi.DevSelectTab(2);
+                Note($"상점 방어구 탭 {shopUi.DevRowCount}종 표시");
+                shopUi.DevSelectTab(5); shopUi.DevSelectRow(0);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("shop_sell");
+                shopCent = shopParty.Cent;
+                shopUi.DevAct();
+                Note($"상점: 1개 판매 → Cent {shopCent} → {shopParty.Cent}");
+                shopUi.DevSelectTab(3); shopUi.DevSelectRow(0);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("shop_services");
+                shopParty.AddCent(100); // 점검용: 숙박비(30×3) 확보
+                int shopRound = board.DevWorldRound;
+                shopUi.DevAct(); // 숙박 → 아군 턴 종료
+                yield return WaitFor(() => board.DevWorldRound > shopRound && board.DevIsIdle, 10f, "숙박 후 턴 진행");
+                Note($"상점: 숙박 이용 → 상점 닫힘 {!ShopPanel.IsOpen}, 월드 라운드 {shopRound} → {board.DevWorldRound}, Cent {shopParty.Cent}");
+                yield return Shot("shop_after_inn");
+                Note("자동 플레이 완료");
+                yield break;
+            }
+
             for (int turn = 1; turn <= 20 && !EncounterPanel.IsOpen; turn++)
             {
                 yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 10f, "이동 대기");

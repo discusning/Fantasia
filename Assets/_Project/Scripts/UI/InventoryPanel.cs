@@ -284,7 +284,7 @@ namespace Fantasia.UI
         }
 
         // 장착하면 바뀌는 수치 (지금 슬롯 장비 대비)
-        private static string DiffText(GearItem next, GearItem current)
+        public static string DiffText(GearItem next, GearItem current) // 상점 비교 카드도 사용
         {
             var parts = new List<string>();
             void Add(string label, int delta) { if (delta != 0) parts.Add($"<color={(delta > 0 ? "#73D973" : "#E0675A")}>{label} {(delta > 0 ? "+" : "")}{delta}</color>"); }

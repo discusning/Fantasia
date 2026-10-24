@@ -49,6 +49,8 @@ namespace Fantasia.Core
         // D24 피의 사냥 (사신 위치·남은 아군 턴·유예) / 지금 전투가 사신전인지
         public Fantasia.World.BloodHuntState Hunt { get; } = new();
         public bool PendingReaperFight { get; set; }
+        // D20 도시 상점 재고·한정 구매·재입고 경계
+        public Fantasia.Items.ShopState Shop { get; } = new();
         public string RegionName { get; set; } = "런던"; // 보드 맵(P13) 확정 전 임시 — 칸·구역별로 바뀔 예정
 
         // 안개 연막병: 다음 기습 슬롯 성공률 +%p (기습 판정 1회에 소모)
@@ -75,6 +77,7 @@ namespace Fantasia.Core
             Hunt.Clear();
             Hunt.GraceRounds = 0;
             PendingReaperFight = false;
+            Shop.Clear();
             PendingAmbushBonus = 0;
             UsedWorldItemThisTurn.Clear();
             PendingLoot.Clear();

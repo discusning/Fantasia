@@ -97,3 +97,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 545d473679e709147b21d4563dbb28a9, type: 2}
   - {fileID: 11400000, guid: 6693f71f21d9a8d46bd45a4286ea1c70, type: 2}
   - {fileID: 11400000, guid: f7f13da2aadf7694aa56b859dfe49808, type: 2}
+  Shops:
+  - {fileID: 11400000, guid: b1d43d9667afac94dba096d741dda228, type: 2}
+  - {fileID: 11400000, guid: ff5102d79847e434381b313217446ffd, type: 2}
+  - {fileID: 11400000, guid: 24bd8a2d901f897499fc957d3ebb94f2, type: 2}

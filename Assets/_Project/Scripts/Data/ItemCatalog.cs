@@ -11,6 +11,9 @@ namespace Fantasia.Data
         public WeaponDefinition[] Weapons = System.Array.Empty<WeaponDefinition>();
         public ArmorDefinition[] Armors = System.Array.Empty<ArmorDefinition>();
         public ConsumableDefinition[] Consumables = System.Array.Empty<ConsumableDefinition>();
+        public CityShopDefinition[] Shops = System.Array.Empty<CityShopDefinition>(); // D20 도시 상점 (Editor/ShopDataSeed)
+
+        public CityShopDefinition ShopAtHub(string hubLabel) => Shops.FirstOrDefault(s => s != null && s.HubLabel == hubLabel);
 
         private static ItemCatalog _current;
         public static ItemCatalog Current => _current != null ? _current : (_current = Resources.Load<ItemCatalog>("ItemCatalog"));

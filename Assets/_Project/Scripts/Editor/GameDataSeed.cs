@@ -70,6 +70,7 @@ namespace Fantasia.Editor
             EnsureShadowReaper();
             SeedSkills(skill, poison);
             ItemDataSeed.SeedAll();
+            ShopDataSeed.SeedAll();
             UIThemeSetup.EnsureAsset();
             AssetDatabase.SaveAssets();
             Debug.Log("[GameDataSeed] 샘플 자산 생성/갱신 완료 (1차 3직업: 명탐정·역병 의사·저격수 + 시작 무기, 현장 검증, 1막 소형 적 4종, 약한 출혈)");

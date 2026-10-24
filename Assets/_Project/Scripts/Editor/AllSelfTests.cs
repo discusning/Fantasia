@@ -19,6 +19,7 @@ namespace Fantasia.Editor
             WorldMapSelfTest.Run();
             BossSelfTest.Run();
             BloodHuntSelfTest.Run();
+            ShopSelfTest.Run();
         }
     }
 }
