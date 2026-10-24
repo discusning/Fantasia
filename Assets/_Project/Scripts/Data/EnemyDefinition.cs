@@ -43,5 +43,9 @@ namespace Fantasia.Data
         public EnemyTargeting Targeting;
         [TextArea] public string TraitDescription;
         public string DeploymentAct; // 배치 구간, 예: "1막"
+
+        [Header("보상 (System.md 수입·가격 책정 근거) — 0이면 크기별 기본값")]
+        public int FixedRewardCent; // 보스·인조 그림자 사신처럼 정해진 값 (예: 검시관 180)
+        public int FixedRewardExp;
     }
 }

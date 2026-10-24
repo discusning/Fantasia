@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9871f0a9ebcd7e4e955f51037dd0bd0, type: 3}
+  m_Name: "Consumable_\uB8EC\uAE30\uAD00\uCC28\uD0D1\uC2B9\uAD8C"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
+  Id: consumable.rune_ticket
+  DisplayName: "\uB8EC \uAE30\uAD00\uCC28 \uD0D1\uC2B9\uAD8C"
+  Icon: {fileID: 0}
+  EffectDescription: "\uAE30\uAD00\uCC28 \uCE78\uC5D0\uC11C \uBC29\uBB38\uD55C \uB3C4\uC2DC
+    \uC911 1\uACF3\uC73C\uB85C \uD30C\uD2F0 \uC774\uB3D9; \uD604\uC7AC \uC6D4\uB4DC
+    \uD589\uB3D9 \uC885\uB8CC"
+  Effect: 12
+  Amount: 0
+  Duration: 0
+  BuffStat: 0
+  Cures: 
+  AppliedStatuses: []
+  Usable: 2
+  Price: 60
+  CityStock: 2
+  MaxStack: 10
+  AvailableFromAct2: 0

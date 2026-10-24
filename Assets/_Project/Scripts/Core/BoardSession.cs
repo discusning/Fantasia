@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Fantasia.Board;
-using Fantasia.Items;
 using UnityEngine;
 
 namespace Fantasia.Core
@@ -46,6 +45,13 @@ namespace Fantasia.Core
         public int SoulHarvest { get; set; }
         public string RegionName { get; set; } = "런던"; // 보드 맵(P13) 확정 전 임시 — 칸·구역별로 바뀔 예정
 
+        // 안개 연막병: 다음 기습 슬롯 성공률 +%p (기습 판정 1회에 소모)
+        public int PendingAmbushBonus { get; set; }
+        // 인벤토리가 차서 받지 못한 전리품 — 인벤토리 창에서 자리를 비우고 받는다 (자동 삭제 안 함)
+        public List<Fantasia.Combat.LootDrop> PendingLoot { get; } = new();
+        // 월드 회복약·정화약은 아군 턴마다 파티원별 1회 (☆ 개발 임시 — System.md "이동 종료 전 1회"를 파티 턴에 맞춤)
+        public HashSet<Fantasia.Data.PartyMember> UsedWorldItemThisTurn { get; } = new();
+
         // 전원 영구 사망 → 플레이 종료 후 처음부터 (파티·진행·인벤토리·보드 시드 초기화).
         public void ResetForNewGame()
         {
@@ -58,75 +64,11 @@ namespace Fantasia.Core
             AllyTurnEndedByBattle = false;
             BloodTrail = 0;
             SoulHarvest = 0;
+            PendingAmbushBonus = 0;
+            UsedWorldItemThisTurn.Clear();
+            PendingLoot.Clear();
             ClearedEncounters.Clear();
-            for (int i = 0; i < Inventory.Length; i++) Inventory[i] = null;
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
-        }
-
-        // Fixed slot array (not a growing list) so a specific grid position
-        // can be targeted directly — StatusInventoryPanel's drag/drop needs
-        // "move to slot index" and "swap these two slots", which a compact
-        // list can't express once there's a gap. Any source (combat loot,
-        // events, camp, ...) can feed this through AddItem — it isn't
-        // combat-specific.
-        public const int InventoryCapacity = 12;
-        public ItemDefinition[] Inventory { get; } = new ItemDefinition[InventoryCapacity];
-
-        // Fires on every successful AddItem regardless of source — UI (e.g.
-        // ItemAcquiredToast) subscribes here instead of each pickup site
-        // calling into UI directly.
-        public event System.Action<ItemDefinition> ItemAdded;
-
-        // Returns false if every slot is already full.
-        public bool AddItem(ItemDefinition item)
-        {
-            if (item == null) return false;
-
-            for (int i = 0; i < Inventory.Length; i++)
-            {
-                if (Inventory[i] == null)
-                {
-                    Inventory[i] = item;
-                    ItemAdded?.Invoke(item);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public void RemoveItemAt(int index)
-        {
-            if (index >= 0 && index < Inventory.Length) Inventory[index] = null;
-        }
-
-        // Swapping into a null slot is how an item moves to an empty slot —
-        // no separate "move" method needed.
-        public void SwapItems(int indexA, int indexB)
-        {
-            if (indexA == indexB) return;
-            if (indexA < 0 || indexA >= Inventory.Length) return;
-            if (indexB < 0 || indexB >= Inventory.Length) return;
-
-            (Inventory[indexA], Inventory[indexB]) = (Inventory[indexB], Inventory[indexA]);
-        }
-
-        // Keyed by ItemDefinition rather than slot index so equip state
-        // follows the item through a drag/swap instead of staying pinned to
-        // a grid position. No per-pickup item identity yet, so two inventory
-        // entries sharing the same ItemDefinition asset are indistinguishable
-        // and will show as equipped together — acceptable until items get
-        // real per-instance identity.
-        public HashSet<ItemDefinition> EquippedItems { get; } = new HashSet<ItemDefinition>();
-
-        // Returns true if the item ends up equipped, false if it was just unequipped.
-        public bool ToggleEquipped(ItemDefinition item)
-        {
-            if (!EquippedItems.Add(item))
-            {
-                EquippedItems.Remove(item);
-                return false;
-            }
-            return true;
         }
 
         // Real quests (GDD content, not yet designed) will replace this —

@@ -97,8 +97,6 @@ namespace Fantasia.Editor
         private static void SpawnManager()
         {
             var controller = new GameObject("BattleManager").AddComponent<BattleController>();
-            var items = PlaceholderDataSetup.EnsureItems();
-            controller.PossibleLoot = System.Array.ConvertAll(items, item => new LootEntry(item, LootTable.DefaultWeight(item.Category)));
 
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();
             var eventSystem = new GameObject("EventSystem");

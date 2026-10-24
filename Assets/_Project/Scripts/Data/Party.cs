@@ -15,6 +15,9 @@ namespace Fantasia.Data
         public IReadOnlyList<PartyMember> Members => _members;
         public int Cent { get; private set; } = StartingCent;
 
+        // 파티 공용 인벤토리 (소모품 스택 + 예비 장비)
+        public PartyInventory Inventory { get; } = new();
+
         public void AddMember(PartyMember member)
         {
             if (_members.Count >= MaxSize)
@@ -45,6 +48,19 @@ namespace Fantasia.Data
         {
             foreach (var member in AliveMembers)
                 member.GrantExperience(amount);
+        }
+
+        // 시작 지급 (System.md "연금술 제작·상점 서비스"): 각 직업은 시작 무기(PartyMember 생성 시) + 붕대 1개.
+        // 붕대는 각자 퀵 슬롯 1번에 넣어 둔다.
+        public void GiveStartingItems(ItemCatalog catalog)
+        {
+            var bandage = catalog != null ? catalog.Consumable(ConsumableIds.Bandage) : null;
+            if (bandage == null) return;
+            foreach (var m in _members)
+            {
+                Inventory.AddConsumable(bandage);
+                m.QuickSlots[0] = bandage;
+            }
         }
 
         public void AddCent(int amount) => Cent = Math.Max(0, Cent + amount);

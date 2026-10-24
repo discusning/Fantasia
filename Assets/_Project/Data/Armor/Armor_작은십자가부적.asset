@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7d1c75967c2a8941b86d8bc2cc3cba0, type: 3}
+  m_Name: "Armor_\uC791\uC740\uC2ED\uC790\uAC00\uBD80\uC801"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ArmorDefinition
+  Id: armor.necklace.small_cross
+  DisplayName: "\uC791\uC740 \uC2ED\uC790\uAC00 \uBD80\uC801"
+  Slot: 4
+  Icon: {fileID: 0}
+  Grade: 0
+  WearLevel: 1
+  Price: 50
+  PhysicalDefense: 0
+  MagicDefense: 0
+  MaxHPBonus: 10
+  MaxMPBonus: 0
+  StatBonus:
+    Strength: 0
+    Speed: 0
+    Vitality: 0
+    Intelligence: 0
+    Luck: 0
+    Perception: 0
+  MaxFocusBonus: 0
+  UniqueEffectDescription: 
+  ExcludeFromLoot: 0

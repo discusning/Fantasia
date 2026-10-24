@@ -37,16 +37,6 @@ namespace Fantasia.Editor
             EditorScreenshotUtility.Capture(cam, "board_test_screenshot.png");
         }
 
-        // -executeMethod entry point for headless UI verification — force-opens
-        // the status/inventory panel (normally hidden until the player presses I).
-        public static void CreateSceneAndCaptureUI()
-        {
-            var cam = BuildScene();
-            var panel = GameObject.Find("StatusInventoryUI").GetComponent<StatusInventoryPanel>();
-            panel.Open();
-            EditorScreenshotUtility.Capture(cam, "status_inventory_screenshot.png");
-        }
-
         private static Camera BuildScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -91,16 +81,11 @@ namespace Fantasia.Editor
 
             new GameObject("DevSceneNav").AddComponent<DevSceneNav>();
 
-            // Without this, uGUI Button clicks (StatusInventoryUI's tabs) are
+            // Without this, uGUI Button clicks (인벤토리·조우 창 버튼) are
             // never dispatched at all — no EventSystem means no UI input.
             var eventSystemGO = new GameObject("EventSystem");
             eventSystemGO.AddComponent<EventSystem>();
             eventSystemGO.AddComponent<StandaloneInputModule>();
-
-            var statusPanel = new GameObject("StatusInventoryUI").AddComponent<StatusInventoryPanel>();
-            statusPanel.TargetCamera = cameraGO.GetComponent<Camera>();
-            statusPanel.Characters = PlaceholderDataSetup.EnsureCharacters();
-            statusPanel.InventoryItems = PlaceholderDataSetup.EnsureItems();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             BuildSettingsUtility.EnsureInBuildSettings(ScenePath);

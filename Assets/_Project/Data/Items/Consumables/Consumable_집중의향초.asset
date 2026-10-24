@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9871f0a9ebcd7e4e955f51037dd0bd0, type: 3}
+  m_Name: "Consumable_\uC9D1\uC911\uC758\uD5A5\uCD08"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
+  Id: consumable.focus_candle
+  DisplayName: "\uC9D1\uC911\uC758 \uD5A5\uCD08"
+  Icon: {fileID: 0}
+  EffectDescription: "\uC9D1\uC911\uB825 +1"
+  Effect: 3
+  Amount: 1
+  Duration: 0
+  BuffStat: 0
+  Cures: 
+  AppliedStatuses: []
+  Usable: 3
+  Price: 45
+  CityStock: 3
+  MaxStack: 10
+  AvailableFromAct2: 0

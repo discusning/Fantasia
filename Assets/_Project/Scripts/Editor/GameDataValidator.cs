@@ -18,6 +18,8 @@ namespace Fantasia.Editor
 
             errorCount += ValidateJobs();
             errorCount += ValidateWeapons();
+            errorCount += ValidateArmors();
+            errorCount += ValidateConsumables();
             errorCount += ValidateEnemies();
             errorCount += ValidateSkills();
             errorCount += ValidateStatusEffects();
@@ -128,6 +130,43 @@ namespace Fantasia.Editor
                     LogError($"WeaponDefinition '{w.name}': AllowedJobs가 비어 있다.", ref errors);
                 if (w.Price < 0)
                     LogError($"WeaponDefinition '{w.name}': Price가 음수다.", ref errors);
+                // 스토리 고유(ExcludeFromLoot)만 판매 불가로 가격 0 허용 — 일반 무기는 상점·전리품 가격이 있어야 한다
+                if (!w.ExcludeFromLoot && w.Price <= 0)
+                    LogError($"WeaponDefinition '{w.name}': 일반 무기인데 Price가 0 이하다.", ref errors);
+            }
+            return errors;
+        }
+
+        // System.md "방어구와 장신구 · 17종"
+        private static int ValidateArmors()
+        {
+            var armors = LoadAll<ArmorDefinition>();
+            int errors = CheckDuplicateIds("ArmorDefinition", armors.Select(a => (a.Id, a.name)));
+
+            foreach (var a in armors)
+            {
+                if (string.IsNullOrWhiteSpace(a.DisplayName))
+                    LogError($"ArmorDefinition '{a.name}': DisplayName이 비어 있다.", ref errors);
+                if (a.Price < 0)
+                    LogError($"ArmorDefinition '{a.name}': Price가 음수다.", ref errors);
+            }
+            return errors;
+        }
+
+        // System.md "소모품·이동권·재료 · 29종"
+        private static int ValidateConsumables()
+        {
+            var consumables = LoadAll<ConsumableDefinition>();
+            int errors = CheckDuplicateIds("ConsumableDefinition", consumables.Select(c => (c.Id, c.name)));
+
+            foreach (var c in consumables)
+            {
+                if (string.IsNullOrWhiteSpace(c.DisplayName))
+                    LogError($"ConsumableDefinition '{c.name}': DisplayName이 비어 있다.", ref errors);
+                if (c.Price < 0)
+                    LogError($"ConsumableDefinition '{c.name}': Price가 음수다.", ref errors);
+                if (c.MaxStack <= 0)
+                    LogError($"ConsumableDefinition '{c.name}': MaxStack이 {c.MaxStack}다 (1 이상 필요).", ref errors);
             }
             return errors;
         }

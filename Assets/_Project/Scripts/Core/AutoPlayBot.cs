@@ -88,7 +88,7 @@ namespace Fantasia.Core
             // ── 3. 전투 ──
             yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투 관리자");
             var battle = FindFirstObjectByType<BattleController>();
-            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false;
+            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false, usedItem = false;
             float deadline = Time.time + 180f;
 
             while (!battle.DevFinished && Time.time < deadline)
@@ -102,6 +102,10 @@ namespace Fantasia.Core
                     // 스킬을 쓸 상황이면 스킬(D11), 아니면 기본 공격 — 집중력이 남으면 추가 집중을 켠다.
                     var (skill, target) = ChooseSkill(battle, actor);
                     var downed = battle.DevAllies.FirstOrDefault(a => a.Member.IsDowned && a.Member.CurrentLP > 0);
+                    // 다친 동료가 있으면 회복 소모품 한 번 (D17)
+                    var potionTarget = battle.DevAllies.Where(a => a.InBattle).OrderBy(a => (float)a.CurrentHP / a.MaxHP).FirstOrDefault();
+                    var potion = BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition)
+                        .FirstOrDefault(d => d.Effect == Fantasia.Data.ConsumableEffect.RestoreHP);
                     if (battle.DevCanRevive && downed != null && !Environment.GetCommandLineArgs().Contains("-autoplay-no-revive"))
                     {
                         // 쓰러진 동료가 있으면 먼저 부활 (D21)
@@ -112,6 +116,18 @@ namespace Fantasia.Core
                             yield return new WaitForSeconds(0.4f);
                             yield return Shot("battle_revive");
                         }
+                    }
+                    else if (!usedItem && potion != null && potionTarget != null && (float)potionTarget.CurrentHP / potionTarget.MaxHP < 0.8f
+                             && Fantasia.Items.ConsumableRules.CanUseOn(potion, potionTarget.Member, out _))
+                    {
+                        usedItem = true;
+                        battle.DevHud.DevOpenItems();
+                        yield return new WaitForSeconds(0.2f);
+                        yield return Shot("battle_item_menu");
+                        Note($"  소모품 사용: {potion.DisplayName} → {potionTarget.DisplayName} (HP {potionTarget.CurrentHP}/{potionTarget.MaxHP})");
+                        battle.DevUseItem(potion, potionTarget);
+                        yield return new WaitForSeconds(0.4f);
+                        yield return Shot("battle_item_used");
                     }
                     else if (skill != null)
                     {
@@ -166,6 +182,29 @@ namespace Fantasia.Core
             yield return new WaitForSeconds(1.2f);
             yield return Shot("board_after_battle");
             NoteParty("보드 복귀 후");
+
+            // ── 5. 인벤토리·장비 창 (D17) ──
+            var party = BoardSession.Instance.Party;
+            Note($"인벤토리: 장비 {party.Inventory.Gear.Count}개, 소모품 {string.Join(", ", party.Inventory.Consumables.Select(s => $"{s.Definition.DisplayName}×{s.Count}"))}, 보관함 {BoardSession.Instance.PendingLoot.Count}");
+            if (party.Inventory.Gear.Count == 0 && Fantasia.Data.ItemCatalog.Current != null)
+            {
+                // 화면 확인용: 전리품에서 장비가 안 나왔으면 희귀 코트 하나 넣어 본다
+                var coat = Fantasia.Data.ItemCatalog.Current.Armors.FirstOrDefault();
+                if (coat != null) party.Inventory.AddGear(new Fantasia.Data.GearItem(coat, Fantasia.Data.EquipmentGrade.Rare));
+                Note("  (점검용 희귀 장비 1개 추가)");
+            }
+            InventoryPanel.Open(party, party.Members[0]);
+            InventoryPanel.Instance.DevSelectFirst(0);
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("inventory_gear_compare");
+            InventoryPanel.Instance.DevEquipSelected();
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("inventory_after_equip");
+            Note($"  장착 후 {party.Members[0].Job.DisplayName}: 몸통 {party.Members[0].GetEquipped(Fantasia.Data.GearSlot.Body)?.DisplayName ?? "없음"} · 물리 방어 {party.Members[0].FinalPhysicalDefense} · 최대 HP {party.Members[0].MaxHP}");
+            InventoryPanel.Instance.DevSelectFirst(1);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("inventory_consumables");
+            InventoryPanel.Close();
             Note("자동 플레이 완료");
         }
 

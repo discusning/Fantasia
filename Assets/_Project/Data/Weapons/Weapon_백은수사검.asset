@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 664556478545d0f41b4c49a9ee2755a0, type: 3}
+  m_Name: "Weapon_\uBC31\uC740\uC218\uC0AC\uAC80"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.WeaponDefinition
+  Id: weapon.sword.silver_inquisitor
+  DisplayName: "\uBC31\uC740 \uC218\uC0AC\uAC80"
+  Category: 1
+  Icon: {fileID: 0}
+  SlotCount: 3
+  BaseBonusB: 6
+  BaseAttackMPCost: 0
+  WearStatBonusDescription: "\uD798 +4"
+  WearStatBonus:
+    Strength: 4
+    Speed: 0
+    Vitality: 0
+    Intelligence: 0
+    Luck: 0
+    Perception: 0
+  MaxMPBonus: 0
+  CritEffectDescription: "\uD06C\uB9AC\uD2F0\uCEEC \uC2DC \uBB3C\uB9AC \uBC29\uC5B4
+    \u22123, 2\uD134"
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  Grade: 1
+  WearLevel: 4
+  Price: 245
+  AllowedJobs: 0000000007000000
+  ExcludeFromLoot: 0

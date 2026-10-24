@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 664556478545d0f41b4c49a9ee2755a0, type: 3}
+  m_Name: "Weapon_\uAC70\uB9AC\uC545\uC0AC\uC758\uBC14\uC774\uC62C\uB9B0"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.WeaponDefinition
+  Id: weapon.instrument.street_violin
+  DisplayName: "\uAC70\uB9AC\uC545\uC0AC\uC758 \uBC14\uC774\uC62C\uB9B0"
+  Category: 9
+  Icon: {fileID: 0}
+  SlotCount: 2
+  BaseBonusB: 4
+  BaseAttackMPCost: 3
+  WearStatBonusDescription: "\uC9C0\uB825 +3, \uC18D\uB3C4 +3"
+  WearStatBonus:
+    Strength: 0
+    Speed: 3
+    Vitality: 0
+    Intelligence: 3
+    Luck: 0
+    Perception: 0
+  MaxMPBonus: 0
+  CritEffectDescription: "\uD06C\uB9AC\uD2F0\uCEEC \uC2DC \uC790\uC2E0\uC758 HP 5
+    \uD68C\uBCF5"
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  Grade: 0
+  WearLevel: 1
+  Price: 80
+  AllowedJobs: 0500000007000000
+  ExcludeFromLoot: 0

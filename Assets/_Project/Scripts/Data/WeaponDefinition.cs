@@ -11,6 +11,7 @@ namespace Fantasia.Data
         public string Id;
         public string DisplayName;
         public WeaponCategory Category;
+        public Sprite Icon; // 비우면 UI가 계열별 임시 아이콘
 
         [Header("계열 고정값 (System.md 무기 계열 표)")]
         public int SlotCount;           // 2/3/4
@@ -33,11 +34,16 @@ namespace Fantasia.Data
         public int Price;
 
         public JobId[] AllowedJobs;
+        // 랜덤 전리품에 넣지 않는 무기 (스토리 고유 6종)
+        public bool ExcludeFromLoot;
 
         // 무기 공격 보너스 = ceil((B + 8 × floor((착용레벨-1)/3)) × R) — System.md "등급·착용 레벨·가격 계산"
-        public int ComputeAttackBonus()
+        public int ComputeAttackBonus() => ComputeAttackBonus(Grade);
+
+        // 전리품처럼 표와 다른 등급으로 나온 경우
+        public int ComputeAttackBonus(EquipmentGrade grade)
         {
-            var row = EquipmentGradeTable.Get(Grade);
+            var row = EquipmentGradeTable.Get(grade);
             int levelStep = Mathf.FloorToInt((WearLevel - 1) / 3f);
             float raw = (BaseBonusB + 8 * levelStep) * row.AttackBonusMultiplier;
             return Mathf.CeilToInt(raw);

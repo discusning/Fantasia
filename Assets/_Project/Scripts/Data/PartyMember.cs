@@ -15,7 +15,16 @@ namespace Fantasia.Data
         public JobDefinition Job { get; }
         public int Level { get; private set; } = 1;
         public int Experience { get; private set; }
-        public WeaponDefinition EquippedWeapon { get; private set; }
+
+        // 착용 슬롯 5칸 (GearSlot 순서). 예비 장비는 파티 인벤토리에 — 능력치 합산 안 함.
+        private readonly GearItem[] _equipped = new GearItem[5];
+        public GearItem GetEquipped(GearSlot slot) => _equipped[(int)slot];
+        public GearItem EquippedWeaponItem => _equipped[(int)GearSlot.Weapon];
+        public WeaponDefinition EquippedWeapon => EquippedWeaponItem?.Weapon;
+
+        // 퀵 슬롯 4칸 — 소모품 종류만 가리키고 수량은 파티 인벤토리를 본다 (System.md "퀵 슬롯").
+        public const int QuickSlotCount = 4;
+        public ConsumableDefinition[] QuickSlots { get; } = new ConsumableDefinition[QuickSlotCount];
 
         public int CurrentHP { get; private set; }
         public int CurrentMP { get; private set; }
@@ -28,7 +37,8 @@ namespace Fantasia.Data
         public PartyMember(JobDefinition job)
         {
             Job = job ?? throw new ArgumentNullException(nameof(job));
-            EquippedWeapon = job.StartingWeapon;
+            if (job.StartingWeapon != null)
+                _equipped[(int)GearSlot.Weapon] = new GearItem(job.StartingWeapon) { IsStartingGear = true };
             CurrentHP = MaxHP;
             CurrentMP = MaxMP;
             CurrentFocus = Mathf.Min(job.StartingFocus, MaxFocus);
@@ -39,14 +49,21 @@ namespace Fantasia.Data
 
         // 최대 HP = 활력×2 + 레벨당 +8. 레벨 1에서는 System.md 직업별 초기 HP 표와 같은 값이 나온다
         // (예: 명탐정 활력54 → 108, 표의 초기 HP 108과 일치).
-        public int MaxHP => Job.Stats.Vitality * 2 + LevelBonusSteps * 8;
+        // + 방어구·장신구 최대 HP 보정 (예: 인부의 두꺼운 코트 +10).
+        public int MaxHP => Job.Stats.Vitality * 2 + LevelBonusSteps * 8 + GearSum(g => g.MaxHPBonus);
 
-        // MP를 쓰는 직업(역병 의사·연금술사·지휘자·도박가)만 활력×2 + 레벨당 +6, 나머지는 0 고정.
-        public int MaxMP => Job.UsesMP ? Job.Stats.Vitality * 2 + LevelBonusSteps * 6 : 0;
+        // MP를 쓰는 직업(역병 의사·연금술사·지휘자·도박가)만 활력×2 + 레벨당 +6 (+ 장신구 최대 MP), 나머지는 0 고정.
+        public int MaxMP => Job.UsesMP ? Job.Stats.Vitality * 2 + LevelBonusSteps * 6 + GearSum(g => g.MaxMPBonus) : 0;
 
-        // 집중력 최대는 기본 3, 장비·기도 포함 최대 6 — 보정원(장비 스탯·석상 기도)은
-        // 구조화된 수치가 아직 없어 D18(장비 고유효과)/D23(보드 이벤트) 때 반영한다.
-        public int MaxFocus => BaseMaxFocus;
+        // 집중력 최대는 기본 3 + 장비 보정, 최대 6. 석상 기도 보정은 D23 때 더한다.
+        public int MaxFocus => Mathf.Min(AbsoluteMaxFocus, BaseMaxFocus + GearSum(g => g.MaxFocusBonus));
+
+        private int GearSum(Func<GearItem, int> value)
+        {
+            int sum = 0;
+            foreach (var g in _equipped) if (g != null) sum += value(g);
+            return sum;
+        }
 
         // 직업 스탯 + 착용 무기 보정 − 상태 효과(중독 전 스탯·속박 속도), 0~99로 제한. 슬롯 확률·속도·회피는 이 값을 쓴다.
         // 최대 HP·MP는 아직 직업 활력 기준 — 중독의 활력 감소를 최대 자원에 반영하는 건 D12 2차에서.
@@ -55,7 +72,7 @@ namespace Fantasia.Data
             get
             {
                 var stats = Job.Stats;
-                if (EquippedWeapon != null) stats += EquippedWeapon.WearStatBonus;
+                foreach (var g in _equipped) if (g != null) stats += g.StatBonus;
                 int all = Statuses.AllStatPenalty;
                 stats += new StatBlock(-all, -all - Statuses.SpeedPenalty, -all, -all, -all, -all);
                 return stats.ClampToCap();
@@ -66,9 +83,8 @@ namespace Fantasia.Data
         {
             get
             {
-                int weaponBonus = EquippedWeapon != null && !EquippedWeapon.Category.IsMagic()
-                    ? EquippedWeapon.ComputeAttackBonus()
-                    : 0;
+                var w = EquippedWeaponItem;
+                int weaponBonus = w != null && !w.IsMagicWeapon ? w.AttackBonus : 0;
                 return Mathf.Max(0, Job.BasePhysicalAttack + LevelBonusSteps * 2 + weaponBonus - Statuses.AttackPenalty);
             }
         }
@@ -77,16 +93,15 @@ namespace Fantasia.Data
         {
             get
             {
-                int weaponBonus = EquippedWeapon != null && EquippedWeapon.Category.IsMagic()
-                    ? EquippedWeapon.ComputeAttackBonus()
-                    : 0;
+                var w = EquippedWeaponItem;
+                int weaponBonus = w != null && w.IsMagicWeapon ? w.AttackBonus : 0;
                 return Mathf.Max(0, Job.BaseMagicAttack + LevelBonusSteps * 2 + weaponBonus - Statuses.AttackPenalty);
             }
         }
 
-        // 방어력은 1차 구현 범위에서 장비 방어구 보정이 아직 없어 직업 기본값 그대로 노출한다 (D17/D18에서 확장).
-        public int FinalPhysicalDefense => Mathf.Max(0, Job.BasePhysicalDefense - Statuses.DefensePenalty);
-        public int FinalMagicDefense => Mathf.Max(0, Job.BaseMagicDefense - Statuses.DefensePenalty);
+        // 직업 기본 + 방어구·장신구 − 상태 효과
+        public int FinalPhysicalDefense => Mathf.Max(0, Job.BasePhysicalDefense + GearSum(g => g.PhysicalDefense) - Statuses.DefensePenalty);
+        public int FinalMagicDefense => Mathf.Max(0, Job.BaseMagicDefense + GearSum(g => g.MagicDefense) - Statuses.DefensePenalty);
 
         // 이 직업이 가진 패시브 값 합 (없으면 0) — 예: 현장 검증 기습 +0.1.
         public float PassiveValue(PassiveType type)
@@ -101,13 +116,66 @@ namespace Fantasia.Data
 
         public int ExperienceToNextLevel => Level * 60;
 
+        // 인벤토리 없이 무기를 바로 바꾼다 (셀프 테스트·시작 장비용). null이면 맨손.
         public void EquipWeapon(WeaponDefinition weapon)
         {
-            EquippedWeapon = weapon;
-            // 장비 교체로 최대치가 늘어도 현재 자원은 무료로 채우지 않는다 (System.md) —
-            // 넘친 경우에만 상한으로 깎는다.
+            _equipped[(int)GearSlot.Weapon] = weapon != null ? new GearItem(weapon) : null;
+            ClampResourcesToMax();
+        }
+
+        // 인벤토리의 장비를 착용한다. 같은 슬롯에 있던 장비는 인벤토리로 돌아간다.
+        public bool TryEquip(GearItem item, PartyInventory inventory, out string reason)
+        {
+            if (item == null) { reason = "장비 없음"; return false; }
+            if (!item.CanEquip(this, out reason)) return false;
+            var previous = _equipped[(int)item.Slot];
+            _equipped[(int)item.Slot] = item;
+            inventory?.SwapGear(item, previous);
+            ClampResourcesToMax();
+            return true;
+        }
+
+        // 슬롯을 비우고 인벤토리로. 인벤토리가 꽉 차면 실패.
+        public bool TryUnequip(GearSlot slot, PartyInventory inventory, out string reason)
+        {
+            reason = null;
+            var current = _equipped[(int)slot];
+            if (current == null) { reason = "빈 슬롯"; return false; }
+            if (inventory != null && inventory.IsGearFull) { reason = "인벤토리가 가득 참"; return false; }
+            _equipped[(int)slot] = null;
+            inventory?.SwapGear(null, current);
+            ClampResourcesToMax();
+            return true;
+        }
+
+        // 장비 교체로 최대치가 늘어도 현재 자원은 무료로 채우지 않는다 (System.md) — 넘친 경우에만 상한으로 깎는다.
+        private void ClampResourcesToMax()
+        {
             CurrentHP = Mathf.Min(CurrentHP, MaxHP);
             CurrentMP = Mathf.Min(CurrentMP, MaxMP);
+            CurrentFocus = Mathf.Min(CurrentFocus, MaxFocus);
+        }
+
+        // 소모품 회복 (영약·향초 등). 최대치를 넘지 않는다. 회복량을 돌려준다.
+        public int RestoreMP(int amount)
+        {
+            int before = CurrentMP;
+            CurrentMP = Mathf.Min(MaxMP, CurrentMP + Mathf.Max(0, amount));
+            return CurrentMP - before;
+        }
+
+        public int RestoreFocus(int amount)
+        {
+            int before = CurrentFocus;
+            CurrentFocus = Mathf.Min(MaxFocus, CurrentFocus + Mathf.Max(0, amount));
+            return CurrentFocus - before;
+        }
+
+        public bool GainLP()
+        {
+            if (IsPermanentlyDead || CurrentLP >= MaxLP) return false;
+            CurrentLP++;
+            return true;
         }
 
         public void GrantExperience(int amount)

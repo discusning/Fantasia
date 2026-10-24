@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 664556478545d0f41b4c49a9ee2755a0, type: 3}
+  m_Name: "Weapon_\uC0AC\uAC74\uC885\uACB0\uC758\uCE7C\uB0A0"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.WeaponDefinition
+  Id: weapon.dagger.case_closed
+  DisplayName: "\uC0AC\uAC74\uC885\uACB0\uC758 \uCE7C\uB0A0"
+  Category: 0
+  Icon: {fileID: 0}
+  SlotCount: 2
+  BaseBonusB: 5
+  BaseAttackMPCost: 0
+  WearStatBonusDescription: "\uD798 +2, \uC18D\uB3C4 +3"
+  WearStatBonus:
+    Strength: 2
+    Speed: 3
+    Vitality: 0
+    Intelligence: 0
+    Luck: 0
+    Perception: 0
+  MaxMPBonus: 0
+  CritEffectDescription: "\uD06C\uB9AC\uD2F0\uCEEC \uC2DC \uC57D\uD55C \uCD9C\uD608
+    3\uD134\n\uACE0\uC720: \uBD84\uC11D\uB41C \uC801\uC5D0\uAC8C \uC9C1\uC811 \uACF5\uACA9
+    \uD53C\uD574 +15%; \uC57D\uC810 \uAC04\uD30C\uC640 \uC5F0\uACB0"
+  OnCritStatuses:
+  - {fileID: 11400000, guid: 3e8d562e91054374eabacf689e27685a, type: 2}
+  OnCritTurnShift: 0
+  Grade: 3
+  WearLevel: 7
+  Price: 0
+  AllowedJobs: 000000000600000007000000
+  ExcludeFromLoot: 1

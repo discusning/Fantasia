@@ -25,6 +25,7 @@ namespace Fantasia.Editor
             PartyMemberSelfTest.Run();
             WorldSelfTest.Run();
             EncounterSelfTest.Run();
+            ItemSelfTest.Run();
         }
 
         [MenuItem("Fantasia/Data/Seed Sample Game Data")]
@@ -66,6 +67,7 @@ namespace Fantasia.Editor
                 "공격력 −3 (가고일 유체 특성). 기간 미정 — 2턴 가정.");
             LinkCritStatuses(bleed, poison, confusion, bind, attackDown);
             SeedSkills(skill, poison);
+            ItemDataSeed.SeedAll();
             UIThemeSetup.EnsureAsset();
             AssetDatabase.SaveAssets();
             Debug.Log("[GameDataSeed] 샘플 자산 생성/갱신 완료 (1차 3직업: 명탐정·역병 의사·저격수 + 시작 무기, 현장 검증, 1막 소형 적 4종, 약한 출혈)");

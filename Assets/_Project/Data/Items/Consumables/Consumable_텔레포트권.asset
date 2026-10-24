@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9871f0a9ebcd7e4e955f51037dd0bd0, type: 3}
+  m_Name: "Consumable_\uD154\uB808\uD3EC\uD2B8\uAD8C"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
+  Id: consumable.teleport
+  DisplayName: "\uD154\uB808\uD3EC\uD2B8\uAD8C"
+  Icon: {fileID: 0}
+  EffectDescription: "\uC774\uBBF8 \uD0D0\uC0C9\uD55C 10\uCE78 \uC774\uB0B4 \uC548\uC804
+    \uD0C0\uC77C\uB85C \uD604\uC7AC \uCE90\uB9AD\uD130 \uC774\uB3D9; \uD589\uB3D9
+    \uC885\uB8CC"
+  Effect: 13
+  Amount: 10
+  Duration: 0
+  BuffStat: 0
+  Cures: 
+  AppliedStatuses: []
+  Usable: 2
+  Price: 120
+  CityStock: 1
+  MaxStack: 10
+  AvailableFromAct2: 0

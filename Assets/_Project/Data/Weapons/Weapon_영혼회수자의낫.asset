@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 664556478545d0f41b4c49a9ee2755a0, type: 3}
+  m_Name: "Weapon_\uC601\uD63C\uD68C\uC218\uC790\uC758\uB0AB"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.WeaponDefinition
+  Id: weapon.greatsword.soul_reaper
+  DisplayName: "\uC601\uD63C\uD68C\uC218\uC790\uC758 \uB0AB"
+  Category: 2
+  Icon: {fileID: 0}
+  SlotCount: 4
+  BaseBonusB: 10
+  BaseAttackMPCost: 0
+  WearStatBonusDescription: "\uD798 +5, \uC18D\uB3C4 \u22124"
+  WearStatBonus:
+    Strength: 5
+    Speed: -4
+    Vitality: 0
+    Intelligence: 0
+    Luck: 0
+    Perception: 0
+  MaxMPBonus: 0
+  CritEffectDescription: "\uD06C\uB9AC\uD2F0\uCEEC \uC2DC \uBC29\uD574\uD568\n\uACE0\uC720:
+    \uD06C\uB9AC\uD2F0\uCEEC \uD6C4 \uC790\uC2E0\uC758 \uC8FD\uC74C\uC758 \uD45C\uC2DD
+    \uC81C\uAC70; \uACF5\uACA9\uB2F9 1\uD68C"
+  OnCritStatuses: []
+  OnCritTurnShift: 1
+  Grade: 4
+  WearLevel: 9
+  Price: 0
+  AllowedJobs: 000000000300000007000000
+  ExcludeFromLoot: 1

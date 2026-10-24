@@ -144,7 +144,7 @@ namespace Fantasia.UI
                     break;
                 case Choice.Ambush:
                     _descriptionText.text = $"인지 판정. 모든 슬롯이 성공하면 첫 라운드에 아군이 먼저 행동하고, 실패하면 적이 먼저 행동합니다.";
-                    ShowRollOdds(AmbushBonus > 0f ? $"기습 확률 (현장 검증 +{AmbushBonus * 100f:0}%p)" : "기습 확률",
+                    ShowRollOdds(AmbushBonus > 0f ? $"기습 확률 (보너스 +{AmbushBonus * 100f:0}%p)" : "기습 확률",
                         EncounterRules.AmbushSlotChance(_enemy, HeroStat(StatKind.Perception), AmbushBonus), StatKind.Perception);
                     break;
                 case Choice.Sneak:
@@ -173,7 +173,9 @@ namespace Fantasia.UI
         private int HeroStat(StatKind kind) => _hero != null ? _hero.FinalStats.Get(kind) : 0;
 
         // 판정 캐릭터의 기습 패시브 (명탐정 현장 검증 +10%p).
-        private float AmbushBonus => _hero != null ? _hero.PassiveValue(PassiveType.AmbushSlotBonus) : 0f;
+        // 현장 검증 패시브 + 안개 연막병(다음 기습 1회) — 합산, 최대 95%는 슬롯 확률 계산에서
+        private float AmbushBonus => (_hero != null ? _hero.PassiveValue(PassiveType.AmbushSlotBonus) : 0f)
+                                     + (Fantasia.Core.BoardSession.Instance != null ? Fantasia.Core.BoardSession.Instance.PendingAmbushBonus / 100f : 0f);
 
         private void ShowRollOdds(string title, float slotChance, StatKind stat)
         {
@@ -215,6 +217,7 @@ namespace Fantasia.UI
                     break;
                 case Choice.Ambush:
                     StartCoroutine(RevealRoll(EncounterRules.RollAmbush(_enemy, HeroStat(StatKind.Perception), 0, AmbushBonus)));
+                    if (Fantasia.Core.BoardSession.Instance != null) Fantasia.Core.BoardSession.Instance.PendingAmbushBonus = 0; // 연막병 소모
                     break;
                 case Choice.Sneak:
                     StartCoroutine(RevealRoll(EncounterRules.RollSneak(_enemy, HeroStat(StatKind.Speed))));

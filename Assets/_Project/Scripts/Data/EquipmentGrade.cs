@@ -13,6 +13,20 @@ namespace Fantasia.Data
 
     // 등급별 추첨 확률(%)·공격 보너스 배율 R·상점 가격 배율 Q. 표 수치 그대로,
     // 코드에서 다시 손으로 베끼지 않도록 한 곳에 모아둔다.
+    public static class EquipmentGradeExtensions
+    {
+        public static string Label(this EquipmentGrade grade) => grade switch
+        {
+            EquipmentGrade.Normal => "노말",
+            EquipmentGrade.Rare => "희귀",
+            EquipmentGrade.Epic => "에픽",
+            EquipmentGrade.Unique => "유니크",
+            EquipmentGrade.Legendary => "전설",
+            EquipmentGrade.Special => "스페셜",
+            _ => grade.ToString(),
+        };
+    }
+
     public static class EquipmentGradeTable
     {
         public readonly struct Row

@@ -73,6 +73,7 @@ namespace Fantasia.Board
             BuildTestParty();
             SpawnToken();
             PlaceLandmarks();
+            HookInventory();
 
             // 전투로 끝난 아군 턴이면 돌아오자마자 적 턴 진행, 아니면 지금 페이즈 표시.
             if (BoardSession.Instance.AllyTurnEndedByBattle)
@@ -106,6 +107,7 @@ namespace Fantasia.Board
                 if (job != null && _testParty.Members.Count < Party.MaxSize) _testParty.AddMember(new PartyMember(job));
             }
             if (_testParty.Members.Count == 0) return;
+            _testParty.GiveStartingItems(ItemCatalog.Current);
             PartyHudPanel.Show(_testParty, Leader);
         }
 
@@ -178,8 +180,47 @@ namespace Fantasia.Board
             if (BoardTopBar.Instance != null) RefreshTopBar(announce: false);
         }
 
+        // ── D17 인벤토리: 초상 클릭·I 키로 창, 퀵 슬롯 클릭으로 월드 사용 ──
+        private bool WorldItemUseAllowed => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && Clock.Phase == WorldPhase.AllyTurn;
+
+        private void HookInventory()
+        {
+            InventoryPanel.WorldUseAllowed = () => WorldItemUseAllowed;
+            InventoryPanel.AllyTurnEndRequested += OnItemEndedAllyTurn;
+            PartyHudPanel.CardClicked += OnCardClicked;
+            PartyHudPanel.QuickSlotClicked += OnBoardQuickSlot;
+        }
+
+        private void OnDestroy()
+        {
+            InventoryPanel.AllyTurnEndRequested -= OnItemEndedAllyTurn;
+            PartyHudPanel.CardClicked -= OnCardClicked;
+            PartyHudPanel.QuickSlotClicked -= OnBoardQuickSlot;
+        }
+
+        private void OnCardClicked(PartyMember member)
+        {
+            if (!EncounterPanel.IsOpen) InventoryPanel.Open(_testParty, member);
+        }
+
+        private void OnBoardQuickSlot(PartyMember member, int slot)
+        {
+            var def = member.QuickSlots[slot];
+            if (def == null) return;
+            string message = WorldItemUseAllowed ? InventoryPanel.UseWorldItem(def, member) : "보드의 아군 턴(이동 중 아님)에만 쓸 수 있음";
+            ItemAcquiredToast.Show(message);
+        }
+
+        // 안개 야영 세트: 사용 후 1월드 라운드 경과 → 아군 턴 종료
+        private void OnItemEndedAllyTurn()
+        {
+            if (!_turnEnding && Clock.Phase == WorldPhase.AllyTurn) StartCoroutine(EndAllyTurn());
+        }
+
         private void Update()
         {
+            if (Input.GetKeyDown(KeyCode.I) && !EncounterPanel.IsOpen) InventoryPanel.Toggle(_testParty, Leader);
+            if (InventoryPanel.IsOpen) return;
             if (LandmarkInfoPanel.IsOpen || DialoguePanel.IsOpen || EncounterPanel.IsOpen) return;
 
             // Ctrl+Right-click = "just look" (info popup only), independent
@@ -355,6 +396,7 @@ namespace Fantasia.Board
             yield return new WaitForSeconds(EnemyTurnSeconds);
 
             Clock.EndEnemyTurn();
+            BoardSession.Instance.UsedWorldItemThisTurn.Clear();
             var allyLog = WorldTurnRules.BeginAllyTurn(_testParty);
             var lines = enemyLog.Concat(allyLog).ToList();
             _worldMessage = lines.Count > 0 ? string.Join(" / ", lines) : null;
@@ -368,7 +410,7 @@ namespace Fantasia.Board
         public static string DevForcedEnemyId;
 
         // 새 아군 턴을 시작할 수 있는 상태 (이동·창·적 턴 연출이 모두 끝났고 아직 안 굴림).
-        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen
+        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen
                                  && Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn;
         public bool DevAwaitingSelection => _awaitingSelection;
         public int DevWorldRound => Clock.WorldRound;
@@ -396,6 +438,7 @@ namespace Fantasia.Board
 
         private void OnGUI()
         {
+            if (InventoryPanel.IsOpen) return; // 개발용 안내 글자가 창 위에 겹치지 않게
             float top = Screen.height * 0.13f; // 보드 상단 바·지역명 배너 아래
             string rollHint = Clock.Phase != WorldPhase.AllyTurn ? "적 턴 진행 중..."
                 : Clock.HasRolledThisTurn ? $"주사위: {_lastRoll}" : "Space로 주사위 굴리기";
@@ -413,7 +456,7 @@ namespace Fantasia.Board
                 GUI.Label(new Rect(10, top + 106, 400, 24), $"이벤트 칸 추가 이동: +{_lastEventBonus}칸 (이번 턴 1회)");
             }
             GUI.Label(new Rect(10, top + 58, 400, 24), "Ctrl+우클릭: 지형지물 정보 확인");
-            GUI.Label(new Rect(10, top + 82, 400, 24), "우측 퀘스트 창의 '달성!' 버튼으로 퀘스트 완료");
+            GUI.Label(new Rect(10, top + 82, 500, 24), "I 키·파티 초상 클릭: 인벤토리·장비 / 퀵 슬롯 클릭: 소모품 사용");
 
             if (!EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage))
             {

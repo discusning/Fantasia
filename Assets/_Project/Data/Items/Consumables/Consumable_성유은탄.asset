@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9871f0a9ebcd7e4e955f51037dd0bd0, type: 3}
+  m_Name: "Consumable_\uC131\uC720\uC740\uD0C4"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
+  Id: consumable.holy_silver_bullet
+  DisplayName: "\uC131\uC720 \uC740\uD0C4"
+  Icon: {fileID: 0}
+  EffectDescription: "\uB2E4\uC74C 3\uD68C \uD65C\xB7\uCD1D \uACF5\uACA9\uC758 \uC778\uAC04\uD615\xB7\uB9DD\uB839\uD615
+    \uB300\uC0C1 \uD53C\uD574 +20%; \uC804\uD22C \uC885\uB8CC \uC2DC \uB0A8\uC740
+    \uD69F\uC218 \uC18C\uBA78"
+  Effect: 16
+  Amount: 20
+  Duration: 3
+  BuffStat: 0
+  Cures: 
+  AppliedStatuses: []
+  Usable: 1
+  Price: 85
+  CityStock: 1
+  MaxStack: 10
+  AvailableFromAct2: 1

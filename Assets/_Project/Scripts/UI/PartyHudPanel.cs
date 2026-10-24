@@ -17,7 +17,11 @@ namespace Fantasia.UI
         public static PartyHudPanel Instance { get; private set; }
 
         private const int CardCount = 3;
-        private const int QuickSlotCount = 4; // System.md "퀵 슬롯" (D17에서 실제 아이템 연결)
+        private const int QuickSlotCount = PartyMember.QuickSlotCount; // System.md "퀵 슬롯" — 소모품 종류를 가리키고 수량은 파티 인벤토리
+
+        // 퀵 슬롯 클릭 (전투: 지금 차례 캐릭터가 사용 / 보드: 월드 사용) · 카드(초상) 클릭 → 인벤토리 창
+        public static event System.Action<PartyMember, int> QuickSlotClicked;
+        public static event System.Action<PartyMember> CardClicked;
 
         private static readonly Color BorderNormal = new Color(0.45f, 0.4f, 0.32f);
         private static readonly Color BorderActive = new Color(0.95f, 0.78f, 0.4f);
@@ -47,6 +51,10 @@ namespace Fantasia.UI
             public readonly List<Image> FocusPips = new();
             public Text Status;  // 카드 위 상태 문구 (행동 중인 캐릭터만)
             public StatusChipRow Statuses; // 걸린 상태 효과 (이름 배너 오른쪽)
+            public readonly List<Image> QuickIcons = new();
+            public readonly List<Text> QuickNames = new();
+            public readonly List<Text> QuickCounts = new();
+            public PartyMember Member;
         }
 
         private readonly List<Card> _cards = new();
@@ -124,6 +132,7 @@ namespace Fantasia.UI
 
         private void Fill(Card card, PartyMember m)
         {
+            card.Member = m;
             bool active = m == _active;
             card.Border.color = active ? BorderActive : BorderNormal;
             card.Portrait.Set(m.Job.Portrait, PortraitStudio.TextureFor(m.Job));
@@ -147,6 +156,20 @@ namespace Fantasia.UI
 
             var s = m.FinalStats;
             card.Stats.text = $"힘 {s.Strength}   지력 {s.Intelligence}   활력 {s.Vitality}   속도 {s.Speed}   행운 {s.Luck}   인지 {s.Perception}";
+
+            // 퀵 슬롯: 아이콘(없으면 이름 앞 두 글자) + 남은 개수
+            var inventory = _party.Inventory;
+            for (int q = 0; q < card.QuickIcons.Count; q++)
+            {
+                var def = m.QuickSlots[q];
+                int count = def != null ? inventory.CountOf(def) : 0;
+                card.QuickIcons[q].enabled = def != null && def.Icon != null;
+                card.QuickIcons[q].sprite = def != null ? def.Icon : null;
+                card.QuickIcons[q].color = count > 0 ? Color.white : new Color(1f, 1f, 1f, 0.35f);
+                card.QuickNames[q].text = def != null && def.Icon == null ? def.DisplayName.Substring(0, System.Math.Min(2, def.DisplayName.Length)) : "";
+                card.QuickNames[q].color = count > 0 ? TextLight : TextDim;
+                card.QuickCounts[q].text = def != null ? count.ToString() : "";
+            }
 
             // 집중력: 최대치만큼 칸을 보이고 현재치만큼 채운다 (최대 6칸).
             for (int i = 0; i < card.FocusPips.Count; i++)
@@ -192,6 +215,9 @@ namespace Fantasia.UI
 
             // 초상 + 레벨 배지 (왼쪽)
             card.Portrait = new PortraitView(fill, "Portrait", new Vector2(0.13f, 0.5f), 96f, BorderNormal);
+            // 초상 클릭 → 그 캐릭터의 인벤토리·장비 창
+            var portraitHit = UGUIKit.CreateImage(fill, "PortraitHit", new Vector2(0f, 0f), new Vector2(0.255f, 1f), Color.clear);
+            portraitHit.gameObject.AddComponent<Button>().onClick.AddListener(() => { if (card.Member != null) CardClicked?.Invoke(card.Member); });
             var levelFill = UGUIKit.CreateBorderedPanel(fill, "LevelBadge", new Vector2(0.03f, 0.13f), new Vector2(0.03f, 0.13f), BorderActive, new Color(0.2f, 0.08f, 0.1f), 1.5f);
             ((RectTransform)levelFill.parent).sizeDelta = new Vector2(30f, 30f);
             card.Level = MakeText(levelFill, "Value", Vector2.zero, Vector2.one, 16, TextAnchor.MiddleCenter, TextLight, bold: true);
@@ -208,7 +234,18 @@ namespace Fantasia.UI
             {
                 float x0 = 0.49f + q * 0.123f;
                 var slot = UGUIKit.CreateThemedPanel(fill, $"QuickSlot{q}", new Vector2(x0, 0.43f), new Vector2(x0 + 0.11f, 0.76f), BorderNormal, new Color(0.13f, 0.12f, 0.14f), 1f);
+                var icon = UGUIKit.CreateImage(slot, "Icon", new Vector2(0.1f, 0.1f), new Vector2(0.9f, 0.9f), Color.white);
+                icon.preserveAspect = true;
+                icon.enabled = false;
+                icon.raycastTarget = false;
+                card.QuickIcons.Add(icon);
+                card.QuickNames.Add(MakeText(slot, "Name", new Vector2(0f, 0.3f), new Vector2(1f, 1f), 10, TextAnchor.MiddleCenter, TextLight, bold: true));
+                card.QuickCounts.Add(MakeText(slot, "Count", new Vector2(0f, 0f), new Vector2(0.94f, 0.42f), 9, TextAnchor.LowerRight, TextLight, bold: true));
                 MakeText(slot, "Key", new Vector2(0.06f, 0f), new Vector2(1f, 0.4f), 9, TextAnchor.LowerLeft, TextDim, bold: false).text = (q + 1).ToString();
+                var slotButton = slot.parent.gameObject.AddComponent<Button>();
+                slotButton.targetGraphic = slot.parent.GetComponent<Image>();
+                int slotIndex = q;
+                slotButton.onClick.AddListener(() => { if (card.Member != null) QuickSlotClicked?.Invoke(card.Member, slotIndex); });
             }
 
             // HP / MP 바

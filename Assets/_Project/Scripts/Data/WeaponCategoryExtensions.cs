@@ -2,6 +2,21 @@ namespace Fantasia.Data
 {
     public static class WeaponCategoryExtensions
     {
+        public static string Label(this WeaponCategory category) => category switch
+        {
+            WeaponCategory.Dagger => "단검",
+            WeaponCategory.SwordSaber => "검·세이버",
+            WeaponCategory.Greatsword => "양손검·대검",
+            WeaponCategory.Polearm => "창·장병기",
+            WeaponCategory.Bow => "활·석궁",
+            WeaponCategory.Pistol => "권총",
+            WeaponCategory.Musket => "화승총·룬 장총",
+            WeaponCategory.Staff => "스태프",
+            WeaponCategory.Grimoire => "마법서",
+            WeaponCategory.Instrument => "악기",
+            _ => category.ToString(),
+        };
+
         // 스태프·마법서·악기만 마법 계열 (System.md "무기" 계열 표의 "마법 / 지력" 행).
         public static bool IsMagic(this WeaponCategory category) => category switch
         {

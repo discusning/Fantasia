@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7d1c75967c2a8941b86d8bc2cc3cba0, type: 3}
+  m_Name: "Armor_\uB9C8\uB9AC\uC758\uACC4\uC57D\uC778\uC7A5"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ArmorDefinition
+  Id: armor.ring.marie_contract
+  DisplayName: "\uB9C8\uB9AC\uC758 \uACC4\uC57D \uC778\uC7A5"
+  Slot: 3
+  Icon: {fileID: 0}
+  Grade: 5
+  WearLevel: 7
+  Price: 580
+  PhysicalDefense: 0
+  MagicDefense: 0
+  MaxHPBonus: 0
+  MaxMPBonus: 0
+  StatBonus:
+    Strength: 0
+    Speed: 0
+    Vitality: 0
+    Intelligence: 0
+    Luck: 0
+    Perception: 0
+  MaxFocusBonus: 1
+  UniqueEffectDescription: "\uC801 \uCC98\uCE58 \uC2DC \uC790\uC2E0 \uC9D1\uC911\uB825
+    1 \uD68C\uBCF5, \uC804\uD22C\uB2F9 1\uD68C"
+  ExcludeFromLoot: 0

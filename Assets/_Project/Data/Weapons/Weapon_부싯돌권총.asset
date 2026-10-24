@@ -15,6 +15,7 @@ MonoBehaviour:
   Id: weapon.pistol.flintlock
   DisplayName: "\uBD80\uC2EF\uB3CC \uAD8C\uCD1D"
   Category: 5
+  Icon: {fileID: 0}
   SlotCount: 2
   BaseBonusB: 7
   BaseAttackMPCost: 0
@@ -35,3 +36,4 @@ MonoBehaviour:
   WearLevel: 1
   Price: 90
   AllowedJobs: 0200000007000000
+  ExcludeFromLoot: 0

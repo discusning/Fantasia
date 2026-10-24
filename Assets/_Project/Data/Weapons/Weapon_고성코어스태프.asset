@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 664556478545d0f41b4c49a9ee2755a0, type: 3}
+  m_Name: "Weapon_\uACE0\uC131\uCF54\uC5B4\uC2A4\uD0DC\uD504"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.WeaponDefinition
+  Id: weapon.staff.castle_core
+  DisplayName: "\uACE0\uC131 \uCF54\uC5B4 \uC2A4\uD0DC\uD504"
+  Category: 7
+  Icon: {fileID: 0}
+  SlotCount: 3
+  BaseBonusB: 6
+  BaseAttackMPCost: 4
+  WearStatBonusDescription: "\uC9C0\uB825 +4, \uCD5C\uB300 MP +8"
+  WearStatBonus:
+    Strength: 0
+    Speed: 0
+    Vitality: 0
+    Intelligence: 4
+    Luck: 0
+    Perception: 0
+  MaxMPBonus: 8
+  CritEffectDescription: "\uD06C\uB9AC\uD2F0\uCEEC \uC2DC \uB9C8\uBC95 \uBC29\uC5B4
+    \u22123, 2\uD134\n\uACE0\uC720: \uACE0\uC720 \uAE30\uC220 \uC601\uD63C \uBC29\uBCBD:
+    MP 18\xB7\uCFE8\uB2E4\uC6B4 4\uD134\xB7\uBAA8\uB4E0 \uC544\uAD70\uC758 \uC591\uCABD
+    \uBC29\uC5B4 +5, 2\uD134"
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  Grade: 5
+  WearLevel: 8
+  Price: 0
+  AllowedJobs: 010000000400000007000000
+  ExcludeFromLoot: 1

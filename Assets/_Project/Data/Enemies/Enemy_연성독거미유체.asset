@@ -35,3 +35,5 @@ MonoBehaviour:
     \uC735\uD569\uB41C \uD0A4\uBA54\uB77C. \uD310\uC815 \uC131\uACF5 \uC2DC [\uC911\uB3C5](1\uC2A4\uD0DD,
     \uB9E4\uD134 3 \uD53C\uD574/\uC18D\uB3C4 -5)\uC744 \uBD80\uC5EC\uD568."
   DeploymentAct: "1\uB9C9"
+  FixedRewardCent: 0
+  FixedRewardExp: 0

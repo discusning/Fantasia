@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7d1c75967c2a8941b86d8bc2cc3cba0, type: 3}
+  m_Name: "Armor_\uAD50\uB2E8\uC0AC\uB0E5\uAC11\uC8FC"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ArmorDefinition
+  Id: armor.body.cult_hunter_plate
+  DisplayName: "\uAD50\uB2E8 \uC0AC\uB0E5 \uAC11\uC8FC"
+  Slot: 1
+  Icon: {fileID: 0}
+  Grade: 2
+  WearLevel: 7
+  Price: 420
+  PhysicalDefense: 14
+  MagicDefense: 5
+  MaxHPBonus: 0
+  MaxMPBonus: 0
+  StatBonus:
+    Strength: 0
+    Speed: -8
+    Vitality: 0
+    Intelligence: 0
+    Luck: 0
+    Perception: 0
+  MaxFocusBonus: 0
+  UniqueEffectDescription: 
+  ExcludeFromLoot: 0

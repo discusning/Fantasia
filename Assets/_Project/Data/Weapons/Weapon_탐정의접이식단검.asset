@@ -15,6 +15,7 @@ MonoBehaviour:
   Id: weapon.dagger.detective_folding
   DisplayName: "\uD0D0\uC815\uC758 \uC811\uC774\uC2DD \uB2E8\uAC80"
   Category: 0
+  Icon: {fileID: 0}
   SlotCount: 2
   BaseBonusB: 5
   BaseAttackMPCost: 0
@@ -36,3 +37,4 @@ MonoBehaviour:
   WearLevel: 1
   Price: 70
   AllowedJobs: 000000000600000007000000
+  ExcludeFromLoot: 0

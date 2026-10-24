@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 664556478545d0f41b4c49a9ee2755a0, type: 3}
+  m_Name: "Weapon_\uC548\uAC1C\uCD94\uC801\uC7A5\uCD1D"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.WeaponDefinition
+  Id: weapon.musket.fog_tracker
+  DisplayName: "\uC548\uAC1C\uCD94\uC801 \uC7A5\uCD1D"
+  Category: 6
+  Icon: {fileID: 0}
+  SlotCount: 4
+  BaseBonusB: 10
+  BaseAttackMPCost: 0
+  WearStatBonusDescription: "\uC778\uC9C0 +6, \uC18D\uB3C4 \u22125"
+  WearStatBonus:
+    Strength: 0
+    Speed: -5
+    Vitality: 0
+    Intelligence: 0
+    Luck: 0
+    Perception: 6
+  MaxMPBonus: 0
+  CritEffectDescription: "\uC77C\uBC18 \uACF5\uACA9\uC5D0\uC11C \uBC29\uC5B4\uB825
+    50% \uAD00\uD1B5\n\uACE0\uC720: \uC601\uC810 \uC870\uC815\uC758 \uC815\uD655\uB3C4
+    \uC99D\uAC00\uB97C +20%p\uB85C \uB300\uCCB4"
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  Grade: 3
+  WearLevel: 7
+  Price: 0
+  AllowedJobs: 0200000007000000
+  ExcludeFromLoot: 1

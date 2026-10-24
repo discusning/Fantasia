@@ -15,6 +15,7 @@ MonoBehaviour:
   Id: weapon.staff.quarantine
   DisplayName: "\uAC80\uC5ED\uC18C \uC9C0\uD321\uC774"
   Category: 7
+  Icon: {fileID: 0}
   SlotCount: 3
   BaseBonusB: 6
   BaseAttackMPCost: 4
@@ -28,10 +29,11 @@ MonoBehaviour:
     Perception: 0
   MaxMPBonus: 8
   CritEffectDescription: "\uD06C\uB9AC\uD2F0\uCEEC \uC2DC \uB9C8\uBC95 \uBC29\uC5B4
-    -3, 2\uD134"
+    \u22123, 2\uD134"
   OnCritStatuses: []
   OnCritTurnShift: 0
   Grade: 0
   WearLevel: 1
   Price: 85
   AllowedJobs: 010000000400000007000000
+  ExcludeFromLoot: 0

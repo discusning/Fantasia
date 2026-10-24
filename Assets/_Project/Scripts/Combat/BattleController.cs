@@ -16,16 +16,12 @@ namespace Fantasia.Combat
     // 전장을 세우고, D09 속도 큐(BattleQueue) 순서대로 아군은 행동 메뉴(BattleHud), 적은 EnemyAI로
     // 행동한다. 공격 판정·피해는 D10 AttackResolver, 상태는 D12 StatusSet, 스킬은 D11 SkillDefinition.
     //
-    // 아직 없는 것: 소모품(D17)·전리품 표(D19)·LP 부활/약탈(D21) — 소모품 버튼은 비활성,
-    // 패배 시엔 임시로 HP 1로 일으켜 보드로 돌려보낸다.
+    // 소모품(D17)은 행동 메뉴·퀵 슬롯에서 쓰고(개인 행동 1회), 승리 보상(D19)은 LootRules.
     public class BattleController : MonoBehaviour
     {
         private const string BoardSceneName = "BoardTest";
         private const float LineX = 2.6f;
         private const float LineSpacing = 2.2f;
-
-        // 프로토타입 전리품 (승리 시 1개) — D19에서 System.md 보상 슬롯 표로 교체.
-        public LootEntry[] PossibleLoot = System.Array.Empty<LootEntry>();
 
         private enum Phase { EnemyActing, ChoosingAction, ChoosingTarget, Resolving, Finished }
 
@@ -46,6 +42,7 @@ namespace Fantasia.Combat
         private SkillDefinition _pendingSkill;
         private bool _targetAllies;
         private bool _reviving; // D21 전투 중 부활 — 대상은 쓰러진(LP 남은) 아군
+        private ConsumableDefinition _pendingItem; // D17 소모품 — 대상 고르는 중
         private readonly Dictionary<BattleUnit, Quaternion> _standingRotation = new();
 
         // 전투 로그 (D29 "재현 가능한 전투 로그") — 콘솔 [Battle] 줄 + 구독자(자동 플레이 점검 등).
@@ -80,9 +77,11 @@ namespace Fantasia.Combat
             _hud.ReviveClicked += OnReviveClicked;
             _hud.EnemyBarClicked += OnUnitPicked;
             _hud.SkillChosen += OnSkillChosen;
+            _hud.ItemChosen += OnItemChosen;
             _hud.SetEnemies(_enemies);
 
             PartyHudPanel.Show(session.Party, null);
+            PartyHudPanel.QuickSlotClicked += OnQuickSlotClicked;
             _targetMarker = CreateTargetMarker();
 
             _queue = new BattleQueue(_allies.Concat(_enemies), _setup.Opening);
@@ -119,7 +118,7 @@ namespace Fantasia.Combat
 
             if (_current.IsAlly && start.Confused)
             {
-                // 혼란: 회복약이 없으면 임의의 적을 기본 공격 (소모품은 D17 — 지금은 항상 공격).
+                // 혼란: 50% 확률로 소지한 일반 HP 회복약 1개를 자신에게, 아니면 임의의 적을 기본 공격 (약이 없으면 공격).
                 _phase = Phase.Resolving;
                 PartyHudPanel.SetActive(_current.Member, "혼란!");
                 _hud.HideActions();
@@ -155,6 +154,15 @@ namespace Fantasia.Combat
         {
             _hud.SetHint($"{ally.DisplayName} 혼란 — 행동을 고를 수 없다");
             yield return new WaitForSeconds(0.6f);
+            var potion = Inventory.Consumables.Select(s => s.Definition)
+                .FirstOrDefault(d => d.Effect == ConsumableEffect.RestoreHP && d.UsableIn(UseContext.Battle));
+            if (potion != null && Random.value < 0.5f)
+            {
+                Log($"{ally.DisplayName} 혼란으로 회복약 사용");
+                yield return ResolveItem(ally, ally, potion);
+                NextTurn();
+                yield break;
+            }
             var targets = _enemies.Where(e => e.InBattle).ToList();
             if (targets.Count > 0)
             {
@@ -196,9 +204,70 @@ namespace Fantasia.Combat
             _hud.SetHint(TargetingHint());
         }
 
+        // ── D17 소모품: 개인 행동 1회. 아군 대상(회복·정화)·적 대상(성수)·즉시(화염병·탈출권) ──
+        private PartyInventory Inventory => BoardSession.Instance.Party.Inventory;
+
+        private void OnQuickSlotClicked(PartyMember member, int slot)
+        {
+            if (_phase != Phase.ChoosingAction || _current == null || _current.Member != member) return;
+            OnItemChosen(member.QuickSlots[slot]);
+        }
+
+        private void OnItemChosen(ConsumableDefinition item)
+        {
+            if (_phase != Phase.ChoosingAction || item == null) return;
+            if (Inventory.CountOf(item) <= 0) { _hud.SetHint($"{item.DisplayName}: 남은 개수 없음"); return; }
+            if (!item.UsableIn(UseContext.Battle)) { _hud.SetHint($"{item.DisplayName}: 전투에서 쓸 수 없음"); return; }
+            _pendingSkill = null;
+            _pendingItem = item;
+            if (ConsumableRules.TargetsAlly(item)) BeginTargeting(allies: true);
+            else if (ConsumableRules.TargetsEnemy(item)) BeginTargeting(allies: false);
+            else StartCoroutine(PlayerAct(null));
+        }
+
+        private IEnumerator ResolveItem(BattleUnit user, BattleUnit target, ConsumableDefinition item)
+        {
+            Inventory.RemoveConsumable(item);
+            switch (item.Effect)
+            {
+                case ConsumableEffect.RevealEvasion:
+                    Log($"{user.DisplayName} [{item.DisplayName}] → {target.DisplayName}");
+                    ApplyStatuses(target, item.AppliedStatuses, 0);
+                    break;
+                case ConsumableEffect.Firebomb:
+                    // 모든 적에게 고정 기본값의 마법 피해, 각 마법 방어 적용, 크리티컬 없음
+                    foreach (var enemy in _enemies.Where(e => e.InBattle).ToList())
+                    {
+                        int dmg = Mathf.Max(0, item.Amount - enemy.Defense().DefenseAgainst(DamageType.Magic));
+                        enemy.TakeDamage(dmg);
+                        _hud.PopText(_camera, ModelTop(enemy), dmg.ToString(), BattleHud.SlotSuccess);
+                        Log($"{user.DisplayName} [{item.DisplayName}] → {enemy.DisplayName}: {dmg} · HP {enemy.CurrentHP}/{enemy.MaxHP}");
+                        if (!enemy.IsAlive) KnockDown(enemy);
+                    }
+                    _hud.RefreshEnemies(null);
+                    break;
+                case ConsumableEffect.Escape:
+                    // 생존 아군 전원 퇴각 — 경험치·전리품 없음 (퇴각 결과로 처리)
+                    Log($"{user.DisplayName} [{item.DisplayName}] — 생존 아군 전원 퇴각");
+                    foreach (var ally in _allies.Where(a => a.InBattle))
+                    {
+                        ally.HasRetreated = true;
+                        _models[ally].SetActive(false);
+                    }
+                    break;
+                default:
+                    string line = ConsumableRules.ApplyToMember(item, target.Member);
+                    Log($"{user.DisplayName}: {line}");
+                    _hud.PopText(_camera, ModelTop(target), item.DisplayName, BattleHud.SlotSuccess);
+                    break;
+            }
+            yield return new WaitForSeconds(0.6f);
+        }
+
         private string TargetingHint()
         {
             if (_reviving) return "부활 — 쓰러진 아군을 클릭하세요 (LP 1 소모, HP 30%) (우클릭: 취소)";
+            if (_pendingItem != null) return $"{_pendingItem.DisplayName} — 대상 {(_targetAllies ? "아군" : "적")}을 클릭하세요 (우클릭: 취소)";
             string what = _pendingSkill != null ? _pendingSkill.DisplayName : "공격";
             return _targetAllies ? $"{what} — 대상 아군을 클릭하세요 (우클릭: 취소)" : $"{what} — 대상 적을 클릭하세요 (우클릭: 취소)";
         }
@@ -208,12 +277,19 @@ namespace Fantasia.Combat
         {
             if (unit == null) return false;
             if (_reviving) return unit.IsAlly && unit.Member.IsDowned && unit.Member.CurrentLP > 0;
+            if (_pendingItem != null && unit.IsAlly && unit.InBattle) return ConsumableRules.CanUseOn(_pendingItem, unit.Member, out _);
             return unit.InBattle && unit.IsAlly == _targetAllies;
         }
 
         private void OnUnitPicked(BattleUnit unit)
         {
-            if (_phase != Phase.ChoosingTarget || !IsValidTarget(unit)) return;
+            if (_phase != Phase.ChoosingTarget) return;
+            if (_pendingItem != null && unit != null && unit.IsAlly && !ConsumableRules.CanUseOn(_pendingItem, unit.Member, out string why))
+            {
+                _hud.SetHint($"{_pendingItem.DisplayName}: {why}");
+                return;
+            }
+            if (!IsValidTarget(unit)) return;
             StartCoroutine(PlayerAct(unit));
         }
 
@@ -252,6 +328,15 @@ namespace Fantasia.Combat
             {
                 _reviving = false;
                 yield return ResolveRevive(actor, target);
+                NextTurn();
+                yield break;
+            }
+
+            if (_pendingItem != null)
+            {
+                var item = _pendingItem;
+                _pendingItem = null;
+                yield return ResolveItem(actor, target, item);
                 NextTurn();
                 yield break;
             }
@@ -500,9 +585,10 @@ namespace Fantasia.Combat
             if (!enemiesLeft)
             {
                 if (session.PendingEncounterCoord.HasValue) session.ClearedEncounters.Add(session.PendingEncounterCoord.Value);
+                // 경험치는 끝까지 서 있던 캐릭터만 → 그다음 쓰러진 아군 정리
+                string loot = GrantRewards(session);
                 string downed = SettleDowned(DefeatRules.PostBattleReviveHpRatio);
-                string loot = GrantLoot(session);
-                _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}\n(경험치·보상 표는 D19에서)", ReturnToBoard);
+                _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard);
             }
             else if (!wiped)
             {
@@ -562,12 +648,33 @@ namespace Fantasia.Combat
             SceneManager.LoadScene(BoardSceneName);
         }
 
-        private string GrantLoot(BoardSession session)
+        // D19 승리 보상: Cent(첫 칸) + 추가 칸 아이템, 생존 캐릭터별 경험치. 인벤토리가 차서 못 받은 것은
+        // BoardSession.PendingLoot에 남겨 인벤토리 창에서 버리기·교체 후 받게 한다 (자동 삭제 안 함).
+        private string GrantRewards(BoardSession session)
         {
-            var loot = PossibleLoot.Length > 0 ? LootTable.PickWeighted(PossibleLoot) : null;
-            if (loot == null) return "";
-            return session.AddItem(loot) ? $"전리품: {loot.ItemName}" : "인벤토리가 가득 차 전리품을 놓쳤다.";
+            var party = session.Party;
+            var levels = party.Members.ToDictionary(m => m, m => m.Level);
+            var rewards = LootRules.Roll(_setup.Enemies, party, ItemCatalog.Current, new System.Random());
+            LootRules.Apply(rewards, party);
+            session.PendingLoot.AddRange(rewards.Overflow);
+            LastRewards = rewards;
+
+            var lines = new List<string> { $"보상 {rewards.SlotCount}칸 — {rewards.Cent} Cent (소지 {party.Cent})" };
+            foreach (var item in rewards.Items)
+            {
+                bool lost = rewards.Overflow.Contains(item);
+                lines.Add($"· {item.Name}{(lost ? " (인벤토리 가득 — 보관함에 대기)" : "")}");
+            }
+            var survivors = party.AliveMembers.ToList();
+            lines.Add($"경험치 +{rewards.Experience} ({string.Join(", ", survivors.Select(m => m.Job.DisplayName))})");
+            foreach (var m in survivors.Where(m => m.Level > levels[m]))
+                lines.Add($"{m.Job.DisplayName} 레벨 업! Lv {m.Level}");
+            Log($"  → 보상: {string.Join(" / ", lines)}");
+            if (rewards.Items.Count > 0) ItemAcquiredToast.Show($"전리품 {rewards.Items.Count}개 획득");
+            return string.Join("\n", lines);
         }
+
+        public BattleRewards LastRewards { get; private set; }
 
         // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 버튼·클릭과 같은 처리를 부른다 ─────
         public bool DevAwaitingPlayer => _phase == Phase.ChoosingAction;
@@ -596,6 +703,14 @@ namespace Fantasia.Combat
 
         public void DevDefend() => OnDefendClicked();
 
+        // 소모품 메뉴 → 아이템 → (대상 클릭)과 같은 순서.
+        public void DevUseItem(ConsumableDefinition item, BattleUnit target)
+        {
+            if (_phase != Phase.ChoosingAction) return;
+            OnItemChosen(item);
+            if (_phase == Phase.ChoosingTarget) OnUnitPicked(target);
+        }
+
         // 부활 버튼 → 쓰러진 아군 클릭과 같은 순서.
         public bool DevCanRevive => CanRevive();
         public void DevRevive(BattleUnit target)
@@ -612,6 +727,8 @@ namespace Fantasia.Combat
             SceneManager.LoadScene(BoardSceneName);
         }
 
+        private void OnDestroy() => PartyHudPanel.QuickSlotClicked -= OnQuickSlotClicked;
+
         // ───────────── 대상 선택 (전장 클릭) ─────────────
         private void Update()
         {
@@ -621,6 +738,7 @@ namespace Fantasia.Combat
             {
                 _phase = Phase.ChoosingAction;
                 _pendingSkill = null;
+                _pendingItem = null;
                 _reviving = false;
                 HideMarker();
                 _hud.ShowActions(_current, CanRevive());
@@ -790,6 +908,7 @@ namespace Fantasia.Combat
                 if (job != null) party.AddMember(new PartyMember(job));
             }
 #endif
+            party.GiveStartingItems(ItemCatalog.Current);
             return party;
         }
 

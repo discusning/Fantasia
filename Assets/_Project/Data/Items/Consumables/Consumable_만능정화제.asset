@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9871f0a9ebcd7e4e955f51037dd0bd0, type: 3}
+  m_Name: "Consumable_\uB9CC\uB2A5\uC815\uD654\uC81C"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
+  Id: consumable.panacea
+  DisplayName: "\uB9CC\uB2A5 \uC815\uD654\uC81C"
+  Icon: {fileID: 0}
+  EffectDescription: "\uC911\uB3C5\xB7\uCD9C\uD608\xB7\uD654\uC0C1\xB7\uD63C\uB780\xB7\uACF5\uD3EC\xB7\uC800\uC8FC\xB7\uBD80\uC2DD
+    \uC81C\uAC70; \uC8FD\uC74C\uC758 \uD45C\uC2DD \uC81C\uC678"
+  Effect: 4
+  Amount: 0
+  Duration: 0
+  BuffStat: 0
+  Cures: 020000000100000003000000
+  AppliedStatuses: []
+  Usable: 3
+  Price: 150
+  CityStock: 1
+  MaxStack: 10
+  AvailableFromAct2: 1

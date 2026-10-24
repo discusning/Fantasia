@@ -1,5 +1,3 @@
-using Fantasia.Core;
-using Fantasia.Items;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,9 +8,7 @@ namespace Fantasia.UI
     // combat승리_아이템 획득.png for the "make the player feel it" reference,
     // kept simple rather than matching that screen's density).
     //
-    // Subscribes to BoardSession.ItemAdded, which fires for every source
-    // (combat loot, future events, camp, ...) — this needs no per-source
-    // wiring. Screen Space - Overlay (not Camera) because this object
+    // 전리품·이벤트 등 어디서든 ItemAcquiredToast.Show("…")로 띄운다. Screen Space - Overlay (not Camera) because this object
     // survives scene loads but no single scene camera does, and a toast
     // fired right before a scene transition (e.g. combat -> board) needs to
     // keep showing across it.
@@ -44,9 +40,6 @@ namespace Fantasia.UI
             if (Application.isPlaying) DontDestroyOnLoad(gameObject);
 
             Build();
-
-            BoardSession.EnsureExists();
-            BoardSession.Instance.ItemAdded += OnItemAdded;
         }
 
         private void Update()
@@ -57,10 +50,18 @@ namespace Fantasia.UI
             }
         }
 
-        private void OnItemAdded(ItemDefinition item)
+        // "X 획득" 배너. icon이 없으면 색 칸만.
+        public static void Show(string label, Sprite icon = null, Color? tint = null)
         {
-            _icon.color = item.IconTint;
-            _label.text = $"{item.ItemName} 획득";
+            EnsureExists();
+            Instance.Display(label, icon, tint ?? new Color(0.75f, 0.65f, 0.4f));
+        }
+
+        private void Display(string label, Sprite icon, Color tint)
+        {
+            _icon.sprite = icon;
+            _icon.color = icon != null ? Color.white : tint;
+            _label.text = label;
             _root.SetActive(true);
             _hideAt = Time.unscaledTime + VisibleSeconds;
         }
