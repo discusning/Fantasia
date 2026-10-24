@@ -18,9 +18,11 @@ namespace Fantasia.Editor
             failures += CheckMovementRollRange();
             failures += CheckReaperPenalty();
             failures += CheckEventBonusRange();
-            failures += CheckWorldClockRoundAdvance();
-            failures += CheckWorldClockSkipsDead();
+            failures += CheckTwoPhaseRound();
+            failures += CheckRollOncePerAllyTurn();
             failures += CheckEventBonusOncePerTurn();
+            failures += CheckLeaderSuccession();
+            failures += CheckPoisonWorldTick();
 
             if (failures == 0)
                 Debug.Log("[WorldSelfTest] 전부 통과.");
@@ -92,56 +94,83 @@ namespace Fantasia.Editor
             return (party, a, b, c);
         }
 
-        private static int CheckWorldClockRoundAdvance()
+        // 월드 라운드 = [아군 턴] → [적 턴] (2026-10-24 기획 결정).
+        private static int CheckTwoPhaseRound()
         {
-            var (party, a, b, c) = BuildTestParty();
             var clock = new WorldClock();
             int errors = 0;
-
             errors += Expect("초기 월드 라운드", clock.WorldRound, 1);
+            errors += ExpectBool("처음은 아군 턴", clock.Phase == WorldPhase.AllyTurn, true);
 
-            clock.NotifyWorldActionTaken(party, a);
-            errors += Expect("2명 중 1명만 행동 — 라운드 안 바뀜", clock.WorldRound, 1);
+            clock.EndAllyTurn();
+            errors += ExpectBool("아군 턴 뒤 적 턴", clock.Phase == WorldPhase.EnemyTurn, true);
+            errors += Expect("적 턴 중엔 라운드 그대로", clock.WorldRound, 1);
 
-            clock.NotifyWorldActionTaken(party, b);
-            clock.NotifyWorldActionTaken(party, c);
-            errors += Expect("전원 행동 후 라운드 +1", clock.WorldRound, 2);
+            clock.EndEnemyTurn();
+            errors += ExpectBool("적 턴 뒤 다시 아군 턴", clock.Phase == WorldPhase.AllyTurn, true);
+            errors += Expect("아군 턴 + 적 턴 = 라운드 +1", clock.WorldRound, 2);
 
+            clock.EndEnemyTurn(); // 아군 턴에 적 턴 종료를 불러도 라운드가 늘지 않는다
+            errors += Expect("페이즈 순서가 안 맞으면 무시", clock.WorldRound, 2);
             return errors;
         }
 
-        private static int CheckWorldClockSkipsDead()
+        private static int CheckRollOncePerAllyTurn()
         {
-            var (party, a, b, c) = BuildTestParty();
-            c.TakeDamage(9999); // 사망 처리
             var clock = new WorldClock();
             int errors = 0;
-
-            clock.NotifyWorldActionTaken(party, a);
-            clock.NotifyWorldActionTaken(party, b);
-            // c는 사망했으니 행동 안 해도 라운드가 넘어가야 한다 (생존자 기준).
-            errors += Expect("사망자 제외, 생존자만 행동해도 라운드 +1", clock.WorldRound, 2);
-
+            errors += ExpectBool("아군 턴 첫 주사위", clock.TryBeginRoll(), true);
+            errors += ExpectBool("같은 턴 두 번째 주사위 불가", clock.TryBeginRoll(), false);
+            clock.EndAllyTurn();
+            errors += ExpectBool("적 턴엔 주사위 불가", clock.TryBeginRoll(), false);
+            clock.EndEnemyTurn();
+            errors += ExpectBool("다음 아군 턴엔 다시 가능", clock.TryBeginRoll(), true);
             return errors;
         }
 
         private static int CheckEventBonusOncePerTurn()
         {
-            var (_, a, _, _) = BuildTestParty();
             var clock = new WorldClock();
             int errors = 0;
+            errors += ExpectBool("첫 이벤트 보너스 사용 성공", clock.TryConsumeEventBonus(), true);
+            errors += ExpectBool("같은 아군 턴 두 번째는 실패(연쇄 금지)", clock.TryConsumeEventBonus(), false);
+            clock.EndAllyTurn();
+            clock.EndEnemyTurn();
+            errors += ExpectBool("다음 아군 턴엔 다시 가능", clock.TryConsumeEventBonus(), true);
+            return errors;
+        }
 
-            clock.BeginTurn(a);
-            bool first = clock.TryConsumeEventBonus(a);
-            bool second = clock.TryConsumeEventBonus(a); // 연쇄 금지 — 같은 턴에 두 번째는 실패해야 함
+        // 파티장 = 1번 고정, 1번이 쓰러지거나 영구 사망하면 다음 순번 생존자 (개발 임시 결정).
+        private static int CheckLeaderSuccession()
+        {
+            var (party, a, b, _) = BuildTestParty();
+            int errors = 0;
+            errors += ExpectBool("파티장 = 1번", party.Leader == a, true);
+            a.TakeDamage(9999);
+            errors += ExpectBool("1번이 쓰러지면 2번", party.Leader == b, true);
+            a.MarkPermanentlyDead();
+            errors += ExpectBool("1번 영구 사망 시에도 2번", party.Leader == b, true);
+            return errors;
+        }
 
-            errors += ExpectBool("첫 이벤트 보너스 사용 성공", first, true);
-            errors += ExpectBool("같은 턴 두 번째 사용은 실패(연쇄 금지)", second, false);
-
-            clock.BeginTurn(a); // 다음 턴 시작 — 다시 가능해야 함
-            bool thirdAfterNewTurn = clock.TryConsumeEventBonus(a);
-            errors += ExpectBool("새 턴 시작 후 다시 사용 가능", thirdAfterNewTurn, true);
-
+        // 중독은 전투 밖에서 아군 턴 시작에 1회 피해 (개발 임시 결정), HP 1 하한.
+        private static int CheckPoisonWorldTick()
+        {
+            var (party, a, _, _) = BuildTestParty();
+            var poison = ScriptableObject.CreateInstance<StatusEffectDefinition>();
+            poison.Effect = StatusEffectType.Poison;
+            poison.DurationTurns = -1;
+            poison.MaxStacks = 3;
+            poison.Magnitude = 3;
+            a.Statuses.Apply(poison);
+            int before = a.CurrentHP;
+            var log = WorldTurnRules.BeginAllyTurn(party);
+            int errors = 0;
+            errors += Expect("아군 턴 시작 중독 피해 3", before - a.CurrentHP, 3);
+            errors += Expect("로그 1줄 (중독 걸린 1명)", log.Count, 1);
+            a.TakeDamage(a.CurrentHP - 1);
+            WorldTurnRules.BeginAllyTurn(party);
+            errors += Expect("HP 1 하한", a.CurrentHP, 1);
             return errors;
         }
 

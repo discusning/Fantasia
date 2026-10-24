@@ -30,6 +30,14 @@ namespace Fantasia.UI
         [Header("초상·타임라인")]
         public Sprite PortraitFrame;
         public Sprite TimelineFrame;
+        [Header("보드 상단 바 (아군·적 턴 시계·위협 트랙)")]
+        public Sprite TopBarFrame;
+        public Sprite PhaseDialAllyActive, PhaseDialAllyIdle;   // 시계 왼쪽(아군) 반원 — 활성/비활성
+        public Sprite PhaseDialEnemyActive, PhaseDialEnemyIdle; // 시계 오른쪽(적) 반원
+        public Sprite ThreatNotch;     // 피의 흔적 칸
+        public Sprite RegionBanner;    // 지역명 배너
+        public Sprite AllyTurnBanner;  // 턴 전환 배너 — 아군 턴
+        public Sprite EnemyTurnBanner; // 턴 전환 배너 — 적 턴
 
         [Header("전투 행동 아이콘")]
         public Sprite AttackIcon;

@@ -25,7 +25,8 @@ namespace Fantasia.Core
 
         private void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(Screen.width - 160, 10, 150, 90), GUI.skin.box);
+            // 화면 오른쪽 가운데 — 위쪽은 보드 상단 바·퀘스트 창, 전투 적 HP 바와 겹치지 않게
+            GUILayout.BeginArea(new Rect(Screen.width - 160, Screen.height * 0.42f, 150, 90), GUI.skin.box);
             GUILayout.Label($"씬: {SceneManager.GetActiveScene().name}");
 
             foreach (var scene in Scenes)

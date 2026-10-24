@@ -10,14 +10,15 @@ using UnityEngine.SceneManagement;
 
 namespace Fantasia.Board
 {
-    // Standalone play-mode test harness for the board: rolls a d6, highlights
-    // the reachable tiles, and walks a placeholder token tile-by-tile along
-    // the rolled path on click. No UI prefabs or art required — draws its
-    // own status line with OnGUI.
+    // 보드 테스트 진행. 월드 턴 = [아군 턴] → [적 턴] (2026-10-24 기획 결정, Docs/Planning/Decisions.md):
+    // 아군 턴에 파티장(1번) 1명이 주사위 1회 → 이동 → 칸 처리(인카운터·이벤트)를 하면 턴이 끝나고,
+    // 적 턴에 월드 처리(피의 흔적·영혼 수확 등 — 해당 업무에서 연결)를 한 뒤 다음 아군 턴. 아트 없이
+    // 토큰(빨간 공)과 OnGUI 안내만으로 동작한다.
     [RequireComponent(typeof(HexBoard))]
     public class BoardTestController : MonoBehaviour
     {
         private const string CombatSceneName = "CombatTest";
+        private const float EnemyTurnSeconds = 0.9f;
 
         [SerializeField] private float tokenRadius = 0.5f; // matches the default primitive Sphere's radius
         [SerializeField] private float secondsPerTile = 0.25f;
@@ -28,13 +29,8 @@ namespace Fantasia.Board
         // several distinct landmark types.
         public LandmarkDefinition[] PlaceholderLandmarks = System.Array.Empty<LandmarkDefinition>();
 
-        // D08 조우 판정 테스트용 — 실제 파티 전체가 아니라 명탐정 1명 스탯으로 기습/몰래
-        // 회피 판정을 걸어본다. Assigned by BoardTestSceneSetup.
+        // 테스트 파티 (명탐정·역병 의사·저격수 — 1번이 파티장). Assigned by BoardTestSceneSetup.
         public JobDefinition TestHeroJob;
-        private PartyMember _testHero;
-
-        // 하단 파티 HUD 표시용 3인 (명탐정·역병 의사·저격수). 보드 이동·조우 판정은 아직
-        // 첫 번째(_testHero) 1명 기준 — 3인 보드 표현은 기획 확인 후. Assigned by BoardTestSceneSetup.
         public JobDefinition[] TestPartyJobs = System.Array.Empty<JobDefinition>();
         private Party _testParty;
 
@@ -50,18 +46,18 @@ namespace Fantasia.Board
         private int _lastRoll;
         private bool _awaitingSelection;
         private bool _isMoving;
-
-        // "개인 월드 턴당 1회"만 이벤트 추가 이동을 주기 위한 플래그 (System.md). 새로
-        // 주사위를 굴릴 때(=새 턴 시작) 리셋되고, 한 번 쓰면 그 턴이 끝날 때까지 다시 안 준다
-        // — 보너스로 다른 이벤트 칸에 도착해도 연쇄 이동이 생기지 않는다.
-        private bool _eventBonusUsedThisTurn;
+        private bool _turnEnding; // 적 턴 연출 중
         private int _lastEventBonus = -1;
+        private string _worldMessage;
 
-        // D08 조우 — 인카운터 칸에 도착하면 바로 전투로 넘기지 않고 EncounterPanel에서
-        // 싸우기/기습/몰래 지나가기/후퇴를 고른다. 후퇴는 직전에 밟았던 칸으로 돌아간다.
+        // D08 조우 — 인카운터 칸에 도착하면 EncounterPanel에서 싸우기/기습/몰래 지나가기/후퇴.
+        // 후퇴는 직전에 밟았던 칸으로 돌아간다.
         private HexCoord _lastSafeCoord;
         private EnemyDefinition _pendingEnemy;
         private string _encounterResultMessage;
+
+        private WorldClock Clock => BoardSession.Instance.World;
+        private PartyMember Leader => _testParty?.Leader;
 
         private void Start()
         {
@@ -77,6 +73,17 @@ namespace Fantasia.Board
             BuildTestParty();
             SpawnToken();
             PlaceLandmarks();
+
+            // 전투로 끝난 아군 턴이면 돌아오자마자 적 턴 진행, 아니면 지금 페이즈 표시.
+            if (BoardSession.Instance.AllyTurnEndedByBattle)
+            {
+                BoardSession.Instance.AllyTurnEndedByBattle = false;
+                StartCoroutine(EndAllyTurn());
+            }
+            else
+            {
+                RefreshTopBar(announce: true);
+            }
         }
 
         // Public so editor tooling can build the HUD for a headless screenshot (Start() doesn't run there).
@@ -87,8 +94,7 @@ namespace Fantasia.Board
             if (BoardSession.Instance.Party != null && BoardSession.Instance.Party.Members.Count > 0)
             {
                 _testParty = BoardSession.Instance.Party;
-                _testHero = FirstLivingMember(_testParty);
-                PartyHudPanel.Show(_testParty, _testHero);
+                PartyHudPanel.Show(_testParty, Leader);
                 return;
             }
 
@@ -100,14 +106,8 @@ namespace Fantasia.Board
                 if (job != null && _testParty.Members.Count < Party.MaxSize) _testParty.AddMember(new PartyMember(job));
             }
             if (_testParty.Members.Count == 0) return;
-
-            _testHero = FirstLivingMember(_testParty);
-            PartyHudPanel.Show(_testParty, _testHero);
+            PartyHudPanel.Show(_testParty, Leader);
         }
-
-        // 조우 판정을 맡는 캐릭터 — 편성 순서대로 첫 번째 생존자 (영구 사망·쓰러짐 제외, 없으면 첫 번째).
-        private static PartyMember FirstLivingMember(Party party) =>
-            party.Members.FirstOrDefault(m => m.IsAlive) ?? party.Members[0];
 
         // 씬이 Setup Board Test Scene 재실행 전 버전이라 TestPartyJobs가 비어 있어도 3인이 나오게 —
         // 에디터에서만 시드된 직업 자산을 직접 읽는다 (빌드에서는 명탐정 1명으로 폴백).
@@ -165,6 +165,19 @@ namespace Fantasia.Board
             return _board.CoordToWorld(coord) + Vector3.up * (_board.TileHeight + tokenRadius);
         }
 
+        // 보드 상단 바 갱신 — 턴 전환 때는 announce로 가운데 전환 배너.
+        private void RefreshTopBar(bool announce)
+        {
+            var session = BoardSession.Instance;
+            BoardTopBar.EnsureExists().Refresh(Clock.Phase, Clock.WorldRound, Leader, session.BloodTrail, session.SoulHarvest,
+                _testParty != null ? _testParty.Cent : 0, session.RegionName, announce);
+        }
+
+        private void LateUpdate()
+        {
+            if (BoardTopBar.Instance != null) RefreshTopBar(announce: false);
+        }
+
         private void Update()
         {
             if (LandmarkInfoPanel.IsOpen || DialoguePanel.IsOpen || EncounterPanel.IsOpen) return;
@@ -178,17 +191,11 @@ namespace Fantasia.Board
                 return;
             }
 
-            if (_isMoving) return;
+            if (_isMoving || _turnEnding) return;
 
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                RollAndHighlight();
-            }
+            if (Input.GetKeyDown(KeyCode.Space)) TryRoll();
 
-            if (_awaitingSelection && Input.GetMouseButtonDown(0))
-            {
-                TrySelectTile();
-            }
+            if (_awaitingSelection && Input.GetMouseButtonDown(0)) TrySelectTile();
         }
 
         private void TryInspectLandmark()
@@ -205,55 +212,25 @@ namespace Fantasia.Board
             LandmarkInfoPanel.Show(tile.Landmark);
         }
 
-        private void RollAndHighlight()
+        // 아군 턴에 주사위 1회 (이미 굴렸거나 적 턴이면 무시).
+        private void TryRoll()
         {
-            _eventBonusUsedThisTurn = false; // 새 턴 시작 — 이벤트 보너스 다시 사용 가능
+            if (!Clock.TryBeginRoll()) return;
             _lastEventBonus = -1;
+            _worldMessage = null;
             _lastRoll = MovementRules.RollMovePoints(pursuedByReaper: false); // 사신 추격 연동은 D24에서
-            _reachability = _board.ComputeReachability(_currentCoord, _lastRoll);
-
-            _board.ClearHighlights();
-            foreach (var coord in _reachability.ReachableTiles)
-            {
-                if (_board.TryGetTile(coord, out var tile))
-                {
-                    tile.SetReachable(true);
-                }
-            }
-
-            _awaitingSelection = true;
+            HighlightReachable(_lastRoll);
         }
 
-        // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 키보드·마우스 대신 같은 굴림·이동 코드를 부른다 ─────
-        // 자동 플레이 점검에서 특정 적 조합을 강제할 때 (예: 그림자 사냥개 특성 확인). 평소엔 null.
-        public static string DevForcedEnemyId;
-
-        public bool DevIsIdle => !_isMoving && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen;
-        public bool DevAwaitingSelection => _awaitingSelection;
-
-        public void DevRoll() => RollAndHighlight();
-
-        // 이동 가능한 칸 중 아직 안 깬 인카운터가 있으면 그 칸, 없으면 가장 가까운 인카운터에 제일 다가가는 칸.
-        public void DevMoveTowardEncounter()
+        private void HighlightReachable(int movePoints)
         {
-            if (!_awaitingSelection) return;
-            var encounters = new List<HexCoord>();
-            foreach (var tile in _board.Tiles)
-                if (tile.IsEncounter && !tile.IsCleared && tile.Enemy != null) encounters.Add(tile.Coordinate);
-
-            HexCoord best = _currentCoord;
-            int bestDistance = int.MaxValue;
+            _reachability = _board.ComputeReachability(_currentCoord, movePoints);
+            _board.ClearHighlights();
             foreach (var coord in _reachability.ReachableTiles)
             {
-                int d = int.MaxValue;
-                foreach (var e in encounters) d = Mathf.Min(d, coord.DistanceTo(e));
-                if (d < bestDistance) { bestDistance = d; best = coord; }
+                if (_board.TryGetTile(coord, out var tile)) tile.SetReachable(true);
             }
-
-            var path = _reachability.GetPathTo(best);
-            _board.ClearHighlights();
-            _awaitingSelection = false;
-            StartCoroutine(WalkPath(path));
+            _awaitingSelection = true;
         }
 
         private void TrySelectTile()
@@ -267,7 +244,12 @@ namespace Fantasia.Board
             var tile = hit.collider.GetComponent<HexTile>();
             if (tile == null || !_reachability.Contains(tile.Coordinate)) return;
 
-            var path = _reachability.GetPathTo(tile.Coordinate);
+            MoveTo(tile.Coordinate);
+        }
+
+        private void MoveTo(HexCoord target)
+        {
+            var path = _reachability.GetPathTo(target);
             _board.ClearHighlights();
             _awaitingSelection = false;
             StartCoroutine(WalkPath(path));
@@ -295,25 +277,22 @@ namespace Fantasia.Board
             _isMoving = false;
             BoardSession.Instance.PlayerPosition = _currentCoord;
 
-            // Landing on an encounter tile — not just passing through it —
-            // is what starts a fight, matching how the highlight/click flow
-            // already treats the destination as the meaningful stop. Cleared
-            // ones don't re-trigger. D08부터는 바로 전투로 넘기지 않고 전투/기습/
-            // 몰래 회피/퇴각 선택지를 먼저 띄운다 (System.md "전투").
+            // 도착한 칸이 인카운터면 조우 창 (지나가기만 하면 발동하지 않음, 클리어한 칸은 다시 안 뜸).
             if (_board.TryGetTile(_currentCoord, out var landedTile) && landedTile.IsEncounter && !landedTile.IsCleared
                 && landedTile.Enemy != null)
             {
                 _encounterResultMessage = null;
                 _pendingEnemy = landedTile.Enemy;
-                EncounterPanel.Show(landedTile.Enemy, _testHero, OnEncounterResolved);
+                EncounterPanel.Show(landedTile.Enemy, Leader, OnEncounterResolved);
                 yield break;
             }
 
-            TryGrantEventBonusMove(landedTile);
+            // 이벤트 칸 추가 이동이 생기면 한 번 더 움직이고, 아니면 아군 턴 종료.
+            if (!TryGrantEventBonusMove(landedTile)) StartCoroutine(EndAllyTurn());
         }
 
         // 조우한 적 + 같은 구역 소형 적 1마리 (프로토타입 편성 — 실제 조우 조합은 D13·P06 기획).
-        // 기습 성공/실패는 BattleQueue가 첫 라운드 순서에 반영한다.
+        // 기습 성공/실패는 BattleQueue가 첫 라운드 순서에 반영한다. 전투가 이 아군 턴의 마지막 행동.
         private void EnterCombat(EncounterOutcome opening)
         {
             var setup = new Fantasia.Combat.BattleSetup { Opening = opening };
@@ -321,9 +300,11 @@ namespace Fantasia.Board
             var forced = System.Array.Find(pool, e => e != null && e.Id == DevForcedEnemyId);
             setup.Enemies.Add(forced != null ? forced : _pendingEnemy);
             if (pool.Length > 0) setup.Enemies.Add(forced != null ? forced : pool[Random.Range(0, pool.Length)]);
-            BoardSession.Instance.PendingBattle = setup;
-            BoardSession.Instance.PendingEncounterCoord = _currentCoord;
-            BoardSession.Instance.LastSafeCoord = _lastSafeCoord;
+            var session = BoardSession.Instance;
+            session.PendingBattle = setup;
+            session.PendingEncounterCoord = _currentCoord;
+            session.LastSafeCoord = _lastSafeCoord;
+            session.AllyTurnEndedByBattle = true;
             SceneManager.LoadScene(CombatSceneName);
         }
 
@@ -335,11 +316,13 @@ namespace Fantasia.Board
             {
                 case EncounterOutcome.SneakSuccess:
                     // 전투 없이 이 칸에 남는다 (경험치·전리품 없음).
+                    StartCoroutine(EndAllyTurn());
                     break;
                 case EncounterOutcome.RetreatSuccess:
                     _currentCoord = _lastSafeCoord;
                     _token.position = TokenSurfacePosition(_currentCoord);
                     BoardSession.Instance.PlayerPosition = _currentCoord;
+                    StartCoroutine(EndAllyTurn());
                     break;
                 default:
                     EnterCombat(outcome);
@@ -347,46 +330,98 @@ namespace Fantasia.Board
             }
         }
 
-        // 이벤트 발판에 도착하면 0/1/2칸 중 랜덤으로 추가 이동을 준다 (System.md "이동").
-        // 턴당 1회만 — 이미 썼으면 조용히 지나간다(연쇄 이동 금지).
-        private void TryGrantEventBonusMove(HexTile landedTile)
+        // 이벤트 발판에 도착하면 0/1/2칸 중 랜덤으로 추가 이동 — 아군 턴당 1회(연쇄 금지). 추가 이동이 생겼으면 true.
+        private bool TryGrantEventBonusMove(HexTile landedTile)
         {
-            if (landedTile == null || !landedTile.IsEventTile || _eventBonusUsedThisTurn) return;
+            if (landedTile == null || !landedTile.IsEventTile || !Clock.TryConsumeEventBonus()) return false;
 
-            _eventBonusUsedThisTurn = true;
             _lastEventBonus = MovementRules.RollEventBonusMove();
-            if (_lastEventBonus <= 0) return;
+            if (_lastEventBonus <= 0) return false;
 
-            _reachability = _board.ComputeReachability(_currentCoord, _lastEventBonus);
+            HighlightReachable(_lastEventBonus);
+            return true;
+        }
+
+        // 아군 턴 종료 → 적 턴(월드 처리) → 다음 아군 턴 시작(중독 등 보드 지속 피해).
+        private IEnumerator EndAllyTurn()
+        {
+            _turnEnding = true;
             _board.ClearHighlights();
+            _awaitingSelection = false;
+
+            Clock.EndAllyTurn();
+            RefreshTopBar(announce: true);
+            var enemyLog = WorldTurnRules.RunEnemyTurn(Clock);
+            yield return new WaitForSeconds(EnemyTurnSeconds);
+
+            Clock.EndEnemyTurn();
+            var allyLog = WorldTurnRules.BeginAllyTurn(_testParty);
+            var lines = enemyLog.Concat(allyLog).ToList();
+            _worldMessage = lines.Count > 0 ? string.Join(" / ", lines) : null;
+            foreach (var line in lines) Debug.Log("[World] " + line);
+            RefreshTopBar(announce: true);
+            _turnEnding = false;
+        }
+
+        // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 키보드·마우스 대신 같은 굴림·이동 코드를 부른다 ─────
+        // 자동 플레이 점검에서 특정 적 조합을 강제할 때 (예: 그림자 사냥개 특성 확인). 평소엔 null.
+        public static string DevForcedEnemyId;
+
+        // 새 아군 턴을 시작할 수 있는 상태 (이동·창·적 턴 연출이 모두 끝났고 아직 안 굴림).
+        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen
+                                 && Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn;
+        public bool DevAwaitingSelection => _awaitingSelection;
+        public int DevWorldRound => Clock.WorldRound;
+
+        public void DevRoll() => TryRoll();
+
+        // 이동 가능한 칸 중 아직 안 깬 인카운터가 있으면 그 칸, 없으면 가장 가까운 인카운터에 제일 다가가는 칸.
+        public void DevMoveTowardEncounter()
+        {
+            if (!_awaitingSelection) return;
+            var encounters = new List<HexCoord>();
+            foreach (var tile in _board.Tiles)
+                if (tile.IsEncounter && !tile.IsCleared && tile.Enemy != null) encounters.Add(tile.Coordinate);
+
+            HexCoord best = _currentCoord;
+            int bestDistance = int.MaxValue;
             foreach (var coord in _reachability.ReachableTiles)
             {
-                if (_board.TryGetTile(coord, out var tile)) tile.SetReachable(true);
+                int d = int.MaxValue;
+                foreach (var e in encounters) d = Mathf.Min(d, coord.DistanceTo(e));
+                if (d < bestDistance) { bestDistance = d; best = coord; }
             }
-            _awaitingSelection = true;
+            MoveTo(best);
         }
 
         private void OnGUI()
         {
-            GUI.Label(new Rect(10, 10, 300, 24), $"주사위: {_lastRoll}  (Space로 굴리기)");
+            float top = Screen.height * 0.13f; // 보드 상단 바·지역명 배너 아래
+            string rollHint = Clock.Phase != WorldPhase.AllyTurn ? "적 턴 진행 중..."
+                : Clock.HasRolledThisTurn ? $"주사위: {_lastRoll}" : "Space로 주사위 굴리기";
+            GUI.Label(new Rect(10, top + 10, 420, 24), $"{rollHint}   (파티장: {Leader?.Job.DisplayName ?? "-"})");
             if (_awaitingSelection)
             {
-                GUI.Label(new Rect(10, 34, 400, 24), "초록 타일을 클릭해서 이동 (주황 = 인카운터, 보라 = 이벤트)");
+                GUI.Label(new Rect(10, top + 34, 400, 24), "초록 타일을 클릭해서 이동 (주황 = 인카운터, 보라 = 이벤트)");
             }
             else if (_isMoving)
             {
-                GUI.Label(new Rect(10, 34, 400, 24), "이동 중...");
+                GUI.Label(new Rect(10, top + 34, 400, 24), "이동 중...");
             }
             if (_lastEventBonus >= 0)
             {
-                GUI.Label(new Rect(10, 106, 400, 24), $"이벤트 칸 추가 이동: +{_lastEventBonus}칸 (이번 턴 1회)");
+                GUI.Label(new Rect(10, top + 106, 400, 24), $"이벤트 칸 추가 이동: +{_lastEventBonus}칸 (이번 턴 1회)");
             }
-            GUI.Label(new Rect(10, 58, 400, 24), "Ctrl+우클릭: 지형지물 정보 확인");
-            GUI.Label(new Rect(10, 82, 400, 24), "우측 퀘스트 창의 '달성!' 버튼으로 퀘스트 완료");
+            GUI.Label(new Rect(10, top + 58, 400, 24), "Ctrl+우클릭: 지형지물 정보 확인");
+            GUI.Label(new Rect(10, top + 82, 400, 24), "우측 퀘스트 창의 '달성!' 버튼으로 퀘스트 완료");
 
             if (!EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage))
             {
-                GUI.Label(new Rect(10, 130, 500, 24), _encounterResultMessage);
+                GUI.Label(new Rect(10, top + 130, 600, 24), _encounterResultMessage);
+            }
+            if (!string.IsNullOrEmpty(_worldMessage))
+            {
+                GUI.Label(new Rect(10, top + 154, 700, 24), "턴 시작: " + _worldMessage);
             }
         }
     }

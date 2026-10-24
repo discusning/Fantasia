@@ -36,6 +36,16 @@ namespace Fantasia.Core
         // 조우 칸에 들어오기 직전 칸 — 전원 퇴각·전원 쓰러짐 뒤 돌아가는 "직전 안전 타일" (D21).
         public HexCoord LastSafeCoord { get; set; }
 
+        // 월드 턴 시계 ([아군 턴] → [적 턴]) — 씬을 오가도 이어진다.
+        public Fantasia.World.WorldClock World { get; private set; } = new();
+        // 아군 턴이 전투로 끝났으면 보드로 돌아오자마자 적 턴을 진행한다.
+        public bool AllyTurnEndedByBattle { get; set; }
+
+        // 보드 상단 바 표시값. 피의 흔적 G·영혼 수확 S(0~100)의 증가 규칙은 D24·D25에서 적 턴에 연결한다.
+        public int BloodTrail { get; set; }
+        public int SoulHarvest { get; set; }
+        public string RegionName { get; set; } = "런던"; // 보드 맵(P13) 확정 전 임시 — 칸·구역별로 바뀔 예정
+
         // 전원 영구 사망 → 플레이 종료 후 처음부터 (파티·진행·인벤토리·보드 시드 초기화).
         public void ResetForNewGame()
         {
@@ -44,6 +54,10 @@ namespace Fantasia.Core
             PendingEncounterCoord = null;
             PlayerPosition = default;
             LastSafeCoord = default;
+            World = new Fantasia.World.WorldClock();
+            AllyTurnEndedByBattle = false;
+            BloodTrail = 0;
+            SoulHarvest = 0;
             ClearedEncounters.Clear();
             for (int i = 0; i < Inventory.Length; i++) Inventory[i] = null;
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);

@@ -62,7 +62,7 @@ namespace Fantasia.Core
                 yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 10f, "이동 대기");
                 if (EncounterPanel.IsOpen) break;
                 board.DevRoll();
-                Note($"보드 {turn}턴: 주사위 굴림");
+                Note($"보드 {turn}턴: 월드 라운드 {board.DevWorldRound} 아군 턴 — 주사위 굴림");
                 if (turn == 1) yield return Shot("board_roll_highlight");
                 board.DevMoveTowardEncounter();
                 yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen || board.DevAwaitingSelection, 15f, "이동");

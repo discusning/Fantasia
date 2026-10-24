@@ -48,7 +48,26 @@ namespace Fantasia.Editor
                 if (child.gameObject.activeSelf) cards++;
             Debug.Log($"[BoardScenePreview] 표시된 파티 카드 수: {cards}");
 
+            // 상단 바 — 미리보기용 예시 값 (피의 흔적 40, 영혼 수확 12, 라운드 3)
+            var session = Fantasia.Core.BoardSession.Instance;
+            session.BloodTrail = 40;
+            session.SoulHarvest = 12;
+            var party = session.Party;
+            var bar = BoardTopBar.EnsureExists();
+            bar.Refresh(Fantasia.World.WorldPhase.AllyTurn, 3, party.Leader, session.BloodTrail, session.SoulHarvest, party.Cent, "런던 · 화이트채플", announce: false);
+            PortraitStudio.RenderAllNow();
+            var barCanvas = bar.GetComponentInChildren<Canvas>(true);
+            barCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+            barCanvas.worldCamera = cam;
+            barCanvas.planeDistance = 0.9f;
+            Canvas.ForceUpdateCanvases();
             EditorScreenshotUtility.Capture(cam, "board_scene_preview.png");
+
+            // 적 턴 + 전환 배너
+            bar.Refresh(Fantasia.World.WorldPhase.EnemyTurn, 3, party.Leader, 90, 78, party.Cent, "런던 · 화이트채플", announce: false);
+            bar.PreviewSplash(ally: false, party.Leader);
+            Canvas.ForceUpdateCanvases();
+            EditorScreenshotUtility.Capture(cam, "board_scene_preview_enemy.png");
         }
     }
 }

@@ -28,6 +28,10 @@ namespace Fantasia.Data
         public IEnumerable<PartyMember> LivingMembers => _members.Where(m => !m.IsPermanentlyDead);
         public bool IsWipedOut => _members.All(m => m.IsPermanentlyDead);
 
+        // 파티장 = 1번 캐릭터 고정 (2026-10-24 기획 결정). 보드 이동·기습·몰래 지나가기 판정을 맡는다.
+        // 1번이 쓰러지거나 영구 사망하면 다음 순번의 생존자가 맡는다 (개발 임시 결정 — Decisions.md).
+        public PartyMember Leader => _members.FirstOrDefault(m => m.IsAlive) ?? _members.FirstOrDefault(m => !m.IsPermanentlyDead);
+
         // 약탈 (패배 시 1회) — 소지 Cent의 percent%, 소수점 버림. 지갑 0이면 손실 0.
         public int LoseCentPercent(int percent)
         {

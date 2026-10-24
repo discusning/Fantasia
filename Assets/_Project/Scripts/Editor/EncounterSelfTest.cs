@@ -25,7 +25,6 @@ namespace Fantasia.Editor
             failures += CheckFocusForcesSuccess();
             failures += CheckBossRestrictions();
             failures += CheckFightHasNoRoll();
-            failures += CheckParticipationRange();
             failures += CheckSuccessDistribution();
 
             if (failures == 0)
@@ -142,19 +141,6 @@ namespace Fantasia.Editor
         private static int CheckFightHasNoRoll()
         {
             return ExpectBool("Fight()는 항상 FightStarted", EncounterRules.Fight() == Fantasia.World.EncounterOutcome.FightStarted, true);
-        }
-
-        private static int CheckParticipationRange()
-        {
-            int errors = 0;
-            var origin = new HexCoord(0, 0);
-            var near = new HexCoord(2, 0);   // 거리 2
-            var far = new HexCoord(3, 0);    // 거리 3
-
-            errors += ExpectBool("기본 지원범위(2칸) 안 — 참가", EncounterParticipation.IsWithinRange(near, origin, hasHastePrayer: false), true);
-            errors += ExpectBool("기본 지원범위(2칸) 밖 — 불참", EncounterParticipation.IsWithinRange(far, origin, hasHastePrayer: false), false);
-            errors += ExpectBool("성급함의 기도(3칸) 적용 시 참가", EncounterParticipation.IsWithinRange(far, origin, hasHastePrayer: true), true);
-            return errors;
         }
 
         // 조우 UI 확률표: 성공 개수 분포의 합은 1, 전부 성공 칸은 크리티컬 확률과 같다.
