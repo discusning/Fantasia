@@ -128,7 +128,7 @@ namespace Fantasia.Combat
             {
                 _phase = Phase.ChoosingAction;
                 PartyHudPanel.SetActive(_current.Member, "행동 선택 중");
-                _hud.ShowActions(_current, CanRevive());
+                _hud.RetreatBlocked = EscapeBlocked; _hud.ShowActions(_current, CanRevive());
             }
             else
             {
@@ -143,12 +143,104 @@ namespace Fantasia.Combat
         {
             _hud.SetHint($"{enemy.DisplayName}의 차례");
             yield return new WaitForSeconds(0.6f);
+            if (enemy.Boss != null)
+            {
+                yield return BossTurn(enemy);
+                NextTurn();
+                yield break;
+            }
             // 1막 소형 적: 기본 공격만, 대상은 데이터의 Targeting 규칙 (EnemyAI).
             var target = EnemyAI.ChooseTarget(enemy, _allies);
             if (target == null) { NextTurn(); yield break; }
             yield return ResolveAttack(enemy, target, enemy.BasicAttack(false), false, enemy.OnCritStatuses, enemy.OnCritTurnShift, null);
             NextTurn();
         }
+
+        // ── D14 보스 차례: BossBrain이 고른 기술 (패턴·임계치 예고·후속 행동) ──
+        private IEnumerator BossTurn(BattleUnit boss)
+        {
+            var action = BossBrain.NextAction(boss.Enemy, boss.Boss, boss.CurrentHP, boss.MaxHP);
+            if (action == null)
+            {
+                var t = EnemyAI.ChooseTarget(boss, _allies);
+                if (t != null) yield return ResolveAttack(boss, t, boss.BasicAttack(false), false, boss.OnCritStatuses, boss.OnCritTurnShift, null);
+                yield break;
+            }
+
+            _hud.SetHint($"{boss.DisplayName} — [{action.Name}]");
+            _hud.PopText(_camera, ModelTop(boss) + Vector3.up * 0.4f, action.Name, BattleHud.StatusColor);
+            switch (action.Kind)
+            {
+                case EnemyActionKind.Attack:
+                    var target = EnemyAI.ChooseTarget(boss, _allies);
+                    if (target == null) yield break;
+                    Log($"{boss.DisplayName} [{action.Name}] → {target.DisplayName}");
+                    yield return ResolveAttack(boss, target, BossRequest(boss, action), false, action.OnCritStatuses, TurnShift.None, null);
+                    break;
+
+                case EnemyActionKind.AreaAttack:
+                    yield return ResolveEnemyAreaAttack(boss, action);
+                    break;
+
+                case EnemyActionKind.Announce:
+                    // 예고는 피해 없음 (보스 공통 규칙). 다음 행동과 막는 법을 보여준다.
+                    var pending = boss.Boss.Pending;
+                    string counter = pending != null && pending.CancelMinCoefficient > 0f
+                        ? $" — 그 전에 계수 {pending.CancelMinCoefficient:0.#}배 이상 공격 기술을 맞히면 취소" : "";
+                    string next = pending != null ? $"다음 행동: {pending.FollowUp.Name}" : "";
+                    Log($"{boss.DisplayName} 예고 [{action.Name}] {next}{counter}");
+                    _hud.SetHint($"예고! {boss.DisplayName} [{action.Name}] {next}{counter}");
+                    yield return new WaitForSeconds(1.2f);
+                    break;
+
+                case EnemyActionKind.SelfHeal:
+                    int healed = boss.HealEnemy(action.HealAmount);
+                    Log($"{boss.DisplayName} [{action.Name}] HP +{healed} · HP {boss.CurrentHP}/{boss.MaxHP}");
+                    _hud.PopText(_camera, ModelTop(boss), $"+{healed}", BattleHud.SlotSuccess);
+                    _hud.RefreshEnemies(null);
+                    yield return new WaitForSeconds(0.7f);
+                    break;
+            }
+        }
+
+        private static AttackRequest BossRequest(BattleUnit boss, EnemyAction action)
+        {
+            var request = AttackResolver.FromEnemy(boss.Enemy, action.Coefficient, action.UsesMagic ? DamageType.Magic : DamageType.Physical);
+            request.AttackValue = Mathf.Max(0, request.AttackValue - boss.Statuses.AttackPenalty);
+            return request;
+        }
+
+        // 적 광역 (봉인된 수은 등): 공통 슬롯 판정 1회, 각 아군의 방어·회피는 따로 (보스 공통 규칙).
+        private IEnumerator ResolveEnemyAreaAttack(BattleUnit boss, EnemyAction action)
+        {
+            var request = BossRequest(boss, action);
+            var slots = SlotCheck.RollWithChance(request.SlotCount, request.SlotChance, 0);
+            string summary = slots.AllSucceeded ? "크리티컬! (전체)" : $"{slots.SuccessCount}/{slots.SlotCount} 성공";
+            yield return _hud.PlayRoll($"{boss.DisplayName} [{action.Name}] → 모든 아군", slots, false, summary,
+                slots.AllSucceeded ? BattleHud.CritColor : BattleHud.SlotFailure);
+            foreach (var ally in _allies.Where(a => a.InBattle).ToList())
+            {
+                var defense = ally.Defense();
+                var outcome = AttackResolver.Compute(request, defense, slots, Fantasia.Dice.DiceRoller.RollChance(defense.EvasionChance));
+                ApplyHit(boss, ally, request, outcome, false, action.OnCritStatuses, TurnShift.None, null);
+            }
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        // 예고 중인 보스의 후속 행동을 계수 높은 공격 기술로 맞혀 취소 (아벨 모로 금지된 봉합: 1.2A 이상)
+        private void TryCancelBossFollowUp(BattleUnit target, SkillDefinition skill)
+        {
+            if (target == null || target.Boss == null || skill == null || _lastOutcomeEvaded) return;
+            if (!BossBrain.TryCancel(target.Boss, skill.Coefficient)) return;
+            Log($"  → {target.DisplayName}의 [{target.Boss.Pending.FollowUp.Name}] 저지! ({skill.DisplayName} {skill.Coefficient:0.##}배)");
+            _hud.PopText(_camera, ModelTop(target) + Vector3.up * 0.9f, "저지!", BattleHud.CritColor);
+            _hud.SetHint($"{target.DisplayName}의 {target.Boss.Pending.FollowUp.Name}을(를) 막았다!");
+        }
+
+        private bool _lastOutcomeEvaded;
+
+        // 보스 봉쇄: 전투 중 퇴각·탈출권 불가 (System.md "주요 보스는 … 전투 중 퇴각을 막는다")
+        private bool EscapeBlocked => _enemies.Any(e => e.IsAlive && e.Enemy.BlocksEscape);
 
         private IEnumerator ConfusedTurn(BattleUnit ally)
         {
@@ -218,6 +310,7 @@ namespace Fantasia.Combat
             if (_phase != Phase.ChoosingAction || item == null) return;
             if (Inventory.CountOf(item) <= 0) { _hud.SetHint($"{item.DisplayName}: 남은 개수 없음"); return; }
             if (!item.UsableIn(UseContext.Battle)) { _hud.SetHint($"{item.DisplayName}: 전투에서 쓸 수 없음"); return; }
+            if (item.Effect == ConsumableEffect.Escape && EscapeBlocked) { _hud.SetHint($"{item.DisplayName}: 보스 봉쇄 중에는 쓸 수 없음"); return; }
             _pendingSkill = null;
             _pendingItem = item;
             if (ConsumableRules.TargetsAlly(item)) BeginTargeting(allies: true);
@@ -365,6 +458,7 @@ namespace Fantasia.Combat
                     break;
                 case SkillEffect.Attack:
                     yield return ResolveAttack(actor, target, actor.SkillAttack(skill, useFocus), useFocus, skill.OnCritStatuses, skill.OnCritTurnShift, skill);
+                    TryCancelBossFollowUp(target, skill);
                     break;
                 case SkillEffect.Heal:
                     yield return ResolveHeal(actor, target, skill, useFocus);
@@ -395,6 +489,7 @@ namespace Fantasia.Combat
         private void OnRetreatClicked()
         {
             if (_phase != Phase.ChoosingAction) return;
+            if (EscapeBlocked) { _hud.SetHint("보스가 퇴로를 막고 있다 — 퇴각할 수 없다"); return; }
             StartCoroutine(PlayerRetreat());
         }
 
@@ -461,6 +556,7 @@ namespace Fantasia.Combat
             StatusEffectDefinition[] onCritStatuses, TurnShift onCritShift, SkillDefinition skill)
         {
             if (!outcome.Evaded) target.TakeDamage(outcome.AppliedDamage);
+            _lastOutcomeEvaded = outcome.Evaded;
             string result = ResultText(outcome);
             Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus ? ", 집중 1" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : outcome.Damage.ToString(), ResultColor(outcome));
@@ -585,6 +681,7 @@ namespace Fantasia.Combat
             if (!enemiesLeft)
             {
                 if (session.PendingEncounterCoord.HasValue) session.ClearedEncounters.Add(session.PendingEncounterCoord.Value);
+                if (session.PendingReaperFight) session.Hunt.ReaperKilled = true; // D24 피의 사냥 사신 처치 → 보드에서 성공 처리
                 // 경험치는 끝까지 서 있던 캐릭터만 → 그다음 쓰러진 아군 정리
                 string loot = GrantRewards(session);
                 string downed = SettleDowned(DefeatRules.PostBattleReviveHpRatio);
@@ -665,6 +762,12 @@ namespace Fantasia.Combat
                 bool lost = rewards.Overflow.Contains(item);
                 lines.Add($"· {item.Name}{(lost ? " (인벤토리 가득 — 보관함에 대기)" : "")}");
             }
+            foreach (var key in _setup.Enemies.Where(en => en.KeyItemRewards != null).SelectMany(en => en.KeyItemRewards))
+            {
+                if (session.KeyItems.Contains(key)) continue;
+                session.KeyItems.Add(key);
+                lines.Add($"★ 퀘스트 물건: {key}");
+            }
             var survivors = party.AliveMembers.ToList();
             lines.Add($"경험치 +{rewards.Experience} ({string.Join(", ", survivors.Select(m => m.Job.DisplayName))})");
             foreach (var m in survivors.Where(m => m.Level > levels[m]))
@@ -741,7 +844,7 @@ namespace Fantasia.Combat
                 _pendingItem = null;
                 _reviving = false;
                 HideMarker();
-                _hud.ShowActions(_current, CanRevive());
+                _hud.RetreatBlocked = EscapeBlocked; _hud.ShowActions(_current, CanRevive());
                 return;
             }
 

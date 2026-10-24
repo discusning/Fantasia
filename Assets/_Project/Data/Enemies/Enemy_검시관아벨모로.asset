@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ffba0a509fe760418d95ad33e364373, type: 3}
+  m_Name: "Enemy_\uAC80\uC2DC\uAD00\uC544\uBCA8\uBAA8\uB85C"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.EnemyDefinition
+  Id: enemy.boss.abel_moreau
+  DisplayName: "\uAC80\uC2DC\uAD00 \uC544\uBCA8 \uBAA8\uB85C"
+  Size: 3
+  TypeTag: "\uC778\uAC04\uD615"
+  Model: {fileID: 0}
+  Portrait: {fileID: 0}
+  MaxHP: 180
+  Speed: 58
+  PhysicalAttack: 18
+  MagicAttack: 24
+  PhysicalDefense: 6
+  MagicDefense: 10
+  SlotCount: 4
+  SlotSuccessRate: 0.32
+  HasEvasionState: 0
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  Targeting: 0
+  TraitDescription: "\uD3D0\uAC80\uC2DC\uC18C\uC758 \uAC80\uC2DC\uAD00. \uD574\uBD80\uC758
+    \uC77C\uACA9 \u2192 \uD574\uBD80\uC758 \uC77C\uACA9 \u2192 \uBD09\uC778\uB41C
+    \uC218\uC740\uC744 \uBC18\uBCF5\uD55C\uB2E4. HP 60% \uC774\uD558\uAC00 \uB418\uBA74
+    \uAE08\uC9C0\uB41C \uBD09\uD569(\uC790\uAC00 \uD68C\uBCF5)\uC744 \uC608\uACE0
+    \u2014 1.2\uBC30 \uC774\uC0C1 \uACF5\uACA9 \uAE30\uC220\uB85C \uC800\uC9C0."
+  DeploymentAct: "1\uB9C9"
+  FixedRewardCent: 180
+  FixedRewardExp: 100
+  Pattern:
+  - Name: "\uD574\uBD80\uC758 \uC77C\uACA9"
+    Kind: 0
+    Coefficient: 1
+    UsesMagic: 0
+    HealAmount: 0
+    OnCritStatuses:
+    - {fileID: 11400000, guid: 3e8d562e91054374eabacf689e27685a, type: 2}
+    Description: "\uBB3C\uB9AC 1.0A \uB2E8\uC77C. \uD06C\uB9AC\uD2F0\uCEEC\uC774\uBA74
+      \uC57D\uD55C \uCD9C\uD608 3\uD134."
+  - Name: "\uD574\uBD80\uC758 \uC77C\uACA9"
+    Kind: 0
+    Coefficient: 1
+    UsesMagic: 0
+    HealAmount: 0
+    OnCritStatuses:
+    - {fileID: 11400000, guid: 3e8d562e91054374eabacf689e27685a, type: 2}
+    Description: "\uBB3C\uB9AC 1.0A \uB2E8\uC77C. \uD06C\uB9AC\uD2F0\uCEEC\uC774\uBA74
+      \uC57D\uD55C \uCD9C\uD608 3\uD134."
+  - Name: "\uBD09\uC778\uB41C \uC218\uC740"
+    Kind: 1
+    Coefficient: 0.8
+    UsesMagic: 1
+    HealAmount: 0
+    OnCritStatuses:
+    - {fileID: 11400000, guid: 74c85e7ee8cc8bc49b27f597f7fa5aa9, type: 2}
+    Description: "\uB9C8\uBC95 0.8M \uBAA8\uB4E0 \uC544\uAD70. \uD06C\uB9AC\uD2F0\uCEEC\uC774\uBA74
+      \uC911\uB3C5 1\uC2A4\uD0DD."
+  Thresholds:
+  - HpRatio: 0.6
+    Announce:
+      Name: "\uAE08\uC9C0\uB41C \uBD09\uD569"
+      Kind: 2
+      Coefficient: 1
+      UsesMagic: 0
+      HealAmount: 0
+      OnCritStatuses: []
+      Description: "\uB2E4\uC74C \uD589\uB3D9\uC774 \uC790\uAC00 HP 30 \uD68C\uBCF5\uC784\uC744
+        \uC608\uACE0."
+    FollowUp:
+      Name: "\uBD09\uD569 \uD68C\uBCF5"
+      Kind: 3
+      Coefficient: 1
+      UsesMagic: 0
+      HealAmount: 30
+      OnCritStatuses: []
+      Description: "\uC790\uAC00 HP 30 \uD68C\uBCF5."
+    CancelMinCoefficient: 1.2
+  BlocksEscape: 1
+  KeyItemRewards:
+  - "\uAC80\uC2DC \uAE30\uB85D"
+  - "\uBD89\uC740 \uB8EC \uC870\uAC01"

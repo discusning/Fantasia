@@ -104,6 +104,31 @@ namespace Fantasia.UI
                     Part(root, PrimitiveType.Cube, new Vector3(0.17f, 1.85f, 0.05f), new Vector3(0.08f, 0.25f, 0.08f), new Color(0.3f, 0.3f, 0.32f));
                     break;
                 }
+                case "enemy.event.shadow_reaper": // 검은 망토 + 낫 + 붉은 눈
+                {
+                    var cloak = new Color(0.08f, 0.07f, 0.1f);
+                    Part(root, PrimitiveType.Capsule, new Vector3(0f, 1.1f, 0f), new Vector3(0.9f, 1.1f, 0.8f), cloak);
+                    Part(root, PrimitiveType.Sphere, new Vector3(0f, 2.25f, 0f), new Vector3(0.62f, 0.7f, 0.62f), cloak);
+                    Part(root, PrimitiveType.Sphere, new Vector3(-0.12f, 2.25f, 0.27f), Vector3.one * 0.09f, new Color(0.95f, 0.1f, 0.1f));
+                    Part(root, PrimitiveType.Sphere, new Vector3(0.12f, 2.25f, 0.27f), Vector3.one * 0.09f, new Color(0.95f, 0.1f, 0.1f));
+                    Rotated(Part(root, PrimitiveType.Cube, new Vector3(0.6f, 1.6f, 0.1f), new Vector3(0.06f, 2.2f, 0.06f), new Color(0.3f, 0.22f, 0.15f)), 0f, 0f, -10f);
+                    Rotated(Part(root, PrimitiveType.Cube, new Vector3(0.35f, 2.65f, 0.1f), new Vector3(0.6f, 0.08f, 0.04f), new Color(0.75f, 0.75f, 0.8f)), 0f, 0f, 15f);
+                    break;
+                }
+                case "enemy.boss.abel_moreau": // 검시관 — 큰 키, 흰 가운, 피 묻은 앞치마, 수은 병
+                {
+                    var coat = new Color(0.86f, 0.84f, 0.78f);
+                    var dark = new Color(0.12f, 0.11f, 0.13f);
+                    Part(root, PrimitiveType.Capsule, new Vector3(0f, 1.3f, 0f), new Vector3(1.1f, 1.3f, 0.8f), coat);            // 가운
+                    Part(root, PrimitiveType.Cube, new Vector3(0f, 1.15f, 0.36f), new Vector3(0.7f, 1.1f, 0.06f), new Color(0.55f, 0.12f, 0.12f)); // 앞치마
+                    Part(root, PrimitiveType.Sphere, new Vector3(0f, 2.85f, 0f), Vector3.one * 0.62f, Skin);                  // 머리
+                    Part(root, PrimitiveType.Cube, new Vector3(0f, 2.9f, 0.3f), new Vector3(0.5f, 0.12f, 0.05f), dark);      // 안경
+                    Part(root, PrimitiveType.Cylinder, new Vector3(0f, 3.2f, 0f), new Vector3(0.62f, 0.04f, 0.62f), dark);   // 모자 챙
+                    Part(root, PrimitiveType.Cylinder, new Vector3(0f, 3.4f, 0f), new Vector3(0.4f, 0.2f, 0.4f), dark);      // 모자
+                    Rotated(Part(root, PrimitiveType.Cube, new Vector3(0.7f, 1.5f, 0.2f), new Vector3(0.06f, 0.8f, 0.06f), new Color(0.7f, 0.72f, 0.76f)), 0f, 0f, -25f); // 메스
+                    Part(root, PrimitiveType.Sphere, new Vector3(-0.7f, 1.2f, 0.25f), new Vector3(0.28f, 0.36f, 0.28f), new Color(0.75f, 0.78f, 0.82f)); // 수은 병
+                    break;
+                }
                 default: // 아직 전용 인형이 없는 적 — 크기만 반영한 붉은 인형
                 {
                     float h = EnemyHeight(enemy);
@@ -123,6 +148,8 @@ namespace Fantasia.UI
             "enemy.small.alchemic_spider_larva" => 0.9f,
             "enemy.small.plague_rat" => 0.8f,
             "enemy.small.gargoyle_larva" => 2f,
+            "enemy.boss.abel_moreau" => 3.6f,
+            "enemy.event.shadow_reaper" => 2.6f,
             _ => enemy.Size switch
             {
                 EnemySize.Small => 1.4f,

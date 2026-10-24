@@ -63,6 +63,8 @@ namespace Fantasia.Editor
             var hexBoard = boardGO.AddComponent<HexBoard>();
             // 확정 월드맵 (Docs/Planning/WorldMap.md)
             hexBoard.MapAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(WorldMapSelfTest.MapPath);
+            hexBoard.RegionBosses = new[] { AssetDatabase.LoadAssetAtPath<EnemyDefinition>("Assets/_Project/Data/Enemies/Enemy_검시관아벨모로.asset") };
+            var reaper = AssetDatabase.LoadAssetAtPath<EnemyDefinition>("Assets/_Project/Data/Enemies/Enemy_인조그림자사신.asset");
             // 1막 소형 적 4종 (System.md 소형 적) — 인카운터 칸마다 이 중 하나.
             hexBoard.EncounterEnemyPool = System.Array.FindAll(new[]
             {
@@ -74,6 +76,7 @@ namespace Fantasia.Editor
             var boardTestController = boardGO.AddComponent<BoardTestController>();
             boardTestController.PlaceholderLandmarks = PlaceholderDataSetup.EnsureLandmarks();
             boardTestController.TestHeroJob = detectiveJob;
+            boardTestController.ReaperEnemy = reaper;
             boardTestController.TestPartyJobs = new[]
             {
                 detectiveJob,

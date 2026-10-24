@@ -25,6 +25,8 @@ namespace Fantasia.Board
 
         // 확정 월드맵 글자 격자. BoardTestSceneSetup이 넣는다.
         public TextAsset MapAsset;
+        // 지역별 보스 (0 런던 · 1 베르사유 · 2 로마). 비어 있으면 보스 칸은 임시로 소형 적.
+        public EnemyDefinition[] RegionBosses = System.Array.Empty<EnemyDefinition>();
         public WorldMapData Map { get; private set; }
         public bool UsesWorldMap => Map != null;
 
@@ -106,7 +108,10 @@ namespace Fantasia.Board
                         break;
                     case MapTileKind.Enemy:
                     case MapTileKind.Boss:
-                        var enemy = EncounterEnemyPool.Length > 0 ? EncounterEnemyPool[StableIndex(mapTile, EncounterEnemyPool.Length)] : null;
+                        int region = Map.RegionOf(coord);
+                        var regionBoss = mapTile.Kind == MapTileKind.Boss && region >= 0 && region < RegionBosses.Length ? RegionBosses[region] : null;
+                        var enemy = regionBoss != null ? regionBoss
+                            : EncounterEnemyPool.Length > 0 ? EncounterEnemyPool[StableIndex(mapTile, EncounterEnemyPool.Length)] : null;
                         tile.SetEncounter(enemy != null, enemy);
                         if (session != null && session.ClearedEncounters.Contains(coord)) tile.SetCleared(true);
                         break;

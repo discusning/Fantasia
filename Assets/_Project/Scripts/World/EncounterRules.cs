@@ -21,7 +21,7 @@ namespace Fantasia.World
     {
         public const int RetreatDuringCombatSlotCount = 2;
 
-        public static bool AllowsPreCombatAvoidance(EnemyDefinition enemy) => enemy.Size != EnemySize.Boss;
+        public static bool AllowsPreCombatAvoidance(EnemyDefinition enemy) => enemy.Size != EnemySize.Boss && !enemy.BlocksEscape;
 
         // 전투: 선택만으로 결정, 판정 없음.
         public static EncounterOutcome Fight() => EncounterOutcome.FightStarted;

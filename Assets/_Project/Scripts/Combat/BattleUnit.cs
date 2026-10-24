@@ -19,6 +19,8 @@ namespace Fantasia.Combat
         public bool HasRetreated { get; set; } // 전투 중 퇴각 성공
 
         private int _enemyHP;
+        // 패턴을 쓰는 보스면 상태 (D14). 일반 적은 null.
+        public BossState Boss { get; }
         private readonly StatusSet _enemyStatuses = new();
 
         public BattleUnit(PartyMember member, int formationIndex)
@@ -34,6 +36,7 @@ namespace Fantasia.Combat
             FormationIndex = formationIndex;
             DisplayName = enemy.DisplayName;
             _enemyHP = enemy.MaxHP;
+            if (enemy.HasPattern || (enemy.Thresholds != null && enemy.Thresholds.Length > 0)) Boss = new BossState();
         }
 
         // 초상·모델 캐시 키 (같은 직업/적 종류는 같은 그림).
@@ -143,6 +146,15 @@ namespace Fantasia.Combat
         {
             if (IsAlly) Member.TakeDamage(amount);
             else _enemyHP = Mathf.Max(0, _enemyHP - amount);
+        }
+
+        // 적 자가 회복 (보스 금지된 봉합 등) — 최대 HP를 넘지 않음. 회복량을 돌려준다.
+        public int HealEnemy(int amount)
+        {
+            if (IsAlly || !IsAlive) return 0;
+            int before = _enemyHP;
+            _enemyHP = Mathf.Min(Enemy.MaxHP, _enemyHP + Mathf.Max(0, amount));
+            return _enemyHP - before;
         }
     }
 

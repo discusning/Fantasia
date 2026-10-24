@@ -37,3 +37,7 @@ MonoBehaviour:
   DeploymentAct: "1\uB9C9"
   FixedRewardCent: 0
   FixedRewardExp: 0
+  Pattern: []
+  Thresholds: []
+  BlocksEscape: 0
+  KeyItemRewards: []

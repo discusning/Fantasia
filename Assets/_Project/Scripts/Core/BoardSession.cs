@@ -46,12 +46,17 @@ namespace Fantasia.Core
         // 보드 상단 바 표시값. 피의 흔적 G·영혼 수확 S(0~100)의 증가 규칙은 D24·D25에서 적 턴에 연결한다.
         public int BloodTrail { get; set; }
         public int SoulHarvest { get; set; }
+        // D24 피의 사냥 (사신 위치·남은 아군 턴·유예) / 지금 전투가 사신전인지
+        public Fantasia.World.BloodHuntState Hunt { get; } = new();
+        public bool PendingReaperFight { get; set; }
         public string RegionName { get; set; } = "런던"; // 보드 맵(P13) 확정 전 임시 — 칸·구역별로 바뀔 예정
 
         // 안개 연막병: 다음 기습 슬롯 성공률 +%p (기습 판정 1회에 소모)
         public int PendingAmbushBonus { get; set; }
         // 인벤토리가 차서 받지 못한 전리품 — 인벤토리 창에서 자리를 비우고 받는다 (자동 삭제 안 함)
         public List<Fantasia.Combat.LootDrop> PendingLoot { get; } = new();
+        // 퀘스트 물건 (보스 확정 보상 — 검시 기록·붉은 룬 조각 등). 퀘스트 시스템(D22) 전까지 이름만 보관
+        public List<string> KeyItems { get; } = new();
         // 월드 회복약·정화약은 아군 턴마다 파티원별 1회 (☆ 개발 임시 — System.md "이동 종료 전 1회"를 파티 턴에 맞춤)
         public HashSet<Fantasia.Data.PartyMember> UsedWorldItemThisTurn { get; } = new();
 
@@ -67,9 +72,13 @@ namespace Fantasia.Core
             AllyTurnEndedByBattle = false;
             BloodTrail = 0;
             SoulHarvest = 0;
+            Hunt.Clear();
+            Hunt.GraceRounds = 0;
+            PendingReaperFight = false;
             PendingAmbushBonus = 0;
             UsedWorldItemThisTurn.Clear();
             PendingLoot.Clear();
+            KeyItems.Clear();
             ClearedEncounters.Clear();
             UsedMapTiles.Clear();
             HasPlayerPosition = false;

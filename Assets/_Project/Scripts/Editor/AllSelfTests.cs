@@ -17,6 +17,8 @@ namespace Fantasia.Editor
             BoardSessionSelfTest.Run();
             PathfindingSelfTest.Run();
             WorldMapSelfTest.Run();
+            BossSelfTest.Run();
+            BloodHuntSelfTest.Run();
         }
     }
 }

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ffba0a509fe760418d95ad33e364373, type: 3}
+  m_Name: "Enemy_\uC778\uC870\uADF8\uB9BC\uC790\uC0AC\uC2E0"
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.EnemyDefinition
+  Id: enemy.event.shadow_reaper
+  DisplayName: "\uC778\uC870 \uADF8\uB9BC\uC790 \uC0AC\uC2E0"
+  Size: 1
+  TypeTag: "\uB9DD\uB839\uD615"
+  Model: {fileID: 0}
+  Portrait: {fileID: 0}
+  MaxHP: 60
+  Speed: 60
+  PhysicalAttack: 14
+  MagicAttack: 0
+  PhysicalDefense: 5
+  MagicDefense: 5
+  SlotCount: 3
+  SlotSuccessRate: 0.4
+  HasEvasionState: 0
+  OnCritStatuses: []
+  OnCritTurnShift: 0
+  Targeting: 0
+  TraitDescription: "\uD53C\uC758 \uD754\uC801\uC774 \uAC00\uB4DD \uCC28\uBA74 \uB098\uD0C0\uB098\uB294
+    \uC0AC\uC2E0. 3\uC544\uAD70 \uD134 \uC548\uC5D0 \uD55C \uB9C8\uB9AC\uB77C\uB3C4
+    \uC7A1\uC544\uC57C \uD55C\uB2E4."
+  DeploymentAct: "\uD53C\uC758 \uC0AC\uB0E5"
+  FixedRewardCent: 35
+  FixedRewardExp: 40
+  Pattern: []
+  Thresholds: []
+  BlocksEscape: 0
+  KeyItemRewards: []

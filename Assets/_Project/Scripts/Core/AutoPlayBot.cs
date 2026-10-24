@@ -56,6 +56,12 @@ namespace Fantasia.Core
             yield return Shot("board_start");
             ApplyStartOverrides();
             NoteParty("보드 시작");
+            var args = Environment.GetCommandLineArgs();
+            int startIndex = Array.IndexOf(args, "-autoplay-start");
+            if (startIndex >= 0 && startIndex + 1 < args.Length) { board.DevTeleport(args[startIndex + 1]); Note($"시작 위치 → {args[startIndex + 1]}"); yield return new WaitForSeconds(0.5f); }
+            bool bossRun = args.Contains("-autoplay-boss");
+            bool huntRun = args.Contains("-autoplay-hunt");
+            bool shotHunt = false, shotSky = false;
 
             for (int turn = 1; turn <= 20 && !EncounterPanel.IsOpen; turn++)
             {
@@ -64,13 +70,29 @@ namespace Fantasia.Core
                 board.DevRoll();
                 Note($"보드 {turn}턴: 월드 라운드 {board.DevWorldRound} 아군 턴 — 주사위 굴림");
                 if (turn == 1) yield return Shot("board_roll_highlight");
-                board.DevMoveTowardEncounter();
+                if (huntRun)
+                {
+                    // D24 점검: 피의 사냥 전에는 적 칸을 피해 다니고, 시작되면 사신 쪽으로
+                    if (BoardSession.Instance.Hunt.Active)
+                    {
+                        if (!shotHunt) { shotHunt = true; yield return Shot("board_blood_hunt"); }
+                        board.DevMoveTowardReaper();
+                    }
+                    else board.DevMoveAvoidingEncounters();
+                }
+                else board.DevMoveTowardEncounter(bossRun);
                 yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen || board.DevAwaitingSelection, 15f, "이동");
+                if (BoardSession.Instance.SoulHarvest >= Fantasia.World.BloodHuntRules.RedSkyThreshold && !shotSky)
+                {
+                    shotSky = true;
+                    yield return new WaitForSeconds(3.5f);
+                    yield return Shot("board_red_sky");
+                }
                 // 이벤트 칸 추가 이동이 생기면 그것도 인카운터 쪽으로.
                 if (board.DevAwaitingSelection && !EncounterPanel.IsOpen)
                 {
                     Note("  이벤트 칸 추가 이동");
-                    board.DevMoveTowardEncounter();
+                    board.DevMoveTowardEncounter(bossRun);
                     yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 15f, "추가 이동");
                 }
             }
@@ -138,7 +160,8 @@ namespace Fantasia.Core
                             yield return new WaitForSeconds(0.2f);
                             yield return Shot("battle_skill_menu");
                         }
-                        battle.DevUseSkill(skill, target, focus: actor.Member.CurrentFocus > skill.FocusCost);
+                        bool bossNow = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null) && !(target != null && target.Boss != null && target.Boss.HasPending);
+                        battle.DevUseSkill(skill, target, focus: actor.Member.CurrentFocus > skill.FocusCost + (bossNow ? 1 : 0));
                         if (!shotSkill)
                         {
                             shotSkill = true;
@@ -153,7 +176,9 @@ namespace Fantasia.Core
                     }
                     else
                     {
-                        battle.DevAttack(focus: actor.Member.CurrentFocus > 0);
+                        // 보스전에서는 집중력 1을 저지용 기술 몫으로 남긴다
+                        bool bossFight = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null);
+                        battle.DevAttack(focus: actor.Member.CurrentFocus > (bossFight ? 1 : 0));
                         if (!shotRoll)
                         {
                             shotRoll = true;
@@ -182,6 +207,12 @@ namespace Fantasia.Core
             yield return new WaitForSeconds(1.2f);
             yield return Shot("board_after_battle");
             NoteParty("보드 복귀 후");
+            var hexBoard = FindAnyObjectByType<HexBoard>();
+            if (hexBoard != null && hexBoard.UsesWorldMap)
+            {
+                var exit = hexBoard.Map.TileAt("K12").Coord;
+                Note($"런던 출구 K12: {(hexBoard.IsExitOpen(exit) ? "열림" : "잠김")} · 퀘스트 물건: {string.Join(", ", BoardSession.Instance.KeyItems)}");
+            }
 
             // ── 5. 인벤토리·장비 창 (D17) ──
             var party = BoardSession.Instance.Party;
@@ -211,13 +242,26 @@ namespace Fantasia.Core
         // 사람이 할 법한 스킬 사용 — 쓸 수 있는(비용·쿨다운 OK) 스킬 중 상황에 맞는 것 하나. 없으면 (null, null).
         private static (Fantasia.Data.SkillDefinition, BattleUnit) ChooseSkill(BattleController battle, BattleUnit actor)
         {
-            Fantasia.Data.SkillDefinition Usable(string id) =>
-                actor.ActiveSkills().FirstOrDefault(s => s.Id == id && actor.CannotUseReason(s) == null);
 
             var enemies = battle.DevEnemies.Where(e => e.InBattle).ToList();
             var allies = battle.DevAllies.Where(a => a.InBattle).ToList();
             if (enemies.Count == 0) return (null, null);
             var evasive = enemies.FirstOrDefault(e => e.HasEvasionState);
+            // 보스가 후속 행동을 예고했으면 1.2배 이상 공격 기술로 저지 (D14 금지된 봉합)
+            var announcing = enemies.FirstOrDefault(e => e.Boss != null && e.Boss.HasPending);
+            if (announcing != null)
+            {
+                var breaker = actor.ActiveSkills().FirstOrDefault(s => s.Effect == Fantasia.Data.SkillEffect.Attack && s.Target == Fantasia.Data.SkillTarget.SingleEnemy
+                    && s.Coefficient >= announcing.Boss.Pending.CancelMinCoefficient && actor.CannotUseReason(s) == null);
+                if (breaker != null) return (breaker, announcing);
+            }
+            // 예고가 곧 나올 보스(임계치 미발동, HP 75% 이하)가 있으면 저지용 기술은 아껴 둔다
+            bool bossFight = enemies.Any(e => e.Boss != null);
+            bool saveBreakers = enemies.Any(e => e.Boss != null && e.Enemy.Thresholds.Length > 0 && e.Boss.FiredThresholds.Count == 0
+                                                 && e.CurrentHP <= e.MaxHP * 0.75f);
+            Fantasia.Data.SkillDefinition Usable(string id) =>
+                actor.ActiveSkills().FirstOrDefault(s => s.Id == id && actor.CannotUseReason(s) == null && !(saveBreakers && s.Coefficient >= 1.2f)
+                    && !(bossFight && s.Coefficient < 1.2f && actor.Member.CurrentFocus - s.FocusCost < 1));
             var weakest = enemies.OrderBy(e => e.CurrentHP).First();
 
             switch (actor.Member.Job.Id)
@@ -265,6 +309,12 @@ namespace Fantasia.Core
             if (lpIndex >= 0 && lpIndex + 1 < args.Length && int.TryParse(args[lpIndex + 1], out int lp))
                 foreach (var m in party.Members) while (m.CurrentLP > lp && m.TrySpendLP()) { }
             if (hpIndex >= 0 || lpIndex >= 0) Note($"시작 상태 조정: HP {(hpIndex >= 0 ? args[hpIndex + 1] : "-")} · LP {(lpIndex >= 0 ? args[lpIndex + 1] : "-")}");
+            // D24·D25 점검: 피의 흔적·영혼 수확 시작값
+            int trailIndex = Array.IndexOf(args, "-autoplay-trail");
+            if (trailIndex >= 0 && trailIndex + 1 < args.Length && int.TryParse(args[trailIndex + 1], out int trail)) BoardSession.Instance.BloodTrail = trail;
+            int soulIndex = Array.IndexOf(args, "-autoplay-soul");
+            if (soulIndex >= 0 && soulIndex + 1 < args.Length && int.TryParse(args[soulIndex + 1], out int soul)) BoardSession.Instance.SoulHarvest = soul;
+            if (trailIndex >= 0 || soulIndex >= 0) Note($"시작 G {BoardSession.Instance.BloodTrail} · S {BoardSession.Instance.SoulHarvest}");
         }
 
         private IEnumerator WaitFor(Func<bool> condition, float timeout, string what)

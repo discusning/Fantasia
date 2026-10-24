@@ -54,7 +54,13 @@ namespace Fantasia.Board
         // 후퇴는 직전에 밟았던 칸으로 돌아간다.
         private HexCoord _lastSafeCoord;
         private EnemyDefinition _pendingEnemy;
+        private bool _pendingIsReaper; // D24 피의 사냥 사신과의 조우
         private string _encounterResultMessage;
+
+        // D24 인조 그림자 사신 (피의 사냥). Assigned by BoardTestSceneSetup.
+        public EnemyDefinition ReaperEnemy;
+        private readonly List<GameObject> _reaperFigures = new();
+        private BloodHuntState Hunt => BoardSession.Instance.Hunt;
 
         private WorldClock Clock => BoardSession.Instance.World;
         private PartyMember Leader => _testParty?.Leader;
@@ -76,6 +82,9 @@ namespace Fantasia.Board
             if (Camera.main != null && _board.UsesWorldMap) BoardCameraRig.Attach(Camera.main, _token);
             PlaceLandmarks();
             HookInventory();
+            if (_board.UsesWorldMap) gameObject.AddComponent<BoardSkyTint>();
+            ResolveReaperFightResult();
+            RefreshReaperFigures();
 
             // 전투로 끝난 아군 턴이면 돌아오자마자 적 턴 진행, 아니면 지금 페이즈 표시.
             if (BoardSession.Instance.AllyTurnEndedByBattle)
@@ -283,7 +292,7 @@ namespace Fantasia.Board
             if (!Clock.TryBeginRoll()) return;
             _lastEventBonus = -1;
             _worldMessage = null;
-            _lastRoll = MovementRules.RollMovePoints(pursuedByReaper: false); // 사신 추격 연동은 D24에서
+            _lastRoll = MovementRules.RollMovePoints(pursuedByReaper: Hunt.Active); // 피의 사냥 중 주사위 −2 (☆)
             HighlightReachable(_lastRoll);
         }
 
@@ -342,12 +351,20 @@ namespace Fantasia.Board
             _isMoving = false;
             BoardSession.Instance.PlayerPosition = _currentCoord;
 
+            // 피의 사냥 사신이 있는 칸에 도착 → 그 사신과 조우
+            if (Hunt.Active && Hunt.Reapers.Contains(_currentCoord) && ReaperEnemy != null)
+            {
+                ShowReaperEncounter();
+                yield break;
+            }
+
             // 도착한 칸이 인카운터면 조우 창 (지나가기만 하면 발동하지 않음, 클리어한 칸은 다시 안 뜸).
             if (_board.TryGetTile(_currentCoord, out var landedTile) && landedTile.IsEncounter && !landedTile.IsCleared
                 && landedTile.Enemy != null)
             {
                 _encounterResultMessage = null;
                 _pendingEnemy = landedTile.Enemy;
+                _pendingIsReaper = false;
                 EncounterPanel.Show(landedTile.Enemy, Leader, OnEncounterResolved);
                 yield break;
             }
@@ -396,15 +413,28 @@ namespace Fantasia.Board
         private void EnterCombat(EncounterOutcome opening)
         {
             var setup = new Fantasia.Combat.BattleSetup { Opening = opening };
+            var session = BoardSession.Instance;
+            session.PendingReaperFight = _pendingIsReaper;
+            if (_pendingIsReaper)
+            {
+                // 피의 사냥 사신 1마리와 전투 (☆). 이기면 BattleController가 Hunt.ReaperKilled 표시
+                setup.Enemies.Add(ReaperEnemy);
+                session.PendingBattle = setup;
+                session.PendingEncounterCoord = null;
+                session.LastSafeCoord = _lastSafeCoord;
+                session.AllyTurnEndedByBattle = true;
+                SceneManager.LoadScene(CombatSceneName);
+                return;
+            }
             var pool = _board.EncounterEnemyPool;
-            var forced = System.Array.Find(pool, e => e != null && e.Id == DevForcedEnemyId);
-            setup.Enemies.Add(forced != null ? forced : _pendingEnemy);
-            // 보스 칸: 보스 데이터(D14) 전까지 소형 적 3마리로 대신 — 처치하면 지역 출구가 열린다
-            int extra = _board.TryGetTile(_currentCoord, out var here) && here.IsBoss ? 2 : 1;
+            var forced = System.Array.Find(pool.Concat(_board.RegionBosses).ToArray(), e => e != null && e.Id == DevForcedEnemyId);
+            var first = forced != null ? forced : _pendingEnemy;
+            setup.Enemies.Add(first);
+            // 보스는 단독 (D14). 보스 데이터가 없는 보스 칸은 임시로 소형 적 3마리 — 처치하면 지역 출구가 열린다
+            int extra = first != null && first.IsBoss ? 0 : _board.TryGetTile(_currentCoord, out var here) && here.IsBoss ? 2 : 1;
             for (int i = 0; i < extra && pool.Length > 0; i++) setup.Enemies.Add(forced != null ? forced : pool[Random.Range(0, pool.Length)]);
             // 전리품 장비 레벨 = 지역 (런던 1 · 베르사유 4 · 로마 7)
             if (_board.UsesWorldMap) Fantasia.Combat.LootRules.CurrentZoneWearLevel = ZoneWearLevel(_board.Map.RegionOf(_currentCoord));
-            var session = BoardSession.Instance;
             session.PendingBattle = setup;
             session.PendingEncounterCoord = _currentCoord;
             session.LastSafeCoord = _lastSafeCoord;
@@ -456,16 +486,78 @@ namespace Fantasia.Board
             Clock.EndAllyTurn();
             RefreshTopBar(announce: true);
             var enemyLog = WorldTurnRules.RunEnemyTurn(Clock);
+            enemyLog.AddRange(RunBloodHuntEnemyTurn());
+            RefreshReaperFigures();
             yield return new WaitForSeconds(EnemyTurnSeconds);
 
             Clock.EndEnemyTurn();
             BoardSession.Instance.UsedWorldItemThisTurn.Clear();
             var allyLog = WorldTurnRules.BeginAllyTurn(_testParty);
             var lines = enemyLog.Concat(allyLog).ToList();
+
+            // 피의 사냥: 아군 턴마다 사신이 2칸씩 다가옴 — 파티 칸에 닿으면 바로 조우
+            int caught = _board.UsesWorldMap ? BloodHuntRules.MoveReapers(Hunt, _board.Map, _currentCoord, _board.IsExitOpen) : -1;
+            RefreshReaperFigures();
+            if (Hunt.Active) lines.Add($"사신이 다가온다 (남은 아군 턴 {Hunt.AllyTurnsLeft})");
+
             _worldMessage = lines.Count > 0 ? string.Join(" / ", lines) : null;
             foreach (var line in lines) Debug.Log("[World] " + line);
             RefreshTopBar(announce: true);
             _turnEnding = false;
+            if (caught >= 0 && ReaperEnemy != null) ShowReaperEncounter();
+        }
+
+        // ── D24 피의 흔적·피의 사냥 / D25 영혼 수확 ──
+        private List<string> RunBloodHuntEnemyTurn()
+        {
+            var session = BoardSession.Instance;
+            int g = session.BloodTrail, s = session.SoulHarvest;
+            var log = BloodHuntRules.OnEnemyTurn(Hunt, ref g, ref s, _testParty, _board.UsesWorldMap ? _board.Map : null,
+                _currentCoord, new System.Random(), out var victim);
+            session.BloodTrail = g;
+            session.SoulHarvest = s;
+            foreach (var line in log)
+                if (line.StartsWith("피의 사냥!") || line.StartsWith("피의 사냥 실패")) ItemAcquiredToast.Show(line);
+            return log;
+        }
+
+        private void ShowReaperEncounter()
+        {
+            _encounterResultMessage = null;
+            _pendingEnemy = ReaperEnemy;
+            _pendingIsReaper = true;
+            EncounterPanel.Show(ReaperEnemy, Leader, OnEncounterResolved);
+        }
+
+        // 사신전에서 이기고 돌아왔으면 성공 처리 (보상), 아니면 사신은 그대로
+        private void ResolveReaperFightResult()
+        {
+            var session = BoardSession.Instance;
+            if (!session.PendingReaperFight) return;
+            session.PendingReaperFight = false;
+            if (!Hunt.ReaperKilled) return;
+            int g = session.BloodTrail;
+            string message = BloodHuntRules.Succeed(Hunt, ref g, _testParty, ItemCatalog.Current);
+            session.BloodTrail = g;
+            _encounterResultMessage = message;
+            ItemAcquiredToast.Show(message);
+            Debug.Log("[World] " + message);
+        }
+
+        // 보드 위 사신 말 (임시 인형 축소)
+        private void RefreshReaperFigures()
+        {
+            foreach (var go in _reaperFigures) if (go != null) Destroy(go);
+            _reaperFigures.Clear();
+            if (!Hunt.Active || ReaperEnemy == null) return;
+            foreach (var coord in Hunt.Reapers)
+            {
+                var fig = Fantasia.UI.PlaceholderFigure.Build(ReaperEnemy);
+                fig.transform.position = _board.CoordToWorld(coord) + Vector3.up * _board.TileHeight;
+                fig.transform.localScale = Vector3.one * 0.6f;
+                fig.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+                _reaperFigures.Add(fig);
+            }
         }
 
         // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 키보드·마우스 대신 같은 굴림·이동 코드를 부른다 ─────
@@ -480,13 +572,53 @@ namespace Fantasia.Board
 
         public void DevRoll() => TryRoll();
 
+        // 자동 플레이: 월드맵 칸 이름(예: "M10")으로 파티를 옮긴다
+        public void DevTeleport(string label)
+        {
+            if (!_board.UsesWorldMap || !WorldMapData.TryParseLabel(label, out var coord) || !_board.TryGetTile(coord, out _)) return;
+            _currentCoord = coord;
+            _lastSafeCoord = coord;
+            BoardSession.Instance.PlayerPosition = coord;
+            _token.position = TokenSurfacePosition(coord);
+            var rig = Camera.main != null ? Camera.main.GetComponent<BoardCameraRig>() : null;
+            if (rig != null) rig.SnapToTarget();
+        }
+
         // 이동 가능한 칸 중 아직 안 깬 인카운터가 있으면 그 칸, 없으면 가장 가까운 인카운터에 제일 다가가는 칸.
-        public void DevMoveTowardEncounter()
+        public void DevMoveTowardEncounter() => DevMoveTowardEncounter(bossOnly: false);
+
+        // 피의 사냥 점검: 가장 가까운 사신 쪽으로
+        public void DevMoveTowardReaper()
+        {
+            if (!_awaitingSelection || !Hunt.Active) return;
+            var field = _board.DistanceField(Hunt.Reapers);
+            HexCoord best = _currentCoord;
+            int bestDistance = int.MaxValue;
+            foreach (var coord in _reachability.ReachableTiles)
+            {
+                int d = field.TryGetValue(coord, out int v) ? v : int.MaxValue;
+                if (d < bestDistance) { bestDistance = d; best = coord; }
+            }
+            MoveTo(best);
+        }
+
+        // 피의 사냥 점검: 전투 칸을 피해 가까운 빈 칸으로 (게이지가 찰 때까지 시간 보내기)
+        public void DevMoveAvoidingEncounters()
+        {
+            if (!_awaitingSelection) return;
+            var safe = _reachability.ReachableTiles
+                .Where(c => _board.TryGetTile(c, out var t) && !t.IsEncounter && t.MapKind == MapTileKind.Walkable)
+                .OrderBy(c => c.DistanceTo(_currentCoord)).ToList();
+            if (safe.Count > 0) MoveTo(safe[0]);
+        }
+
+        // bossOnly: 보스 칸만 목표 (자동 플레이 -autoplay-boss)
+        public void DevMoveTowardEncounter(bool bossOnly)
         {
             if (!_awaitingSelection) return;
             var encounters = new List<HexCoord>();
             foreach (var tile in _board.Tiles)
-                if (tile.IsEncounter && !tile.IsCleared && tile.Enemy != null && !tile.IsBoss) encounters.Add(tile.Coordinate);
+                if (tile.IsEncounter && !tile.IsCleared && tile.Enemy != null && tile.IsBoss == bossOnly) encounters.Add(tile.Coordinate);
 
             // 장애물을 돌아가는 실제 이동 거리로 가장 가까운 적 칸 쪽
             var field = _board.DistanceField(encounters);

@@ -66,6 +66,8 @@ namespace Fantasia.Editor
                 duration: 2, maxStacks: 1, magnitude: 3, statPenalty: 0, clearedByVictory: true,
                 "공격력 −3 (가고일 유체 특성). 기간 미정 — 2턴 가정.");
             LinkCritStatuses(bleed, poison, confusion, bind, attackDown);
+            EnsureAbelMoreau(bleed, poison);
+            EnsureShadowReaper();
             SeedSkills(skill, poison);
             ItemDataSeed.SeedAll();
             UIThemeSetup.EnsureAsset();
@@ -357,6 +359,76 @@ namespace Fantasia.Editor
             e.HasEvasionState = false;
             e.TraitDescription = trait;
             e.DeploymentAct = "1막";
+            EditorUtility.SetDirty(e);
+            return e;
+        }
+
+        // D24 피의 사냥 사신 (System.md "기존 일반 적의 보완 스탯": 인조 그림자 사신 HP 60·속도 60·망령형·3슬롯 40%,
+        // 물리 공격 14·물리/마법 방어 5/5, 처치당 35 Cent·경험치 40)
+        private static EnemyDefinition EnsureShadowReaper()
+        {
+            var e = LoadOrCreate<EnemyDefinition>(EnemyDir, "Enemy_인조그림자사신");
+            e.Id = "enemy.event.shadow_reaper";
+            e.DisplayName = "인조 그림자 사신";
+            e.Size = EnemySize.Medium; // 3슬롯 = 중형 체급
+            e.TypeTag = "망령형";
+            e.MaxHP = 60;
+            e.Speed = 60;
+            e.PhysicalAttack = 14;
+            e.MagicAttack = 0;
+            e.PhysicalDefense = 5;
+            e.MagicDefense = 5;
+            e.SlotCount = 3;
+            e.SlotSuccessRate = 0.4f;
+            e.Targeting = EnemyTargeting.Random;
+            e.FixedRewardCent = 35;
+            e.FixedRewardExp = 40;
+            e.DeploymentAct = "피의 사냥";
+            e.TraitDescription = "피의 흔적이 가득 차면 나타나는 사신. 3아군 턴 안에 한 마리라도 잡아야 한다.";
+            EditorUtility.SetDirty(e);
+            return e;
+        }
+
+        // D14 1막 보스 (System.md "보스급 > 검시관 아벨 모로"). 기본 패턴: 해부의 일격 → 해부의 일격 → 봉인된 수은.
+        private static EnemyDefinition EnsureAbelMoreau(StatusEffectDefinition bleed, StatusEffectDefinition poison)
+        {
+            var e = LoadOrCreate<EnemyDefinition>(EnemyDir, "Enemy_검시관아벨모로");
+            e.Id = "enemy.boss.abel_moreau";
+            e.DisplayName = "검시관 아벨 모로";
+            e.Size = EnemySize.Boss;
+            e.TypeTag = "인간형";
+            e.MaxHP = 180;
+            e.Speed = 58;
+            e.PhysicalAttack = 18;
+            e.MagicAttack = 24;
+            e.PhysicalDefense = 6;
+            e.MagicDefense = 10;
+            e.SlotCount = 4;
+            e.SlotSuccessRate = 0.32f;
+            e.HasEvasionState = false;
+            e.Targeting = EnemyTargeting.Random;
+            e.DeploymentAct = "1막";
+            e.FixedRewardCent = 180;
+            e.FixedRewardExp = 100;
+            e.BlocksEscape = true;
+            e.KeyItemRewards = new[] { "검시 기록", "붉은 룬 조각" };
+            e.TraitDescription = "폐검시소의 검시관. 해부의 일격 → 해부의 일격 → 봉인된 수은을 반복한다. HP 60% 이하가 되면 금지된 봉합(자가 회복)을 예고 — 1.2배 이상 공격 기술로 저지.";
+
+            var dissect = new EnemyAction { Name = "해부의 일격", Kind = EnemyActionKind.Attack, Coefficient = 1.0f, OnCritStatuses = new[] { bleed },
+                Description = "물리 1.0A 단일. 크리티컬이면 약한 출혈 3턴." };
+            var mercury = new EnemyAction { Name = "봉인된 수은", Kind = EnemyActionKind.AreaAttack, Coefficient = 0.8f, UsesMagic = true, OnCritStatuses = new[] { poison },
+                Description = "마법 0.8M 모든 아군. 크리티컬이면 중독 1스택." };
+            e.Pattern = new[] { dissect, dissect, mercury };
+            e.Thresholds = new[]
+            {
+                new EnemyThresholdAction
+                {
+                    HpRatio = 0.6f,
+                    Announce = new EnemyAction { Name = "금지된 봉합", Kind = EnemyActionKind.Announce, Description = "다음 행동이 자가 HP 30 회복임을 예고." },
+                    FollowUp = new EnemyAction { Name = "봉합 회복", Kind = EnemyActionKind.SelfHeal, HealAmount = 30, Description = "자가 HP 30 회복." },
+                    CancelMinCoefficient = 1.2f,
+                },
+            };
             EditorUtility.SetDirty(e);
             return e;
         }

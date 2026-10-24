@@ -1,10 +1,10 @@
+using System;
 using UnityEngine;
 
 namespace Fantasia.Data
 {
     // 적 정의 (System.md "적" 절 — 소형/중형/대형/보스 공통 스키마).
-    // 보스는 BossSkills만 채우고 Traits는 비워둬도 된다 (보스는 패턴표로 별도 관리,
-    // D14~D16에서 BossDefinition으로 확장 예정).
+    // 보스는 Pattern(반복 기술)·Thresholds(HP 임계치 1회 예고)를 채운다 (D14 — 별도 클래스 없이 같은 스키마).
     [CreateAssetMenu(fileName = "Enemy", menuName = "Fantasia/Data/Enemy Definition")]
     public class EnemyDefinition : ScriptableObject
     {
@@ -47,5 +47,16 @@ namespace Fantasia.Data
         [Header("보상 (System.md 수입·가격 책정 근거) — 0이면 크기별 기본값")]
         public int FixedRewardCent; // 보스·인조 그림자 사신처럼 정해진 값 (예: 검시관 180)
         public int FixedRewardExp;
+
+        [Header("보스 (System.md 보스급) — 비우면 기본 공격만 쓰는 일반 적")]
+        public EnemyAction[] Pattern = Array.Empty<EnemyAction>();   // 순서대로 반복
+        public EnemyThresholdAction[] Thresholds = Array.Empty<EnemyThresholdAction>(); // 각 1회
+        // 주요 보스: 전투 전 몰래 지나가기·후퇴, 전투 중 퇴각·탈출권 불가 (System.md 조우 규칙)
+        public bool BlocksEscape;
+        // 처치 시 확정 획득하는 퀘스트 물건 (예: 검시 기록, 붉은 룬 조각)
+        public string[] KeyItemRewards = Array.Empty<string>();
+
+        public bool IsBoss => Size == EnemySize.Boss;
+        public bool HasPattern => Pattern != null && Pattern.Length > 0;
     }
 }

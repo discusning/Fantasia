@@ -43,6 +43,8 @@ namespace Fantasia.UI
         public event Action<BattleUnit> EnemyBarClicked;
         public event Action<Fantasia.Data.SkillDefinition> SkillChosen;
         public event Action<Fantasia.Data.ConsumableDefinition> ItemChosen;
+        // 보스 봉쇄 — 퇴각 버튼 비활성 (BattleController가 행동 메뉴 열 때마다 갱신)
+        public bool RetreatBlocked { get; set; }
 
         public bool UseFocus => _focusToggle != null && _focusToggle.isOn;
 
@@ -174,7 +176,7 @@ namespace Fantasia.UI
             _actorText.text = $"{actor.DisplayName}의 차례";
             _attackButton.interactable = actor.CanBasicAttack;
             _defendButton.interactable = true;
-            _retreatButton.interactable = true;
+            _retreatButton.interactable = !RetreatBlocked;
             _reviveButton.interactable = canRevive;
             _actionActor = actor;
             _skillButton.interactable = System.Linq.Enumerable.Any(actor.ActiveSkills());
@@ -588,10 +590,14 @@ namespace Fantasia.UI
         {
             var dim = UGUIKit.CreateImage(parent, "ResultRoot", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.5f));
             _resultPanel = dim.gameObject;
-            var panel = UGUIKit.CreateThemedPanel(dim.transform, "ResultCard", new Vector2(0.35f, 0.38f), new Vector2(0.65f, 0.66f), Gold, PanelFill, 2.5f);
-            _resultTitle = Label(panel, "Title", new Vector2(0.05f, 0.66f), new Vector2(0.95f, 0.95f), 26, TextAnchor.MiddleCenter, CritColor, bold: true);
-            _resultBody = Label(panel, "Body", new Vector2(0.06f, 0.3f), new Vector2(0.94f, 0.66f), 12, TextAnchor.MiddleCenter, TextLight, bold: false);
-            var button = UGUIKit.CreateThemedButton(panel, "Continue", new Vector2(0.3f, 0.07f), new Vector2(0.7f, 0.25f), "보드로 돌아가기", ButtonFill, 13);
+            var panel = UGUIKit.CreateThemedPanel(dim.transform, "ResultCard", new Vector2(0.32f, 0.27f), new Vector2(0.68f, 0.78f), Gold, PanelFill, 2.5f);
+            _resultTitle = Label(panel, "Title", new Vector2(0.05f, 0.82f), new Vector2(0.95f, 0.97f), 26, TextAnchor.MiddleCenter, CritColor, bold: true);
+            // 보상 줄이 많아도(아이템 3칸·퀘스트 물건·레벨 업) 잘리지 않게 글자 크기 자동 축소
+            _resultBody = Label(panel, "Body", new Vector2(0.06f, 0.19f), new Vector2(0.94f, 0.81f), 12, TextAnchor.MiddleCenter, TextLight, bold: false);
+            _resultBody.resizeTextForBestFit = true;
+            _resultBody.resizeTextMinSize = 8;
+            _resultBody.resizeTextMaxSize = 13;
+            var button = UGUIKit.CreateThemedButton(panel, "Continue", new Vector2(0.3f, 0.04f), new Vector2(0.7f, 0.15f), "보드로 돌아가기", ButtonFill, 13);
             button.GetComponentInChildren<Text>().color = TextLight;
             _resultButtonLabel = button.GetComponentInChildren<Text>();
             button.onClick.AddListener(() => _onResultContinue?.Invoke());
