@@ -6,14 +6,18 @@ namespace Fantasia.Board
     // Builds a flat-shaded hex prism as placeholder tile geometry (no art dependency).
     public static class HexMeshBuilder
     {
-        public static Mesh BuildFlatTopHexPrism(float radius, float height)
+        public static Mesh BuildFlatTopHexPrism(float radius, float height) => BuildHexPrism(radius, height, pointyTop: false);
+
+        // pointyTop: 꼭짓점이 위·아래 (월드맵처럼 행이 반 칸씩 어긋나는 배치)
+        public static Mesh BuildHexPrism(float radius, float height, bool pointyTop)
         {
+            float offset = pointyTop ? 30f : 0f;
             var vertices = new List<Vector3>();
             var triangles = new List<int>();
 
             Vector3 Corner(int i, float y)
             {
-                float angle = Mathf.Deg2Rad * (60f * i);
+                float angle = Mathf.Deg2Rad * (60f * i + offset);
                 return new Vector3(radius * Mathf.Cos(angle), y, radius * Mathf.Sin(angle));
             }
 

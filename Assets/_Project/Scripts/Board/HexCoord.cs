@@ -45,6 +45,14 @@ namespace Fantasia.Board
             return new Vector3(x, 0f, z);
         }
 
+        // Pointy-top axial (월드맵 — 행 A가 위(+z), 아래로 갈수록 −z).
+        public Vector3 ToWorldPositionPointy(float size)
+        {
+            float x = size * Mathf.Sqrt(3f) * (Q + R / 2f);
+            float z = -size * 1.5f * R;
+            return new Vector3(x, 0f, z);
+        }
+
         public static HexCoord operator +(HexCoord a, HexCoord b) => new HexCoord(a.Q + b.Q, a.R + b.R);
 
         public bool Equals(HexCoord other) => Q == other.Q && R == other.R;

@@ -1,3 +1,4 @@
+using System.Linq;
 using Fantasia.Board;
 using Fantasia.UI;
 using UnityEditor;
@@ -25,9 +26,24 @@ namespace Fantasia.Editor
                 return;
             }
 
-            controller.GetComponent<HexBoard>().Generate();
+            var board = controller.GetComponent<HexBoard>();
+            board.Generate();
             controller.SpawnToken();
             controller.BuildTestParty();
+
+            // 월드맵: 전체 지도 한 장 (위에서 내려다봄) → 그다음 평소처럼 파티 토큰 따라가는 카메라
+            if (board.UsesWorldMap)
+            {
+                var rot = cam.transform.rotation;
+                var bounds = new Bounds(board.Tiles.First().transform.position, Vector3.zero);
+                foreach (var t in board.Tiles) bounds.Encapsulate(t.transform.position);
+                cam.transform.rotation = Quaternion.Euler(70f, 0f, 0f);
+                cam.transform.position = bounds.center - cam.transform.forward * 62f;
+                EditorScreenshotUtility.Capture(cam, "board_worldmap_overview.png");
+                cam.transform.rotation = rot;
+                var token = GameObject.Find("Token");
+                if (token != null) Fantasia.Board.BoardCameraRig.Attach(cam, token.transform);
+            }
 
             var hud = PartyHudPanel.Instance;
             if (hud == null)

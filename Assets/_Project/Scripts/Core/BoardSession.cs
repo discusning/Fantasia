@@ -27,6 +27,9 @@ namespace Fantasia.Core
         public HexCoord PlayerPosition { get; set; }
         public HashSet<HexCoord> ClearedEncounters { get; } = new HashSet<HexCoord>();
         public HexCoord? PendingEncounterCoord { get; set; }
+        // 월드맵: 시작 위치를 정했는지 (처음이면 런던 거점 S05에서 시작), 이미 쓴 회복·보물 칸
+        public bool HasPlayerPosition { get; set; }
+        public HashSet<HexCoord> UsedMapTiles { get; } = new HashSet<HexCoord>();
 
         // 보드·전투가 같이 쓰는 3인 파티 (HP·집중력 등이 씬을 넘어 유지된다).
         public Fantasia.Data.Party Party { get; set; }
@@ -68,6 +71,8 @@ namespace Fantasia.Core
             UsedWorldItemThisTurn.Clear();
             PendingLoot.Clear();
             ClearedEncounters.Clear();
+            UsedMapTiles.Clear();
+            HasPlayerPosition = false;
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
         }
 

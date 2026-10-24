@@ -1,74 +1,76 @@
-using System.Collections.Generic;
 using System.Linq;
 using Fantasia.Board;
 using Fantasia.Core;
+using Fantasia.Data;
 using UnityEditor;
 using UnityEngine;
 
 namespace Fantasia.Editor
 {
-    // Verifies the board reproduces identically across regenerations sharing
-    // a BoardSession seed, and that clearing an encounter actually sticks —
-    // this is what makes position/cleared-tile persistence across the
-    // board<->combat scene round trip meaningful (rather than the board just
-    // reshuffling every time the player leaves and comes back).
+    // 보드 ↔ 전투 씬을 오가도 보드 상태가 이어지는지 (확정 월드맵 기준, 2026-10-24 재작성):
+    // 다시 생성해도 같은 칸 배치, 적 칸 클리어 유지, 보스 처치 → 지역 출구 개방, 회복·보물 사용 기록 유지.
     public static class BoardSessionSelfTest
     {
         [MenuItem("Fantasia/Run Board Session Self-Test")]
         public static void Run()
         {
             BoardSession.EnsureExists();
+            var session = BoardSession.Instance;
+            session.ClearedEncounters.Clear();
+            session.UsedMapTiles.Clear();
+            int e = 0;
 
-            var layout1 = GenerateLayout();
-            var layout2 = GenerateLayout();
+            var first = Build(out var map);
+            if (map == null) { Debug.LogError("[BoardSession] 월드맵 자산 없음"); return; }
+            int tileCount = first.Tiles.Count();
+            var enemyCoord = map.TileAt("P04").Coord;
+            var enemyBefore = first.TryGetTile(enemyCoord, out var t0) ? t0.Enemy : null;
+            Object.DestroyImmediate(first.gameObject);
 
-            bool identical = layout1.Count == layout2.Count &&
-                              layout1.All(kv => layout2.TryGetValue(kv.Key, out var other) && other == kv.Value);
+            // 1) 다시 만들어도 같은 배치·같은 적
+            var second = Build(out _);
+            e += Check(second.Tiles.Count() == tileCount, $"재생성 칸 수 {tileCount}");
+            e += Check(second.TryGetTile(enemyCoord, out var t1) && t1.Enemy == enemyBefore && enemyBefore != null, "P04 적 칸의 적이 매번 같음");
+            e += Check(second.TryGetTile(map.TileAt("K12").Coord, out var exit) && exit.IsBlocked, "보스 처치 전 K12 출구 잠김");
+            Object.DestroyImmediate(second.gameObject);
 
-            Debug.Log(identical
-                ? $"[BoardSession] 통과 — 같은 시드로 재생성한 보드 {layout1.Count}개 타일 전부 동일"
-                : "[BoardSession] 실패 — 재생성된 보드가 이전과 다름");
+            // 2) 클리어·보스 처치·회복 사용 후 다시 생성
+            session.ClearedEncounters.Add(enemyCoord);
+            session.ClearedEncounters.Add(map.TileAt("M11").Coord); // 런던 보스
+            session.UsedMapTiles.Add(map.TileAt("S16").Coord);
+            var third = Build(out _);
+            e += Check(third.TryGetTile(enemyCoord, out var t2) && t2.IsCleared, "P04 클리어 유지");
+            e += Check(third.TryGetTile(map.TileAt("K12").Coord, out var exit2) && !exit2.IsBlocked, "런던 보스 처치 → K12 개방");
+            e += Check(third.TryGetTile(map.TileAt("K26").Coord, out var exit3) && exit3.IsBlocked, "베르사유 출구 K26은 그대로 잠김");
+            e += Check(third.TryGetTile(map.TileAt("S16").Coord, out var rec) && rec.IsUsed, "회복 칸 S16 사용 기록 유지");
+            var reach = third.ComputeReachability(map.TileAt("L11").Coord, 2);
+            e += Check(reach.Contains(map.TileAt("J12").Coord), "열린 출구로 L11 → J12 (베르사유) 이동 가능");
+            Object.DestroyImmediate(third.gameObject);
 
-            var encounterCoord = layout1.FirstOrDefault(kv => kv.Value == TileState.Encounter).Key;
-            BoardSession.Instance.ClearedEncounters.Add(encounterCoord);
-
-            var boardGO = new GameObject("BoardSessionSelfTest_Board3");
-            var board3 = boardGO.AddComponent<HexBoard>();
-            board3.Generate();
-            bool found = board3.TryGetTile(encounterCoord, out var clearedTile);
-            // Evaluate before destroying — a destroyed Object compares equal
-            // to null in Unity's overload, which would otherwise make this
-            // look like a failure regardless of the real result.
-            bool clearedCorrectly = found && clearedTile != null && clearedTile.IsEncounter && clearedTile.IsCleared;
-            Object.DestroyImmediate(boardGO);
-            Debug.Log(clearedCorrectly
-                ? $"[BoardSession] 통과 — {encounterCoord} 클리어 처리 후 재생성해도 클리어 상태 유지됨"
-                : $"[BoardSession] 실패 — {encounterCoord} 클리어 상태가 반영되지 않음");
+            session.ClearedEncounters.Clear();
+            session.UsedMapTiles.Clear();
+            if (e == 0) Debug.Log("[BoardSession] 통과 — 월드맵 재생성·클리어·출구 개방·사용 기록 유지");
+            else Debug.LogError($"[BoardSession] {e}건 실패");
         }
 
-        private enum TileState { Base, Blocked, Encounter }
-
-        private static Dictionary<HexCoord, TileState> GenerateLayout()
+        private static HexBoard Build(out WorldMapData map)
         {
-            var boardGO = new GameObject("BoardSessionSelfTest_Board");
-            var board = boardGO.AddComponent<HexBoard>();
+            var go = new GameObject("BoardSessionSelfTest_Board");
+            var board = go.AddComponent<HexBoard>();
+            board.MapAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(WorldMapSelfTest.MapPath);
+            board.EncounterEnemyPool = new[] { "Enemy_그림자사냥개", "Enemy_연성독거미유체", "Enemy_역병쥐", "Enemy_가고일유체" }
+                .Select(n => AssetDatabase.LoadAssetAtPath<EnemyDefinition>($"Assets/_Project/Data/Enemies/{n}.asset"))
+                .Where(x => x != null).ToArray();
             board.Generate();
+            map = board.Map;
+            return board;
+        }
 
-            var layout = new Dictionary<HexCoord, TileState>();
-            for (int q = -4; q <= 4; q++)
-            {
-                int r1 = Mathf.Max(-4, -q - 4);
-                int r2 = Mathf.Min(4, -q + 4);
-                for (int r = r1; r <= r2; r++)
-                {
-                    var coord = new HexCoord(q, r);
-                    if (!board.TryGetTile(coord, out var tile)) continue;
-                    layout[coord] = tile.IsBlocked ? TileState.Blocked : tile.IsEncounter ? TileState.Encounter : TileState.Base;
-                }
-            }
-
-            Object.DestroyImmediate(boardGO);
-            return layout;
+        private static int Check(bool ok, string label)
+        {
+            if (ok) return 0;
+            Debug.LogError($"[BoardSession] 실패: {label}");
+            return 1;
         }
     }
 }

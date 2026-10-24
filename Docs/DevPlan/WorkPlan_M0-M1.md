@@ -143,7 +143,7 @@ M1 종료 기준: **임시 이미지로 이동 → 조우 → 전투 → 보상 
 
 ## 6. 기획에 요청/확인할 것
 
-1. **P13 런던 노드 초안** — 실제 보드 맵(현재 랜덤 헥스). D05 완료 조건.
+1. ~~P13 런던 노드 초안~~ → **월드맵 수신 (2026-10-24)**: `Docs/Planning/WorldMap.md` — 3지역 720칸. 칸 배치 옮겨 적기·검산 완료(Data/Boards/WorldMap.txt). 남은 것: 적 칸 구성. 계획: `MapUpdatePlan.md`. D05 완료 조건.
 2. **P01~P04 ID 양식·데이터 입력 방식** — ScriptableObject 그대로 갈지, 표(CSV/시트) → 임포트로 갈지. D03 완료 조건 "기획자가 코드 수정 없이 수치 수정".
 3. **턴 변화(돌격·방해함·초기화) 확정** — D09.
 4. ~~3인 파티의 보드 표현~~ → **해결 (2026-10-24)**: 파티장(1번) 1인 이동, [아군 턴]→[적 턴] — `Docs/Planning/Decisions.md`
@@ -154,7 +154,7 @@ M1 종료 기준: **임시 이미지로 이동 → 조우 → 전투 → 보상 
 9. **관통 후 남은 방어력 반올림** — 방어 5, 관통 50% → 2(내림)로 가정 중 (`AttackResolver.NormalDamage`).
 10. **승리·퇴각으로 끝난 전투에서 쓰러져 있던 아군** — System.md에 없음. LP 1로 HP 30% 복귀(없으면 영구 사망)로 가정 (`DefeatRules.PostBattleReviveHpRatio`).
 11. **가고일 공격력 −3 기간**(2턴 가정)·**적별 대상 선택 규칙**(기본 무작위, `EnemyDefinition.Targeting`).
-12. **보드 상단 UI·턴 구조 후속 6건** (2026-10-24 전달) — ~~사신 이동 예외~~·~~파티장 사망 승계~~ (해결, 사신 4마리·3아군 턴·1마리 처치 종료)·~~S 경고 연출~~(붉은 하늘)·~~상단 UI 배치~~(확정)·지역 구분·~~상점 재고~~(도시 설계안·판매표 수신 — City.md, City_Shop.md)·피의 사냥 정리 수신. 목록: `Docs/Planning/Decisions.md`
+12. **보드 상단 UI·턴 구조 후속 6건** (2026-10-24 전달) — ~~사신 이동 예외~~·~~파티장 사망 승계~~ (해결, 사신 4마리·3아군 턴·1마리 처치 종료)·~~S 경고 연출~~(붉은 하늘)·~~상단 UI 배치~~(확정)·~~지역 구분~~(월드맵 — WorldMap.md)·~~상점 재고~~(도시 설계안·판매표 수신 — City.md, City_Shop.md)·피의 사냥 정리 수신. 목록: `Docs/Planning/Decisions.md`
 
 ## 진행 기록
 - 2026-10-22: 단계 1(D10) 코드 작성 — `Combat/AttackResolver.cs`, `Editor/AttackResolverSelfTest.cs`, 스키마 보강(`StatBlock` 연산·`StatKind`, 무기 `WearStatBonus`/`MaxMPBonus`, 계열별 참조 스탯·관통률, `PartyMember.FinalStats`/`TrySpendFocus`, `SlotCheck.RollWithChance`/`AllSuccessProbability`). 시드 수정: 역병 의사 맨손 공격력 0 → 4 (System.md 기준). 배치 모드 컴파일 + 셀프테스트 6종 통과. **에디터 확인·커밋 전.**
@@ -174,3 +174,4 @@ M1 종료 기준: **임시 이미지로 이동 → 조우 → 전투 → 보상 
 - 2026-10-24: 기획 결정 반영 — 보드 파티장(1번) 1인 이동, 월드 턴 [아군 턴]→[적 턴](WorldClock 재작성, 처음으로 보드에 연결: 아군 턴 주사위 1회·이동·칸 처리 후 자동 종료 → 적 턴 → 라운드 +1), 상단 아군/적 턴 표시(WorldPhaseIndicator, UITheme 교체), Party.Leader, 조우 참가 범위(EncounterParticipation)·성급함의 기도 삭제, 중독 보드 피해 아군 턴 시작 1회. 결정·임시 결정 기록: Docs/Planning/Decisions.md.
 - 2026-10-24: 보드 상단 UI 교체 — 보드게임 16종 조사(Docs/References/BoardTurnUI_Research_2026-10-24.md) 후 "페이즈 시계 + 위협 트랙" 채택. BoardTopBar: 파티장 초상·이름 / 피의 흔적 G 10칸 / 아군·적 턴 시계(가운데 라운드) / 영혼 수확 S(25·50·75 눈금) / Cent / 지역명 배너, 턴 전환 시 가운데 큰 배너. WorldPhaseIndicator 삭제. G·S 값은 BoardSession 표시만 — 증가는 D24·D25. 그림은 UITheme(TopBarFrame·PhaseDial*·ThreatNotch·RegionBanner·*TurnBanner).
 - 2026-10-24: **D17 인벤토리·소모품 + D19 승리 보상** (참고: FTK 인벤토리 스크린샷 11번) — 스키마: ArmorDefinition(방어구·장신구)·ConsumableDefinition·GearItem(전리품 등급 환산·가격)·PartyInventory(파티 공용)·ItemCatalog(Resources). 데이터: 무기 36(일반 30+고유 6)·방어구/장신구 17·소모품 29 (Editor/ItemDataSeed — 에이전트 작성). 장비 5칸 착용(무기·몸통·머리·반지·목걸이)이 능력치·방어·최대 HP/MP·집중에 반영, 착용 레벨·계열 제한. 보상: Combat/LootRules — 슬롯 15/50/25/10(보스 4), 종류표 16종, 무기 70/30 계열 규칙, 등급 50/30/15/2/1/2, 크기별 Cent·경험치. 소모품 효과: Items/ConsumableRules — 회복·정화·성수·화염병·탈출권·연막병·야영·월계관. 전투: 소모품 메뉴·퀵 슬롯(행동 1회), 혼란 시 50% 회복약. 화면: UI/InventoryPanel(비교 카드 2장 + 장비 5칸 + 3D 초상 + 장비/소모품/보관함 목록, 장착·해제·버리기·사용·퀵 지정), 하단 카드 퀵 슬롯 아이콘·개수·클릭. 구 9월 아이템 시스템(ItemDefinition·LootTable·StatusInventoryPanel·CharacterDefinition) 삭제. 검증: ItemSelfTest(등급 환산·착용·상한·소모품·전리품 분포 20000회) + 전체 셀프 테스트 통과, 빌드 자동 플레이로 전투 붕대 사용·보상·장착(방어 6→9, 최대 HP 108→120) 확인. 기존 BoardSessionSelfTest "(0,0) 클리어" 1건 실패 — 9월 테스트, 이번 변경과 무관(보드 생성 미수정), 확인 필요. 임시값: Decisions.md.
+- 2026-10-24: **월드맵 적용 (D05)** — 기획 월드맵(PDF)을 `Data/Boards/WorldMap.txt` 글자 격자로 옮겨 검산(칸 수·지역 칸 수·거리 19곳 일치). `Board/WorldMapData`(좌표 변환·지역·거리), HexBoard 월드맵 생성(720칸 pointy-top), `BoardCameraRig`(따라가기·WASD·줌), S05 시작, 적 칸 클리어, 보스 처치 → 출구 개방(보스는 임시 소형 3마리), 회복·보물 칸 임시 규칙, 상단 바 지역 이름·전리품 장비 레벨. BoardSessionSelfTest 재작성, WorldMapSelfTest 추가. 계획·진행: `MapUpdatePlan.md`.

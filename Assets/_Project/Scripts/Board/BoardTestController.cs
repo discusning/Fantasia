@@ -68,10 +68,12 @@ namespace Fantasia.Board
             DialoguePanel.EnsureExists();
             EncounterPanel.EnsureExists();
             _board = GetComponent<HexBoard>();
+            PlaceAtStartIfNew();
             _currentCoord = BoardSession.Instance.PlayerPosition;
             _lastSafeCoord = _currentCoord;
             BuildTestParty();
             SpawnToken();
+            if (Camera.main != null && _board.UsesWorldMap) BoardCameraRig.Attach(Camera.main, _token);
             PlaceLandmarks();
             HookInventory();
 
@@ -127,8 +129,22 @@ namespace Fantasia.Board
             return new[] { TestHeroJob };
         }
 
+        // 월드맵 처음 시작: 런던 거점 S05 (WorldMap.md)
+        private void PlaceAtStartIfNew()
+        {
+            BoardSession.EnsureExists();
+            var session = BoardSession.Instance;
+            if (!_board.UsesWorldMap || session.HasPlayerPosition) return;
+            session.PlayerPosition = _board.Map.TileAt(StartHubLabel).Coord;
+            session.LastSafeCoord = session.PlayerPosition;
+            session.HasPlayerPosition = true;
+        }
+
+        private const string StartHubLabel = "S05";
+
         private void PlaceLandmarks()
         {
+            if (_board.UsesWorldMap) return; // 확정 맵에는 임시 지형지물을 놓지 않음
             for (int i = 0; i < PlaceholderLandmarks.Length && i < LandmarkOffsets.Length; i++)
             {
                 if (!_board.TryGetTile(LandmarkOffsets[i], out var tile)) continue;
@@ -147,6 +163,11 @@ namespace Fantasia.Board
         public void SpawnToken()
         {
             _board ??= GetComponent<HexBoard>();
+            if (_board.UsesWorldMap)
+            {
+                PlaceAtStartIfNew();
+                _currentCoord = BoardSession.Instance.PlayerPosition;
+            }
 
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "Token";
@@ -167,10 +188,13 @@ namespace Fantasia.Board
             return _board.CoordToWorld(coord) + Vector3.up * (_board.TileHeight + tokenRadius);
         }
 
+        private static int ZoneWearLevel(int region) => region switch { 1 => 4, 2 => 7, _ => 1 };
+
         // 보드 상단 바 갱신 — 턴 전환 때는 announce로 가운데 전환 배너.
         private void RefreshTopBar(bool announce)
         {
             var session = BoardSession.Instance;
+            if (_board != null && _board.UsesWorldMap && _board.Map.RegionName(_currentCoord) is string regionName) session.RegionName = regionName;
             BoardTopBar.EnsureExists().Refresh(Clock.Phase, Clock.WorldRound, Leader, session.BloodTrail, session.SoulHarvest,
                 _testParty != null ? _testParty.Cent : 0, session.RegionName, announce);
         }
@@ -328,9 +352,44 @@ namespace Fantasia.Board
                 yield break;
             }
 
+            HandleMapTile(landedTile);
+
             // 이벤트 칸 추가 이동이 생기면 한 번 더 움직이고, 아니면 아군 턴 종료.
             if (!TryGrantEventBonusMove(landedTile)) StartCoroutine(EndAllyTurn());
         }
+
+        // 월드맵 특수 칸 도착 처리 — 회복·보물은 칸마다 1회 (☆ 개발 임시: 기획 규칙 대기, WorldMap.md)
+        private void HandleMapTile(HexTile tile)
+        {
+            if (tile == null || !_board.UsesWorldMap) return;
+            var session = BoardSession.Instance;
+            switch (tile.MapKind)
+            {
+                case MapTileKind.Hub:
+                    _encounterResultMessage = $"{tile.MapLabel} — 안전 지대 (상점·서비스는 준비 중)";
+                    break;
+                case MapTileKind.Recovery when !tile.IsUsed:
+                    foreach (var m in _testParty.AliveMembers) m.Heal(Mathf.CeilToInt(m.MaxHP * RecoveryTileHpRatio));
+                    session.UsedMapTiles.Add(tile.Coordinate);
+                    tile.SetUsed(true);
+                    _encounterResultMessage = $"{tile.MapLabel} — 파티 HP {RecoveryTileHpRatio * 100f:0}% 회복 (임시 규칙)";
+                    ItemAcquiredToast.Show("회복 칸: 파티 HP 회복");
+                    break;
+                case MapTileKind.Treasure when !tile.IsUsed:
+                    var drop = Fantasia.Combat.LootRules.RollDrop(_testParty, ItemCatalog.Current, new System.Random());
+                    session.UsedMapTiles.Add(tile.Coordinate);
+                    tile.SetUsed(true);
+                    if (drop.HasValue)
+                    {
+                        if (!Fantasia.Combat.LootRules.TryAdd(_testParty.Inventory, drop.Value)) session.PendingLoot.Add(drop.Value);
+                        _encounterResultMessage = $"{tile.MapLabel} — {drop.Value.Name} 획득 (임시 규칙)";
+                        ItemAcquiredToast.Show($"보물: {drop.Value.Name}");
+                    }
+                    break;
+            }
+        }
+
+        private const float RecoveryTileHpRatio = 0.3f;
 
         // 조우한 적 + 같은 구역 소형 적 1마리 (프로토타입 편성 — 실제 조우 조합은 D13·P06 기획).
         // 기습 성공/실패는 BattleQueue가 첫 라운드 순서에 반영한다. 전투가 이 아군 턴의 마지막 행동.
@@ -340,7 +399,11 @@ namespace Fantasia.Board
             var pool = _board.EncounterEnemyPool;
             var forced = System.Array.Find(pool, e => e != null && e.Id == DevForcedEnemyId);
             setup.Enemies.Add(forced != null ? forced : _pendingEnemy);
-            if (pool.Length > 0) setup.Enemies.Add(forced != null ? forced : pool[Random.Range(0, pool.Length)]);
+            // 보스 칸: 보스 데이터(D14) 전까지 소형 적 3마리로 대신 — 처치하면 지역 출구가 열린다
+            int extra = _board.TryGetTile(_currentCoord, out var here) && here.IsBoss ? 2 : 1;
+            for (int i = 0; i < extra && pool.Length > 0; i++) setup.Enemies.Add(forced != null ? forced : pool[Random.Range(0, pool.Length)]);
+            // 전리품 장비 레벨 = 지역 (런던 1 · 베르사유 4 · 로마 7)
+            if (_board.UsesWorldMap) Fantasia.Combat.LootRules.CurrentZoneWearLevel = ZoneWearLevel(_board.Map.RegionOf(_currentCoord));
             var session = BoardSession.Instance;
             session.PendingBattle = setup;
             session.PendingEncounterCoord = _currentCoord;
@@ -423,14 +486,15 @@ namespace Fantasia.Board
             if (!_awaitingSelection) return;
             var encounters = new List<HexCoord>();
             foreach (var tile in _board.Tiles)
-                if (tile.IsEncounter && !tile.IsCleared && tile.Enemy != null) encounters.Add(tile.Coordinate);
+                if (tile.IsEncounter && !tile.IsCleared && tile.Enemy != null && !tile.IsBoss) encounters.Add(tile.Coordinate);
 
+            // 장애물을 돌아가는 실제 이동 거리로 가장 가까운 적 칸 쪽
+            var field = _board.DistanceField(encounters);
             HexCoord best = _currentCoord;
             int bestDistance = int.MaxValue;
             foreach (var coord in _reachability.ReachableTiles)
             {
-                int d = int.MaxValue;
-                foreach (var e in encounters) d = Mathf.Min(d, coord.DistanceTo(e));
+                int d = field.TryGetValue(coord, out int v) ? v : int.MaxValue;
                 if (d < bestDistance) { bestDistance = d; best = coord; }
             }
             MoveTo(best);
@@ -445,7 +509,7 @@ namespace Fantasia.Board
             GUI.Label(new Rect(10, top + 10, 420, 24), $"{rollHint}   (파티장: {Leader?.Job.DisplayName ?? "-"})");
             if (_awaitingSelection)
             {
-                GUI.Label(new Rect(10, top + 34, 400, 24), "초록 타일을 클릭해서 이동 (주황 = 인카운터, 보라 = 이벤트)");
+                GUI.Label(new Rect(10, top + 34, 700, 24), "초록 칸 클릭: 이동 · 주황 적 / 자주 보스 / 파랑 거점 / 보라 이벤트 / 초록 회복 / 노랑 보물");
             }
             else if (_isMoving)
             {
@@ -455,7 +519,7 @@ namespace Fantasia.Board
             {
                 GUI.Label(new Rect(10, top + 106, 400, 24), $"이벤트 칸 추가 이동: +{_lastEventBonus}칸 (이번 턴 1회)");
             }
-            GUI.Label(new Rect(10, top + 58, 400, 24), "Ctrl+우클릭: 지형지물 정보 확인");
+            GUI.Label(new Rect(10, top + 58, 600, 24), _board != null && _board.UsesWorldMap ? "카메라: WASD·방향키 이동, 휠 줌, F 파티로" : "Ctrl+우클릭: 지형지물 정보 확인");
             GUI.Label(new Rect(10, top + 82, 500, 24), "I 키·파티 초상 클릭: 인벤토리·장비 / 퀵 슬롯 클릭: 소모품 사용");
 
             if (!EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage))

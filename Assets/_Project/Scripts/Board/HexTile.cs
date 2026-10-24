@@ -12,6 +12,14 @@ namespace Fantasia.Board
         [SerializeField] private Color encounterColor = new Color(0.85f, 0.45f, 0.15f);
         [SerializeField] private Color clearedColor = new Color(0.45f, 0.65f, 0.55f);
         [SerializeField] private Color eventColor = new Color(0.55f, 0.35f, 0.85f);
+        // 월드맵 칸 종류 (Docs/Planning/WorldMap.md 범례 색과 비슷하게)
+        [SerializeField] private Color hubColor = new Color(0.25f, 0.5f, 0.9f);
+        [SerializeField] private Color bossColor = new Color(0.55f, 0.15f, 0.4f);
+        [SerializeField] private Color recoveryColor = new Color(0.2f, 0.65f, 0.4f);
+        [SerializeField] private Color treasureColor = new Color(0.85f, 0.65f, 0.2f);
+        [SerializeField] private Color exitLockedColor = new Color(0.3f, 0.18f, 0.32f);
+        [SerializeField] private Color exitOpenColor = new Color(0.7f, 0.55f, 0.75f);
+        [SerializeField] private Color usedColor = new Color(0.42f, 0.4f, 0.38f);
 
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -32,6 +40,24 @@ namespace Fantasia.Board
         // 실제 소형 4종 등 콘텐츠 채우기는 D13에서 진행 — 지금은 null 허용.
         public EnemyDefinition Enemy { get; private set; }
         public LandmarkDefinition Landmark { get; private set; }
+        // 월드맵 칸 종류 (랜덤 보드면 Walkable). 이름은 지점 표시용 (예: "S05 그리니치 거점").
+        public MapTileKind MapKind { get; private set; } = MapTileKind.Walkable;
+        public string MapLabel { get; private set; }
+        public bool IsBoss => MapKind == MapTileKind.Boss;
+        public bool IsUsed { get; private set; } // 회복·보물 칸을 이미 씀
+
+        public void SetMapKind(MapTileKind kind, string label)
+        {
+            MapKind = kind;
+            MapLabel = label;
+            RefreshColor();
+        }
+
+        public void SetUsed(bool used)
+        {
+            IsUsed = used;
+            RefreshColor();
+        }
         public bool IsLandmark => Landmark != null;
 
         // Set up directly from Initialize rather than Awake — HexBoard always
@@ -88,18 +114,24 @@ namespace Fantasia.Board
         // Encounter/cleared/landmark markers stay visible even while
         // highlighted reachable — they're points of interest, not something
         // a highlight overlay should hide.
-        // KNOWN GAP (2026-10-21, 사용자 피드백): 이 우선순위 때문에 인카운터/이벤트/
-        // 지형지물 타일은 "이동 가능(초록)" 신호를 아예 못 보여준다. 색 하나로 둘 다
-        // 표현하지 말고, 테두리 링 같은 별도 하이라이트 레이어로 분리하는 방향 검토할 것.
+        // 이동 가능 칸이 특수 칸이면 그 색과 초록을 섞어 둘 다 보이게 한다 (2026-10-21 피드백 반영).
+        // 나중에 아트가 들어오면 테두리 링 같은 별도 하이라이트 레이어로 바꾸면 된다.
         private void RefreshColor()
         {
-            Color color = IsBlocked ? blockedColor
+            Color color = MapKind == MapTileKind.Exit ? (IsBlocked ? exitLockedColor : (_isReachable ? reachableColor : exitOpenColor))
+                : IsBlocked ? blockedColor
+                : IsUsed ? usedColor
+                : MapKind == MapTileKind.Hub ? hubColor
+                : IsBoss && !IsCleared ? bossColor
+                : MapKind == MapTileKind.Recovery ? recoveryColor
+                : MapKind == MapTileKind.Treasure ? treasureColor
                 : IsCleared ? clearedColor
                 : IsEncounter ? encounterColor
                 : IsLandmark ? Landmark.AccentColor
                 : IsEventTile ? eventColor
                 : _isReachable ? reachableColor
                 : baseColor;
+            if (_isReachable && !IsBlocked && color != reachableColor) color = Color.Lerp(color, reachableColor, 0.55f);
             ApplyColor(color);
         }
 

@@ -61,6 +61,8 @@ namespace Fantasia.Editor
 
             var boardGO = new GameObject("BoardManager");
             var hexBoard = boardGO.AddComponent<HexBoard>();
+            // 확정 월드맵 (Docs/Planning/WorldMap.md)
+            hexBoard.MapAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(WorldMapSelfTest.MapPath);
             // 1막 소형 적 4종 (System.md 소형 적) — 인카운터 칸마다 이 중 하나.
             hexBoard.EncounterEnemyPool = System.Array.FindAll(new[]
             {

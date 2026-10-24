@@ -1,12 +1,13 @@
 using System.Collections.Generic;
+using System.Linq;
 using Fantasia.Core;
 using Fantasia.Data;
 using UnityEngine;
 
 namespace Fantasia.Board
 {
-    // Generates a placeholder hex-shaped board (no art dependency) and answers
-    // grid queries (lookup, movement range, pathing) for gameplay code to build on.
+    // 보드 생성 + 칸 질의(조회·이동 범위·경로). MapAsset(Data/Boards/WorldMap.txt)이 있으면 확정 월드맵
+    // (Docs/Planning/WorldMap.md, 720칸, pointy-top), 없으면 예전 무작위 육각 보드(셀프 테스트용).
     public class HexBoard : MonoBehaviour
     {
         [SerializeField] private int radius = 4;
@@ -21,6 +22,11 @@ namespace Fantasia.Board
         // 지금은 D04/D08 샘플(그림자 사냥개 1종)만 있어도 동작하게 설계. Assigned by
         // BoardTestSceneSetup.
         public EnemyDefinition[] EncounterEnemyPool = System.Array.Empty<EnemyDefinition>();
+
+        // 확정 월드맵 글자 격자. BoardTestSceneSetup이 넣는다.
+        public TextAsset MapAsset;
+        public WorldMapData Map { get; private set; }
+        public bool UsesWorldMap => Map != null;
 
         private readonly Dictionary<HexCoord, HexTile> _tiles = new Dictionary<HexCoord, HexTile>();
         private Material _tileMaterial;
@@ -50,6 +56,12 @@ namespace Fantasia.Board
             // and URP never supported) is what actually pays off once every
             // tile shares one mesh + material like this.
             _tileMaterial = new Material(Shader.Find("Standard")) { enableInstancing = true };
+
+            if (MapAsset != null)
+            {
+                GenerateFromMap();
+                return;
+            }
             // Every tile is the same size, so build the prism once and share
             // it — 61 tiles at radius 4 previously meant 61 identical meshes.
             var sharedMesh = HexMeshBuilder.BuildFlatTopHexPrism(tileSize - tileGap, tileHeight);
@@ -68,6 +80,114 @@ namespace Fantasia.Board
                     CreateTile(new HexCoord(q, r), sharedMesh, rng);
                 }
             }
+        }
+
+        // ── 확정 월드맵 ──
+        // 적 칸: 칸마다 정해진 적 (적 구성 기획 전까지 1막 소형 적 풀에서 좌표 기준 고정 추첨 — 다시 불러와도 같은 적).
+        // 보스 칸도 전투 칸 (보스 데이터는 D14). 잠긴 출구는 그 지역 보스를 잡기 전까지 막힘.
+        private void GenerateFromMap()
+        {
+            Map = WorldMapData.Parse(MapAsset.text);
+            var sharedMesh = HexMeshBuilder.BuildHexPrism(tileSize - tileGap, tileHeight, pointyTop: true);
+            var session = BoardSession.Instance;
+
+            foreach (var mapTile in Map.Tiles.Values)
+            {
+                var coord = mapTile.Coord;
+                var tile = SpawnTileObject(coord, sharedMesh, $"Hex {mapTile.Label}");
+                tile.SetMapKind(mapTile.Kind, MapTileName(mapTile));
+                switch (mapTile.Kind)
+                {
+                    case MapTileKind.Blocked:
+                        tile.SetBlocked(true);
+                        break;
+                    case MapTileKind.Exit:
+                        tile.SetBlocked(!IsExitOpen(coord));
+                        break;
+                    case MapTileKind.Enemy:
+                    case MapTileKind.Boss:
+                        var enemy = EncounterEnemyPool.Length > 0 ? EncounterEnemyPool[StableIndex(mapTile, EncounterEnemyPool.Length)] : null;
+                        tile.SetEncounter(enemy != null, enemy);
+                        if (session != null && session.ClearedEncounters.Contains(coord)) tile.SetCleared(true);
+                        break;
+                    case MapTileKind.Event:
+                        tile.SetEventTile(true);
+                        break;
+                    case MapTileKind.Recovery:
+                    case MapTileKind.Treasure:
+                        if (session != null && session.UsedMapTiles.Contains(coord)) tile.SetUsed(true);
+                        break;
+                }
+            }
+        }
+
+        // 그 지역 보스를 처치했으면 지역에 맞닿은 출구가 열린다.
+        public bool IsExitOpen(HexCoord exit)
+        {
+            var session = BoardSession.Instance;
+            if (Map == null || session == null) return false;
+            for (int d = 0; d < 6; d++)
+            {
+                int region = Map.RegionOf(exit.Neighbor(d));
+                if (region < 0) continue;
+                var boss = Map.TilesInRegion(region).FirstOrDefault(t => t.Kind == MapTileKind.Boss);
+                if (boss.Kind == MapTileKind.Boss && session.ClearedEncounters.Contains(boss.Coord)) return true;
+            }
+            return false;
+        }
+
+        private static int StableIndex(MapTile t, int count) => ((t.Row * 37 + t.Col * 101) % count + count) % count;
+
+        private string MapTileName(MapTile t)
+        {
+            int region = Map.RegionOf(t.Coord);
+            string regionName = region >= 0 ? WorldMapData.RegionDefs[region].name : null;
+            string kind = t.Kind switch
+            {
+                MapTileKind.Hub => t.Label switch { "S05" => "그리니치 거점", "F18" => "베르사유 궁전", "S31" => "제국 광장", _ => "거점" },
+                MapTileKind.Boss => t.Label switch { "M11" => "폐검시소", "I25" => "지하 예배당", "U35" => "고성 시험 시설", _ => "보스" },
+                MapTileKind.Enemy => "적",
+                MapTileKind.Event => "이벤트",
+                MapTileKind.Recovery => "회복",
+                MapTileKind.Treasure => "보물",
+                MapTileKind.Exit => "출구",
+                _ => null,
+            };
+            return kind == null ? t.Label : $"{t.Label} {(regionName != null ? regionName + " · " : "")}{kind}";
+        }
+
+        private HexTile SpawnTileObject(HexCoord coord, Mesh sharedMesh, string name)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = LocalPosition(coord);
+            go.AddComponent<MeshFilter>().sharedMesh = sharedMesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = _tileMaterial;
+            go.AddComponent<MeshCollider>().sharedMesh = sharedMesh;
+            var tile = go.AddComponent<HexTile>();
+            tile.Initialize(coord);
+            _tiles[coord] = tile;
+            return tile;
+        }
+
+        // 여러 칸에서 출발하는 이동 거리 (장애물·잠긴 출구 제외) — 자동 플레이가 막힌 길을 돌아가게.
+        public Dictionary<HexCoord, int> DistanceField(IEnumerable<HexCoord> sources)
+        {
+            var dist = new Dictionary<HexCoord, int>();
+            var queue = new Queue<HexCoord>();
+            foreach (var s in sources) { dist[s] = 0; queue.Enqueue(s); }
+            while (queue.Count > 0)
+            {
+                var c = queue.Dequeue();
+                for (int d = 0; d < HexCoord.Directions.Length; d++)
+                {
+                    var n = c.Neighbor(d);
+                    if (dist.ContainsKey(n) || !_tiles.TryGetValue(n, out var t) || t.IsBlocked) continue;
+                    dist[n] = dist[c] + 1;
+                    queue.Enqueue(n);
+                }
+            }
+            return dist;
         }
 
         private void CreateTile(HexCoord coord, Mesh sharedMesh, System.Random rng)
@@ -114,7 +234,9 @@ namespace Fantasia.Board
         public bool TryGetTile(HexCoord coord, out HexTile tile) => _tiles.TryGetValue(coord, out tile);
         public IEnumerable<HexTile> Tiles => _tiles.Values;
 
-        public Vector3 CoordToWorld(HexCoord coord) => transform.TransformPoint(coord.ToWorldPosition(tileSize));
+        public Vector3 CoordToWorld(HexCoord coord) => transform.TransformPoint(LocalPosition(coord));
+
+        private Vector3 LocalPosition(HexCoord coord) => UsesWorldMap ? coord.ToWorldPositionPointy(tileSize) : coord.ToWorldPosition(tileSize);
 
         // BFS over the tile graph (not straight-line distance) so blocked tiles
         // are respected and can't be cut through or landed on. Keeps parent
