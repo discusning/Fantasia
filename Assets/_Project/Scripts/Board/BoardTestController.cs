@@ -74,6 +74,7 @@ namespace Fantasia.Board
             DialoguePanel.EnsureExists();
             EncounterPanel.EnsureExists();
             CaseLogPanel.EnsureExists(new Vector2(-10f, -74f)); // 상단 바 바로 아래 오른쪽
+            BoardHintPanel.EnsureExists();
             _board = GetComponent<HexBoard>();
             _hasSave = SaveGame.HasSave;
             if (_board.UsesWorldMap) MusicPlayer.Play(MusicIds.FieldLondon); // 월드 복귀 시 지역 음악 (☆ 지역별 곡은 런던만 정의)
@@ -249,6 +250,7 @@ namespace Fantasia.Board
         private void LateUpdate()
         {
             if (BoardTopBar.Instance != null) RefreshTopBar(announce: false);
+            RefreshHint();
         }
 
         // ── D17 인벤토리: 초상 클릭·I 키로 창, 퀵 슬롯 클릭으로 월드 사용 ──
@@ -879,36 +881,21 @@ namespace Fantasia.Board
             MoveTo(best);
         }
 
-        private void OnGUI()
+        // 보드 왼쪽 안내 (BoardHintPanel — 예전 개발용 화면 글자를 대신, 다른 창이 열리면 숨김)
+        private void RefreshHint()
         {
-            if (InventoryPanel.IsOpen || Fantasia.UI.ShopPanel.IsOpen) return; // 개발용 안내 글자가 창 위에 겹치지 않게
-            float top = Screen.height * 0.13f; // 보드 상단 바·지역명 배너 아래
             string rollHint = Clock.Phase != WorldPhase.AllyTurn ? "적 턴 진행 중..."
-                : Clock.HasRolledThisTurn ? $"주사위: {_lastRoll}" : "Space로 주사위 굴리기";
-            GUI.Label(new Rect(10, top + 10, 420, 24), $"{rollHint}   (파티장: {Leader?.Job.DisplayName ?? "-"})");
-            if (_awaitingSelection)
-            {
-                GUI.Label(new Rect(10, top + 34, 700, 24), "초록 칸 클릭: 이동 · 주황 적 / 자주 보스 / 파랑 거점 / 보라 이벤트 / 초록 회복 / 노랑 보물");
-            }
-            else if (_isMoving)
-            {
-                GUI.Label(new Rect(10, top + 34, 400, 24), "이동 중...");
-            }
-            if (_lastEventBonus >= 0)
-            {
-                GUI.Label(new Rect(10, top + 106, 400, 24), $"이벤트 칸 추가 이동: +{_lastEventBonus}칸 (이번 턴 1회)");
-            }
-            GUI.Label(new Rect(10, top + 58, 600, 24), _board != null && _board.UsesWorldMap ? "카메라: WASD·방향키 이동, 휠 줌, F 파티로" : "Ctrl+우클릭: 지형지물 정보 확인");
-            GUI.Label(new Rect(10, top + 82, 600, 24), "I 키·파티 초상 클릭: 인벤토리·장비 / 퀵 슬롯 클릭: 소모품 사용" + (OnHubTile ? " / B: 상점" : "") + (_hasSave && DevLoadAllowed ? " / F9: 불러오기(개발)" : "") + (SaveGame.LastError != null ? " / 저장 실패!" : ""));
-
-            if (!EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage))
-            {
-                GUI.Label(new Rect(10, top + 130, 600, 24), _encounterResultMessage);
-            }
-            if (!string.IsNullOrEmpty(_worldMessage))
-            {
-                GUI.Label(new Rect(10, top + 154, 700, 24), "턴 시작: " + _worldMessage);
-            }
+                : Clock.HasRolledThisTurn ? $"주사위: {_lastRoll}" : "Space: 주사위 굴리기";
+            BoardHintPanel.Set(
+                $"<b>{rollHint}</b>   <color=#A39C92>파티장 {Leader?.Job.DisplayName ?? "-"}</color>",
+                _awaitingSelection ? "밝은 칸 클릭: 이동" : _isMoving ? "이동 중..." : null,
+                _lastEventBonus >= 0 ? $"이벤트 칸 추가 이동 +{_lastEventBonus}칸 (이번 턴 1회)" : null,
+                "<color=#A39C92>주황 적 · 자주 보스 · 파랑 거점 · 보라 이벤트 · 초록 회복 · 노랑 보물</color>",
+                "<color=#A39C92>I·초상 클릭: 인벤토리 · Q: 사건 기록" + (OnHubTile ? " · B: 상점" : "") + (_hasSave && DevLoadAllowed ? " · F9: 불러오기(개발)" : "") + "</color>",
+                _board != null && _board.UsesWorldMap ? "<color=#A39C92>카메라: WASD·방향키, 휠 줌, F 파티로</color>" : null,
+                SaveGame.LastError != null ? "<color=#E0675A>저장 실패</color>" : null,
+                !EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage) ? _encounterResultMessage : null,
+                !string.IsNullOrEmpty(_worldMessage) ? "턴 시작: " + _worldMessage : null);
         }
     }
 }

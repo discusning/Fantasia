@@ -24,6 +24,7 @@ namespace Fantasia.Core
         private static void Boot()
         {
             if (!Environment.GetCommandLineArgs().Contains("-autoplay")) return;
+            if (!Application.isEditor && !Debug.isDebugBuild && !Environment.GetCommandLineArgs().Contains("-autoplay-release")) return; // 배포 빌드는 명시할 때만 (QA)
             // 자동 플레이는 사용자 저장을 건드리지 않게 별도 파일 (매번 새로)
             SaveGame.FileName = "save_autoplay.json";
             if (SaveGame.HasSave) File.Delete(SaveGame.SavePath);
