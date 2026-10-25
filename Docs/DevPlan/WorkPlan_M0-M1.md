@@ -183,3 +183,4 @@ M1 종료 기준: **임시 이미지로 이동 → 조우 → 전투 → 보상 
 - 2026-10-25: **1막 보스전 수정 요청서 적용 (Boss_Abel_v1.0)** — 수치·수은 중독·봉합 방해·예고 UI(`BattleHud`)·등장 연출·음악 재생기(`MusicPlayer`, 곡 대기)·확정 대사·막 전환(`ActOneStory`)·사건 기록 창(`CaseLogPanel`)·베르사유/로마 보스 잠금·레벨 경고(`ConfirmPanel`). 스토리 플래그·퀘스트 저장. 셀프 테스트 17종 통과.
 - 2026-10-25: **D27 저장 확정안 적용 (Save.md 1~7)** — `GameRandom`(저장되는 게임 난수), `SaveGame.Checkpoint`(확정 → 저장 → 표시, 15개 지점), 회차 종료(`EndRun`·종료 회차 목록), `BattleSnapshot`·`BattleController.Save`(전투 중 저장·확정 행동 재실행), 이어하기 정보·새 게임 확인, F9 개발 전용·배포 빌드. 강제 종료 재현 자동 플레이(`-autoplay-snap-at`·`-autoplay-resume`)로 주사위·전투 결과 동일 확인.
 - 2026-10-25: **플레이테스트 기록 (D29 일부)** — `Core/PlaytestLog`(battles.csv·economy.csv, 엑셀용 UTF-8), `BattleController.Log`, 상점·보드 Cent 기록, 메뉴 `Fantasia/Playtest/Open Log Folder`. 실행 빌드로 확인.
+- 2026-10-25: **전체 통플레이 점검** — 자동 플레이 `-autoplay-full`(새 게임 → 탐험 → 보스 → 보고 → 클리어). 시드 3개 모두 1막 클리어, 오류 0건. 밸런스 관찰은 진행일지 10/25.

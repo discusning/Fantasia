@@ -65,11 +65,155 @@ namespace Fantasia.Core
 
             if (args.Contains("-autoplay-resume")) yield return ResumeRun();
             else if (args.Contains("-autoplay-menu")) yield return MenuRun();
+            else if (args.Contains("-autoplay-full")) yield return FullRun();
             else yield return Play();
 
             File.WriteAllText(Path.Combine(_outDir, "autoplay_log.txt"), _log.ToString(), Encoding.UTF8);
             yield return new WaitForSeconds(0.5f);
             Application.Quit();
+        }
+
+        // ── 통플레이 점검 (-autoplay-full): 새 게임 → 런던 탐험(상점·일반 전투·회복·이벤트·피의 사냥) → 레벨 3 → 보스 → 보고 → 1막 클리어 ──
+        // 사람처럼 판단: HP가 낮으면 회복 칸·거점, 피의 사냥이면 사신 쪽, 레벨이 오르면 보스, 처치 뒤엔 런던 거점으로 보고.
+        private IEnumerator FullRun()
+        {
+            float start = Time.realtimeSinceStartup;
+            float limit = start + 40 * 60;
+            int turns = 0, battles = 0, wins = 0, shopVisits = 0, events = 0;
+            string ending = "시간 초과";
+
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            if (Seed >= 0) GameRandom.Seed(Seed);
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return new WaitForSeconds(1f);
+            yield return Shot("full_start");
+            Note("통플레이 시작 — 파티: " + string.Join(", ", BoardSession.Instance.Party.Members.Select(m => m.Job.DisplayName)));
+
+            while (Time.realtimeSinceStartup < limit)
+            {
+                yield return null;
+                if (ActClearPanel.IsOpen)
+                {
+                    yield return new WaitForSeconds(0.5f);
+                    yield return Shot("full_act_clear");
+                    ending = "1막 클리어";
+                    ActClearPanel.DevClose();
+                    yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+                    break;
+                }
+                if (FindFirstObjectByType<MainMenuController>() != null) { ending = "메인 메뉴로 돌아감 (전멸 등)"; break; }
+                if (SaveErrorPanel.IsOpen) { Note("저장 실패 창 — 재시도"); SaveErrorPanel.DevRetry(); yield return new WaitForSecondsRealtime(0.5f); continue; }
+
+                if (SceneManager.GetActiveScene().name == "CombatTest")
+                {
+                    battles++;
+                    yield return RunBattle(shots: false);
+                    var b = _lastBattle;
+                    if (b == null || !b.DevFinished) { Note("실패: 전투가 끝나지 않음"); yield return Shot("full_battle_stuck"); ending = "전투 멈춤"; break; }
+                    if (b.DevEnemies.All(e => !e.IsAlive)) wins++;
+                    yield return new WaitForSeconds(0.6f);
+                    b.DevContinue();
+                    yield return WaitFor(() => SceneManager.GetActiveScene().name != "CombatTest", 10f, "전투 뒤 씬 전환");
+                    yield return new WaitForSeconds(1f);
+                    NoteParty($"전투 {battles} 뒤");
+                    continue;
+                }
+
+                var board = FindFirstObjectByType<BoardTestController>();
+                if (board == null) continue;
+                if (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); yield return new WaitForSeconds(0.15f); continue; }
+                if (ConfirmPanel.IsOpen) { Note("보스 레벨 경고 → 진입"); ConfirmPanel.DevChoose(true); continue; }
+                if (EncounterPanel.IsOpen) { yield return new WaitForSeconds(0.4f); EncounterPanel.DevChoose(1); yield return new WaitForSeconds(0.8f); continue; }
+                if (ShopPanel.IsOpen) { shopVisits++; yield return ShopVisit(); continue; }
+                if (EventPanelOpen()) { events++; yield return EventVisit(); continue; }
+
+                if (board.DevAwaitingSelection)
+                {
+                    board.DevMoveToward(FullRunTargets(board, turns));
+                    yield return new WaitForSeconds(0.2f);
+                    continue;
+                }
+                if (board.DevIsIdle)
+                {
+                    board.DevRoll();
+                    yield return null;
+                    if (board.DevAwaitingSelection)
+                    {
+                        turns++;
+                        if (turns % 10 == 0) NoteParty($"보드 {turns}턴 (월드 라운드 {board.DevWorldRound})");
+                    }
+                }
+            }
+
+            var s = BoardSession.Instance;
+            Note($"통플레이 결과: {ending} · 보드 턴 {turns} · 월드 라운드 {s?.World.WorldRound} · 전투 {battles} (승리 {wins}) · 상점 방문 {shopVisits} · 이벤트 {events}"
+                 + $" · 레벨 {string.Join("/", s?.Party?.Members.Select(m => m.Level) ?? new int[0])} · Cent {s?.Party?.Cent} · 피의 흔적 {s?.BloodTrail} · 영혼 수확 {s?.SoulHarvest}"
+                 + $" · 실제 시간 {(Time.realtimeSinceStartup - start) / 60f:0.0}분");
+            yield return Shot("full_end");
+            Note("자동 플레이 완료");
+        }
+
+        // 다음 목표 칸들
+        private static System.Collections.Generic.List<HexCoord> FullRunTargets(BoardTestController board, int turns)
+        {
+            var s = BoardSession.Instance;
+            var map = board.DevBoard.Map;
+            var hub = map.TileAt(ActOneStory.HubLabel).Coord;
+            if (ActOneStory.NeedsReport(s)) return new System.Collections.Generic.List<HexCoord> { hub };
+            if (s.Hunt.Active && s.Hunt.Reapers.Count > 0) return s.Hunt.Reapers.ToList();
+            var tiles = board.DevBoard.Tiles.ToList();
+            var alive = s.Party.AliveMembers.ToList();
+            bool hurt = alive.Any(m => m.CurrentHP < m.MaxHP * 0.45f || (m.MaxMP > 0 && m.CurrentMP < m.MaxMP * 0.25f));
+            if (hurt)
+            {
+                var heal = tiles.Where(t => t.MapKind == MapTileKind.Recovery && !t.IsUsed && map.RegionOf(t.Coordinate) == 0).Select(t => t.Coordinate).ToList();
+                if (s.Party.Cent >= 90) heal.Add(hub);
+                if (heal.Count > 0) return heal;
+            }
+            bool ready = s.Party.LivingMembers.All(m => m.Level >= 3) || turns > 90;
+            var enemies = tiles.Where(t => t.IsEncounter && !t.IsCleared && t.Enemy != null && !t.IsBoss && map.RegionOf(t.Coordinate) == 0).Select(t => t.Coordinate).ToList();
+            if (ready || enemies.Count == 0) return new System.Collections.Generic.List<HexCoord> { map.TileAt("M11").Coord };
+            // 보물·회복 칸도 들름
+            var extras = tiles.Where(t => (t.MapKind == MapTileKind.Treasure || t.MapKind == MapTileKind.Recovery) && !t.IsUsed && map.RegionOf(t.Coordinate) == 0).Select(t => t.Coordinate);
+            return enemies.Concat(extras).ToList();
+        }
+
+        // 거점 상점: 영약·해독제 조금 사고, 많이 다쳤으면 숙박 (숙박은 턴을 끝냄)
+        private IEnumerator ShopVisit()
+        {
+            var ui = ShopPanel.Instance;
+            var party = BoardSession.Instance.Party;
+            int before = party.Cent;
+            ui.DevSelectTab(0);
+            for (int i = 0; i < 2 && party.Cent >= 90; i++) { ui.DevSelectRow(1); ui.DevAct(); } // 생명의 영약
+            if (party.Cent >= 65) { ui.DevSelectRow(4); ui.DevAct(); }                            // 해독제
+            yield return new WaitForSeconds(0.3f);
+            bool rest = party.AliveMembers.Any(m => m.CurrentHP < m.MaxHP * 0.6f || (m.MaxMP > 0 && m.CurrentMP < m.MaxMP * 0.4f)) && party.Cent >= 30 * party.AliveMembers.Count();
+            Note($"  상점: Cent {before} → {party.Cent}{(rest ? " · 숙박" : "")}");
+            if (rest) { ui.DevSelectTab(3); ui.DevSelectRow(0); ui.DevAct(); }
+            else ShopPanel.Close();
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        // 이벤트 창 — 리플렉션으로 부른다 (이벤트 칸 코드가 없는 빌드에서도 이 파일은 컴파일됨)
+        private static Type EventPanelType => Type.GetType("Fantasia.UI.EventPanel");
+        private static bool EventPanelOpen() => EventPanelType?.GetProperty("IsOpen")?.GetValue(null) is true;
+        private static void EventCall(string method, params object[] a) => EventPanelType?.GetMethod(method)?.Invoke(null, a);
+
+        private IEnumerator EventVisit()
+        {
+            yield return new WaitForSeconds(0.3f);
+            EventCall("DevPickCard", 0);   // 점술마녀: 부
+            EventCall("DevPickTarget", 0); // 분수대: 1번
+            EventCall("DevConfirm");
+            yield return new WaitForSeconds(1.2f);
+            EventCall("DevLeave");
+            yield return new WaitForSeconds(0.3f);
         }
 
         // 메뉴 점검 (-autoplay-menu): 메인 메뉴 표시(최근 전멸 기록 등) → 설정 화면 → 새 게임 → 저장 실패 일시정지·재시도
@@ -311,175 +455,11 @@ namespace Fantasia.Core
             yield return WaitFor(() => SceneManager.GetActiveScene().name == "CombatTest", 10f, "전투 씬 전환");
 
             // ── 3. 전투 ──
-            yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투 관리자");
-            var battle = FindFirstObjectByType<BattleController>();
-            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false, usedItem = false;
-            bool shotBanner = false, shotIntro = false, shotTelegraph = false, focusZeroed = false;
-            bool kit = args.Contains("-autoplay-kit"), forceInterrupt = args.Contains("-autoplay-interrupt"), focusZero = args.Contains("-autoplay-focus0");
-            int downs = 0, healsUsed = 0, interrupts = 0;
-            var wasDowned = new System.Collections.Generic.HashSet<BattleUnit>();
-            int focusBefore = battle.DevAllies.Sum(a => a.Member.CurrentFocus);
-            float deadline = Time.time + 180f;
-
-            while (!battle.DevFinished && Time.time < deadline)
-            {
-                // 보스 등장 연출: 배너 → 전투 전 대화 (Space와 같은 다음 줄)
-                if (!shotBanner && battle.DevHud.DevBannerVisible) { shotBanner = true; yield return new WaitForSeconds(0.3f); yield return Shot("boss_banner"); }
-                if (DialoguePanel.IsOpen)
-                {
-                    if (!shotIntro) { shotIntro = true; yield return new WaitForSeconds(0.3f); yield return Shot("boss_intro_dialogue"); }
-                    DialoguePanel.DevAdvance();
-                    yield return new WaitForSeconds(0.15f);
-                    continue;
-                }
-                foreach (var a in battle.DevAllies) if (a.Member.IsDowned && wasDowned.Add(a)) downs++; else if (!a.Member.IsDowned) wasDowned.Remove(a);
-                var telegraphBoss = battle.DevEnemies.FirstOrDefault(e => e.Boss != null && e.Boss.HasPending && e.IsAlive);
-                if (telegraphBoss != null && focusZero && !focusZeroed)
-                {
-                    // 조건 C: 예고 시점에 아군 집중력 전원 0
-                    focusZeroed = true;
-                    foreach (var a in battle.DevAllies) a.Member.TrySpendFocus(a.Member.CurrentFocus);
-                    Note("  (점검: 예고 시점 아군 집중력 전원 0)");
-                }
-                if (telegraphBoss != null && !shotTelegraph && battle.DevAwaitingPlayer)
-                {
-                    shotTelegraph = true;
-                    yield return new WaitForSeconds(0.4f);
-                    yield return Shot("boss_telegraph");
-                    Note($"  예고 UI: {battle.DevHud.DevTelegraphText(telegraphBoss)?.Replace("\n", " / ")} · 봉합 방해 버튼 {(battle.DevHud.DevInterruptVisible ? "보임" : "없음")}");
-                }
-
-                if (battle.DevAwaitingPlayer)
-                {
-                    yield return new WaitForSeconds(0.3f);
-                    if (!shotFirstTurn) { shotFirstTurn = true; yield return Shot("battle_first_turn"); }
-
-                    var actor = battle.DevCurrent;
-                    // 스킬을 쓸 상황이면 스킬(D11), 아니면 기본 공격 — 집중력이 남으면 추가 집중을 켠다.
-                    var (skill, target) = ChooseSkill(battle, actor);
-                    var downed = battle.DevAllies.FirstOrDefault(a => a.Member.IsDowned && a.Member.CurrentLP > 0);
-                    // 다친 동료가 있으면 회복 소모품 한 번 (D17) — 플레이테스트 준비물(-autoplay-kit)이면 HP 50% 아래마다
-                    var potionTarget = battle.DevAllies.Where(a => a.InBattle).OrderBy(a => (float)a.CurrentHP / a.MaxHP).FirstOrDefault();
-                    var potion = BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition)
-                        .FirstOrDefault(d => d.Effect == Fantasia.Data.ConsumableEffect.RestoreHP);
-                    var poisoned = battle.DevAllies.Where(a => a.InBattle).FirstOrDefault(a => a.Statuses.All.Any(s => s.Effect == Fantasia.Data.StatusEffectType.Poison && s.Stacks >= 2));
-                    var antidote = BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition).FirstOrDefault(d => d.Id == Fantasia.Data.ConsumableIds.Antidote);
-                    bool breakerReady = skill != null && telegraphBoss != null && target == telegraphBoss && skill.Coefficient >= telegraphBoss.Boss.Pending.CancelMinCoefficient;
-                    if (telegraphBoss != null && battle.DevHud.DevInterruptVisible && (forceInterrupt || !breakerReady))
-                    {
-                        // 봉합 방해: 저지 기술이 없거나(집중력·쿨다운) 점검으로 강제할 때
-                        interrupts++;
-                        Note($"  {actor.DisplayName} → 봉합 방해 (집중력 {actor.Member.CurrentFocus})");
-                        battle.DevHud.DevPressInterrupt();
-                        yield return new WaitForSeconds(0.5f);
-                        yield return Shot("boss_interrupt");
-                    }
-                    else if (kit && antidote != null && poisoned != null && Fantasia.Items.ConsumableRules.CanUseOn(antidote, poisoned.Member, out _))
-                    {
-                        healsUsed++;
-                        Note($"  해독제 → {poisoned.DisplayName}");
-                        battle.DevUseItem(antidote, poisoned);
-                    }
-                    else if (kit && potion != null && potionTarget != null && (float)potionTarget.CurrentHP / potionTarget.MaxHP < 0.5f
-                             && Fantasia.Items.ConsumableRules.CanUseOn(potion, potionTarget.Member, out _))
-                    {
-                        healsUsed++;
-                        Note($"  {potion.DisplayName} → {potionTarget.DisplayName} (HP {potionTarget.CurrentHP}/{potionTarget.MaxHP})");
-                        battle.DevUseItem(potion, potionTarget);
-                    }
-                    else if (battle.DevCanRevive && downed != null && !Environment.GetCommandLineArgs().Contains("-autoplay-no-revive"))
-                    {
-                        // 쓰러진 동료가 있으면 먼저 부활 (D21)
-                        battle.DevRevive(downed);
-                        if (!shotRevive)
-                        {
-                            shotRevive = true;
-                            yield return new WaitForSeconds(0.4f);
-                            yield return Shot("battle_revive");
-                        }
-                    }
-                    else if (!usedItem && potion != null && potionTarget != null && (float)potionTarget.CurrentHP / potionTarget.MaxHP < 0.8f
-                             && Fantasia.Items.ConsumableRules.CanUseOn(potion, potionTarget.Member, out _))
-                    {
-                        usedItem = true;
-                        healsUsed++;
-                        battle.DevHud.DevOpenItems();
-                        yield return new WaitForSeconds(0.2f);
-                        yield return Shot("battle_item_menu");
-                        Note($"  소모품 사용: {potion.DisplayName} → {potionTarget.DisplayName} (HP {potionTarget.CurrentHP}/{potionTarget.MaxHP})");
-                        battle.DevUseItem(potion, potionTarget);
-                        yield return new WaitForSeconds(0.4f);
-                        yield return Shot("battle_item_used");
-                    }
-                    else if (skill != null)
-                    {
-                        if (!shotSkillMenu)
-                        {
-                            shotSkillMenu = true;
-                            battle.DevHud.DevOpenSkills();
-                            yield return new WaitForSeconds(0.2f);
-                            yield return Shot("battle_skill_menu");
-                        }
-                        if (skill.Effect == Fantasia.Data.SkillEffect.Heal || skill.Effect == Fantasia.Data.SkillEffect.Cleanse) healsUsed++;
-                        bool bossNow = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null) && !(target != null && target.Boss != null && target.Boss.HasPending);
-                        battle.DevUseSkill(skill, target, focus: actor.Member.CurrentFocus > skill.FocusCost + (bossNow ? 1 : 0));
-                        if (!shotSkill)
-                        {
-                            shotSkill = true;
-                            yield return new WaitForSeconds(0.6f);
-                            yield return Shot($"battle_skill_{skill.Id.Split('.').Last()}");
-                        }
-                    }
-                    else if (!defended && actor.Member.Job.Id == Fantasia.Data.JobId.PlagueDoctor && actor.Member.CurrentMP < 12)
-                    {
-                        defended = true;
-                        battle.DevDefend();
-                    }
-                    else
-                    {
-                        // 보스전에서는 집중력 1을 저지용 기술 몫으로 남긴다
-                        bool bossFight = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null);
-                        battle.DevAttack(focus: actor.Member.CurrentFocus > (bossFight ? 1 : 0));
-                        if (!shotRoll)
-                        {
-                            shotRoll = true;
-                            yield return new WaitForSeconds(0.5f);
-                            yield return Shot("battle_player_roll");
-                            yield return new WaitForSeconds(1.2f);
-                            yield return Shot("battle_after_hit");
-                        }
-                    }
-                }
-                else if (!shotEnemy && battle.DevCurrent != null && !battle.DevCurrent.IsAlly)
-                {
-                    shotEnemy = true;
-                    yield return new WaitForSeconds(0.9f);
-                    yield return Shot("battle_enemy_turn");
-                }
-                yield return null;
-            }
-            if (!battle.DevFinished) { Note("실패: 전투가 180초 안에 끝나지 않음"); yield return Shot("battle_timeout"); yield break; }
-
-            // 보스 처치 후 대화 → 보상 창
-            bool bossBattle = battle.DevEnemies.Any(e => e.Boss != null);
-            yield return new WaitForSeconds(0.5f);
-            bool shotOutro = false;
-            while (DialoguePanel.IsOpen)
-            {
-                if (!shotOutro) { shotOutro = true; yield return Shot("boss_after_dialogue"); }
-                DialoguePanel.DevAdvance();
-                yield return new WaitForSeconds(0.15f);
-            }
-            if (bossBattle)
-            {
-                // 플레이테스트 기록 (Boss_Abel_v1.0 "개발팀에서 함께 남길 결과")
-                bool won = battle.DevEnemies.All(e => !e.IsAlive);
-                Note($"보스전 결과: {(won ? "승리" : "패배")} · 라운드 {battle.DevRound} · 다운 {downs} · LP 소모 {battle.DevAllies.Sum(a => a.Member.Job.StartingLP - a.Member.CurrentLP)}"
-                     + $" · 회복/해독 {healsUsed} · 봉합 방해 {interrupts} · 레벨 {string.Join("/", battle.DevAllies.Select(a => a.Member.Level))}"
-                     + $" · 남은 HP {string.Join("/", battle.DevAllies.Select(a => $"{a.CurrentHP}"))} · 남은 집중력 {string.Join("/", battle.DevAllies.Select(a => a.Member.CurrentFocus))} (시작 합 {focusBefore})"
-                     + $" · 시드 {Seed}");
-                if (args.Contains("-autoplay-batch")) { yield return Shot("battle_result"); Note("자동 플레이 완료"); yield break; }
-            }
+            yield return RunBattle(shots: true);
+            var battle = _lastBattle;
+            if (battle == null || !battle.DevFinished) yield break;
+            bool bossBattle = _lastBattleBoss;
+            if (bossBattle && args.Contains("-autoplay-batch")) { yield return Shot("battle_result"); Note("자동 플레이 완료"); yield break; }
 
             // ── 4. 결과 → 보드 복귀 ──
             yield return new WaitForSeconds(0.8f);
@@ -556,6 +536,187 @@ namespace Fantasia.Core
         }
 
         // 사람이 할 법한 스킬 사용 — 쓸 수 있는(비용·쿨다운 OK) 스킬 중 상황에 맞는 것 하나. 없으면 (null, null).
+        // 전투 1회 자동 진행 (일반·보스 공통). shots = 화면 캡처 여부. 결과는 _lastBattle·_lastBattleBoss
+        private BattleController _lastBattle;
+        private bool _lastBattleBoss;
+
+        private IEnumerator RunBattle(bool shots)
+        {
+            var args = Environment.GetCommandLineArgs();
+            _lastBattle = null;
+            yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투 관리자");
+            var battle = FindFirstObjectByType<BattleController>();
+            _lastBattle = battle;
+            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false, usedItem = false;
+            bool shotBanner = false, shotIntro = false, shotTelegraph = false, focusZeroed = false;
+            bool kit = args.Contains("-autoplay-kit"), forceInterrupt = args.Contains("-autoplay-interrupt"), focusZero = args.Contains("-autoplay-focus0");
+            int downs = 0, healsUsed = 0, interrupts = 0;
+            var wasDowned = new System.Collections.Generic.HashSet<BattleUnit>();
+            int focusBefore = battle.DevAllies.Sum(a => a.Member.CurrentFocus);
+            float deadline = Time.time + 180f;
+
+            while (!battle.DevFinished && Time.time < deadline)
+            {
+                // 보스 등장 연출: 배너 → 전투 전 대화 (Space와 같은 다음 줄)
+                if (!shotBanner && battle.DevHud.DevBannerVisible) { shotBanner = true; yield return new WaitForSeconds(0.3f); if (shots) yield return Shot("boss_banner"); }
+                if (DialoguePanel.IsOpen)
+                {
+                    if (!shotIntro) { shotIntro = true; yield return new WaitForSeconds(0.3f); if (shots) yield return Shot("boss_intro_dialogue"); }
+                    DialoguePanel.DevAdvance();
+                    yield return new WaitForSeconds(0.15f);
+                    continue;
+                }
+                foreach (var a in battle.DevAllies) if (a.Member.IsDowned && wasDowned.Add(a)) downs++; else if (!a.Member.IsDowned) wasDowned.Remove(a);
+                var telegraphBoss = battle.DevEnemies.FirstOrDefault(e => e.Boss != null && e.Boss.HasPending && e.IsAlive);
+                if (telegraphBoss != null && focusZero && !focusZeroed)
+                {
+                    // 조건 C: 예고 시점에 아군 집중력 전원 0
+                    focusZeroed = true;
+                    foreach (var a in battle.DevAllies) a.Member.TrySpendFocus(a.Member.CurrentFocus);
+                    Note("  (점검: 예고 시점 아군 집중력 전원 0)");
+                }
+                if (telegraphBoss != null && !shotTelegraph && battle.DevAwaitingPlayer)
+                {
+                    shotTelegraph = true;
+                    yield return new WaitForSeconds(0.4f);
+                    if (shots) yield return Shot("boss_telegraph");
+                    Note($"  예고 UI: {battle.DevHud.DevTelegraphText(telegraphBoss)?.Replace("\n", " / ")} · 봉합 방해 버튼 {(battle.DevHud.DevInterruptVisible ? "보임" : "없음")}");
+                }
+
+                if (battle.DevAwaitingPlayer)
+                {
+                    yield return new WaitForSeconds(0.3f);
+                    if (!shotFirstTurn) { shotFirstTurn = true; if (shots) yield return Shot("battle_first_turn"); }
+
+                    var actor = battle.DevCurrent;
+                    // 스킬을 쓸 상황이면 스킬(D11), 아니면 기본 공격 — 집중력이 남으면 추가 집중을 켠다.
+                    var (skill, target) = ChooseSkill(battle, actor);
+                    var downed = battle.DevAllies.FirstOrDefault(a => a.Member.IsDowned && a.Member.CurrentLP > 0);
+                    // 다친 동료가 있으면 회복 소모품 한 번 (D17) — 플레이테스트 준비물(-autoplay-kit)이면 HP 50% 아래마다
+                    var potionTarget = battle.DevAllies.Where(a => a.InBattle).OrderBy(a => (float)a.CurrentHP / a.MaxHP).FirstOrDefault();
+                    var potion = BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition)
+                        .FirstOrDefault(d => d.Effect == Fantasia.Data.ConsumableEffect.RestoreHP);
+                    var poisoned = battle.DevAllies.Where(a => a.InBattle).FirstOrDefault(a => a.Statuses.All.Any(s => s.Effect == Fantasia.Data.StatusEffectType.Poison && s.Stacks >= 2));
+                    var antidote = BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition).FirstOrDefault(d => d.Id == Fantasia.Data.ConsumableIds.Antidote);
+                    bool breakerReady = skill != null && telegraphBoss != null && target == telegraphBoss && skill.Coefficient >= telegraphBoss.Boss.Pending.CancelMinCoefficient;
+                    if (telegraphBoss != null && battle.DevHud.DevInterruptVisible && (forceInterrupt || !breakerReady))
+                    {
+                        // 봉합 방해: 저지 기술이 없거나(집중력·쿨다운) 점검으로 강제할 때
+                        interrupts++;
+                        Note($"  {actor.DisplayName} → 봉합 방해 (집중력 {actor.Member.CurrentFocus})");
+                        battle.DevHud.DevPressInterrupt();
+                        yield return new WaitForSeconds(0.5f);
+                        if (shots) yield return Shot("boss_interrupt");
+                    }
+                    else if (kit && antidote != null && poisoned != null && Fantasia.Items.ConsumableRules.CanUseOn(antidote, poisoned.Member, out _))
+                    {
+                        healsUsed++;
+                        Note($"  해독제 → {poisoned.DisplayName}");
+                        battle.DevUseItem(antidote, poisoned);
+                    }
+                    else if (kit && potion != null && potionTarget != null && (float)potionTarget.CurrentHP / potionTarget.MaxHP < 0.5f
+                             && Fantasia.Items.ConsumableRules.CanUseOn(potion, potionTarget.Member, out _))
+                    {
+                        healsUsed++;
+                        Note($"  {potion.DisplayName} → {potionTarget.DisplayName} (HP {potionTarget.CurrentHP}/{potionTarget.MaxHP})");
+                        battle.DevUseItem(potion, potionTarget);
+                    }
+                    else if (battle.DevCanRevive && downed != null && !Environment.GetCommandLineArgs().Contains("-autoplay-no-revive"))
+                    {
+                        // 쓰러진 동료가 있으면 먼저 부활 (D21)
+                        battle.DevRevive(downed);
+                        if (!shotRevive)
+                        {
+                            shotRevive = true;
+                            yield return new WaitForSeconds(0.4f);
+                            if (shots) yield return Shot("battle_revive");
+                        }
+                    }
+                    else if (!usedItem && potion != null && potionTarget != null && (float)potionTarget.CurrentHP / potionTarget.MaxHP < 0.8f
+                             && Fantasia.Items.ConsumableRules.CanUseOn(potion, potionTarget.Member, out _))
+                    {
+                        usedItem = true;
+                        healsUsed++;
+                        battle.DevHud.DevOpenItems();
+                        yield return new WaitForSeconds(0.2f);
+                        if (shots) yield return Shot("battle_item_menu");
+                        Note($"  소모품 사용: {potion.DisplayName} → {potionTarget.DisplayName} (HP {potionTarget.CurrentHP}/{potionTarget.MaxHP})");
+                        battle.DevUseItem(potion, potionTarget);
+                        yield return new WaitForSeconds(0.4f);
+                        if (shots) yield return Shot("battle_item_used");
+                    }
+                    else if (skill != null)
+                    {
+                        if (!shotSkillMenu)
+                        {
+                            shotSkillMenu = true;
+                            battle.DevHud.DevOpenSkills();
+                            yield return new WaitForSeconds(0.2f);
+                            if (shots) yield return Shot("battle_skill_menu");
+                        }
+                        if (skill.Effect == Fantasia.Data.SkillEffect.Heal || skill.Effect == Fantasia.Data.SkillEffect.Cleanse) healsUsed++;
+                        bool bossNow = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null) && !(target != null && target.Boss != null && target.Boss.HasPending);
+                        battle.DevUseSkill(skill, target, focus: actor.Member.CurrentFocus > skill.FocusCost + (bossNow ? 1 : 0));
+                        if (!shotSkill)
+                        {
+                            shotSkill = true;
+                            yield return new WaitForSeconds(0.6f);
+                            if (shots) yield return Shot($"battle_skill_{skill.Id.Split('.').Last()}");
+                        }
+                    }
+                    else if (!defended && actor.Member.Job.Id == Fantasia.Data.JobId.PlagueDoctor && actor.Member.CurrentMP < 12)
+                    {
+                        defended = true;
+                        battle.DevDefend();
+                    }
+                    else
+                    {
+                        // 보스전에서는 집중력 1을 저지용 기술 몫으로 남긴다
+                        bool bossFight = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null);
+                        if (!actor.CanBasicAttack) battle.DevDefend(); // MP가 없어 기본 공격도 못 하면 방어
+                        else battle.DevAttack(focus: actor.Member.CurrentFocus > (bossFight ? 1 : 0));
+                        if (!shotRoll)
+                        {
+                            shotRoll = true;
+                            yield return new WaitForSeconds(0.5f);
+                            if (shots) yield return Shot("battle_player_roll");
+                            yield return new WaitForSeconds(1.2f);
+                            if (shots) yield return Shot("battle_after_hit");
+                        }
+                    }
+                }
+                else if (!shotEnemy && battle.DevCurrent != null && !battle.DevCurrent.IsAlly)
+                {
+                    shotEnemy = true;
+                    yield return new WaitForSeconds(0.9f);
+                    if (shots) yield return Shot("battle_enemy_turn");
+                }
+                yield return null;
+            }
+            if (!battle.DevFinished) { Note("실패: 전투가 180초 안에 끝나지 않음"); if (shots) yield return Shot("battle_timeout"); yield break; }
+
+            // 보스 처치 후 대화 → 보상 창
+            bool bossBattle = battle.DevEnemies.Any(e => e.Boss != null);
+            yield return new WaitForSeconds(0.5f);
+            bool shotOutro = false;
+            while (DialoguePanel.IsOpen)
+            {
+                if (!shotOutro) { shotOutro = true; if (shots) yield return Shot("boss_after_dialogue"); }
+                DialoguePanel.DevAdvance();
+                yield return new WaitForSeconds(0.15f);
+            }
+            if (bossBattle)
+            {
+                // 플레이테스트 기록 (Boss_Abel_v1.0 "개발팀에서 함께 남길 결과")
+                bool won = battle.DevEnemies.All(e => !e.IsAlive);
+                Note($"보스전 결과: {(won ? "승리" : "패배")} · 라운드 {battle.DevRound} · 다운 {downs} · LP 소모 {battle.DevAllies.Sum(a => a.Member.Job.StartingLP - a.Member.CurrentLP)}"
+                     + $" · 회복/해독 {healsUsed} · 봉합 방해 {interrupts} · 레벨 {string.Join("/", battle.DevAllies.Select(a => a.Member.Level))}"
+                     + $" · 남은 HP {string.Join("/", battle.DevAllies.Select(a => $"{a.CurrentHP}"))} · 남은 집중력 {string.Join("/", battle.DevAllies.Select(a => a.Member.CurrentFocus))} (시작 합 {focusBefore})"
+                     + $" · 시드 {Seed}");
+            }
+            _lastBattleBoss = bossBattle;
+        }
+
         private static (Fantasia.Data.SkillDefinition, BattleUnit) ChooseSkill(BattleController battle, BattleUnit actor)
         {
 

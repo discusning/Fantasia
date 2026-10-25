@@ -864,6 +864,24 @@ namespace Fantasia.Board
             if (safe.Count > 0) MoveTo(safe[0]);
         }
 
+        // 통플레이 점검: 목표 칸들 중 실제 이동 거리로 가장 가까운 쪽으로 (도달 가능한 칸 중 최선)
+        public void DevMoveToward(IEnumerable<HexCoord> targets)
+        {
+            if (!_awaitingSelection) return;
+            var field = _board.DistanceField(targets.ToList());
+            HexCoord best = _currentCoord;
+            int bestDistance = int.MaxValue;
+            foreach (var coord in _reachability.ReachableTiles)
+            {
+                int d = field.TryGetValue(coord, out int v) ? v : int.MaxValue;
+                if (d < bestDistance) { bestDistance = d; best = coord; }
+            }
+            if (best.Equals(_currentCoord) && _reachability.ReachableTiles.Any()) best = _reachability.ReachableTiles.First();
+            MoveTo(best);
+        }
+
+        public HexBoard DevBoard => _board;
+
         // bossOnly: 보스 칸만 목표 (자동 플레이 -autoplay-boss)
         public void DevMoveTowardEncounter(bool bossOnly)
         {
