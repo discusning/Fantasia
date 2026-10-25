@@ -31,6 +31,7 @@ namespace Fantasia.Core
             // 강제 종료 재현: 앞선 실행이 남긴 저장 파일로 시작 (-autoplay-resume <파일>)
             var bootArgs = Environment.GetCommandLineArgs();
             int resumeIndex = Array.IndexOf(bootArgs, "-autoplay-resume");
+            if (resumeIndex < 0) resumeIndex = Array.IndexOf(bootArgs, "-autoplay-full-resume"); // 통플레이를 저장 지점부터 이어서
             if (resumeIndex >= 0 && resumeIndex + 1 < bootArgs.Length && File.Exists(bootArgs[resumeIndex + 1])) File.Copy(bootArgs[resumeIndex + 1], SaveGame.SavePath, true);
             var go = new GameObject("AutoPlayBot");
             DontDestroyOnLoad(go);
@@ -63,9 +64,30 @@ namespace Fantasia.Core
                 Note($"[스냅샷] '{reason}' 시점 저장 파일 복사");
             };
 
-            if (args.Contains("-autoplay-resume")) yield return ResumeRun();
+            // 이어하기 통합 점검: "-autoplay-snaps 이름#건너뛸수,이름#건너뛸수,..." — 그 저장 지점이 (건너뛸 수+1)번째 올 때 snapshot_번호.json으로 복사
+            int snapsIndex = Array.IndexOf(args, "-autoplay-snaps");
+            if (snapsIndex >= 0 && snapsIndex + 1 < args.Length)
+            {
+                var specs = args[snapsIndex + 1].Split(',').Select(s => s.Split('#')).Select(p => (name: p[0], skip: p.Length > 1 && int.TryParse(p[1], out int k) ? k : 0)).ToArray();
+                var seen = new int[specs.Length];
+                var done = new bool[specs.Length];
+                SaveGame.Saved += reason =>
+                {
+                    for (int k = 0; k < specs.Length; k++)
+                    {
+                        if (done[k] || !reason.Contains(specs[k].name)) continue;
+                        if (seen[k]++ < specs[k].skip) continue;
+                        done[k] = true;
+                        File.Copy(SaveGame.SavePath, Path.Combine(_outDir, $"snapshot_{k}.json"), true);
+                        Note($"[스냅샷 {k}] '{reason}' (월드 라운드 {BoardSession.Instance?.World.WorldRound}) 저장 파일 복사");
+                    }
+                };
+            }
+
+            if (args.Contains("-autoplay-full-resume")) yield return FullRun(resume: true);
+            else if (args.Contains("-autoplay-resume")) yield return ResumeRun();
             else if (args.Contains("-autoplay-menu")) yield return MenuRun();
-            else if (args.Contains("-autoplay-full")) yield return FullRun();
+            else if (args.Contains("-autoplay-full")) yield return FullRun(resume: false);
             else yield return Play();
 
             File.WriteAllText(Path.Combine(_outDir, "autoplay_log.txt"), _log.ToString(), Encoding.UTF8);
@@ -75,7 +97,7 @@ namespace Fantasia.Core
 
         // ── 통플레이 점검 (-autoplay-full): 새 게임 → 런던 탐험(상점·일반 전투·회복·이벤트·피의 사냥) → 레벨 3 → 보스 → 보고 → 1막 클리어 ──
         // 사람처럼 판단: HP가 낮으면 회복 칸·거점, 피의 사냥이면 사신 쪽, 레벨이 오르면 보스, 처치 뒤엔 런던 거점으로 보고.
-        private IEnumerator FullRun()
+        private IEnumerator FullRun(bool resume)
         {
             float start = Time.realtimeSinceStartup;
             float limit = start + 40 * 60;
@@ -85,14 +107,25 @@ namespace Fantasia.Core
             yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
             yield return new WaitForSeconds(1f);
             var menu = FindFirstObjectByType<MainMenuController>();
-            menu.DevOpenPartySelect();
-            yield return new WaitForSeconds(0.3f);
-            menu.OnDepart();
-            if (Seed >= 0) GameRandom.Seed(Seed);
-            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            if (resume)
+            {
+                // 이어하기 통합 점검: 저장 파일(꺼진 시점)에서 메인 메뉴 [이어하기] → 끝까지
+                Note($"이어하기: {menu.DevContinueInfo.Replace("\n", " / ")}");
+                yield return Shot("full_resume_menu");
+                menu.OnContinue();
+                yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null || FindFirstObjectByType<BattleController>() != null, 10f, "이어하기 씬");
+            }
+            else
+            {
+                menu.DevOpenPartySelect();
+                yield return new WaitForSeconds(0.3f);
+                menu.OnDepart();
+                if (Seed >= 0) GameRandom.Seed(Seed);
+                yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            }
             yield return new WaitForSeconds(1f);
             yield return Shot("full_start");
-            Note("통플레이 시작 — 파티: " + string.Join(", ", BoardSession.Instance.Party.Members.Select(m => m.Job.DisplayName)));
+            Note((resume ? "통플레이 이어하기 — 파티: " : "통플레이 시작 — 파티: ") + string.Join(", ", BoardSession.Instance.Party.Members.Select(m => m.Job.DisplayName)));
 
             while (Time.realtimeSinceStartup < limit)
             {
