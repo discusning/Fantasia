@@ -306,6 +306,7 @@ namespace Fantasia.UI
         {
             if (_selected < 0 || _selected >= _shown.Count) return;
             var (act2, castle) = _stages();
+            int centBefore = _party.Cent;
             ShopResult result = _shown[_selected] switch
             {
                 ShopEntry e => ShopRules.Buy(State, _shop, e, _party, act2, castle),
@@ -315,6 +316,7 @@ namespace Fantasia.UI
                 GearItem g => ShopRules.SellGear(_party, g),
                 _ => new ShopResult(false, ""),
             };
+            if (result.Ok) PlaytestLog.Cent(_tab switch { Tab.Sell => "상점 판매", Tab.Services => "상점 서비스", Tab.Workbench => "작업대 제작", _ => "상점 구입" }, _party.Cent - centBefore, _party.Cent, $"{_shop.DisplayName}: {result.Message}");
             if (result.Ok) SaveGame.Checkpoint("상점 거래"); // 저장 → 표시
             _message.text = result.Message;
             _message.color = result.Ok ? Gold : Bad;

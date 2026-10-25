@@ -502,6 +502,7 @@ namespace Fantasia.Board
                         if (!Fantasia.Combat.LootRules.TryAdd(_testParty.Inventory, drop.Value)) session.PendingLoot.Add(drop.Value);
                         _encounterResultMessage = $"{tile.MapLabel} — {drop.Value.Name} 획득 (임시 규칙)";
                         ItemAcquiredToast.Show($"보물: {drop.Value.Name}");
+                        PlaytestLog.Cent("보물 칸", 0, _testParty.Cent, $"{tile.MapLabel}: {drop.Value.Name}");
                     }
                     break;
             }
@@ -780,7 +781,9 @@ namespace Fantasia.Board
             session.PendingReaperFight = false;
             if (!Hunt.ReaperKilled) return;
             int g = session.BloodTrail;
+            int centBefore = _testParty.Cent;
             string message = BloodHuntRules.Succeed(Hunt, ref g, _testParty, ItemCatalog.Current);
+            PlaytestLog.Cent("피의 사냥 성공", _testParty.Cent - centBefore, _testParty.Cent, message);
             session.BloodTrail = g;
             _encounterResultMessage = message;
             ItemAcquiredToast.Show(message);

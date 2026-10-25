@@ -97,6 +97,7 @@ namespace Fantasia.Combat
             {
                 // 진행 중 저장에서 이어하기: 그 개인 턴 시작 상태 → 확정된 행동이 있으면 그대로 다시 실행 (도주 처리 아님)
                 ApplySnapshot(snap);
+                BeginPlayLog(resumed: true);
                 _current = FromRef(snap.current);
                 Log($"전투 이어하기 — 라운드 {_queue.Round} · {_current?.DisplayName} 차례{(snap.pending.kind != BattleSnapshot.CommandKind.None ? $" · 확정된 행동 {snap.pending.kind}" : "")}");
                 MusicPlayer.Play(_enemies.Any(e => ActOneStory.IsActOneBoss(e.Enemy)) ? MusicIds.BossAbel : MusicIds.Battle, 0f);
@@ -105,6 +106,7 @@ namespace Fantasia.Combat
                 if (snap.pending.kind != BattleSnapshot.CommandKind.None && _current.IsAlly) ReplayCommand(snap.pending);
                 return;
             }
+            BeginPlayLog(resumed: false);
             StartCoroutine(Opening());
         }
 
@@ -311,6 +313,7 @@ namespace Fantasia.Combat
             string summary = slots.AllSucceeded ? "크리티컬! (전체)" : $"{slots.SuccessCount}/{slots.SlotCount} 성공";
             yield return _hud.PlayRoll($"{boss.DisplayName} [{action.Name}] → 모든 아군", slots, false, summary,
                 slots.AllSucceeded ? BattleHud.CritColor : BattleHud.SlotFailure);
+            BeginAreaLog();
             foreach (var ally in _allies.Where(a => a.InBattle).ToList())
             {
                 var defense = ally.Defense();
@@ -319,6 +322,7 @@ namespace Fantasia.Combat
                 // 봉인된 수은: 명중하면 확정 상태 (크리티컬이어도 추가 없음, 회피하면 없음)
                 if (!outcome.Evaded && ally.IsAlive && action.OnHitStatuses != null && action.OnHitStatuses.Length > 0) ApplyStatuses(ally, action.OnHitStatuses, 1);
             }
+            EndAreaLog();
             yield return new WaitForSeconds(0.3f);
         }
 
@@ -344,6 +348,7 @@ namespace Fantasia.Combat
             var pending = boss.Boss.Pending;
             SaveBattle("전투 행동 확정 — 봉합 방해", CommandFor(BattleSnapshot.CommandKind.Interrupt));
             if (!BossBrain.TryInterrupt(boss.Boss)) return;
+            if (_playLog != null) _playLog.Interrupts++;
             _phase = Phase.Resolving;
             _hud.HideActions();
             Log($"{_current.DisplayName} [{pending.InterruptName}] → {boss.DisplayName}의 [{pending.FollowUp.Name}] 저지 (집중력 0)");
@@ -477,6 +482,8 @@ namespace Fantasia.Combat
         private IEnumerator ResolveItem(BattleUnit user, BattleUnit target, ConsumableDefinition item)
         {
             Inventory.RemoveConsumable(item);
+            _playLog?.Item(item.DisplayName);
+            if (_playLog != null && (item.Effect == ConsumableEffect.RestoreHP || item.Effect == ConsumableEffect.Cure)) _playLog.Heals++;
             switch (item.Effect)
             {
                 case ConsumableEffect.RevealEvasion:
@@ -597,6 +604,7 @@ namespace Fantasia.Combat
             if (skill == null)
             {
                 bool focus = _hud.UseFocus && actor.Member.TrySpendFocus(1);
+                if (_playLog != null) { _playLog.MpSpent += actor.BasicAttackMPCost; _playLog.FocusSpent += focus ? 1 : 0; }
                 actor.Member.TrySpendMP(actor.BasicAttackMPCost);
                 yield return ResolveAttack(actor, target, actor.BasicAttack(focus), focus, actor.OnCritStatuses, actor.OnCritTurnShift, null);
                 NextTurn();
@@ -609,6 +617,7 @@ namespace Fantasia.Combat
             if (skill.HPCost > 0) actor.Member.TakeDamage(skill.HPCost);
             actor.StartCooldown(skill);
             bool useFocus = skill.RollsSlots && _hud.UseFocus && actor.Member.TrySpendFocus(1);
+            if (_playLog != null) { _playLog.MpSpent += skill.MPCost; _playLog.FocusSpent += skill.FocusCost + (useFocus ? 1 : 0); if (skill.Effect == SkillEffect.Heal || skill.Effect == SkillEffect.Cleanse) _playLog.Heals++; }
             Log($"{actor.DisplayName} 스킬 [{skill.DisplayName}] ({BattleHud.SkillCostText(skill)}){(useFocus ? " + 추가 집중" : "")}");
 
             switch (skill.Effect)
@@ -703,12 +712,14 @@ namespace Fantasia.Combat
             yield return _hud.PlayRoll($"{attacker.DisplayName} [{skill.DisplayName}] → 모든 적", slots, useFocus, summary,
                 slots.AllSucceeded ? BattleHud.CritColor : BattleHud.SlotSuccess);
 
+            BeginAreaLog();
             foreach (var enemy in _enemies.Where(e => e.InBattle).ToList())
             {
                 var defense = enemy.Defense();
                 var outcome = AttackResolver.Compute(request, defense, slots, Fantasia.Dice.DiceRoller.RollChance(defense.EvasionChance));
                 ApplyHit(attacker, enemy, request, outcome, useFocus, skill.OnCritStatuses, skill.OnCritTurnShift, skill);
             }
+            EndAreaLog();
             _hud.RefreshEnemies(null);
             yield return new WaitForSeconds(0.25f);
         }
@@ -720,6 +731,7 @@ namespace Fantasia.Combat
             if (!outcome.Evaded) target.TakeDamage(outcome.AppliedDamage);
             _lastOutcomeEvaded = outcome.Evaded;
             _lastDamageDealt = outcome.Evaded ? 0 : outcome.AppliedDamage;
+            LogHit(attacker, request, outcome);
             string result = ResultText(outcome);
             Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus ? ", 집중 1" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : outcome.Damage.ToString(), ResultColor(outcome));
@@ -812,6 +824,7 @@ namespace Fantasia.Combat
         private void KnockDown(BattleUnit unit)
         {
             if (unit.Boss != null) { unit.Boss.Pending = null; RefreshBossTelegraph(); } // 쓰러진 보스는 예고 해제·실행 안 함
+            if (unit.IsAlly && _playLog != null) _playLog.Downs++;
             if (!_models.TryGetValue(unit, out var model)) return;
             if (!_standingRotation.ContainsKey(unit)) _standingRotation[unit] = model.transform.rotation;
             model.transform.rotation = _standingRotation[unit] * Quaternion.Euler(0f, 0f, 90f);
@@ -858,10 +871,11 @@ namespace Fantasia.Combat
                     // Boss_Abel_v1.0 처치 후 순서: 처치·최초 보상·증거품·퀘스트 갱신(중복 없이) → 처치 후 대화 → 보상 창 → 월드 복귀
                     session.StoryFlags.Add(ActOneStory.FlagRewardGiven);
                     ActOneStory.MarkBossDefeated(session);
+                    EndPlayLog("승리 (보스)", LastRewards, 0);
                     SaveGame.Checkpoint("보스 처치·보상·증거품"); // 보상 확정 → 저장 → 대화·보상 창
                     StartCoroutine(PlayDialogueThen(ActOneStory.AfterBattle, () => _hud.ShowResult("승리", $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard)));
                 }
-                else { SaveGame.Checkpoint("전투 승리·보상"); _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
+                else { EndPlayLog("승리", LastRewards, 0); SaveGame.Checkpoint("전투 승리·보상"); _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
             }
             else if (!wiped)
             {
@@ -869,6 +883,7 @@ namespace Fantasia.Combat
                 string downed = SettleDowned(DefeatRules.PostBattleReviveHpRatio);
                 session.PlayerPosition = session.LastSafeCoord;
                 Log("  → 전원 이탈: 직전 안전 타일로 이동 (약탈 없음)");
+                EndPlayLog("퇴각", null, 0);
                 SaveGame.Checkpoint("전투 퇴각");
                 _hud.ShowResult("퇴각", $"파티가 전투에서 이탈해 직전 안전 타일로 물러났다.\n조우는 그대로 남는다.{downed}", ReturnToBoard);
             }
@@ -878,18 +893,21 @@ namespace Fantasia.Combat
                 // LP 없는 캐릭터는 영구 사망. 아무도 복귀하지 못하면 플레이 종료.
                 int percent = DefeatRules.RollPlunderPercent();
                 int lost = session.Party.LoseCentPercent(percent);
+                PlaytestLog.Cent("약탈", -lost, session.Party.Cent, $"{percent}%");
                 Log($"  → 약탈 판정: 소지 Cent의 {percent}% → {lost} Cent 손실 (남은 {session.Party.Cent})");
                 string downed = SettleDowned(DefeatRules.WipeReturnHpRatio);
 
                 if (session.Party.IsWipedOut)
                 {
                     Log("  → 전원 영구 사망 — 플레이 종료");
+                    EndPlayLog("전멸 (회차 종료)", null, lost);
                     SaveGame.EndRun(session); // Save.md 1: 회차 종료 기록을 먼저 저장한 뒤 게임 오버 표시
                     _hud.ShowResult("게임 오버", $"파티 전원이 영구 사망했다.{downed}\n처음부터 다시 시작한다.", RestartGame, "처음부터 다시");
                 }
                 else
                 {
                     session.PlayerPosition = session.LastSafeCoord;
+                    EndPlayLog("패배", null, lost);
                     SaveGame.Checkpoint("전투 패배");
                     _hud.ShowResult("패배", $"파티가 쓰러졌다. 약탈 {lost} Cent ({percent}%).{downed}\n직전 안전 타일에서 다시 일어났다.", ReturnToBoard);
                 }
@@ -935,6 +953,7 @@ namespace Fantasia.Combat
             LootRules.Apply(rewards, party);
             session.PendingLoot.AddRange(rewards.Overflow);
             LastRewards = rewards;
+            PlaytestLog.Cent("전투 보상", rewards.Cent, party.Cent, string.Join(" + ", _setup.Enemies.Select(e => e.DisplayName)));
 
             var lines = new List<string> { $"보상 {rewards.SlotCount}칸 — {rewards.Cent} Cent (소지 {party.Cent})" };
             foreach (var item in rewards.Items)
