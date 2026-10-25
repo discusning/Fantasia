@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>판타지아 에셋·UI 요청 목록</title>
+<style>
+  @page { size: A4; margin: 15mm 14mm 15mm 14mm; }
+  :root { --ink:#1d1a17; --dim:#5f5850; --gold:#9a7230; --line:#d9d2c6; --bg:#f7f3ec; --p1:#a33a2c; --p2:#b0791d; --p3:#5c6b74; }
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; color: var(--ink); font-size: 9.6pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 21pt; margin: 0 0 4px; }
+  h2 { font-size: 13.5pt; margin: 20px 0 8px; padding: 6px 10px; background: var(--ink); color: #fff; border-radius: 3px; page-break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12px 0 5px; color: var(--gold); page-break-after: avoid; }
+  p { margin: 4px 0; }
+  .cover { border: 2px solid var(--ink); padding: 16px 18px; margin-bottom: 12px; }
+  .sub { color: var(--dim); font-size: 10pt; }
+  .meta { display: flex; gap: 16px; margin-top: 8px; font-size: 9pt; color: var(--dim); flex-wrap: wrap; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 2px; }
+  .stat { border: 1px solid var(--line); background: var(--bg); padding: 7px; text-align: center; border-radius: 3px; }
+  .stat b { display: block; font-size: 15pt; }
+  .stat span { font-size: 8.3pt; color: var(--dim); }
+  table { width: 100%; border-collapse: collapse; margin: 5px 0 9px; font-size: 8.7pt; }
+  th, td { border: 1px solid var(--line); padding: 4px 5px; vertical-align: top; text-align: left; }
+  th { background: var(--bg); font-weight: 700; white-space: nowrap; }
+  tr { page-break-inside: avoid; }
+  .p { font-size: 7.8pt; padding: 1px 6px; border-radius: 9px; color: #fff; white-space: nowrap; font-weight: 700; }
+  .P1 { background: var(--p1); } .P2 { background: var(--p2); } .P3 { background: var(--p3); }
+  .note { font-size: 8.8pt; color: var(--dim); }
+  .box { border: 1px solid var(--line); background: var(--bg); padding: 7px 10px; margin: 6px 0; border-radius: 3px; page-break-inside: avoid; }
+  code { font-family: Consolas, monospace; font-size: 8.3pt; background: #efe9df; padding: 0 3px; border-radius: 2px; }
+  ul { margin: 3px 0 3px 18px; padding: 0; } li { margin: 1px 0; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 9pt; margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>판타지아 — 에셋·UI·인터페이스 요청 목록</h1>
+  <div class="sub">개발팀 → 아트·사운드·기획 · 2026-10-25 현재 게임 기준으로 다시 정리 (이전판: Docs/Art/AssetList.md, 10/24)</div>
+  <div class="meta"><span>마감 2026-11-18</span><span>P1 희망 기한 <b>11/7</b> (교체·확인 시간)</span><span>지금 게임: 임시 도형·기본 글꼴·무음으로 모든 기능 동작</span></div>
+  <div class="summary">
+    <div class="stat"><b>20개</b><span>게임에 있는 화면·창</span></div>
+    <div class="stat"><b>6개</b><span>새로 필요한 화면</span></div>
+    <div class="stat"><b>약 190개</b><span>아이콘·그림 (P1 약 80)</span></div>
+    <div class="stat"><b>8곡 + 40여 개</b><span>배경음 + 효과음</span></div>
+  </div>
+</div>
+
+<h2>0. 읽는 법 · 공통 규격</h2>
+<div class="legend">
+  <span><span class="p P1">P1</span> 1차(1막 런던) 완성에 필요 — 11/7까지</span>
+  <span><span class="p P2">P2</span> 있으면 품질이 크게 오름 — 마무리 기간에 넣을 수 있음</span>
+  <span><span class="p P3">P3</span> 2차 이후 (베르사유·로마, 나머지 직업)</span>
+</div>
+<table>
+<tr><th>종류</th><th>형식·크기</th><th>넣는 곳 (개발)</th></tr>
+<tr><td>3D 모델 (캐릭터·적·소품)</td><td>FBX, 로우폴리, 키 약 2.4유닛 기준, 텍스처 1024 이하</td><td>직업·적 데이터의 <code>Model</code> 칸 — 넣으면 보드·전투·3D 초상에 자동 반영</td></tr>
+<tr><td>2D 초상</td><td>PNG 512×512, 투명 배경</td><td>직업·적 데이터의 <code>Portrait</code> 칸 — 있으면 3D 초상 대신 사용</td></tr>
+<tr><td>아이콘</td><td>PNG 128×128, 투명 배경</td><td>아이템·스킬·상태 데이터의 <code>Icon</code> 칸 (상점·인벤토리·전투 메뉴에 칸이 이미 있음)</td></tr>
+<tr><td>UI 틀</td><td>PNG 9-slice (테두리 두께 표시), 흰색으로 그리면 색은 코드가 입힘</td><td><code>UITheme</code> 한 곳 — 넣으면 모든 창에 반영</td></tr>
+<tr><td>배경음</td><td>OGG/WAV, 이음매 없이 반복</td><td><code>MusicLibrary</code> (ID별 칸, 재생·페이드 코드 완료)</td></tr>
+<tr><td>효과음</td><td>OGG/WAV, 짧게 (0.1~1.5초)</td><td>효과음 재생기는 소리가 오면 연결 (반나절)</td></tr>
+<tr><td>글꼴</td><td>TTF/OTF + <b>라이선스 파일</b> (상업 배포 가능, 예: OFL)</td><td><code>UITheme.Font</code></td></tr>
+</table>
+
+<!-- ───── 1 ───── -->
+<h2>1. 캐릭터 · 적 · NPC</h2>
+<table>
+<tr><th>대상</th><th>모델</th><th>2D 초상</th><th>지금</th><th>메모</th></tr>
+<tr><td>명탐정</td><td><span class="p P1">P1</span></td><td><span class="p P2">P2</span></td><td>도형 인형</td><td>중절모·코트·접이식 단검. 대기·공격·피격·쓰러짐 자세</td></tr>
+<tr><td>역병 의사</td><td><span class="p P1">P1</span></td><td><span class="p P2">P2</span></td><td>도형 인형</td><td>부리 가면·검은 코트·지팡이</td></tr>
+<tr><td>저격수</td><td><span class="p P1">P1</span></td><td><span class="p P2">P2</span></td><td>도형 인형</td><td>장총</td></tr>
+<tr><td><b>검시관 아벨 모로 (보스)</b></td><td><span class="p P1">P1</span></td><td><span class="p P1">P1</span></td><td>도형 인형</td><td>보스 요청서: 정식 리소스는 <b>아벨 모로부터</b> 교체. 흰 가운·메스·수은 병. 등장 배너·대화에 초상 사용</td></tr>
+<tr><td>그림자 사냥개 / 연성 독거미 / 역병 쥐 / 가고일 유체</td><td><span class="p P1">P1</span></td><td><span class="p P2">P2</span></td><td>도형</td><td>1막 소형 적 4종</td></tr>
+<tr><td>인조 그림자 사신</td><td><span class="p P1">P1</span></td><td><span class="p P2">P2</span></td><td>도형</td><td>피의 사냥 — 전투 + <b>보드 위 말</b>(4마리 동시)</td></tr>
+<tr><td>제임스 (의뢰인)</td><td>—</td><td><span class="p P1">P1</span></td><td>없음</td><td>보고 대화·도입 장면. 대화 창 초상</td></tr>
+<tr><td>점술마녀</td><td>—</td><td><span class="p P1">P1</span></td><td>없음</td><td>이벤트 창 왼쪽 큰 그림 (시안 G02 구성)</td></tr>
+<tr><td>나머지 5직업·2막 이후 적·보스</td><td><span class="p P3">P3</span></td><td><span class="p P3">P3</span></td><td>—</td><td>세베린·제1시험체 등</td></tr>
+</table>
+
+<!-- ───── 2 ───── -->
+<h2>2. 보드 (월드맵 720칸)</h2>
+<table>
+<tr><th>항목</th><th>우선</th><th>지금</th><th>메모</th></tr>
+<tr><td>칸 바닥 9종: 일반·막힘·거점·적·보스·이벤트·회복·보물·출구</td><td><span class="p P1">P1</span></td><td>색 육각 기둥</td><td>모델 또는 바닥 텍스처 (텍스처면 개발 작업 적음). 사용한 회복·보물 칸 "쓴 상태" 표현 포함</td></tr>
+<tr><td>이동 가능 칸 강조</td><td><span class="p P1">P1</span></td><td>밝은 초록</td><td>테두리 빛 등</td></tr>
+<tr><td>그리니치 거점 (S05) 건물</td><td><span class="p P1">P1</span></td><td>없음</td><td>상점·제임스 보고 장소</td></tr>
+<tr><td>폐검시소 (보스 M11) 건물</td><td><span class="p P1">P1</span></td><td>없음</td><td></td></tr>
+<tr><td>파티 토큰 (말)</td><td><span class="p P1">P1</span></td><td>빨간 구</td><td>파티장 1명이 이끄는 말</td></tr>
+<tr><td>사신 말</td><td><span class="p P1">P1</span></td><td>작은 도형</td><td>피의 사냥 중 보드에 4개</td></tr>
+<tr><td>K12 출구 표지</td><td><span class="p P2">P2</span></td><td>글자 "2막 베르사유 추후 공개"</td><td>잠긴 문·표지판</td></tr>
+<tr><td>하늘·조명 (평상시 / 붉은 하늘)</td><td><span class="p P1">P1</span></td><td>색만 바뀜</td><td>영혼 수확 75 이상 붉은 하늘</td></tr>
+<tr><td>이벤트 칸 장식 (점술 천막·분수대·석상)</td><td><span class="p P2">P2</span></td><td>보라 칸</td><td>칸 위 소품</td></tr>
+<tr><td>베르사유 궁전·로마 광장·2·3막 보스 건물</td><td><span class="p P3">P3</span></td><td>—</td><td>지도엔 보이지만 잠김</td></tr>
+</table>
+
+<!-- ───── 3 ───── -->
+<h2>3. 전투</h2>
+<table>
+<tr><th>항목</th><th>우선</th><th>지금</th><th>메모</th></tr>
+<tr><td>전투 배경 — 런던 거리</td><td><span class="p P1">P1</span></td><td>단색 바닥</td><td>일반·사신 전투</td></tr>
+<tr><td>전투 배경 — 폐검시소 내부</td><td><span class="p P1">P1</span></td><td>단색 바닥</td><td>아벨 모로전</td></tr>
+<tr><td>대상 선택 표시 (발밑 링)</td><td><span class="p P2">P2</span></td><td>단순 링</td><td></td></tr>
+<tr><td>효과 연출: 타격·크리티컬·회피·회복·중독·출혈·쓰러짐·부활</td><td><span class="p P2">P2</span></td><td>숫자 팝업만</td><td>파티클·짧은 흔들림</td></tr>
+<tr><td>보스 연출: 등장 밝기 강조·봉합 예고·저지 성공</td><td><span class="p P2">P2</span></td><td>색 강조·글자</td><td>보스 요청서 04번 — 기능은 완료, 그림만</td></tr>
+</table>
+
+<!-- ───── 4 ───── -->
+<h2>4. 아이콘 (128×128)</h2>
+<table>
+<tr><th>묶음</th><th>전체</th><th>P1</th><th>메모</th></tr>
+<tr><td>스킬</td><td>12 (1차) + 2차 15</td><td>12</td><td>명탐정·역병 의사·저격수 각 4 (패시브 1 + 액티브 3)</td></tr>
+<tr><td>상태 효과</td><td>9 (+2차: 화상·저주·부식 등)</td><td>9</td><td>약한 출혈·중독·혼란·속박·공격력 감소·방어 감소·속도 감소·장막 걷힘·영점 조정 — 적 HP 바·파티 카드 칩</td></tr>
+<tr><td>전투 행동</td><td>8</td><td>8</td><td>공격·스킬·소모품·방어·부활·퇴각·추가 집중 + <b>봉합 방해</b>(새로 생김)</td></tr>
+<tr><td>소모품</td><td>29</td><td>12</td><td>런던 판매·전리품: 붕대·생명/마력 영약·향초·해독제·지혈 연고·정신 안정 염·성수·시약·탈출권·텔레포트권·생명의 월계관</td></tr>
+<tr><td>무기</td><td>36</td><td>8</td><td>계열 10종 기본 그림 + <b>등급 테두리 6색</b>으로 돌려써도 됨</td></tr>
+<tr><td>방어구·장신구</td><td>17</td><td>4</td><td>몸통·머리·반지·목걸이</td></tr>
+<tr><td>등급 테두리</td><td>6</td><td>6</td><td>노말·희귀·에픽·유니크·전설·스페셜</td></tr>
+<tr><td>증거품</td><td>2</td><td>2</td><td>검시 기록·붉은 룬 조각 — 사건 기록 창 (없으면 공통 문서 아이콘)</td></tr>
+<tr><td>점술 카드 그림</td><td>3</td><td>3</td><td>부(동전)·회복(약병)·집중(촛불) — 시안 G02처럼 카드 한 장 크기 (약 300×400)</td></tr>
+<tr><td>기타 기호</td><td>6</td><td>6</td><td>Cent·LP·집중력·피의 흔적·영혼 수확·사건 기록</td></tr>
+</table>
+
+<!-- ───── 5 ───── -->
+<h2>5. UI 틀 (UITheme — 넣으면 전체 반영)</h2>
+<table>
+<tr><th>슬롯</th><th>쓰이는 곳</th><th>우선</th></tr>
+<tr><td>PanelFrame / PanelFill</td><td>모든 창 테두리·바탕 (메뉴·조우·인벤토리·상점·이벤트·사건 기록·설정·결과)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>Banner</td><td>이름 배너 (파티 카드, 조우 창 적 이름)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>Button</td><td>모든 버튼</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>BarBack / BarFill</td><td>HP·MP·영혼 수확 게이지 (흰색으로)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>SlotIcon</td><td>판정 슬롯 (미정·성공·실패를 색으로) — 전투·조우·점술</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>FocusPip</td><td>집중력 칸</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>PortraitFrame</td><td>초상 테두리 (파티 카드·타임라인·적 HP 바·파티 구성)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>TimelineFrame</td><td>전투 위쪽 행동 순서 줄</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>TopBarFrame, PhaseDial 4장, ThreatNotch, RegionBanner</td><td>보드 상단 바 (턴 시계·피의 흔적 10칸·지역명)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>AllyTurnBanner / EnemyTurnBanner</td><td>턴 전환 큰 배너</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>Attack~FocusToggle 아이콘 7개 (+봉합 방해)</td><td>전투 행동 버튼</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>Font</td><td>한글 글꼴 (본문 고딕 + 제목 명조/세리프 추천)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td><b>새 슬롯 제안</b>: 보스 배너 띠, 예고 칸 테두리, 카드 틀(점술·직업), 탭 버튼, 토스트·알림 바탕, 확인창 틀</td><td>지금은 단색 — 슬롯 추가는 개발 0.3일</td><td><span class="p P2">P2</span></td></tr>
+</table>
+
+<!-- ───── 6 ───── -->
+<h2>6. 화면별 구성 — 지금 게임에 있는 20개</h2>
+<p class="note">모두 기능은 완성. 그림(틀·아이콘·초상)만 들어오면 됨. "시안"은 화면 구성 그림이 있으면 배치까지 맞춰 바꿀 수 있다는 뜻.</p>
+<table>
+<tr><th>#</th><th>화면</th><th>들어 있는 요소</th><th>필요한 그림</th><th>우선</th></tr>
+<tr><td>1</td><td>메인 메뉴</td><td>타이틀·새 게임·이어하기(정보 2줄)·설정·종료, 최근 전멸 기록</td><td>타이틀 로고, 배경 (제안: 월드맵 밤·안개 활용 — 요청 28), 시안</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>2</td><td>파티 구성</td><td>직업 카드 3장(초상·역할·능력치·무기·기술), ◀▶, 1번 파티장</td><td>직업 카드 틀 ("사건 파일" 컨셉 시 서류철 — 요청 24), 시안</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>3</td><td>설정 + 화면 유지 확인</td><td>볼륨 3·해상도·전체 화면·초기화, 15초 확인</td><td>공통 틀로 충분</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>4</td><td>확인창 (새 게임 덮어쓰기·보스 레벨 경고)</td><td>문구 + 버튼 2개</td><td>공통 틀</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>5</td><td>보드 화면</td><td>상단 바(파티장·피의 흔적·턴 시계·영혼 수확·Cent·지역명), 턴 배너, 왼쪽 안내 패널, 퀘스트 추적, 사건 기록 버튼, 하단 파티 카드 3장(초상·HP/MP·집중·LP·퀵 슬롯 4·능력치)</td><td>5번 UI 틀 전부</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>6</td><td>조우 창</td><td>적 초상·이름·크기, 선택지 4개(전투·기습·몰래·후퇴)와 확률, 슬롯 공개</td><td>적 초상, 시안</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>7</td><td>전투 화면</td><td>타임라인(라운드·예고 "!" 표식), 적 HP 바(초상·상태 칩), <b>보스 예고 칸</b>, 행동 메뉴 6 + 추가 집중 + <b>봉합 방해</b>, 스킬/소모품 패널, 판정 롤 패널, 하단 알림, 보스 이름 배너</td><td>아이콘·틀·배경, 시안</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>8</td><td>전투 결과 창</td><td>승리·퇴각·패배·게임 오버, 보상 목록</td><td>공통 틀 (게임 오버는 14번 별도 화면 제안)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>9</td><td>대화 창</td><td>화자 이름·본문·다음·연출 건너뛰기</td><td><b>화자 초상</b> (명탐정·역병 의사·아벨 모로·제임스) — 지금은 초상 칸 없음, 추가 0.3일</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>10</td><td>인벤토리·장비</td><td>장비 5칸·장착 비교·소모품·보관함·퀵 슬롯</td><td>아이콘, 부위 빈칸 그림</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>11</td><td>상점 (탭 7개)</td><td>보급품·무기·방어구·서비스·작업대·팔기·의뢰, 재고·비용 줄, 상세 카드 + 장착됨 비교</td><td>아이콘, 상인 그림(선택)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>12</td><td>이벤트 창 — 점술마녀</td><td>참가비·카드 3장·성공률·대상 선택·판정 결과</td><td>점술마녀 그림, 카드 3장 (시안 G02 그대로 가능)</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>13</td><td>이벤트 창 — 분수대</td><td>캐릭터 선택·LP +1</td><td>분수대 그림</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>14</td><td>사건 기록 (Q)</td><td>진행 중·완료·증거품 탭</td><td>증거품 아이콘, 서류 질감(선택)</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>15</td><td>1막 클리어</td><td>제목·요약·다음 목적지·메인 메뉴로</td><td>배경 일러스트 1장</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>16</td><td>저장 실패</td><td>경고·원인·다시 시도</td><td>공통 틀</td><td><span class="p P3">P3</span></td></tr>
+<tr><td>17</td><td>랜드마크 정보</td><td>지형지물 이름·설명</td><td>건물 그림(선택)</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>18</td><td>아이템 획득 알림</td><td>짧은 토스트</td><td>아이콘</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>19</td><td>보드 안내 패널</td><td>주사위·이동·칸 색·단축키·결과 메시지</td><td>공통 틀</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>20</td><td>퀘스트 추적 (오른쪽 위)</td><td>진행 중 사건 목표</td><td>공통 틀</td><td><span class="p P2">P2</span></td></tr>
+</table>
+
+<h3>새로 필요한 화면 (6개)</h3>
+<table>
+<tr><th>화면</th><th>왜 필요</th><th>필요한 것</th><th>우선</th></tr>
+<tr><td>게임 중 메뉴 (Esc)</td><td>지금은 게임 중에 메인 메뉴·설정으로 갈 방법이 없음 (저장 예외 34번)</td><td>기획 OK + 공통 틀</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>게임 오버 화면</td><td>회차 종료 순간 — 지금은 결과 창 한 줄 (S3)</td><td>문구 + 일러스트 1장</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>1막 도입 장면</td><td>새 게임 후 바로 보드가 열림 — 제임스 의뢰 장면 (S2)</td><td>대사 + 일러스트 1~3장</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>십자가 석상 기도 창</td><td>이벤트 칸 (요청 38)</td><td>기도 목록 기획 + 석상 그림</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>로딩 화면</td><td>씬 전환(메뉴↔보드↔전투) 순간</td><td>그림 + 팁 문구</td><td><span class="p P2">P2</span></td></tr>
+<tr><td>마우스 커서</td><td>기본·이동 가능·공격</td><td>32×32 PNG 3종</td><td><span class="p P2">P2</span></td></tr>
+</table>
+
+<!-- ───── 7 ───── -->
+<h2>7. 사운드</h2>
+<h3>배경음 (MusicLibrary — 재생·페이드 코드 완료)</h3>
+<table>
+<tr><th>ID</th><th>쓰이는 곳</th><th>우선</th><th>메모</th></tr>
+<tr><td>BGM_Field_London</td><td>보드(런던)</td><td><span class="p P1">P1</span></td><td>연결 완료, 파일만 필요</td></tr>
+<tr><td>BGM_Battle</td><td>일반 전투</td><td><span class="p P1">P1</span></td><td>연결 완료</td></tr>
+<tr><td><b>BGM_Boss_Abel</b></td><td>아벨 모로전</td><td><span class="p P1">P1</span></td><td>보스 요청서: 음악 없이는 완료 처리 불가 — <b>임시 트랙이라도</b></td></tr>
+<tr><td>BGM_Menu</td><td>메인 메뉴·파티 구성</td><td><span class="p P1">P1</span></td><td>ID 추가 예정</td></tr>
+<tr><td>BGM_Victory / BGM_GameOver / BGM_ActClear</td><td>승리 짧은 곡·게임 오버·1막 클리어</td><td><span class="p P2">P2</span></td><td></td></tr>
+<tr><td>BGM_BloodHunt</td><td>피의 사냥 중</td><td><span class="p P2">P2</span></td><td>긴장감</td></tr>
+</table>
+<h3>효과음</h3>
+<table>
+<tr><th>묶음</th><th>목록</th><th>우선</th></tr>
+<tr><td>보드</td><td>주사위, 말 이동(칸마다), 턴 전환, 조우 시작, 보물 획득, 회복, 출구 잠김 알림, 사신 출현, 붉은 하늘</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>전투</td><td>슬롯 공개(성공·실패), 크리티컬, 물리 타격, 마법 타격, 빗나감(회피), 회복, 상태 걸림, 쓰러짐, 부활, 방어, 퇴각</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>보스</td><td>등장 배너, 예고, 저지 성공, 봉합 회복</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>UI</td><td>버튼, 창 열기·닫기, 탭 전환, 아이템 획득, 장착, 구입·판매(돈), 저장 실패 경고</td><td><span class="p P1">P1</span></td></tr>
+<tr><td>이벤트</td><td>점술 카드 뒤집기·성공·실패, 분수대</td><td><span class="p P2">P2</span></td></tr>
+</table>
+
+<!-- ───── 8 ───── -->
+<h2>8. 정리 — 받는 순서 제안</h2>
+<div class="box">
+<b>1순위 (11/1까지 오면 가장 좋음)</b>: 한글 글꼴(+라이선스) · UI 틀(PanelFrame·Button·Bar·PortraitFrame) · 보스 임시 음악 · 아벨 모로 모델·초상<br>
+<b>2순위 (11/7까지)</b>: 3직업·소형 적 4종·사신 모델 · 보드 칸 9종·거점·폐검시소 · 전투 배경 2 · P1 아이콘 약 80개 · 나머지 P1 배경음·효과음 · 점술마녀·제임스 초상 · 메인 메뉴 로고·배경 · 1막 클리어·게임 오버 일러스트<br>
+<b>3순위 (마무리 기간)</b>: P2 전체 (연출 효과, 로딩, 커서, 이벤트 장식 등)
+</div>
+<div class="box">
+<b>아트팀 확인 3가지</b>: ① 로우폴리 3D(For the King 느낌) 방향 유지 여부 ② 보드 칸을 모델로 줄지 텍스처로 줄지 ③ P1을 11/7까지 받을 수 있는지 — 어려운 항목은 미리 알려 주면 임시 그림으로 대체 계획을 세움<br>
+<b>개발이 할 일 (리소스 오면)</b>: 데이터·UITheme에 연결 → 화면 확인 → 판정 위치·자세 점검. 대화 초상 칸·새 UI 슬롯·효과음 재생기 추가는 리소스 도착 전에 미리 준비 가능 (합계 약 1일).
+</div>
+<p class="note">이전판(AssetList.md, 10/24) 대비 추가: 메인 메뉴·파티 구성·설정·확인창·사건 기록·1막 클리어·저장 실패·보드 안내 패널, 보스 예고 칸·봉합 방해 아이콘·보스 배너, 점술마녀·제임스 초상, 점술 카드 3장, 증거품 아이콘, 대화 초상, 새 화면 6개, 배경음 ID 정리, 보스·이벤트 효과음.</p>
+
+</body>
+</html>
