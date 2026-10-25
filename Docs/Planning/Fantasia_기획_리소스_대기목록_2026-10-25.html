@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>판타지아 기획·리소스 대기 목록</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  :root { --ink:#1d1a17; --dim:#5f5850; --gold:#9a7230; --red:#a33a2c; --line:#d9d2c6; --bg:#f7f3ec; --a:#a33a2c; --b:#b0791d; --c:#5c6b74; }
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", "Noto Sans KR", sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.55; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4px; letter-spacing: -0.5px; }
+  h2 { font-size: 14pt; margin: 22px 0 8px; padding: 6px 10px; background: var(--ink); color: #fff; border-radius: 3px; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14px 0 6px; color: var(--gold); page-break-after: avoid; }
+  p { margin: 4px 0; }
+  .cover { border: 2px solid var(--ink); padding: 18px 20px; margin-bottom: 14px; }
+  .sub { color: var(--dim); font-size: 10.5pt; }
+  .meta { display: flex; gap: 18px; margin-top: 10px; font-size: 9.5pt; color: var(--dim); flex-wrap: wrap; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 4px; }
+  .stat { border: 1px solid var(--line); background: var(--bg); padding: 8px; text-align: center; border-radius: 3px; }
+  .stat b { display: block; font-size: 16pt; }
+  .stat span { font-size: 8.5pt; color: var(--dim); }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9pt; page-break-inside: auto; }
+  th, td { border: 1px solid var(--line); padding: 5px 6px; vertical-align: top; text-align: left; }
+  th { background: var(--bg); font-weight: 700; }
+  tr { page-break-inside: avoid; }
+  .item { border: 1px solid var(--line); border-left: 5px solid var(--c); padding: 8px 10px; margin: 8px 0; page-break-inside: avoid; border-radius: 2px; }
+  .item.A { border-left-color: var(--a); }
+  .item.B { border-left-color: var(--b); }
+  .item .head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .no { font-weight: 800; font-size: 11pt; }
+  .q { font-weight: 700; font-size: 10.5pt; }
+  .tag { font-size: 8pt; padding: 1px 6px; border-radius: 9px; color: #fff; white-space: nowrap; }
+  .tag.A { background: var(--a); } .tag.B { background: var(--b); } .tag.C { background: var(--c); }
+  .row { display: grid; grid-template-columns: 72px 1fr; gap: 4px 8px; font-size: 9.3pt; }
+  .row .k { color: var(--dim); font-weight: 700; }
+  .ex { background: var(--bg); padding: 4px 8px; border-radius: 2px; font-size: 9pt; margin-top: 4px; }
+  ul { margin: 4px 0 4px 18px; padding: 0; }
+  li { margin: 1px 0; }
+  .note { font-size: 9pt; color: var(--dim); }
+  .legend { display: flex; gap: 14px; font-size: 9pt; margin: 6px 0; flex-wrap: wrap; }
+  .pb { page-break-before: always; }
+  .small { font-size: 8.8pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>판타지아 — 기획·리소스 대기 목록</h1>
+  <div class="sub">개발팀 → 기획팀·아트팀 · 1차(1막 런던) 완성을 위해 답변·자료가 필요한 항목 전체</div>
+  <div class="meta"><span>작성 2026-10-25</span><span>마감 2026-11-18</span><span>마무리 기간 11/8~11/18</span><span>관련 문서: Docs/Planning/PlannerRequests_2026-10-24.md · Decisions.md · Art/AssetList.md</span></div>
+  <div class="summary">
+    <div class="stat"><b>약 90%</b><span>1차 개발 진행률</span></div>
+    <div class="stat"><b>27건</b><span>기획 답변 대기 (+임시값 확인 8)</span></div>
+    <div class="stat"><b>11/1</b><span>A 등급 답변 희망일</span></div>
+    <div class="stat"><b>11/7</b><span>P1 아트·사운드 희망일</span></div>
+  </div>
+  <p class="small" style="margin-top:8px">개발은 답이 없는 부분을 <b>임시값(☆)</b>으로 먼저 만들어 두었습니다. 따라서 답이 늦어도 게임은 돌아가지만, 임시값이 그대로 최종 빌드에 들어가게 됩니다.
+  답을 주시면 대부분 숫자·표 한 곳만 바꾸면 되어 반영은 빠릅니다 (항목마다 "답 받은 뒤 작업" 참고).</p>
+</div>
+
+<h2>읽는 법</h2>
+<div class="legend">
+  <span><span class="tag A">A 긴급</span> 1막 플레이 내용에 직접 들어감 · 11/1까지</span>
+  <span><span class="tag B">B 확정</span> 임시값으로 돌아가지만 확정 필요 · 11/5까지</span>
+  <span><span class="tag C">C 여유</span> 품질·편의 · 마무리 전까지</span>
+</div>
+<p class="small">각 항목: <b>질문</b> · <b>왜 필요한가</b> · <b>지금 임시값</b> · <b>답이 없으면</b> · <b>답 받은 뒤 작업</b>. 번호는 기존 요청 목록 번호를 그대로 썼습니다 (2번은 37번과 합침).</p>
+
+<table>
+  <tr><th style="width:22%">묶음</th><th>번호</th><th style="width:10%">등급</th><th>요약</th></tr>
+  <tr><td>1. 지도·칸 규칙</td><td>1, 3, 4, 5, 6, 7, 8</td><td>A·B</td><td>적 칸 구성, 회복·보물 칸, 거리·기관차·사신·이름 통일</td></tr>
+  <tr><td>2. 이벤트 칸</td><td>37(=2), 38, 39, 40</td><td>A</td><td>칸 배정, 석상 기도 목록, 점술 판정자, 고정/랜덤</td></tr>
+  <tr><td>3. 피의 사냥·상점·서비스</td><td>9, 10, 11</td><td>B</td><td>사냥 보상·페널티, 런던 무기 수, 서비스 적용 범위</td></tr>
+  <tr><td>4. 저장 예외 상황</td><td>33~36</td><td>B</td><td>파일 손상, 게임 중 메뉴, 대화 중 종료, 플레이 시간</td></tr>
+  <tr><td>5. 메인 메뉴 화면</td><td>24~28</td><td>C</td><td>"사건 파일" 컨셉 채택 여부와 세부</td></tr>
+  <tr><td>6. 스토리·퀘스트</td><td>S1~S4</td><td>A·B</td><td>런던 의뢰, 1막 도입, 게임 오버 문구 등</td></tr>
+  <tr><td>7. 개발 임시값 확인</td><td>T1~T8</td><td>B</td><td>개발이 정한 값 — OK/수정만</td></tr>
+  <tr><td>8. 아트·사운드 리소스</td><td>R1~R6</td><td>A·B</td><td>캐릭터·적·칸·UI·글꼴·음악·효과음</td></tr>
+</table>
+
+<!-- ───────────── 1 ───────────── -->
+<h2>1. 지도·칸 규칙</h2>
+<p class="small">월드맵(720칸)은 PDF와 숫자까지 맞춰 게임에 들어가 있습니다. 지도에 "별도 규칙"으로 남은 칸들의 내용이 필요합니다.</p>
+
+<div class="item A"><div class="head"><span class="no">1</span><span class="q">런던 적 칸 10곳에 어떤 적이 몇 마리 나오나요?</span><span class="tag A">A</span></div>
+<div class="row">
+<span class="k">대상</span><span>N15, O07, O18, P04, Q01, Q13, U01, W04, W10, X07</span>
+<span class="k">왜 필요</span><span>1막에서 가장 많이 하는 전투가 이 10칸입니다. 적 구성이 곧 1막 난이도와 경험치·Cent 흐름을 정합니다. 보스(권장 레벨 3)에 도달할 때 파티 레벨이 몇이 될지도 이 값으로 결정됩니다. 거점에서 먼 칸을 더 세게 할지(난이도 곡선)도 함께 정해야 동선이 자연스럽습니다.</span>
+<span class="k">지금 임시</span><span>칸마다 1막 소형 적 4종 중 하나 + 같은 지역 소형 적 1마리 (총 2마리). 이긴 칸은 빈 칸.</span>
+<span class="k">답 없으면</span><span>모든 칸이 비슷한 난이도 → 성장 체감이 약하고, 보스 전 레벨이 기획 의도(3)와 어긋날 수 있음.</span>
+<span class="k">답 받은 뒤</span><span>칸별 표 입력만 (0.3일). 다시 나타나는 적이 필요하면 +0.5일.</span>
+</div>
+<div class="ex">답 예시: P04 = 역병 쥐 2 / N15 = 그림자 사냥개 1 + 역병 쥐 1 / … · 거점 6칸 이상은 중형 1 추가 · 처치 후 빈 칸 유지</div></div>
+
+<div class="item A"><div class="head"><span class="no">3</span><span class="q">회복 칸(초록) 규칙</span><span class="tag A">A</span></div>
+<div class="row">
+<span class="k">대상</span><span>런던 S16, X13 (전체 6곳)</span>
+<span class="k">왜 필요</span><span>회복 칸은 상점 숙박(1인 30 Cent)과 경쟁하는 자원입니다. 회복량·횟수에 따라 회복약 소비와 Cent 경제가 크게 달라지고, 보스전 준비 난이도도 바뀝니다.</span>
+<span class="k">지금 임시</span><span>살아 있는 파티 전원 최대 HP의 30%, 칸마다 1회 (사용 후 회색), 무료.</span>
+<span class="k">답 없으면</span><span>임시값 그대로 출시. 1회 제한이라 1막 후반엔 회복 수단이 상점뿐.</span>
+<span class="k">답 받은 뒤</span><span>숫자·조건 변경 (0.2일). 몇 턴마다 재사용이면 점술마녀와 같은 대기 구조로 0.3일.</span>
+</div>
+<div class="ex">정할 것: 회복 대상(HP/MP/집중력) · 양(% 또는 고정) · 비용 · 횟수(1회 / 매번 / N라운드마다)</div></div>
+
+<div class="item A"><div class="head"><span class="no">4</span><span class="q">보물 칸(노랑) 내용</span><span class="tag A">A</span></div>
+<div class="row">
+<span class="k">대상</span><span>런던 J06 (전체 3곳)</span>
+<span class="k">왜 필요</span><span>보물 칸은 탐험 보상의 핵심입니다. 무작위면 운에 따라 1막 장비 격차가 커지고, 고정 아이템이면 "가볼 이유"를 설계할 수 있습니다(예: 보스 대비 해독제 묶음).</span>
+<span class="k">지금 임시</span><span>전투 전리품 표(16종)에서 1개, 장비는 지역 등급 확률대로, 칸마다 1회.</span>
+<span class="k">답 없으면</span><span>무작위 1개로 출시 — 기대감이 약하고 결과 편차가 큼.</span>
+<span class="k">답 받은 뒤</span><span>고정 아이템/Cent/다수 지급 모두 0.2일.</span>
+</div></div>
+
+<div class="item B"><div class="head"><span class="no">5</span><span class="q">도시 사이 거리: 기존 문서 "50~60칸" vs 월드맵 "거점→출구 10~11칸"</span><span class="tag B">B</span></div>
+<div class="row">
+<span class="k">왜 필요</span><span>System.md·City.md는 도시 간 50~60칸을 전제로 피의 흔적·영혼 수확 속도, 재입고 주기(3라운드)를 정했습니다. 실제 지도는 훨씬 가깝습니다. 어느 쪽이 기준인지에 따라 게이지 증가 속도 조정 여부가 갈립니다.</span>
+<span class="k">지금 임시</span><span>월드맵 기준으로 구현 (게이지 수치는 기존 문서 그대로).</span>
+<span class="k">답 없으면</span><span>지도 기준 유지. 단 2막 이후 이동이 짧아 압박 게이지가 상대적으로 약할 수 있음.</span>
+</div></div>
+
+<div class="item B"><div class="head"><span class="no">6</span><span class="q">기관차 칸 — 기존 기획서엔 있고 월드맵엔 없음</span><span class="tag B">B</span></div>
+<div class="row">
+<span class="k">왜 필요</span><span>기관차는 "가본 수도로 이동"하는 이벤트이자 상점의 "룬 기관차 탑승권"과 연결됩니다. 안 쓰면 탑승권을 판매표에서 빼야 하고, 쓰면 지도에 위치가 필요합니다.</span>
+<span class="k">지금 임시</span><span>기관차 없음, 탑승권은 상점에서 숨김.</span>
+<span class="k">답 없으면</span><span>1차엔 영향 없음(도시 1개). 2차 설계 때 다시 결정 필요.</span>
+</div></div>
+
+<div class="item B"><div class="head"><span class="no">7</span><span class="q">피의 사냥 사신이 열린 출구를 넘어 다른 지역까지 따라오나요?</span><span class="tag B">B</span></div>
+<div class="row">
+<span class="k">왜 필요</span><span>출구가 열린 뒤 사신을 피해 다른 지역으로 도망치는 전략이 가능해지는지 여부입니다.</span>
+<span class="k">지금 임시</span><span>사신은 파티가 있는 지역 안에서만 생성·이동.</span>
+<span class="k">답 없으면</span><span>1차는 K12가 잠겨 있어 영향 없음. 2막 구현 전까지만 결정하면 됨.</span>
+</div></div>
+
+<div class="item C"><div class="head"><span class="no">8</span><span class="q">이름 통일: "그리니치 거점"(지도) / "그리니치 전망대"(기존 기획서)</span><span class="tag C">C</span></div>
+<div class="row"><span class="k">왜 필요</span><span>화면 표시(상점 제목·지역 배너·대사)와 문서가 다르면 플레이어·팀 모두 혼동합니다.</span><span class="k">지금 임시</span><span>지도 이름 "그리니치 거점", 상점 부제 "그리니치 전망대·수사대 상점".</span></div></div>
+
+<!-- ───────────── 2 ───────────── -->
+<h2>2. 이벤트 칸</h2>
+<p class="small">점술마녀(시안 G02 구성)와 분수대는 구현 완료. 기획 확인 뒤 수정하기로 한 상태입니다.</p>
+
+<div class="item A"><div class="head"><span class="no">37</span><span class="q">런던 이벤트 칸 2곳 배정 (기존 2번 질문과 같음)</span><span class="tag A">A</span></div>
+<div class="row">
+<span class="k">대상</span><span>런던 M02, S10 (전체 6곳: + A15, A21, Q26, X28)</span>
+<span class="k">왜 필요</span><span>런던에 이벤트 칸이 2곳뿐이라, 어떤 이벤트를 두느냐가 1막에서 플레이어가 볼 수 있는 이벤트를 결정합니다.</span>
+<span class="k">지금 임시</span><span>M02 = 점술마녀, S10 = 분수대.</span>
+<span class="k">답 받은 뒤</span><span>배정 표 한 줄 (즉시).</span>
+</div></div>
+
+<div class="item A"><div class="head"><span class="no">40</span><span class="q">이벤트는 칸마다 고정 / 방문마다 랜덤 / 새 게임마다 랜덤 배정 중 어느 쪽?</span><span class="tag A">A</span></div>
+<div class="row">
+<span class="k">왜 필요</span><span>지금 문서는 "칸 종류"로 쓰여 고정 배치로 읽힙니다. 그런데 런던 칸이 2곳이라 고정이면 1막에서 이벤트 2종만 보게 됩니다. 방문마다 랜덤이면 분수대처럼 "칸당 1회" 규칙과 충돌합니다. 새 게임마다 랜덤 배정은 두 문제를 모두 피하지만 지도 의도와 다를 수 있습니다.</span>
+<span class="k">지금 임시</span><span>칸마다 고정.</span>
+<span class="k">답 받은 뒤</span><span>어느 방식이든 0.3일 이내.</span>
+</div></div>
+
+<div class="item A"><div class="head"><span class="no">38</span><span class="q">십자가 석상: 한 석상에서 8종 기도 중 무엇을 고를 수 있나요?</span><span class="tag A">A</span></div>
+<div class="row">
+<span class="k">왜 필요</span><span>기획서에 기도 8종의 효과와 "석상 1개당 1회, 캐릭터당 활성 기도 1개"는 있지만, 석상마다 선택지가 전부인지 일부인지가 없습니다. 또 순수의 기도(질병·화상 면역), 성급함(전투 지원 범위)은 아직 게임에 없는 시스템이 필요합니다.</span>
+<span class="k">지금 임시</span><span>석상 미구현.</span>
+<span class="k">개발 제안</span><span>1차는 지금 시스템으로 되는 6종(집중·부·생명·그림자·피·지혜)만 먼저 넣기.</span>
+<span class="k">답 받은 뒤</span><span>6종 기준 1일 (기도 효과 연결 + 선택 창).</span>
+</div></div>
+
+<div class="item B"><div class="head"><span class="no">39</span><span class="q">점술마녀 판정은 파티장의 행운으로 하나요?</span><span class="tag B">B</span></div>
+<div class="row">
+<span class="k">왜 필요</span><span>기획서는 "행운 수치%"만 있고 누구의 행운인지가 없습니다. 보드에서는 파티장 1명이 이동·판정을 맡기로 결정되어 같은 원칙을 적용했습니다. 도박가(행운 특화, 2차)가 생기면 "누가 판정하느냐"가 직업 가치에 직결됩니다.</span>
+<span class="k">지금 임시</span><span>파티장(1번) 행운, 최대 95%.</span>
+</div></div>
+
+<!-- ───────────── 3 ───────────── -->
+<h2>3. 피의 사냥 · 상점 · 서비스</h2>
+
+<div class="item B"><div class="head"><span class="no">9</span><span class="q">피의 사냥 세부 수치</span><span class="tag B">B</span></div>
+<div class="row">
+<span class="k">왜 필요</span><span>피의 사냥은 1막의 주요 긴장 요소입니다. 성공 보상이 크면 일부러 사냥을 유도하게 되고, 실패 페널티가 약하면 무시하게 됩니다.</span>
+<span class="k">지금 임시</span><span>
+<ul>
+<li>성공(사신 1마리 처치): 100 Cent + 생명의 영약</li>
+<li>실패: 무작위 1명 HP·MP 1, 영혼 수확 추가 상승 없음</li>
+<li>사냥 중 주사위 −2 유지 (1·2가 나오면 이동 0 → 자동 턴 종료)</li>
+<li>끝난 뒤 2라운드 동안 피의 흔적 증가 없음</li>
+</ul></span>
+<span class="k">답 받은 뒤</span><span>수치 변경 즉시.</span>
+</div></div>
+
+<div class="item B"><div class="head"><span class="no">10</span><span class="q">런던 상점 노말 무기: 도시 설계안 "3종" vs 판매표 기준 "8종"</span><span class="tag B">B</span></div>
+<div class="row"><span class="k">왜 필요</span><span>두 문서의 숫자가 다릅니다. 판매 수가 1막 장비 선택 폭과 Cent 소비처를 정합니다.</span><span class="k">지금 임시</span><span>판매표 기준 — 파티 3직업이 쓰는 노말 무기 8종.</span></div></div>
+
+<div class="item B"><div class="head"><span class="no">11</span><span class="q">도시 서비스(숙박·치료·명상): 캐릭터 1명씩 vs 파티 3명 한꺼번에</span><span class="tag B">B</span></div>
+<div class="row"><span class="k">왜 필요</span><span>도시 설계안은 "선택 캐릭터"인데, 보드는 파티 1인 이동 구조라 3명 각각 쓰면 아군 턴이 3번 필요해집니다.</span><span class="k">지금 임시</span><span>파티 일괄, 1인 가격 × 생존 인원, 이용하면 아군 턴 종료.</span></div></div>
+
+<!-- ───────────── 4 ───────────── -->
+<h2>4. 저장 예외 상황 (세이브 확정안 이후 남은 것)</h2>
+<p class="small">저장 확정안·추가 수정안은 전부 반영했습니다. 아래 4개는 기본안으로 동작 중이며 "OK"만 주시면 확정합니다.</p>
+<table>
+<tr><th style="width:6%">번호</th><th style="width:20%">상황</th><th style="width:34%">지금 기본안</th><th>왜 정해야 하나</th></tr>
+<tr><td>33</td><td>저장 파일 손상·업데이트로 버전 불일치</td><td>"저장 파일을 불러올 수 없습니다" 표시, 파일은 지우지 않고 보관, 새 게임만 가능</td><td>테스트 빌드를 업데이트할 때마다 팀원 저장이 안 맞을 수 있습니다. 옛 저장을 변환해 줄지, 버릴지 정책이 필요합니다.</td></tr>
+<tr><td>34</td><td>게임 중 메뉴 (Esc)</td><td>미구현 — 제안: [계속] [설정] [메인 메뉴로] [게임 종료] + "저장 중" 표시</td><td>자동 저장만 있는 게임인데, 지금은 게임 중에 메인 메뉴로 나가거나 설정을 열 방법이 창 닫기뿐입니다. <b>가장 필요한 항목</b>.</td></tr>
+<tr><td>35</td><td>대화·연출 도중 종료</td><td>전투 전 대화 중 → 이어하면 대화 생략, 전투부터 / 처치 후·보고 대화 중 → 결과는 저장됨, 다시 켜면 결과 화면부터 (대화 다시 안 봄)</td><td>"결과 저장"과 "대사 보여주기"는 별개입니다. 중요한 대사를 놓칠 수 있어 다시 보여줄지 정해야 합니다.</td></tr>
+<tr><td>36</td><td>누적 플레이 시간</td><td>메인 메뉴·창 비활성(다른 창 사용) 시간 제외</td><td>이어하기 화면에 표시되는 값의 기준입니다.</td></tr>
+</table>
+
+<!-- ───────────── 5 ───────────── -->
+<h2>5. 메인 메뉴 화면 확장 (제안서: MainMenu_Proposal.md)</h2>
+<p class="small">현재 메인 메뉴·파티 구성은 기능만 있는 최소 화면입니다. For the King과 너무 같지 않게 다키스트 던전·인투 더 브리치·슬레이 더 스파이어·셜록 홈즈 보드게임을 섞은 "사건 파일" 컨셉을 제안했습니다.</p>
+<table>
+<tr><th style="width:6%">번호</th><th style="width:30%">질문</th><th>왜 필요 · 영향</th></tr>
+<tr><td>24</td><td>"사건 파일" 컨셉(서류철 직업 카드 + 신문 기사 이어하기)으로 갈지</td><td>첫인상 화면입니다. 컨셉이 정해져야 아트 요청(카드 틀·배경)도 확정됩니다. 약 1.5일.</td></tr>
+<tr><td>25</td><td>버튼 문구: "새 게임" / "새 사건" 등</td><td>세계관 톤을 정하는 문구입니다.</td></tr>
+<tr><td>26</td><td>추천 편성·무작위 버튼</td><td>1차는 직업 3개라 효과가 작지만, 2차(8직업)에서 필수에 가깝습니다.</td></tr>
+<tr><td>27</td><td>파티 역할 균형 표시(근접·원거리·회복·마법)</td><td>넣으면 직업별 역할 태그를 기획이 정해야 합니다.</td></tr>
+<tr><td>28</td><td>메뉴 배경: 실제 월드맵을 밤·안개로 / 별도 일러스트</td><td>월드맵 활용은 아트가 필요 없어 일정에 안전합니다.</td></tr>
+</table>
+
+<!-- ───────────── 6 ───────────── -->
+<h2>6. 스토리 · 퀘스트</h2>
+<p class="small">스토리 기획은 나중에 들어오는 것으로 알고 있습니다. 시스템은 준비되어 있어 문구만 받으면 넣을 수 있습니다.</p>
+
+<div class="item A"><div class="head"><span class="no">S1</span><span class="q">런던 의뢰(서브 퀘스트) 내용</span><span class="tag A">A</span></div>
+<div class="row"><span class="k">왜 필요</span><span>상점의 [의뢰] 탭이 지금 안내 문구만 있습니다. 기획서상 의뢰별 최초 1회 보상(1막 80 Cent · 경험치 40)이 있어, 의뢰가 없으면 1막 수입·경험치가 기획보다 적습니다.</span>
+<span class="k">필요한 것</span><span>의뢰 수, 각 의뢰의 제목·목표(어느 칸에서 무엇을)·완료 조건·대사 1~2줄.</span>
+<span class="k">답 받은 뒤</span><span>퀘스트 틀은 있음 — 의뢰당 0.2~0.3일.</span></div></div>
+
+<div class="item B"><div class="head"><span class="no">S2</span><span class="q">1막 도입 — 제임스의 의뢰 장면 대사</span><span class="tag B">B</span></div>
+<div class="row"><span class="k">왜 필요</span><span>새 게임을 시작하면 지금은 바로 보드가 열립니다. Story.md에 도입 장면(신문·제임스 방문)은 있지만 대사가 없습니다.</span>
+<span class="k">지금 임시</span><span>시작 퀘스트 "제임스의 의뢰 — 폐검시소(M11)의 검시관을 찾아 부인의 사건을 밝혀라" (개발 작성 문구).</span></div></div>
+
+<div class="item B"><div class="head"><span class="no">S3</span><span class="q">게임 오버(전멸) 화면 문구</span><span class="tag B">B</span></div>
+<div class="row"><span class="k">왜 필요</span><span>지금은 "파티 전원이 영구 사망했다. 처음부터 다시 시작한다." 한 줄입니다. 회차 종료가 저장되는 중요한 순간이라 연출·문구가 필요합니다.</span></div></div>
+
+<div class="item C"><div class="head"><span class="no">S4</span><span class="q">1막 클리어 결과 화면 문구 확인</span><span class="tag C">C</span></div>
+<div class="row"><span class="k">지금 임시</span><span>제목 "1막 클리어", 부제 "런던 — 검시소의 장부", 처치·보고·플레이 시간·증거·파티 요약, "다음 목적지: 2막 베르사유 — 추후 공개".</span></div></div>
+
+<!-- ───────────── 7 ───────────── -->
+<h2>7. 개발 임시값 확인 (OK / 수정만)</h2>
+<p class="small">기획서에 없어 개발이 정한 값입니다. 자세한 내용은 Decisions.md(☆ 표시).</p>
+<table>
+<tr><th style="width:6%">번호</th><th style="width:24%">항목</th><th style="width:38%">지금 값</th><th>왜 확인이 필요한가</th></tr>
+<tr><td>T1</td><td>파티 구성 중복 직업</td><td>같은 직업 2명 불가 (1차는 사실상 순서 정하기)</td><td>2차 8직업에서 중복 허용 여부가 밸런스에 영향</td></tr>
+<tr><td>T2</td><td>제임스 보고 장소</td><td>런던 거점 S05 도착 시 자동</td><td>보고서에 장소가 없음</td></tr>
+<tr><td>T3</td><td>보스 레벨 경고 [돌아가기]</td><td>직전 칸으로 물러나고 아군 턴 종료</td><td>불이익 여부 확인</td></tr>
+<tr><td>T4</td><td>예고 뒤 아군 차례가 없을 때</td><td>보스 차례를 "금지된 봉합 준비"(효과 없음)로 미룸</td><td>요청서의 "다음 보스 턴으로 미룸"을 이렇게 해석</td></tr>
+<tr><td>T5</td><td>상점 여는 법</td><td>거점 도착 시 자동 + 거점에서 B 키, 사고팔기는 턴 소모 없음</td><td>조작 방식 확정</td></tr>
+<tr><td>T6</td><td>2막 판매 단계 해금</td><td>런던 보스(아벨 모로) 처치</td><td>1차는 1막까지라 실질적으로 클리어 직전에만 의미</td></tr>
+<tr><td>T7</td><td>음악 ID</td><td>BGM_Field_London · BGM_Battle · BGM_Boss_Abel</td><td>사운드팀 파일 이름과 맞추기</td></tr>
+<tr><td>T8</td><td>월드 회복약 사용 제한</td><td>아군 턴마다 파티원별 1회</td><td>기획서 "이동 종료 전 1회"를 1인 이동 구조에 맞춤</td></tr>
+</table>
+
+<!-- ───────────── 8 ───────────── -->
+<h2>8. 아트 · 사운드 리소스 (상세: Docs/Art/AssetList.md)</h2>
+<p class="small">게임은 지금 임시 도형·기본 글꼴·무음으로 모든 기능이 동작합니다. 아래는 <b>P1 = 1차 완성에 필요</b>, 교체·확인 시간을 위해 <b>11/7까지</b> 받아야 하는 것입니다. UI 틀은 UITheme 한 곳에 넣으면 전체 화면에 반영되도록 준비되어 있습니다.</p>
+<table>
+<tr><th style="width:6%">번호</th><th style="width:20%">묶음</th><th style="width:42%">필요한 것 (P1)</th><th>왜 필요</th></tr>
+<tr><td>R1</td><td>캐릭터·적 모델</td><td>명탐정·역병 의사·저격수 / 그림자 사냥개·연성 독거미·역병 쥐·가고일 유체 / <b>아벨 모로(보스, 초상 포함)</b> / 인조 그림자 사신</td><td>전투·보드·초상(3D 렌더) 전부에 쓰임. 보스 요청서: 정식 리소스가 오면 아벨 모로부터 교체</td></tr>
+<tr><td>R2</td><td>보드 칸·랜드마크</td><td>칸 종류별 바닥(일반·막힘·거점·적·보스·이벤트·회복·보물·출구), 그리니치 전망대, 폐검시소, 파티 토큰, 사신 말, 하늘·조명</td><td>720칸이 이것들로 깔림. 텍스처만이면 개발 작업이 더 적음</td></tr>
+<tr><td>R3</td><td>전투 배경</td><td>런던 거리, 폐검시소 내부</td><td>지금은 단색 바닥</td></tr>
+<tr><td>R4</td><td>아이콘 (128×128)</td><td>스킬 12, 상태 9, 전투 행동 7, 소모품 12, 노말 무기 8, 방어구 4, 등급 테두리 6, 기타 4(Cent·LP·집중력·게이지)</td><td>인벤토리·상점·전투 메뉴의 아이콘 칸이 비어 있음 (아이콘 칸은 준비됨)</td></tr>
+<tr><td>R5</td><td>UI 틀·글꼴</td><td>패널·배너·버튼·게이지·슬롯·초상 테두리·타임라인·상단 바·턴 시계·턴 배너, 점술 카드 3장 그림, <b>한글 글꼴(상업 배포 가능 라이선스)</b></td><td>모든 창의 인상. 글꼴은 라이선스 파일까지 필요 (배포 문제)</td></tr>
+<tr><td>R6</td><td>사운드</td><td><b>배경음</b>: 메인 메뉴·보드(런던)·일반 전투·<b>보스전(아벨 모로)</b>·승리·게임 오버 / <b>효과음</b>: 주사위·이동·턴 전환·슬롯 성공/실패·크리티컬·타격·회복·쓰러짐·버튼·아이템 획득 (OGG/WAV, 배경음은 반복 가능하게)</td><td>보스 요청서 04번: "음악 없음 상태로 완료 처리하지 않음" — <b>임시 트랙이라도 필요</b>. 재생 코드는 완료, 파일만 연결하면 됨</td></tr>
+</table>
+<p class="small"><b>아트팀 확인 3가지</b>: ① 로우폴리 3D(For the King 느낌) 방향 유지 여부 ② 보드 칸을 모델로 줄지 텍스처로 줄지 ③ P1을 11/7까지 받을 수 있는지 — 어려우면 임시 그림으로 제출해야 하므로 미리 알려 주세요.</p>
+
+<!-- ───────────── 일정 ───────────── -->
+<h2>답변 일정 제안</h2>
+<table>
+<tr><th style="width:18%">시점</th><th>받으면 좋은 것</th><th style="width:30%">이유</th></tr>
+<tr><td>~11/1</td><td>A 등급: 1(적 칸), 3(회복), 4(보물), 37·40·38(이벤트), S1(런던 의뢰)</td><td>1막 플레이 내용 자체 — 반영 후 밸런스 확인 시간이 필요</td></tr>
+<tr><td>~11/5</td><td>B 등급 전부, 34(Esc 메뉴), T1~T8 확인</td><td>마무리 기간(11/8~) 전에 확정</td></tr>
+<tr><td>~11/7</td><td>아트·사운드 P1</td><td>교체 후 화면·판정 위치 확인 시간</td></tr>
+<tr><td>11/8~11/18</td><td>통플레이·버그 수정·최종 빌드</td><td>새 기능 추가 없이 안정화</td></tr>
+</table>
+<p class="note">개발 현황: 전투·보스(아벨 모로)·월드맵·상점·피의 사냥/영혼 수확·저장(전투 중 재개 포함)·메인 메뉴·설정·사건 기록·1막 클리어 흐름·이벤트 칸(점술마녀·분수대) 구현 완료. 실행 빌드 자동 플레이로 확인.</p>
+
+</body>
+</html>
