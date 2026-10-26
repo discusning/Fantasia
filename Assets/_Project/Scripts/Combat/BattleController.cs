@@ -1035,7 +1035,7 @@ namespace Fantasia.Combat
         // ───────────── 대상 선택 (전장 클릭) ─────────────
         private void Update()
         {
-            if (SaveErrorPanel.IsOpen) return; // 저장 실패 — 재시도 성공까지 진행 일시정지
+            if (SaveErrorPanel.IsOpen || PauseMenu.IsOpen) return; // 저장 실패·게임 중 메뉴 — 진행 일시정지
             // 사건 기록 (Q) — 전투 중엔 열람만
             if (Input.GetKeyDown(KeyCode.Q) && !DialoguePanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen) return;

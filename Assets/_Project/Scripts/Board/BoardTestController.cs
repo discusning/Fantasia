@@ -294,7 +294,7 @@ namespace Fantasia.Board
 
         private void Update()
         {
-            if (SaveErrorPanel.IsOpen) return; // 저장 실패 — 재시도 성공까지 진행 일시정지
+            if (SaveErrorPanel.IsOpen || PauseMenu.IsOpen) return; // 저장 실패·게임 중 메뉴 — 진행 일시정지
             if (Input.GetKeyDown(KeyCode.Q) && !EncounterPanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen || ConfirmPanel.IsOpen || ActClearPanel.IsOpen) return;
             if (Input.GetKeyDown(KeyCode.I) && !EncounterPanel.IsOpen) InventoryPanel.Toggle(_testParty, Leader);
@@ -912,7 +912,7 @@ namespace Fantasia.Board
                 _awaitingSelection ? "밝은 칸 클릭: 이동" : _isMoving ? "이동 중..." : null,
                 _lastEventBonus >= 0 ? $"이벤트 칸 추가 이동 +{_lastEventBonus}칸 (이번 턴 1회)" : null,
                 "<color=#A39C92>주황 적 · 자주 보스 · 파랑 거점 · 보라 이벤트 · 초록 회복 · 노랑 보물</color>",
-                "<color=#A39C92>I·초상 클릭: 인벤토리 · Q: 사건 기록" + (OnHubTile ? " · B: 상점" : "") + (_hasSave && DevLoadAllowed ? " · F9: 불러오기(개발)" : "") + "</color>",
+                "<color=#A39C92>I·초상 클릭: 인벤토리 · Q: 사건 기록 · Esc: 메뉴" + (OnHubTile ? " · B: 상점" : "") + (_hasSave && DevLoadAllowed ? " · F9: 불러오기(개발)" : "") + "</color>",
                 _board != null && _board.UsesWorldMap ? "<color=#A39C92>카메라: WASD·방향키, 휠 줌, F 파티로</color>" : null,
                 SaveGame.LastError != null ? "<color=#E0675A>저장 실패</color>" : null,
                 !EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage) ? _encounterResultMessage : null,

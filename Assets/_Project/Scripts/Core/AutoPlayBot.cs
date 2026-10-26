@@ -285,6 +285,17 @@ namespace Fantasia.Core
             yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
             yield return new WaitForSeconds(1.5f);
             yield return Shot("board_k12_notice");
+
+            // Esc 게임 중 메뉴: 열기 → 멈춤 확인 → 메인 메뉴로 → 이어하기 정보
+            PauseMenu.DevOpen();
+            yield return new WaitForSecondsRealtime(0.4f);
+            Note($"Esc 메뉴 {(PauseMenu.IsOpen ? "열림" : "안 열림")} · timeScale {Time.timeScale}");
+            yield return Shot("pause_menu");
+            PauseMenu.DevToMainMenu();
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            Note($"메인 메뉴로 나감 → {FindFirstObjectByType<MainMenuController>()?.DevContinueInfo.Replace("\n", " / ")} · timeScale {Time.timeScale}");
+            yield return Shot("menu_after_pause");
             Note("자동 플레이 완료");
         }
 

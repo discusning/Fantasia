@@ -60,7 +60,13 @@ namespace Fantasia.Core
         {
             if (Environment.GetCommandLineArgs().Length > 0 && Array.IndexOf(Environment.GetCommandLineArgs(), "-autoplay") >= 0) { Current.ApplyAudio(); return; } // 자동 플레이는 창 크기 인자 우선
             Current.ApplyAudio();
-            Current.ApplyDisplay();
+            // 화면 설정을 한 번도 바꾸지 않았으면 모니터 해상도 전체 화면으로 — 자동 플레이 등이 남긴 작은 창 크기를 물려받지 않게
+            if (Current.width <= 0 || Current.height <= 0)
+            {
+                var d = Defaults();
+                Screen.SetResolution(d.width, d.height, FullScreenMode.FullScreenWindow);
+            }
+            else Current.ApplyDisplay();
         }
     }
 }

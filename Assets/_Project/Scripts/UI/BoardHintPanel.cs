@@ -19,7 +19,7 @@ namespace Fantasia.UI
         {
             () => InventoryPanel.IsOpen, () => ShopPanel.IsOpen, () => DialoguePanel.IsOpen, () => EncounterPanel.IsOpen,
             () => CaseLogPanel.IsOpen, () => ConfirmPanel.IsOpen, () => ActClearPanel.IsOpen, () => SaveErrorPanel.IsOpen,
-            () => SettingsPanel.IsOpen, () => LandmarkInfoPanel.IsOpen,
+            () => SettingsPanel.IsOpen, () => LandmarkInfoPanel.IsOpen, () => PauseMenu.IsOpen,
         };
 
         private static readonly Dictionary<string, Func<bool>> Registered = new();
