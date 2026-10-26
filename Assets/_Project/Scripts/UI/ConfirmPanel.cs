@@ -43,11 +43,11 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.55f));
             _root = dim.gameObject;
-            var box = UGUIKit.CreateThemedPanel(dim.transform, "Box", new Vector2(0.3f, 0.38f), new Vector2(0.7f, 0.62f), Gold, new Color(0.08f, 0.07f, 0.09f, 0.97f), 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            var box = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Box", new Vector2(0.3f, 0.38f), new Vector2(0.7f, 0.62f), Gold, new Color(0.08f, 0.07f, 0.09f, 0.97f), 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
             _body = UGUIKit.CreateText(box, "Text", new Vector2(0.05f, 0.42f), new Vector2(0.95f, 0.92f), "", 15, TextAnchor.MiddleCenter);
             _body.color = new Color(0.92f, 0.9f, 0.86f);
             var yes = UGUIKit.CreateThemedButton(box, "Yes", new Vector2(0.1f, 0.1f), new Vector2(0.45f, 0.34f), "", new Color(0.45f, 0.18f, 0.16f), 14);

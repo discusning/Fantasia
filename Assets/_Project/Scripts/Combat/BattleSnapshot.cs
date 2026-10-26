@@ -17,6 +17,7 @@ namespace Fantasia.Combat
         public int coordQ, coordR;
         public bool reaperFight;
         public int zoneWearLevel = 1;
+        public int fixedExp, fixedCent; // 지도 적 칸 확정 보상 (MapTileRules)
 
         public List<UnitData> allies = new(), enemies = new();
         public int round, index;

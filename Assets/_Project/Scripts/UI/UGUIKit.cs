@@ -13,11 +13,36 @@ namespace Fantasia.UI
 
         // Lazy, not a field initializer — GetBuiltinResource isn't allowed to
         // run during MonoBehaviour construction/deserialization.
-        // UITheme에 글꼴이 지정돼 있으면 그걸 쓴다 (한글 글꼴 교체 지점).
+        // 게임 글꼴: UITheme에 지정돼 있으면 그것 → 없으면 Resources/Fonts의 ZEN SERIF(팀 지정 글꼴) → 없으면 기본 글꼴.
+        // ZEN SERIF 파일은 라이선스상 재배포 금지라 저장소에 없음 — 팀원은 Assets/_Project/Resources/Fonts/에 직접 넣는다.
+        public const string GameFontResource = "Fonts/ZEN-SERIF-TTF-Regular";
         private static Font _uiFont;
-        public static Font UIFont => _uiFont ??= UITheme.Current.Font != null
-            ? UITheme.Current.Font
-            : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        public static Font UIFont => _uiFont ??= UITheme.Current.Font != null ? UITheme.Current.Font
+            : Resources.Load<Font>(GameFontResource) ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        // 해상도 공통 규칙 (배포용): UI는 16:9 기준 크기로 그리고 화면에 맞춰 비율대로 키운다.
+        // Expand — 가로·세로 중 작은 쪽에 맞춰 키움 → 21:9·16:10에서도 글자·창이 화면 밖으로 넘치지 않음.
+        public static readonly Vector2 ReferenceResolution = new Vector2(1280, 720);
+
+        public static void ConfigureScaler(CanvasScaler scaler)
+        {
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = ReferenceResolution;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+        }
+
+        // 화면 가운데 16:9 영역 — 창·메뉴처럼 가운데 뜨는 것은 여기에 붙여 울트라와이드에서 옆으로 늘어나지 않게 한다.
+        // 상단 바·파티 카드처럼 가장자리에 붙는 HUD는 쓰지 않는다 (화면 끝에 붙어야 함).
+        public static Transform Safe16x9(Transform fullScreenParent)
+        {
+            var existing = fullScreenParent.Find("Safe16x9");
+            if (existing != null) return existing;
+            var rt = CreateRect(fullScreenParent, "Safe16x9", Vector2.zero, Vector2.one);
+            var fitter = rt.gameObject.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            fitter.aspectRatio = 16f / 9f;
+            return rt;
+        }
 
         public static RectTransform CreateRect(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax)
         {

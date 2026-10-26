@@ -42,11 +42,22 @@ namespace Fantasia.UI
 
         private static GameSettings S => GameSettings.Current;
 
+        private static readonly (int, int)[] CommonResolutions =
+        {
+            (1280, 720), (1366, 768), (1600, 900), (1920, 1080), (1920, 1200),
+            (2560, 1080), (2560, 1440), (3440, 1440), (3840, 2160),
+        };
+
         private void LoadDisplayChoices()
         {
-            _resolutions = Screen.resolutions.Select(r => (r.width, r.height)).Distinct().OrderBy(r => r.width * r.height).ToList();
+            // 흔한 해상도만 (모니터가 지원하는 것 중) + 모니터 해상도 — 이상한 해상도가 줄줄이 나오지 않게
+            var native = (Screen.currentResolution.width, Screen.currentResolution.height);
+            _resolutions = Screen.resolutions.Select(r => (r.width, r.height)).Distinct()
+                .Where(r => CommonResolutions.Contains(r) || r == native).ToList();
+            if (!_resolutions.Contains(native)) _resolutions.Add(native);
             int w = S.width > 0 ? S.width : Screen.width, h = S.height > 0 ? S.height : Screen.height;
             if (!_resolutions.Contains((w, h))) _resolutions.Add((w, h));
+            _resolutions = _resolutions.OrderBy(r => r.Item1 * r.Item2).ToList();
             _resIndex = _resolutions.IndexOf((w, h));
             _pendingFullscreen = S.width > 0 ? S.fullscreen : Screen.fullScreen;
         }
@@ -152,11 +163,11 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.6f));
             _root = dim.gameObject;
-            var win = UGUIKit.CreateThemedPanel(dim.transform, "Window", new Vector2(0.3f, 0.15f), new Vector2(0.7f, 0.85f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.3f, 0.15f), new Vector2(0.7f, 0.85f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
             Label(win, "Title", new Vector2(0.05f, 0.88f), new Vector2(0.95f, 0.97f), "설정", 20, Gold, true);
 
             _master = Row(win, 0, "전체 볼륨", () => StepVolume(0, -1), () => StepVolume(0, +1));
@@ -174,7 +185,7 @@ namespace Fantasia.UI
             // 화면 유지 확인
             var cdim = UGUIKit.CreateImage(dim.transform, "Confirm", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.5f));
             _confirm = cdim.gameObject;
-            var box = UGUIKit.CreateThemedPanel(cdim.transform, "Box", new Vector2(0.33f, 0.38f), new Vector2(0.67f, 0.62f), Gold, Fill, 2f);
+            var box = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(cdim.transform), "Box", new Vector2(0.33f, 0.38f), new Vector2(0.67f, 0.62f), Gold, Fill, 2f);
             _confirmText = Label(box, "Text", new Vector2(0.05f, 0.42f), new Vector2(0.95f, 0.92f), "", 14, TextLight, false);
             UGUIKit.CreateThemedButton(box, "Revert", new Vector2(0.08f, 0.1f), new Vector2(0.46f, 0.34f), "되돌리기", ButtonFill, 14).onClick.AddListener(RevertDisplay);
             UGUIKit.CreateThemedButton(box, "Keep", new Vector2(0.54f, 0.1f), new Vector2(0.92f, 0.34f), "유지", AccentFill, 14).onClick.AddListener(KeepDisplay);

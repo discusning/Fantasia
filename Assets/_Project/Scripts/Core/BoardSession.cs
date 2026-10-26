@@ -30,6 +30,8 @@ namespace Fantasia.Core
         // 월드맵: 시작 위치를 정했는지 (처음이면 런던 거점 S05에서 시작), 이미 쓴 회복·보물 칸
         public bool HasPlayerPosition { get; set; }
         public HashSet<HexCoord> UsedMapTiles { get; } = new HashSet<HexCoord>();
+        // 점술마녀 칸별 마지막 참여 월드 라운드 (3라운드 뒤 재참여). 분수대는 UsedMapTiles로 1회
+        public Dictionary<HexCoord, int> WitchRounds { get; } = new();
 
         // 보드·전투가 같이 쓰는 3인 파티 (HP·집중력 등이 씬을 넘어 유지된다).
         public Fantasia.Data.Party Party { get; set; }
@@ -111,6 +113,7 @@ namespace Fantasia.Core
             ResetQuests();
             ClearedEncounters.Clear();
             UsedMapTiles.Clear();
+            WitchRounds.Clear();
             HasPlayerPosition = false;
             BoardSeed = Random.Range(int.MinValue, int.MaxValue);
             // 새 회차: 회차 ID·게임 난수 새로

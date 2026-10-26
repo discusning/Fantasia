@@ -107,7 +107,7 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             // 사건 기록 버튼 (창이 닫혀 있을 때도 보임)
             var open = UGUIKit.CreateThemedButton(canvasGO.transform, "CaseLogButton", new Vector2(1f, 1f), new Vector2(1f, 1f), "사건 기록 (Q)", new Color(0.2f, 0.16f, 0.1f), 11);
@@ -118,12 +118,12 @@ namespace Fantasia.UI
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.5f));
             _root = dim.gameObject;
-            var win = UGUIKit.CreateThemedPanel(dim.transform, "Window", new Vector2(0.2f, 0.15f), new Vector2(0.8f, 0.88f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.2f, 0.15f), new Vector2(0.8f, 0.88f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
             win.parent.gameObject.AddComponent<Button>(); // 창 안 클릭이 뒤로 새지 않게
             var title = UGUIKit.CreateText(win, "Title", new Vector2(0.03f, 0.9f), new Vector2(0.6f, 0.98f), "사건 기록", 18, TextAnchor.MiddleLeft);
             title.color = Gold;
             title.fontStyle = FontStyle.Bold;
-            UGUIKit.CreateThemedButton(win, "Close", new Vector2(0.92f, 0.91f), new Vector2(0.98f, 0.98f), "✕", RowFill, 14).onClick.AddListener(() => _root.SetActive(false));
+            UGUIKit.CreateThemedButton(win, "Close", new Vector2(0.92f, 0.91f), new Vector2(0.98f, 0.98f), "×", RowFill, 14).onClick.AddListener(() => _root.SetActive(false));
             for (int i = 0; i < TabNames.Length; i++)
             {
                 int index = i;

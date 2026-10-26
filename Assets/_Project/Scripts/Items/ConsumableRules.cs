@@ -56,7 +56,7 @@ namespace Fantasia.Items
             {
                 case ConsumableEffect.RestoreHP:
                     int before = target.CurrentHP;
-                    target.Heal(def.Amount);
+                    target.Heal(def.Amount + (target.Prayer == PrayerKind.Life ? PrayerRules.LifeItemHeal : 0)); // 생명의 기도
                     parts.Add($"HP +{target.CurrentHP - before}");
                     break;
                 case ConsumableEffect.RestoreMP:

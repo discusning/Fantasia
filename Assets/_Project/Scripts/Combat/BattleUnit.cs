@@ -90,7 +90,7 @@ namespace Fantasia.Combat
             if (!weaponBased)
             {
                 request.SlotCount = skill.SlotCount;
-                request.SlotChance = SlotCheck.FinalSlotChance(skill.SlotCount, Member.FinalStats.Get(skill.RollStat));
+                request.SlotChance = SlotCheck.FinalSlotChance(skill.SlotCount, Member.FinalStats.Get(skill.RollStat), Member.Prayer == PrayerKind.Blood ? PrayerRules.BloodSlotBonus : 0f);
             }
             request.PierceRatio = Mathf.Max(request.PierceRatio, skill.PierceRatio);
             return request;
@@ -168,5 +168,7 @@ namespace Fantasia.Combat
     {
         public List<EnemyDefinition> Enemies = new();
         public EncounterOutcome Opening = EncounterOutcome.FightStarted; // 기습 성공/실패면 첫 라운드 순서가 바뀐다
+        // 지도 적 칸 확정 보상 (MapTileRules) — 0이면 몬스터별 기본 보상. 경험치는 생존 참가자 각자, Cent는 파티 1회
+        public int FixedExp, FixedCent;
     }
 }

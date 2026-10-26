@@ -343,18 +343,18 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.55f));
             _root = dim.gameObject;
-            var win = UGUIKit.CreateThemedPanel(dim.transform, "Window", new Vector2(0.12f, 0.24f), new Vector2(0.88f, 0.93f), Gold, Fill, 2f, UITheme.Current.PanelFrame);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.12f, 0.24f), new Vector2(0.88f, 0.93f), Gold, Fill, 2f, UITheme.Current.PanelFrame);
             win.parent.gameObject.AddComponent<Button>(); // 창 안 클릭이 뒤로 새지 않게
 
             _title = Label(win, "Title", new Vector2(0.02f, 0.935f), new Vector2(0.4f, 0.995f), 18, TextAnchor.MiddleLeft, Gold, true);
             _subtitle = Label(win, "Subtitle", new Vector2(0.02f, 0.895f), new Vector2(0.4f, 0.94f), 11, TextAnchor.MiddleLeft, TextDim, false);
             _restock = Label(win, "Restock", new Vector2(0.4f, 0.9f), new Vector2(0.7f, 0.99f), 11, TextAnchor.MiddleCenter, TextDim, false);
             _cent = Label(win, "Cent", new Vector2(0.7f, 0.9f), new Vector2(0.93f, 0.99f), 15, TextAnchor.MiddleRight, Gold, true);
-            UGUIKit.CreateThemedButton(win, "Close", new Vector2(0.945f, 0.91f), new Vector2(0.99f, 0.99f), "✕", RowFill, 14).onClick.AddListener(Close);
+            UGUIKit.CreateThemedButton(win, "Close", new Vector2(0.945f, 0.91f), new Vector2(0.99f, 0.99f), "×", RowFill, 14).onClick.AddListener(Close);
 
             for (int i = 0; i < TabNames.Length; i++)
             {

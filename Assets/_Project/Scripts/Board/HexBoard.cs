@@ -110,7 +110,11 @@ namespace Fantasia.Board
                     case MapTileKind.Boss:
                         int region = Map.RegionOf(coord);
                         var regionBoss = mapTile.Kind == MapTileKind.Boss && region >= 0 && region < RegionBosses.Length ? RegionBosses[region] : null;
+                        // 일반 적 칸: 확정 조합이 있으면 그 첫 적을 칸 대표로 (MapTileRules), 없으면 임시 풀
+                        var fixedGroup = mapTile.Kind == MapTileKind.Enemy
+                            ? Fantasia.World.MapTileRules.ResolveEnemies(Fantasia.World.MapTileRules.EncounterAt(mapTile.Label), ItemCatalog.Current) : null;
                         var enemy = regionBoss != null ? regionBoss
+                            : fixedGroup != null ? fixedGroup[0]
                             : EncounterEnemyPool.Length > 0 ? EncounterEnemyPool[StableIndex(mapTile, EncounterEnemyPool.Length)] : null;
                         tile.SetEncounter(enemy != null, enemy);
                         if (session != null && session.ClearedEncounters.Contains(coord)) tile.SetCleared(true);

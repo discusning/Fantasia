@@ -61,7 +61,7 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0.03f, 0.02f, 0.03f, 0.92f));
             _root = dim.gameObject;

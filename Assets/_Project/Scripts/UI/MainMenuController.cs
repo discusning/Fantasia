@@ -162,11 +162,11 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
             var bg = UGUIKit.CreateImage(canvasGO.transform, "Background", Vector2.zero, Vector2.one, new Color(0.05f, 0.045f, 0.06f));
 
             // 메뉴
-            _menu = UGUIKit.CreateRect(bg.transform, "Menu", Vector2.zero, Vector2.one).gameObject;
+            _menu = UGUIKit.CreateRect(UGUIKit.Safe16x9(bg.transform), "Menu", Vector2.zero, Vector2.one).gameObject;
             Label(_menu.transform, "Title", new Vector2(0.2f, 0.66f), new Vector2(0.8f, 0.86f), 64, TextAnchor.MiddleCenter, Gold, true).text = "판타지아";
             Label(_menu.transform, "Subtitle", new Vector2(0.2f, 0.6f), new Vector2(0.8f, 0.67f), 16, TextAnchor.MiddleCenter, TextDim, false).text = "1막 — 런던";
             UGUIKit.CreateThemedButton(_menu.transform, "NewGame", new Vector2(0.4f, 0.46f), new Vector2(0.6f, 0.53f), "새 게임", StartFill, 18).onClick.AddListener(OnNewGame);
@@ -179,7 +179,7 @@ namespace Fantasia.UI
             // 새 게임 덮어쓰기 확인
             var dim = UGUIKit.CreateImage(bg.transform, "Confirm", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.6f));
             _confirm = dim.gameObject;
-            var box = UGUIKit.CreateThemedPanel(dim.transform, "Box", new Vector2(0.32f, 0.38f), new Vector2(0.68f, 0.62f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            var box = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Box", new Vector2(0.32f, 0.38f), new Vector2(0.68f, 0.62f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
             Label(box, "Text", new Vector2(0.05f, 0.45f), new Vector2(0.95f, 0.92f), 14, TextAnchor.MiddleCenter, TextLight, false).text = "기존 진행 상황이 삭제됩니다.\n새 게임을 시작할까요?";
             UGUIKit.CreateThemedButton(box, "No", new Vector2(0.1f, 0.1f), new Vector2(0.45f, 0.35f), "취소", ButtonFill, 14).onClick.AddListener(ShowMenu);
             UGUIKit.CreateThemedButton(box, "Yes", new Vector2(0.55f, 0.1f), new Vector2(0.9f, 0.35f), "새 게임 시작", StartFill, 14).onClick.AddListener(ShowPartySelect);

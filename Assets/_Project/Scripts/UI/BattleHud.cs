@@ -128,11 +128,15 @@ namespace Fantasia.UI
 
                 var unit = entries[i].Unit;
                 slot.Portrait.texture = PortraitStudio.TextureFor(unit.Definition);
-                slot.Border.color = unit.IsAlly ? AllyBorder : EnemyBorder;
+                // 다음 라운드는 "예상" — 흐리게 표시 (속도 변화·쓰러짐에 따라 바뀔 수 있음)
+                bool predicted = entries[i].Round != currentRound;
+                var border = unit.IsAlly ? AllyBorder : EnemyBorder;
+                slot.Border.color = predicted ? new Color(border.r, border.g, border.b, 0.45f) : border;
+                slot.Portrait.color = predicted ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
                 // 다음 라운드가 시작되는 칸에 라운드 표시 (속도 변화는 이 칸부터 반영된다).
                 bool newRound = entries[i].Round != prevRound;
                 slot.Round.gameObject.SetActive(newRound);
-                slot.Round.text = $"R{entries[i].Round}";
+                slot.Round.text = $"R{entries[i].Round} 예상";
                 slot.Mark.gameObject.SetActive(unit.Boss != null && unit.Boss.HasPending && unit.IsAlive);
                 prevRound = entries[i].Round;
             }
@@ -462,7 +466,7 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
             _canvasRect = (RectTransform)canvasGO.transform;
 
             BuildTimeline(canvasGO.transform);
@@ -493,7 +497,7 @@ namespace Fantasia.UI
                 entry.Root = entry.Rect.gameObject;
                 entry.Border = entry.Root.GetComponent<Image>();
                 entry.Portrait = UGUIKit.CreateRect(fill, "Portrait", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
-                entry.Round = Label(entry.Rect, "RoundMark", new Vector2(0f, -0.55f), new Vector2(1f, 0f), 10, TextAnchor.MiddleCenter, Gold, bold: true);
+                entry.Round = Label(entry.Rect, "RoundMark", new Vector2(-0.4f, -0.55f), new Vector2(1.4f, 0f), 10, TextAnchor.MiddleCenter, Gold, bold: true);
                 entry.Round.gameObject.SetActive(false);
                 // 예고 중인 보스 표식
                 entry.Mark = Label(entry.Rect, "TelegraphMark", new Vector2(0.55f, 0.55f), new Vector2(1.15f, 1.2f), 14, TextAnchor.MiddleCenter, CritColor, bold: true);

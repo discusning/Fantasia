@@ -107,7 +107,8 @@ namespace Fantasia.Combat
             public Entry(BattleUnit unit, int round) { Unit = unit; Round = round; }
         }
 
-        // 타임라인 표시용: 현재 차례부터 앞으로 count개. 다음 라운드는 지금 속도 기준 예상 순서.
+        // 타임라인 표시용: 현재 차례부터 앞으로 count개 — 이번 라운드 + 다음 라운드까지만 (속도 추가 기획 10/26).
+        // 다음 라운드는 지금 속도 기준 "예상" 순서 (속도 변화·쓰러짐으로 바뀔 수 있음).
         public List<Entry> Preview(int count)
         {
             var result = new List<Entry>();
@@ -117,7 +118,7 @@ namespace Fantasia.Combat
             }
 
             int round = Round;
-            while (result.Count < count)
+            while (result.Count < count && round < Round + 1)
             {
                 round++;
                 var next = ComputeOrder(_units, round, _opening);

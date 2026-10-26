@@ -91,7 +91,7 @@ namespace Fantasia.UI
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             // Full-screen dim backdrop doubles as the toggle root (Card is a
             // child of it) so one SetActive shows/hides both, and it reads

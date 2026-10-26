@@ -95,11 +95,13 @@ namespace Fantasia.Core
             public Gear[] equipped = new Gear[5]; // GearSlot 순서, 빈 칸은 id ""
             public string[] quickSlots = new string[PartyMember.QuickSlotCount];
             public List<StatusData> statuses = new();
+            public int prayer;              // 십자가 석상 활성 기도 (PrayerKind)
         }
 
         [Serializable] public class StockData { public string city, item; public int count; }
         [Serializable] public class LootData { public Gear gear; public string consumable; }
         [Serializable] public class QuestData { public string title, objective; public int kind; }
+        [Serializable] public class WitchData { public Coord tile; public int round; }
 
         [Serializable]
         public class Data
@@ -118,6 +120,7 @@ namespace Fantasia.Core
             public Coord player, lastSafe;
             public bool hasPlayerPosition;
             public List<Coord> cleared = new(), usedTiles = new();
+            public List<WitchData> witchRounds = new();
             public int worldRound, phase;
             public bool rolled, eventBonusUsed;
             public int bloodTrail, soulHarvest;
@@ -160,6 +163,7 @@ namespace Fantasia.Core
                 hasPlayerPosition = s.HasPlayerPosition,
                 cleared = s.ClearedEncounters.Select(C).ToList(),
                 usedTiles = s.UsedMapTiles.Select(C).ToList(),
+                witchRounds = s.WitchRounds.Select(kv => new WitchData { tile = C(kv.Key), round = kv.Value }).ToList(),
                 worldRound = s.World.WorldRound,
                 phase = (int)s.World.Phase,
                 rolled = s.World.HasRolledThisTurn,
@@ -198,6 +202,7 @@ namespace Fantasia.Core
                     for (int i = 0; i < md.equipped.Length; i++) md.equipped[i] = G(m.GetEquipped((GearSlot)i));
                     for (int i = 0; i < md.quickSlots.Length; i++) md.quickSlots[i] = m.QuickSlots[i] != null ? m.QuickSlots[i].Id : "";
                     md.statuses = m.Statuses.All.Select(a => new StatusData { id = a.Definition.Id, turns = a.RemainingTurns, stacks = a.Stacks }).ToList();
+                    md.prayer = (int)m.Prayer;
                     d.members.Add(md);
                 }
                 d.consumables = party.Inventory.Consumables.Select(st => new StackData { id = st.Definition.Id, count = st.Count }).ToList();
@@ -262,6 +267,7 @@ namespace Fantasia.Core
                 for (int i = 0; i < md.quickSlots.Length && i < PartyMember.QuickSlotCount; i++)
                     m.QuickSlots[i] = string.IsNullOrEmpty(md.quickSlots[i]) ? null : catalog.Consumable(md.quickSlots[i]);
                 foreach (var st in md.statuses) m.Statuses.Restore(catalog.Status(st.id), st.turns, st.stacks);
+                m.SetPrayer((PrayerKind)md.prayer); // 최대 HP·집중력에 영향 — 현재 값 복원보다 먼저
                 m.RestoreState(md.level, md.experience, md.hp, md.mp, md.focus, md.lp, md.dead);
                 party.AddMember(m);
             }
@@ -293,6 +299,7 @@ namespace Fantasia.Core
             s.HasPlayerPosition = d.hasPlayerPosition;
             foreach (var c in d.cleared) s.ClearedEncounters.Add(H(c));
             foreach (var c in d.usedTiles) s.UsedMapTiles.Add(H(c));
+            foreach (var w in d.witchRounds) s.WitchRounds[H(w.tile)] = w.round;
             s.World.Restore(Math.Max(1, d.worldRound), (WorldPhase)d.phase, d.rolled, d.eventBonusUsed);
             s.BloodTrail = d.bloodTrail;
             s.SoulHarvest = d.soulHarvest;

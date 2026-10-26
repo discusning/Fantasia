@@ -108,11 +108,11 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.6f));
             _root = dim.gameObject;
-            var win = UGUIKit.CreateThemedPanel(dim.transform, "Window", new Vector2(0.38f, 0.27f), new Vector2(0.62f, 0.73f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.38f, 0.27f), new Vector2(0.62f, 0.73f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
             var title = UGUIKit.CreateText(win, "Title", new Vector2(0.05f, 0.82f), new Vector2(0.95f, 0.96f), "메뉴", 20, TextAnchor.MiddleCenter);
             title.color = Gold;
             title.fontStyle = FontStyle.Bold;
@@ -140,7 +140,7 @@ namespace Fantasia.UI
             // 나가기 확인
             var cdim = UGUIKit.CreateImage(dim.transform, "Confirm", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.4f));
             _confirm = cdim.gameObject;
-            var box = UGUIKit.CreateThemedPanel(cdim.transform, "Box", new Vector2(0.33f, 0.38f), new Vector2(0.67f, 0.62f), Gold, Fill, 2f);
+            var box = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(cdim.transform), "Box", new Vector2(0.33f, 0.38f), new Vector2(0.67f, 0.62f), Gold, Fill, 2f);
             _confirmText = UGUIKit.CreateText(box, "Text", new Vector2(0.05f, 0.42f), new Vector2(0.95f, 0.92f), "", 14, TextAnchor.MiddleCenter);
             _confirmText.color = new Color(0.92f, 0.9f, 0.86f);
             UGUIKit.CreateThemedButton(box, "No", new Vector2(0.08f, 0.1f), new Vector2(0.46f, 0.34f), "취소", ButtonFill, 14).onClick.AddListener(() => _confirm.SetActive(false));

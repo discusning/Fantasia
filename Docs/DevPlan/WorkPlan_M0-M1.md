@@ -182,6 +182,7 @@ M1 종료 기준: **임시 이미지로 이동 → 조우 → 전투 → 보상 
 - 2026-10-25: **메인 메뉴·파티 구성 (최소 버전)** — `Scenes/MainMenu/MainMenu.unity`(빌드 첫 씬, `Editor/MainMenuSceneSetup`), `UI/MainMenuController`(새 게임·이어하기·종료, 덮어쓰기 확인, 직업 카드 3장 ◀ ▶ 자리 교환·1번 파티장). 에디터 Play·전원 영구 사망 → 메인 메뉴. 피의 사냥 이동력 0 멈춤 버그 수정. 확장안은 MainMenu_Proposal.md (기획 OK 대기).
 - 2026-10-25: **1막 보스전 수정 요청서 적용 (Boss_Abel_v1.0)** — 수치·수은 중독·봉합 방해·예고 UI(`BattleHud`)·등장 연출·음악 재생기(`MusicPlayer`, 곡 대기)·확정 대사·막 전환(`ActOneStory`)·사건 기록 창(`CaseLogPanel`)·베르사유/로마 보스 잠금·레벨 경고(`ConfirmPanel`). 스토리 플래그·퀘스트 저장. 셀프 테스트 17종 통과.
 - 2026-10-25: **D27 저장 확정안 적용 (Save.md 1~7)** — `GameRandom`(저장되는 게임 난수), `SaveGame.Checkpoint`(확정 → 저장 → 표시, 15개 지점), 회차 종료(`EndRun`·종료 회차 목록), `BattleSnapshot`·`BattleController.Save`(전투 중 저장·확정 행동 재실행), 이어하기 정보·새 게임 확인, F9 개발 전용·배포 빌드. 강제 종료 재현 자동 플레이(`-autoplay-snap-at`·`-autoplay-resume`)로 주사위·전투 결과 동일 확인.
+- 2026-10-25: **이벤트 칸 (D23 일부)** — `World/EventTiles`(점술마녀 20 Cent·행운 판정·부/회복/집중·3라운드 재참여, 분수대 LP +1 칸당 1회), `UI/EventPanel`(시안 G02 구성 + FTK식 판정 결과). M02·S10 임시 배정, 석상·기관차 대기. EventSelfTest — 18종 통과.
 - 2026-10-25: **플레이테스트 기록 (D29 일부)** — `Core/PlaytestLog`(battles.csv·economy.csv, 엑셀용 UTF-8), `BattleController.Log`, 상점·보드 Cent 기록, 메뉴 `Fantasia/Playtest/Open Log Folder`. 실행 빌드로 확인.
 - 2026-10-25: **전체 통플레이 점검** — 자동 플레이 `-autoplay-full`(새 게임 → 탐험 → 보스 → 보고 → 클리어). 시드 3개 모두 1막 클리어, 오류 0건. 밸런스 관찰은 진행일지 10/25.
 - 2026-10-25: **이어하기 통합 점검** — 통플레이 중 8개 시점(주사위·이동·상점·전투 진입·전투 행동·보스전 도중·보스 처치 직후·턴 종료)에서 끊고 이어하기 → 8개 모두 1막 클리어, 예외 0, 7개는 원래 판과 끝 상태 동일.

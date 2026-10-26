@@ -14,6 +14,8 @@ namespace Fantasia.Core
         public float master = DefaultMaster, music = DefaultMusic, sfx = DefaultSfx;
         public int width, height;      // 0 = 아직 정하지 않음 (지금 화면 그대로)
         public bool fullscreen = true;
+        public int quality = -1;       // -1 = 자동 (그래픽 카드 보고 결정). 설정 창 항목은 기획 OK 후
+        public bool vsync = true;      // 수직 동기화 — 모니터 주사율 고정 (노트북 발열·화면 찢김 방지)
 
         private static GameSettings _current;
         public static GameSettings Current => _current ??= Load();
@@ -54,12 +56,33 @@ namespace Fantasia.Core
             Screen.SetResolution(width, height, fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed);
         }
 
+        // 그래픽 품질: 자동이면 내장 그래픽은 High(그림자 있음, 안티에일리어싱 2x), 외장은 Ultra(4x)
+        public static bool IsIntegratedGpu
+        {
+            get
+            {
+                string n = SystemInfo.graphicsDeviceName ?? "";
+                return n.Contains("Intel") || n.Contains("Radeon(TM) Graphics") || n.Contains("Vega") || SystemInfo.graphicsMemorySize < 2048;
+            }
+        }
+
+        public void ApplyQuality()
+        {
+            int levels = QualitySettings.names.Length;
+            int level = quality >= 0 ? Mathf.Min(quality, levels - 1) : (IsIntegratedGpu ? Mathf.Min(3, levels - 1) : levels - 1);
+            QualitySettings.SetQualityLevel(level, true);
+            if (quality < 0 && IsIntegratedGpu) QualitySettings.antiAliasing = 2;
+            QualitySettings.vSyncCount = vsync ? 1 : 0;
+            Application.targetFrameRate = vsync ? -1 : 120;
+        }
+
         // 게임을 켤 때 저장된 설정 적용
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void ApplyOnStart()
         {
-            if (Environment.GetCommandLineArgs().Length > 0 && Array.IndexOf(Environment.GetCommandLineArgs(), "-autoplay") >= 0) { Current.ApplyAudio(); return; } // 자동 플레이는 창 크기 인자 우선
+            if (Environment.GetCommandLineArgs().Length > 0 && Array.IndexOf(Environment.GetCommandLineArgs(), "-autoplay") >= 0) { Current.ApplyAudio(); Current.ApplyQuality(); return; } // 자동 플레이는 창 크기 인자 우선
             Current.ApplyAudio();
+            Current.ApplyQuality();
             // 화면 설정을 한 번도 바꾸지 않았으면 모니터 해상도 전체 화면으로 — 자동 플레이 등이 남긴 작은 창 크기를 물려받지 않게
             if (Current.width <= 0 || Current.height <= 0)
             {

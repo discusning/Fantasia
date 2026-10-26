@@ -364,6 +364,110 @@ namespace Fantasia.Core
             bool huntRun = args.Contains("-autoplay-hunt");
             bool shotHunt = false, shotSky = false;
 
+            // ── 이벤트 칸 점검 (-autoplay-event): 점술마녀(M02) 회복 카드 → 분수대(S10) ──
+            if (args.Contains("-autoplay-event"))
+            {
+                var evParty = BoardSession.Instance.Party;
+                evParty.Members[1].TakeDamage(60);
+                board.DevArriveAt("M02");
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "점술마녀 창");
+                yield return new WaitForSeconds(0.4f);
+                yield return Shot("event_witch");
+                EventPanel.DevPickCard(1); // 회복
+                EventPanel.DevPickTarget(1);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("event_witch_selected");
+                int evCent = evParty.Cent, evHp = evParty.Members[1].CurrentHP;
+                EventPanel.DevConfirm();
+                yield return new WaitForSeconds(1.2f);
+                yield return Shot("event_witch_result");
+                Note($"점술마녀 회복 → Cent {evCent} → {evParty.Cent} · 역병 의사 HP {evHp} → {evParty.Members[1].CurrentHP}");
+                EventPanel.DevLeave();
+                yield return WaitFor(() => board.DevIsIdle || board.DevAwaitingSelection, 15f, "점술 뒤 진행");
+                Note($"점술 뒤: 추가 이동 선택 {board.DevAwaitingSelection}");
+
+                // 같은 칸 재방문 → 3라운드 대기 표시
+                yield return WaitFor(() => board.DevIsIdle, 15f, "턴 진행");
+                yield return WaitFor(() => board.DevIsIdle && !board.DevAwaitingSelection, 15f, "대기");
+                board.DevArriveAt("M02");
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "점술마녀 재방문");
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("event_witch_cooldown");
+                EventPanel.DevLeave();
+                yield return WaitFor(() => !EventPanel.IsOpen, 3f, "닫기");
+                yield return WaitFor(() => board.DevIsIdle || board.DevAwaitingSelection, 15f, "진행");
+
+                board.DevArriveAt("S10");
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "분수대 창");
+                EventPanel.DevPickTarget(2);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("event_fountain");
+                int lp = evParty.Members[2].CurrentLP;
+                EventPanel.DevConfirm();
+                yield return new WaitForSeconds(1.2f);
+                yield return Shot("event_fountain_result");
+                Note($"분수대 → 저격수 LP {lp} → {evParty.Members[2].CurrentLP}");
+                EventPanel.DevLeave();
+                yield return new WaitForSeconds(0.3f);
+                board.DevArriveAt("S10");
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "분수대 다시");
+                int lpAgain = evParty.Members[2].CurrentLP;
+                EventPanel.DevPickTarget(2);
+                EventPanel.DevConfirm();
+                yield return new WaitForSeconds(0.5f);
+                Note($"분수대 재방문: LP {lpAgain} → {evParty.Members[2].CurrentLP} (늘면 안 됨)");
+                EventPanel.DevLeave();
+
+                // 십자가 석상 (배치 칸 기획 대기 — 베르사유 이벤트 칸 A15·A21을 석상으로 보고 점검)
+                var doc = evParty.Members[1];
+                int maxFocus0 = doc.MaxFocus;
+                board.DevOpenStatueAt("A15");
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "석상 창");
+                EventPanel.DevPickPrayer(0);   // 집중의 기도
+                EventPanel.DevPickTarget(1);   // 역병 의사
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("statue_select");
+                EventPanel.DevLeave();         // 취소 → 횟수 안 씀
+                yield return new WaitForSeconds(0.3f);
+                board.DevOpenStatueAt("A15");
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "석상 다시");
+                EventPanel.DevPickPrayer(0);
+                EventPanel.DevPickTarget(1);
+                EventPanel.DevConfirm();
+                yield return new WaitForSeconds(1.2f);
+                yield return Shot("statue_result");
+                Note($"석상 A15 (취소 후 다시): {doc.Job.DisplayName} {Fantasia.Data.PrayerRules.Name(doc.Prayer)} · 최대 집중력 {maxFocus0} → {doc.MaxFocus}");
+                EventPanel.DevLeave();
+                yield return new WaitForSeconds(0.3f);
+                board.DevOpenStatueAt("A15");
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "석상 재방문");
+                EventPanel.DevPickPrayer(2);
+                EventPanel.DevPickTarget(1);
+                EventPanel.DevConfirm();
+                yield return new WaitForSeconds(0.5f);
+                Note($"석상 A15 재방문: {Fantasia.Data.PrayerRules.Name(doc.Prayer)} (사용한 석상은 그대로여야 함)");
+                EventPanel.DevLeave();
+                yield return new WaitForSeconds(0.3f);
+                board.DevOpenStatueAt("A21");
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "다른 석상");
+                EventPanel.DevPickPrayer(2);   // 생명의 기도로 교체
+                EventPanel.DevPickTarget(1);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("statue_replace");
+                int hp0 = doc.MaxHP;
+                EventPanel.DevConfirm();
+                yield return new WaitForSeconds(1.2f);
+                Note($"석상 A21 교체: {Fantasia.Data.PrayerRules.Name(doc.Prayer)} · 최대 집중력 {doc.MaxFocus} · 최대 HP {hp0} → {doc.MaxHP}");
+                EventPanel.DevLeave();
+                yield return new WaitForSeconds(0.3f);
+                board.DevLoadLastSave();
+                yield return new WaitForSeconds(2f);
+                var loaded = BoardSession.Instance.Party.Members[1];
+                Note($"불러오기 뒤: {loaded.Job.DisplayName} {Fantasia.Data.PrayerRules.Name(loaded.Prayer)} · 최대 HP {loaded.MaxHP} · 분수대 사용 {(BoardSession.Instance.UsedMapTiles.Count)}칸 기록");
+                Note("자동 플레이 완료");
+                yield break;
+            }
+
             // ── D27 저장 점검 (-autoplay-save): 상점에서 사고 숙박 → 다음 아군 턴 자동 저장 → 값 바꾸기 → 불러오기 → 비교 ──
             if (args.Contains("-autoplay-save"))
             {
@@ -400,6 +504,80 @@ namespace Fantasia.Core
                 Note("불러온 뒤: " + loaded);
                 Note(loaded == saved ? "저장 점검: 일치" : "저장 점검: 불일치!");
                 yield return Shot("save_after_load");
+                Note("자동 플레이 완료");
+                yield break;
+            }
+
+            // ── 기도 전투 점검 (-autoplay-prayer): 명탐정 피·역병 의사 부·저격수 그림자 ──
+            // 1) P04 기습 실패 강제 → 그림자 면역(정상 속도순) · 부 Cent +20% (40 → 48)
+            // 2) 아벨 모로(인간형) → 피의 기도 피해 ×1.1
+            // 3) HP 1로 N15 → 전멸이면 부의 기도 약탈 면역
+            if (args.Contains("-autoplay-prayer"))
+            {
+                var pp = BoardSession.Instance.Party;
+                pp.Members[0].SetPrayer(Fantasia.Data.PrayerKind.Blood);
+                pp.Members[1].SetPrayer(Fantasia.Data.PrayerKind.Wealth);
+                pp.Members[2].SetPrayer(Fantasia.Data.PrayerKind.Shadow);
+                Note($"기도: {string.Join(", ", pp.Members.Select(m => $"{m.Job.DisplayName} {Fantasia.Data.PrayerRules.Name(m.Prayer)}"))}");
+
+                BoardTestController.DevForceOpening = (int)Fantasia.World.EncounterOutcome.AmbushFailure;
+                int cent = pp.Cent;
+                yield return PrayerFight("P04", "1) P04 기습 실패 + 그림자·부");
+                Note($"1) Cent {cent} → {BoardSession.Instance.Party.Cent} (확정 보상 40 × 1.2 = 48 기대)");
+                BoardTestController.DevForceOpening = -1;
+
+                yield return PrayerFight("M11", "2) 아벨 모로 + 피의 기도");
+
+                yield return PrayerFight("N15", "3) 그림자 사냥개 (망령형 — 피의 기도 미적용)");
+
+                // 4) 전투 시작 직후 아군 전원 쓰러뜨려 전멸 → 부의 기도 있으면 약탈 0
+                void Wipe()
+                {
+                    foreach (var m in BoardSession.Instance.Party.AliveMembers.ToList()) m.TakeDamage(m.CurrentHP);
+                    FindFirstObjectByType<BattleController>()?.DevCheckEnd();
+                }
+                cent = BoardSession.Instance.Party.Cent;
+                yield return PrayerFight("Q01", "4) 전멸 + 부의 기도", Wipe);
+                Note($"4) Cent {cent} → {BoardSession.Instance.Party.Cent} (부의 기도 — 그대로여야 함)");
+                // 5) 대조: 부의 기도 없이 전멸 → 약탈 발생
+                BoardSession.Instance.Party.Members[1].SetPrayer(Fantasia.Data.PrayerKind.None);
+                cent = BoardSession.Instance.Party.Cent;
+                yield return PrayerFight("U01", "5) 전멸 + 기도 없음 (대조)", Wipe);
+                Note($"5) Cent {cent} → {BoardSession.Instance.Party.Cent} (약탈로 줄어야 함)");
+                Note("자동 플레이 완료");
+                yield break;
+            }
+
+            // ── 회복·보물 칸 점검 (-autoplay-tiles): 가득 찬 파티 → 회복 칸 안 씀, 다친 뒤 [지나가기] → [이용], 보물 J06 ──
+            if (args.Contains("-autoplay-tiles"))
+            {
+                var tp = BoardSession.Instance.Party;
+                string State() => string.Join(", ", tp.AliveMembers.Select(m => $"{m.Job.DisplayName} HP {m.CurrentHP}/{m.MaxHP} MP {m.CurrentMP}/{m.MaxMP} 집중 {m.CurrentFocus}"));
+                board.DevArriveAt("S16");
+                yield return new WaitForSeconds(1f);
+                Note($"회복 칸 S16 (가득 참): 창 {(ConfirmPanel.IsOpen ? "열림" : "안 열림")} · {board.DevResultMessage}");
+                foreach (var m in tp.AliveMembers) { m.TakeDamage(m.MaxHP / 2); m.TrySpendMP(m.MaxMP / 2); m.TrySpendFocus(2); }
+                Note($"피해 뒤: {State()}");
+                board.DevArriveAt("S16");
+                yield return WaitFor(() => ConfirmPanel.IsOpen, 5f, "회복 칸 선택");
+                yield return Shot("recovery_offer");
+                ConfirmPanel.DevChoose(false);
+                yield return new WaitForSeconds(0.5f);
+                Note($"[지나가기]: {board.DevResultMessage}");
+                board.DevArriveAt("S16");
+                yield return WaitFor(() => ConfirmPanel.IsOpen, 5f, "회복 칸 다시");
+                ConfirmPanel.DevChoose(true);
+                yield return new WaitForSeconds(0.5f);
+                Note($"[이용]: {board.DevResultMessage} → {State()}");
+                yield return Shot("recovery_used");
+                board.DevArriveAt("S16");
+                yield return new WaitForSeconds(1f);
+                Note($"다시 도착: 창 {(ConfirmPanel.IsOpen ? "열림" : "안 열림")}");
+                int cent = tp.Cent;
+                board.DevArriveAt("J06");
+                yield return new WaitForSeconds(1f);
+                Note($"보물 J06: {board.DevResultMessage} · Cent {cent} → {tp.Cent}");
+                yield return Shot("treasure_j06");
                 Note("자동 플레이 완료");
                 yield break;
             }
@@ -583,6 +761,39 @@ namespace Fantasia.Core
         // 전투 1회 자동 진행 (일반·보스 공통). shots = 화면 캡처 여부. 결과는 _lastBattle·_lastBattleBoss
         private BattleController _lastBattle;
         private bool _lastBattleBoss;
+
+        // 기도 전투 점검: 그 칸에 도착 → 대화·경고·조우(싸우기) 처리 → 전투 → 보드(또는 메뉴)로
+        private IEnumerator PrayerFight(string label, string title, Action beforeBattle = null)
+        {
+            var board = FindFirstObjectByType<BoardTestController>();
+            if (board == null) { Note($"{title}: 보드 없음"); yield break; }
+            Note($"── {title} ──");
+            board.DevArriveAt(label);
+            float until = Time.realtimeSinceStartup + 30f;
+            while (SceneManager.GetActiveScene().name != "CombatTest" && Time.realtimeSinceStartup < until)
+            {
+                if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance();
+                if (ConfirmPanel.IsOpen) ConfirmPanel.DevChoose(true);
+                if (EncounterPanel.IsOpen) EncounterPanel.DevChoose(0);
+                yield return new WaitForSeconds(0.3f);
+            }
+            if (SceneManager.GetActiveScene().name != "CombatTest") { Note($"{title}: 전투로 안 넘어감"); yield break; }
+            if (beforeBattle != null) { yield return new WaitForSeconds(1.5f); beforeBattle(); }
+            yield return RunBattle(shots: false);
+            var b = _lastBattle;
+            if (b == null || !b.DevFinished) { Note($"{title}: 전투가 끝나지 않음"); yield break; }
+            Note($"{title}: {(b.DevEnemies.All(e => !e.IsAlive) ? "승리" : "패배/이탈")}");
+            yield return new WaitForSeconds(0.6f);
+            b.DevContinue();
+            yield return WaitFor(() => SceneManager.GetActiveScene().name != "CombatTest", 10f, "전투 뒤 씬 전환");
+            yield return new WaitForSeconds(1f);
+            until = Time.realtimeSinceStartup + 20f;
+            while (Time.realtimeSinceStartup < until && FindFirstObjectByType<BoardTestController>() is { } bd && !bd.DevIsIdle)
+            {
+                if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance();
+                yield return new WaitForSeconds(0.2f);
+            }
+        }
 
         private IEnumerator RunBattle(bool shots)
         {

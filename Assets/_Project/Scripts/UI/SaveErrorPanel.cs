@@ -66,11 +66,11 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.7f));
             _root = dim.gameObject;
-            var box = UGUIKit.CreateThemedPanel(dim.transform, "Box", new Vector2(0.3f, 0.33f), new Vector2(0.7f, 0.67f), new Color(0.85f, 0.35f, 0.3f), new Color(0.08f, 0.06f, 0.07f, 0.98f), 2f);
+            var box = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Box", new Vector2(0.3f, 0.33f), new Vector2(0.7f, 0.67f), new Color(0.85f, 0.35f, 0.3f), new Color(0.08f, 0.06f, 0.07f, 0.98f), 2f);
             var title = UGUIKit.CreateText(box, "Title", new Vector2(0.05f, 0.8f), new Vector2(0.95f, 0.95f), "저장 실패", 18, TextAnchor.MiddleCenter);
             title.color = new Color(0.95f, 0.45f, 0.4f);
             title.fontStyle = FontStyle.Bold;

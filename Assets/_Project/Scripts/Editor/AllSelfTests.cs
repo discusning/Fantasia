@@ -17,10 +17,12 @@ namespace Fantasia.Editor
             BoardSessionSelfTest.Run();
             PathfindingSelfTest.Run();
             WorldMapSelfTest.Run();
+            MapTileRulesSelfTest.Run();
             BossSelfTest.Run();
             BloodHuntSelfTest.Run();
             ShopSelfTest.Run();
             SaveSelfTest.Run();
+            EventSelfTest.Run();
         }
     }
 }

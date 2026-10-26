@@ -95,6 +95,7 @@ namespace Fantasia.Combat
             if (member == null) throw new ArgumentNullException(nameof(member));
             var weapon = member.EquippedWeapon;
             var stats = member.FinalStats;
+            slotBonus += member.Prayer == PrayerKind.Blood ? PrayerRules.BloodSlotBonus : 0f; // 피의 기도 (최대 95%는 FinalSlotChance)
 
             // 맨손: 2슬롯·힘 판정·무기 보너스 0의 물리 공격.
             if (weapon == null)
@@ -151,7 +152,7 @@ namespace Fantasia.Combat
             {
                 PhysicalDefense = member.FinalPhysicalDefense + defendBonus,
                 MagicDefense = member.FinalMagicDefense + defendBonus,
-                EvasionChance = EvasionChance(member.FinalStats.Speed, evasionBonus),
+                EvasionChance = EvasionChance(member.FinalStats.Speed, evasionBonus + (member.Prayer == PrayerKind.Shadow ? PrayerRules.ShadowEvasion : 0f)), // 그림자의 기도 (최대 40%)
                 HasEvasionState = false,
                 CurrentHP = member.CurrentHP,
             };

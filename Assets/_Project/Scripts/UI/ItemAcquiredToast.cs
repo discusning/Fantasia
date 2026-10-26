@@ -75,7 +75,7 @@ namespace Fantasia.UI
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             var inner = UGUIKit.CreateBorderedPanel(canvasGO.transform, "Banner", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), UGUIKit.DefaultBorderColor, new Color(0.98f, 0.98f, 0.95f), 2f);
             var outerRect = (RectTransform)inner.transform.parent;

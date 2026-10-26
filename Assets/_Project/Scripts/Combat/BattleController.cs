@@ -88,6 +88,12 @@ namespace Fantasia.Combat
             PartyHudPanel.QuickSlotClicked += OnQuickSlotClicked;
             _targetMarker = CreateTargetMarker();
 
+            // 그림자의 기도: 파티에 받은 캐릭터가 있으면 기습 실패의 적 선공 페널티 없음 → 정상 속도순
+            if (_setup.Opening == EncounterOutcome.AmbushFailure && PrayerRules.PartyHas(session.Party, PrayerKind.Shadow))
+            {
+                _setup.Opening = EncounterOutcome.FightStarted;
+                Log("그림자의 기도 — 기습 실패 페널티 면역 (정상 속도순)");
+            }
             _queue = new BattleQueue(_allies.Concat(_enemies), _setup.Opening);
             Log($"전투 시작 — 개시 {_setup.Opening} · 아군 {string.Join(", ", _allies.Select(u => $"{u.DisplayName}(HP {u.CurrentHP}/{u.MaxHP}, 속도 {u.Speed})"))}"
                 + $" · 적 {string.Join(", ", _enemies.Select(u => $"{u.DisplayName}(HP {u.CurrentHP}, 속도 {u.Speed})"))}");
@@ -683,12 +689,21 @@ namespace Fantasia.Combat
         }
 
         // ───────────── 판정 공통 ─────────────
+        // 피의 기도: 인간형 적에게 피해 +10% (계수에 곱함 — 크리티컬 포함)
+        private static AttackRequest WithPrayerDamage(BattleUnit attacker, BattleUnit target, AttackRequest request)
+        {
+            if (attacker.IsAlly && !target.IsAlly && attacker.Member.Prayer == PrayerKind.Blood && PrayerRules.IsHumanoid(target.Enemy))
+                request.Coefficient *= 1f + PrayerRules.BloodHumanoidDamage;
+            return request;
+        }
+
         // 단일 공격 (기본 공격·공격 스킬·적 공격). skill이 null이면 기본 공격.
         private IEnumerator ResolveAttack(BattleUnit attacker, BattleUnit target, AttackRequest request, bool useFocus,
             StatusEffectDefinition[] onCritStatuses, TurnShift onCritShift, SkillDefinition skill)
         {
             bool weaponBased = skill == null || skill.SlotCount <= 0;
             request = WithFirstGunShot(attacker, request, weaponBased);
+            request = WithPrayerDamage(attacker, target, request);
 
             var outcome = AttackResolver.Resolve(request, target.Defense());
             if (attacker.IsAlly && weaponBased) attacker.Statuses.Remove(StatusEffectType.AccuracyUp); // 영점 조정은 다음 무기 공격 1회
@@ -716,8 +731,9 @@ namespace Fantasia.Combat
             foreach (var enemy in _enemies.Where(e => e.InBattle).ToList())
             {
                 var defense = enemy.Defense();
-                var outcome = AttackResolver.Compute(request, defense, slots, Fantasia.Dice.DiceRoller.RollChance(defense.EvasionChance));
-                ApplyHit(attacker, enemy, request, outcome, useFocus, skill.OnCritStatuses, skill.OnCritTurnShift, skill);
+                var hit = WithPrayerDamage(attacker, enemy, request);
+                var outcome = AttackResolver.Compute(hit, defense, slots, Fantasia.Dice.DiceRoller.RollChance(defense.EvasionChance));
+                ApplyHit(attacker, enemy, hit, outcome, useFocus, skill.OnCritStatuses, skill.OnCritTurnShift, skill);
             }
             EndAreaLog();
             _hud.RefreshEnemies(null);
@@ -891,10 +907,13 @@ namespace Fantasia.Combat
             {
                 // 전원 쓰러짐: 약탈 1회(인원수만큼 반복하지 않음) → LP 남은 캐릭터는 LP 1로 안전 타일에서 HP 50% 복귀,
                 // LP 없는 캐릭터는 영구 사망. 아무도 복귀하지 못하면 플레이 종료.
+                // 부의 기도: 파티에 받은 캐릭터가 있으면 약탈 면역 (판정 난수는 그대로 소비 — 이어하기 재현 유지)
                 int percent = DefeatRules.RollPlunderPercent();
+                bool plunderImmune = PrayerRules.PartyHas(session.Party, PrayerKind.Wealth);
+                if (plunderImmune) percent = 0;
                 int lost = session.Party.LoseCentPercent(percent);
-                PlaytestLog.Cent("약탈", -lost, session.Party.Cent, $"{percent}%");
-                Log($"  → 약탈 판정: 소지 Cent의 {percent}% → {lost} Cent 손실 (남은 {session.Party.Cent})");
+                PlaytestLog.Cent("약탈", -lost, session.Party.Cent, plunderImmune ? "부의 기도 면역" : $"{percent}%");
+                Log(plunderImmune ? "  → 부의 기도 — 약탈 면역" : $"  → 약탈 판정: 소지 Cent의 {percent}% → {lost} Cent 손실 (남은 {session.Party.Cent})");
                 string downed = SettleDowned(DefeatRules.WipeReturnHpRatio);
 
                 if (session.Party.IsWipedOut)
@@ -950,6 +969,11 @@ namespace Fantasia.Combat
             var party = session.Party;
             var levels = party.Members.ToDictionary(m => m, m => m.Level);
             var rewards = LootRules.Roll(_setup.Enemies, party, ItemCatalog.Current, GameRandom.NewSystemRandom());
+            // 지도 적 칸 확정 보상 — 몬스터별 합산 대신 전투 전체 값 (아이템 칸은 기존 표 그대로)
+            if (_setup.FixedCent > 0) rewards.Cent = _setup.FixedCent;
+            if (_setup.FixedExp > 0) rewards.Experience = _setup.FixedExp;
+            // 부의 기도: 전투 Cent +20%, 여러 명이 받아도 파티당 1회 (버림)
+            if (PrayerRules.PartyHas(party, PrayerKind.Wealth)) rewards.Cent += Mathf.FloorToInt(rewards.Cent * PrayerRules.WealthCentBonus);
             LootRules.Apply(rewards, party);
             session.PendingLoot.AddRange(rewards.Overflow);
             LastRewards = rewards;
@@ -981,6 +1005,7 @@ namespace Fantasia.Combat
         // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 버튼·클릭과 같은 처리를 부른다 ─────
         public bool DevAwaitingPlayer => _phase == Phase.ChoosingAction;
         public bool DevFinished => _phase == Phase.Finished;
+        public void DevCheckEnd() => CheckBattleEnd(); // 자동 플레이: 강제로 바꾼 상태(전멸 등)를 바로 판정
         public BattleUnit DevCurrent => _current;
         public BattleHud DevHud => _hud;
         public IReadOnlyList<BattleUnit> DevAllies => _allies;

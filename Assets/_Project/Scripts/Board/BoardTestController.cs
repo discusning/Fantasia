@@ -296,7 +296,7 @@ namespace Fantasia.Board
         {
             if (SaveErrorPanel.IsOpen || PauseMenu.IsOpen) return; // 저장 실패·게임 중 메뉴 — 진행 일시정지
             if (Input.GetKeyDown(KeyCode.Q) && !EncounterPanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen) CaseLogPanel.Toggle();
-            if (CaseLogPanel.IsOpen || ConfirmPanel.IsOpen || ActClearPanel.IsOpen) return;
+            if (CaseLogPanel.IsOpen || ConfirmPanel.IsOpen || ActClearPanel.IsOpen || EventPanel.IsOpen) return;
             if (Input.GetKeyDown(KeyCode.I) && !EncounterPanel.IsOpen) InventoryPanel.Toggle(_testParty, Leader);
             if (InventoryPanel.IsOpen || Fantasia.UI.ShopPanel.IsOpen) return;
             // 거점 칸에서 B: 상점 (아군 턴, 이동·턴 처리 중이 아닐 때)
@@ -471,7 +471,7 @@ namespace Fantasia.Board
 
             // 이벤트 칸 추가 이동이 생기면 한 번 더 움직이고, 아니면 아군 턴 종료.
             // 거점 도착으로 상점이 열렸으면 닫을 때까지 기다림 (서비스·제작을 쓰면 상점이 아군 턴을 끝냄)
-            while (Fantasia.UI.ShopPanel.IsOpen) yield return null;
+            while (Fantasia.UI.ShopPanel.IsOpen || EventPanel.IsOpen) yield return null; // 상점·이벤트 창을 닫을 때까지
             if (_turnEnding || Clock.Phase != WorldPhase.AllyTurn) yield break;
             if (!TryGrantEventBonusMove(landedTile)) StartCoroutine(EndAllyTurn());
         }
@@ -486,30 +486,65 @@ namespace Fantasia.Board
                 case MapTileKind.Hub:
                     OpenShopHere();
                     break;
+                case MapTileKind.Event:
+                    OpenEventHere(tile);
+                    break;
                 case MapTileKind.Recovery when !tile.IsUsed:
-                    foreach (var m in _testParty.AliveMembers) m.Heal(Mathf.CeilToInt(m.MaxHP * RecoveryTileHpRatio));
-                    session.UsedMapTiles.Add(tile.Coordinate);
-                    tile.SetUsed(true);
-                    _encounterResultMessage = $"{tile.MapLabel} — 파티 HP {RecoveryTileHpRatio * 100f:0}% 회복 (임시 규칙)";
-                    ItemAcquiredToast.Show("회복 칸: 파티 HP 회복");
+                    OfferRecovery(tile);
                     break;
                 case MapTileKind.Treasure when !tile.IsUsed:
-                    var drop = Fantasia.Combat.LootRules.RollDrop(_testParty, ItemCatalog.Current, GameRandom.NewSystemRandom());
-                    session.UsedMapTiles.Add(tile.Coordinate);
-                    tile.SetUsed(true);
-                    if (drop.HasValue)
-                    {
-                        if (!Fantasia.Combat.LootRules.TryAdd(_testParty.Inventory, drop.Value)) session.PendingLoot.Add(drop.Value);
-                        _encounterResultMessage = $"{tile.MapLabel} — {drop.Value.Name} 획득 (임시 규칙)";
-                        ItemAcquiredToast.Show($"보물: {drop.Value.Name}");
-                        PlaytestLog.Cent("보물 칸", 0, _testParty.Cent, $"{tile.MapLabel}: {drop.Value.Name}");
-                    }
+                    OpenTreasure(tile);
+                    SaveGame.Checkpoint("칸 효과");
                     break;
             }
-            if (tile.MapKind == MapTileKind.Recovery || tile.MapKind == MapTileKind.Treasure) SaveGame.Checkpoint("칸 효과");
         }
 
-        private const float RecoveryTileHpRatio = 0.3f;
+        // 지도 좌표 이름 (예: J06)
+        private static string CoordLabel(HexCoord c) { var (row, col) = WorldMapData.AxialToOffset(c); return WorldMapData.Label(row, col); }
+
+        // 회복 칸 (MapTileRules, 전체 6곳): [이용] / [지나가기]. 회복할 자원이 아무에게도 없으면 횟수를 쓰지 않는다.
+        private void OfferRecovery(HexTile tile)
+        {
+            string effect = $"생존 파티원 HP·MP 최대치의 {Fantasia.World.MapTileRules.RecoveryHpRatio * 100f:0}% · 집중력 +{Fantasia.World.MapTileRules.RecoveryFocus} 회복 (무료, 이 칸 1회)";
+            if (!Fantasia.World.MapTileRules.RecoveryWouldHelp(_testParty))
+            {
+                _encounterResultMessage = $"{tile.MapLabel} — 회복할 것이 없어 그대로 둠 (다음에 이용 가능)";
+                return;
+            }
+            ConfirmPanel.Show($"{tile.MapLabel}\n{effect}\nLP·상태 이상은 회복되지 않습니다.", "이용", "지나가기", () =>
+            {
+                var (hp, mp, focus) = Fantasia.World.MapTileRules.ApplyRecovery(_testParty);
+                BoardSession.Instance.UsedMapTiles.Add(tile.Coordinate);
+                tile.SetUsed(true);
+                _encounterResultMessage = $"{tile.MapLabel} — HP +{hp} · MP +{mp} · 집중력 +{focus}";
+                ItemAcquiredToast.Show("회복 칸: 파티 회복");
+                SaveGame.Checkpoint("칸 효과");
+            }, () => _encounterResultMessage = $"{tile.MapLabel} — 지나감 (다음에 이용 가능)");
+        }
+
+        // 보물 칸 (MapTileRules): 고정 보상 전부 지급, 타일별 파티 공유 1회. 인벤토리가 차면 받을 물건으로 남김.
+        private void OpenTreasure(HexTile tile)
+        {
+            var session = BoardSession.Instance;
+            var treasure = Fantasia.World.MapTileRules.TreasureAt(CoordLabel(tile.Coordinate));
+            session.UsedMapTiles.Add(tile.Coordinate);
+            tile.SetUsed(true);
+            if (treasure == null) { _encounterResultMessage = $"{tile.MapLabel} — 빈 보물 칸"; return; }
+            _testParty.AddCent(treasure.Cent);
+            var names = new List<string> { $"{treasure.Cent} Cent" };
+            foreach (var id in treasure.ConsumableIds)
+            {
+                var c = ItemCatalog.Current != null ? ItemCatalog.Current.Consumable(id) : null;
+                if (c == null) continue;
+                var drop = new Fantasia.Combat.LootDrop(c);
+                if (!Fantasia.Combat.LootRules.TryAdd(_testParty.Inventory, drop)) session.PendingLoot.Add(drop);
+                names.Add(c.DisplayName);
+            }
+            string list = string.Join(" + ", names);
+            _encounterResultMessage = $"{tile.MapLabel} — {list}";
+            ItemAcquiredToast.Show($"보물: {list}");
+            PlaytestLog.Cent("보물 칸", treasure.Cent, _testParty.Cent, $"{tile.MapLabel}: {list}");
+        }
 
         // ── D27 저장·불러오기: 아군 턴이 시작될 때 자동 저장, F9로 마지막 저장 불러오기 ──
         private bool _hasSave;
@@ -588,6 +623,67 @@ namespace Fantasia.Board
         // 개발용: 정식 보스가 없는 보스 칸의 임시 소형 적 전투 허용 (내부 동선 점검 — 자동 플레이 -autoplay-temp-boss)
         public static bool DevAllowTempBosses;
 
+        // ── 이벤트 칸 (점술마녀·분수대 — EventTiles) ──
+        // 십자가 석상: 기도 6종 중 1종을 캐릭터 1명에게, 석상당 회차 1회 (확정 때 소모). 기존 기도는 교체.
+        private void OpenStatue(HexTile tile, HexCoord coord, System.Action<string> closed)
+        {
+            var session = BoardSession.Instance;
+            EventPanel.OpenStatue(_testParty, session.UsedMapTiles.Contains(coord), (member, prayer) =>
+            {
+                if (session.UsedMapTiles.Contains(coord) || !member.IsAlive) return "기도를 받을 수 없다";
+                var before = member.Prayer;
+                member.SetPrayer(prayer);
+                session.UsedMapTiles.Add(coord);
+                if (tile != null) tile.SetUsed(true);
+                SaveGame.Checkpoint($"십자가 석상 — {member.Job.DisplayName} {PrayerRules.Name(prayer)}");
+                Debug.Log($"[Event] 십자가 석상 {member.Job.DisplayName} {PrayerRules.Name(before)} → {PrayerRules.Name(prayer)}");
+                return before == PrayerKind.None ? $"{member.Job.DisplayName} — {PrayerRules.Name(prayer)}"
+                    : $"{member.Job.DisplayName} — {PrayerRules.Name(before)} → {PrayerRules.Name(prayer)} (교체)";
+            }, closed);
+        }
+
+        private void OpenEventHere(HexTile tile)
+        {
+            var (row, col) = WorldMapData.AxialToOffset(_currentCoord);
+            var kind = EventTiles.KindAt(WorldMapData.Label(row, col));
+            var session = BoardSession.Instance;
+            var coord = _currentCoord;
+            void Closed(string message) { if (message != null) _encounterResultMessage = message; }
+            switch (kind)
+            {
+                case EventKind.FortuneTeller:
+                    session.WitchRounds.TryGetValue(coord, out int last);
+                    EventPanel.OpenWitch(_testParty, Leader, EventTiles.WitchWaitRounds(last, Clock.WorldRound), (card, target) =>
+                    {
+                        var result = EventTiles.PlayWitch(_testParty, Leader, card, target);
+                        if (!result.Ok) return result;
+                        session.WitchRounds[coord] = Clock.WorldRound;
+                        SaveGame.Checkpoint($"점술마녀 판정 — {EventTiles.CardName(card)} {(result.Success ? "성공" : "실패")}"); // 결과 공개 전 저장
+                        Debug.Log($"[Event] 점술마녀 {EventTiles.CardName(card)} — {result.Message}");
+                        return result;
+                    }, Closed);
+                    break;
+                case EventKind.Fountain:
+                    EventPanel.OpenFountain(_testParty, session.UsedMapTiles.Contains(coord), member =>
+                    {
+                        if (!EventTiles.CanUseFountain(member) || session.UsedMapTiles.Contains(coord)) return "기운을 받을 수 없다";
+                        member.GainLP();
+                        session.UsedMapTiles.Add(coord);
+                        tile.SetUsed(true);
+                        SaveGame.Checkpoint($"분수대 — {member.Job.DisplayName} LP +1");
+                        Debug.Log($"[Event] 분수대 {member.Job.DisplayName} LP {member.CurrentLP}");
+                        return $"{member.Job.DisplayName} LP +1 (LP {member.CurrentLP})";
+                    }, Closed);
+                    break;
+                case EventKind.Statue:
+                    OpenStatue(tile, coord, Closed);
+                    break;
+                default:
+                    _encounterResultMessage = $"{tile.MapLabel} — 이 이벤트는 2막 이후 공개";
+                    break;
+            }
+        }
+
         // ── D20 도시 상점: 거점 칸에서 열림 (도착하면 자동, 아군 턴 중 B) ──
         private void OpenShopHere()
         {
@@ -616,6 +712,7 @@ namespace Fantasia.Board
         // 기습 성공/실패는 BattleQueue가 첫 라운드 순서에 반영한다. 전투가 이 아군 턴의 마지막 행동.
         private void EnterCombat(EncounterOutcome opening)
         {
+            if (DevForceOpening >= 0) opening = (EncounterOutcome)DevForceOpening; // 자동 플레이 점검용
             var setup = new Fantasia.Combat.BattleSetup { Opening = opening };
             var session = BoardSession.Instance;
             session.PendingReaperFight = _pendingIsReaper;
@@ -634,10 +731,22 @@ namespace Fantasia.Board
             var pool = _board.EncounterEnemyPool;
             var forced = System.Array.Find(pool.Concat(_board.RegionBosses).ToArray(), e => e != null && e.Id == DevForcedEnemyId);
             var first = forced != null ? forced : _pendingEnemy;
-            setup.Enemies.Add(first);
-            // 보스는 단독 (D14). 보스 데이터가 없는 보스 칸은 임시로 소형 적 3마리 — 처치하면 지역 출구가 열린다
-            int extra = first != null && first.IsBoss ? 0 : _board.TryGetTile(_currentCoord, out var here) && here.IsBoss ? 2 : 1;
-            for (int i = 0; i < extra && pool.Length > 0; i++) setup.Enemies.Add(forced != null ? forced : pool[GameRandom.Range(0, pool.Length)]);
+            // 지도 적 칸 확정 조합·보상 (MapTileRules) — 런던 10곳
+            var fixedEncounter = forced == null && _board.UsesWorldMap ? Fantasia.World.MapTileRules.EncounterAt(CoordLabel(_currentCoord)) : null;
+            var fixedGroup = Fantasia.World.MapTileRules.ResolveEnemies(fixedEncounter, ItemCatalog.Current);
+            if (fixedGroup != null && first != null && !first.IsBoss)
+            {
+                setup.Enemies.AddRange(fixedGroup);
+                setup.FixedExp = fixedEncounter.Exp;
+                setup.FixedCent = fixedEncounter.Cent;
+            }
+            else
+            {
+                setup.Enemies.Add(first);
+                // 보스는 단독 (D14). 보스 데이터가 없는 보스 칸은 임시로 소형 적 3마리 — 처치하면 지역 출구가 열린다
+                int extra = first != null && first.IsBoss ? 0 : _board.TryGetTile(_currentCoord, out var here) && here.IsBoss ? 2 : 1;
+                for (int i = 0; i < extra && pool.Length > 0; i++) setup.Enemies.Add(forced != null ? forced : pool[GameRandom.Range(0, pool.Length)]);
+            }
             // 전리품 장비 레벨 = 지역 (런던 1 · 베르사유 4 · 로마 7)
             if (_board.UsesWorldMap) Fantasia.Combat.LootRules.CurrentZoneWearLevel = ZoneWearLevel(_board.Map.RegionOf(_currentCoord));
             session.PendingBattle = setup;
@@ -662,6 +771,8 @@ namespace Fantasia.Board
                 coordR = s.PendingEncounterCoord?.R ?? 0,
                 reaperFight = s.PendingReaperFight,
                 zoneWearLevel = Fantasia.Combat.LootRules.CurrentZoneWearLevel,
+                fixedExp = setup.FixedExp,
+                fixedCent = setup.FixedCent,
             };
             s.BattleSnapshotJson = JsonUtility.ToJson(snap);
             SaveGame.Checkpoint("전투 진입");
@@ -809,14 +920,25 @@ namespace Fantasia.Board
         // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 키보드·마우스 대신 같은 굴림·이동 코드를 부른다 ─────
         // 자동 플레이 점검에서 특정 적 조합을 강제할 때 (예: 그림자 사냥개 특성 확인). 평소엔 null.
         public static string DevForcedEnemyId;
+        public static int DevForceOpening = -1; // 자동 플레이: 조우 결과 강제 (예: 기습 실패)
 
         // 새 아군 턴을 시작할 수 있는 상태 (이동·창·적 턴 연출이 모두 끝났고 아직 안 굴림).
-        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen && !CaseLogPanel.IsOpen && !ConfirmPanel.IsOpen
+        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen && !CaseLogPanel.IsOpen && !ConfirmPanel.IsOpen && !EventPanel.IsOpen
                                  && Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn;
         public bool DevAwaitingSelection => _awaitingSelection;
         public int DevWorldRound => Clock.WorldRound;
         public HexCoord DevPosition => _currentCoord;
         public int DevLastRoll => _lastRoll;
+        public string DevResultMessage => _encounterResultMessage;
+        // 그 칸에 도착한 것처럼 (회복·보물·이벤트 칸 점검용)
+        public void DevArriveAt(string label) { DevTeleport(label); StartCoroutine(Arrive()); }
+        // 석상 배치 전(런던 밖) 점검용: 그 칸을 석상으로 보고 기도 창을 연다
+        public void DevOpenStatueAt(string label)
+        {
+            if (!WorldMapData.TryParseLabel(label, out var c)) return;
+            _board.TryGetTile(c, out var t);
+            OpenStatue(t, c, m => { if (m != null) _encounterResultMessage = m; });
+        }
 
         public void DevRoll() => TryRoll();
         public void DevOpenShop() => OpenShopHere();

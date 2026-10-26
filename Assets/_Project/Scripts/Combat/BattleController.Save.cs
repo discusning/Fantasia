@@ -35,6 +35,8 @@ namespace Fantasia.Combat
                 coordR = session.PendingEncounterCoord?.R ?? 0,
                 reaperFight = session.PendingReaperFight,
                 zoneWearLevel = LootRules.CurrentZoneWearLevel,
+                fixedExp = _setup.FixedExp,
+                fixedCent = _setup.FixedCent,
                 round = _queue.Round,
                 index = _queue.Index,
                 order = _queue.RoundOrder.Select(Ref).ToList(),
@@ -98,6 +100,8 @@ namespace Fantasia.Combat
             session.PendingReaperFight = snap.reaperFight;
             session.AllyTurnEndedByBattle = true;
             LootRules.CurrentZoneWearLevel = snap.zoneWearLevel;
+            setup.FixedExp = snap.fixedExp;
+            setup.FixedCent = snap.fixedCent;
             return setup;
         }
 

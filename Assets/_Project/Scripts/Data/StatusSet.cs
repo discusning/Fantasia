@@ -33,10 +33,14 @@ namespace Fantasia.Data
         public bool Has(StatusEffectType effect) => _active.Any(a => a.Effect == effect);
         private Active Find(StatusEffectType effect) => _active.FirstOrDefault(a => a.Effect == effect);
 
+        // 면역 (집중의 기도 = 혼란). 순수의 기도(저주·중독·화상)는 2차.
+        public bool ImmuneToConfusion;
+
         // 부여. 반환값: 새로 걸렸거나 갱신·스택된 상태 (면역 등으로 안 걸리면 null — 면역은 기도·장비와 함께 추가).
         public Active Apply(StatusEffectDefinition definition)
         {
             if (definition == null || definition.Effect == StatusEffectType.None) return null;
+            if (ImmuneToConfusion && definition.Effect == StatusEffectType.Confusion) return null;
 
             var existing = Find(definition.Effect);
             if (existing != null)

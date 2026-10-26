@@ -195,7 +195,7 @@ namespace Fantasia.UI
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             const float width = 0.31f, gap = 0.015f, left = 0.02f;
             for (int i = 0; i < CardCount; i++)

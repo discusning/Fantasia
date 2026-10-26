@@ -63,3 +63,7 @@ Thumbs.db
 
 # Local player builds (테스트 빌드·자동 플레이 결과)
 /Builds/
+
+# 글꼴: ZEN SERIF — 라이선스상 파일 재배포 금지 (공개 저장소에 올리지 않음). 팀원은 같은 위치에 직접 넣는다.
+/Assets/_Project/Resources/Fonts/ZEN-SERIF-TTF-Regular.ttf
+/Assets/_Project/Resources/Fonts/ZEN-SERIF-TTF-Regular.ttf.meta

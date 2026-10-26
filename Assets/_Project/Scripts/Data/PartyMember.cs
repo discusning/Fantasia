@@ -34,6 +34,18 @@ namespace Fantasia.Data
         // 걸린 상태 효과 (D12). 중독처럼 전투 뒤에도 남는 것이 있어 파티원이 직접 갖는다.
         public StatusSet Statuses { get; } = new();
 
+        // 십자가 석상의 활성 기도 (캐릭터당 1개, 이번 회차 동안). 바꾸면 SetPrayer — 최대 HP·집중력이 줄면 현재 값도 맞춘다.
+        public PrayerKind Prayer { get; private set; }
+
+        public void SetPrayer(PrayerKind prayer)
+        {
+            Prayer = prayer;
+            Statuses.ImmuneToConfusion = prayer == PrayerKind.Focus;
+            if (prayer == PrayerKind.Focus) Statuses.Remove(StatusEffectType.Confusion);
+            CurrentHP = Mathf.Min(CurrentHP, MaxHP);
+            CurrentFocus = Mathf.Min(CurrentFocus, MaxFocus);
+        }
+
         public PartyMember(JobDefinition job)
         {
             Job = job ?? throw new ArgumentNullException(nameof(job));
@@ -50,13 +62,14 @@ namespace Fantasia.Data
         // 최대 HP = 활력×2 + 레벨당 +8. 레벨 1에서는 System.md 직업별 초기 HP 표와 같은 값이 나온다
         // (예: 명탐정 활력54 → 108, 표의 초기 HP 108과 일치).
         // + 방어구·장신구 최대 HP 보정 (예: 인부의 두꺼운 코트 +10).
-        public int MaxHP => Job.Stats.Vitality * 2 + LevelBonusSteps * 8 + GearSum(g => g.MaxHPBonus);
+        // + 생명의 기도 활력 +5 → HP +10 (활력으로만, 따로 더하지 않음)
+        public int MaxHP => (Job.Stats.Vitality + PrayerRules.StatBonus(Prayer).Vitality) * 2 + LevelBonusSteps * 8 + GearSum(g => g.MaxHPBonus);
 
         // MP를 쓰는 직업(역병 의사·연금술사·지휘자·도박가)만 활력×2 + 레벨당 +6 (+ 장신구 최대 MP), 나머지는 0 고정.
         public int MaxMP => Job.UsesMP ? Job.Stats.Vitality * 2 + LevelBonusSteps * 6 + GearSum(g => g.MaxMPBonus) : 0;
 
-        // 집중력 최대는 기본 3 + 장비 보정, 최대 6. 석상 기도 보정은 D23 때 더한다.
-        public int MaxFocus => Mathf.Min(AbsoluteMaxFocus, BaseMaxFocus + GearSum(g => g.MaxFocusBonus));
+        // 집중력 최대는 기본 3 + 장비 + 집중의 기도 +2, 최대 6.
+        public int MaxFocus => Mathf.Min(AbsoluteMaxFocus, BaseMaxFocus + GearSum(g => g.MaxFocusBonus) + (Prayer == PrayerKind.Focus ? PrayerRules.FocusMaxBonus : 0));
 
         private int GearSum(Func<GearItem, int> value)
         {
@@ -73,6 +86,7 @@ namespace Fantasia.Data
             {
                 var stats = Job.Stats;
                 foreach (var g in _equipped) if (g != null) stats += g.StatBonus;
+                stats += PrayerRules.StatBonus(Prayer); // 석상 기도
                 int all = Statuses.AllStatPenalty;
                 stats += new StatBlock(-all, -all - Statuses.SpeedPenalty, -all, -all, -all, -all);
                 return stats.ClampToCap();
@@ -181,6 +195,7 @@ namespace Fantasia.Data
         public void GrantExperience(int amount)
         {
             if (amount <= 0 || Level >= MaxLevel) return;
+            if (Prayer == PrayerKind.Wisdom) amount += Mathf.FloorToInt(amount * PrayerRules.WisdomExpBonus); // 지혜의 기도 (버림)
             Experience += amount;
             while (Level < MaxLevel && Experience >= ExperienceToNextLevel)
             {

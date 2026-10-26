@@ -52,7 +52,7 @@ namespace Fantasia.UI
             canvas.sortingOrder = 1; // 보드 HUD 위, 모든 창 아래
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             var bg = UGUIKit.CreateImage(canvasGO.transform, "Hint", new Vector2(0f, 1f), new Vector2(0f, 1f), new Color(0.05f, 0.04f, 0.05f, 0.62f));
             bg.raycastTarget = false;

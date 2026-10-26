@@ -428,16 +428,16 @@ namespace Fantasia.UI
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            UGUIKit.ConfigureScaler(scaler);
 
             // 뒤 화면 클릭 막는 어두운 판
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.55f));
             _root = dim.gameObject;
             dim.gameObject.AddComponent<Button>().onClick.AddListener(Close);
 
-            var win = UGUIKit.CreateThemedPanel(dim.transform, "Window", new Vector2(0.1f, 0.24f), new Vector2(0.9f, 0.93f), Gold, Fill, 2f, UITheme.Current.PanelFrame);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.1f, 0.24f), new Vector2(0.9f, 0.93f), Gold, Fill, 2f, UITheme.Current.PanelFrame);
             win.parent.gameObject.AddComponent<Button>(); // 창 안 클릭은 닫기로 안 넘어가게
-            var close = UGUIKit.CreateThemedButton(win, "Close", new Vector2(0.955f, 0.92f), new Vector2(0.995f, 0.995f), "✕", RowFill, 14);
+            var close = UGUIKit.CreateThemedButton(win, "Close", new Vector2(0.955f, 0.92f), new Vector2(0.995f, 0.995f), "×", RowFill, 14);
             close.onClick.AddListener(Close);
 
             BuildCards(win);
