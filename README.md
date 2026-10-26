@@ -1,98 +1,78 @@
 # Fantasia (판타지아, 가제)
 
-유한대학교 게임콘텐츠 · 게임엔진 팀 프로젝트 — Unity 3D 턴제 보드 RPG (로그라이크)
+유한대학교 게임콘텐츠 · 게임엔진 팀 프로젝트 — Unity로 만드는 3D 턴제 보드 RPG
 
 > **1774년 런던에서 시작하는 18세기 오컬트 판타지.** 탐정 사무소의 명탐정이 연쇄 살인사건을 쫓다
-> 영생을 위해 "잭 더 리퍼"의 강림을 준비하는 교단 **붉은 밤**의 영혼 수확망과 마주한다.
-> 런던 → 베르사유 → 로마 제국 3막, 열린 결말. (모티브: *For the King* — 헥스 보드 + 슬롯 판정 전투)
+> 영생을 위해 "잭 더 리퍼"를 불러내려는 교단 **붉은 밤**과 마주한다.
+> 런던 → 베르사유 → 로마 제국 3막. (모티브: *For the King* — 육각형 칸 보드 + 확률 칸 판정 전투)
 
 ## 게임 한눈에 보기
 
+| 메인 메뉴 | 파티 구성 |
+|---|---|
+| ![메인 메뉴](Docs/Images/README/main_menu.png) | ![파티 구성](Docs/Images/README/party_select.png) |
+
+| 보드 (지도 이동) | 전투 |
+|---|---|
+| ![보드](Docs/Images/README/board.png) | ![전투](Docs/Images/README/battle.png) |
+
 | 항목 | 내용 |
 |---|---|
-| 플레이 | 솔로 1명이 3인 파티 조작 — 1차 직업: **명탐정 · 역병 의사 · 저격수** (추가 5직업은 후속) |
-| 보드 | 파티장(1번) 1인 이동 · [아군 턴]→[적 턴] · 주사위 1~6, 인카운터·이벤트 칸, 도시 거점 |
-| 조우 | 싸우기 / 기습(인지) / 몰래 지나가기(속도) / 후퇴 |
-| 전투 | 아군·적 통합 **속도 큐**, 무기 **슬롯 판정**(2·3·4슬롯, 전부 성공 = 크리티컬 → 방어 무시 2배), 집중력으로 슬롯 1개 확정 |
-| 자원 | HP · MP · 집중력 · **LP(부활 횟수)** — LP 0에서 HP 0이면 영구 사망 |
-| 성장 | 레벨 1~10, 무기 10계열 × 등급 6단계, 상태이상·직업 스킬 |
-| 1막 목표 | 새 게임부터 런던 보스 **검시관 아벨 모로** 처치 + 다음 지역 단서 확보까지 |
+| 플레이 | 혼자서 3명 파티를 움직임 — 1차 직업: **명탐정 · 역병 의사 · 저격수** |
+| 보드 | 주사위(1~6)를 굴려 육각형 칸을 이동. 아군 턴 → 적 턴이 번갈아 진행 |
+| 칸 종류 | 적(주황) · 보스 · 거점(상점, 파랑) · 이벤트(보라) · 회복(초록) · 보물(노랑) |
+| 조우 | 적 칸에 가면 싸우기 / 기습 / 몰래 지나가기 / 후퇴 중 선택 |
+| 전투 | 속도가 빠른 순서로 1번씩 행동. 공격은 무기의 확률 칸(2~4칸)을 굴리고, 전부 성공하면 크리티컬 |
+| 자원 | HP(체력) · MP(마력) · 집중력(확률 칸 1개 성공 고정) · **LP(부활 횟수)** — LP가 없을 때 쓰러지면 영구 사망 |
+| 1막 목표 | 런던 보스 **검시관 아벨 모로**를 쓰러뜨리고 다음 지역 단서를 찾기 |
+
+| 상점 (거점) | 회복 칸 | 십자가 석상 (기도) |
+|---|---|---|
+| ![상점](Docs/Images/README/shop.png) | ![회복 칸](Docs/Images/README/recovery_tile.png) | ![석상](Docs/Images/README/statue.png) |
+
+## 지금 상태 (2026-10-26)
+
+- **1막(런던)은 처음부터 끝까지 플레이 가능** — 새 게임 → 런던 탐험 → 보스 → 1막 클리어
+- 들어간 것: 메인 메뉴·설정, 자동 저장·이어하기, 상점, 적 칸 10곳, 회복·보물 칸, 점술마녀·분수대, 십자가 석상 기도, 피의 사냥, Esc 메뉴
+- 아직 임시: 캐릭터·적 모양(단색 인형), 음악·효과음 일부, 대사 일부 — 아트·스토리 자료가 오면 바꿈
+- 날짜별 진행: [`Docs/진행일지/`](Docs/진행일지/) · 남은 일: [작업 계획](Docs/DevPlan/WorkPlan_M0-M1.md)
 
 ## 문서
 
 | 문서 | 내용 |
 |---|---|
-| [`Docs/GDD/GDD.md`](Docs/GDD/GDD.md) | 게임 디자인 요약 (기획서 기준) |
-| [`Docs/Planning/System.md`](Docs/Planning/System.md) | **시스템 기획 원문** (2026-10-21 확정 — 수치는 이 문서가 기준) |
+| [`Docs/Planning/System.md`](Docs/Planning/System.md) | **시스템 기획 원문** — 수치는 이 문서가 기준 |
 | [`Docs/Planning/Story.md`](Docs/Planning/Story.md) | 스토리 기획 원문 (1~3막) |
-| [`Docs/Planning/Decisions.md`](Docs/Planning/Decisions.md) | **원문 이후 기획 결정** (보드 1인 이동·아군/적 턴 등 — 원문보다 우선) |
-| [`Docs/DevPlan/WorkPlan_M0-M1.md`](Docs/DevPlan/WorkPlan_M0-M1.md) | 개발 작업 계획·진행 기록·기획 확인 필요 항목 |
+| [`Docs/Planning/Decisions.md`](Docs/Planning/Decisions.md) | **원문 이후 정해진 것** — 원문과 다르면 이 문서를 따름 |
+| `Docs/Planning/` 의 다른 문서 | 주제별 확정안 (보스·저장·속도·지도 칸·이벤트 칸 등) — 기획 원문 + 개발 반영 내용 |
+| [`Docs/DevPlan/WorkPlan_M0-M1.md`](Docs/DevPlan/WorkPlan_M0-M1.md) | 개발 작업 계획 · 기획 확인 필요 항목 |
 | [`Docs/진행일지/`](Docs/진행일지/) | 날짜별 작업 요약 |
-| [`Docs/References/`](Docs/References/) | 리서치 자료 (모티브 참고용 — 그대로 복제 금지) |
 
-## 개발 진행 현황 (개발 업무 D01~D30 기준)
+## 게임 실행
 
-| 상태 | 업무 |
-|---|---|
-| ✅ 구현·검증 | D03 데이터 구조·검증 · D04 파티·자원·레벨 · D08 조우 판정 · D09 전투 순서 · D10 슬롯·피해·회피 · D11 3직업 스킬 12개 · D12 상태이상 1차(9종) · D13 1막 소형 적 4종 · D21 쓰러짐·부활·패배(약탈·영구 사망·게임 오버) |
-| 🟡 일부 | D01 (테스트 빌드 ✅, URP 미정) · D05/D06 (규칙만 — 보드 맵·파티 이동 방식 기획 확인 중) · D26 (전투·조우·파티 UI) · D29 (전투 로그·자동 플레이·빌드) |
-| ⬜ 다음 | D19 전리품·경험치 → D17 인벤토리·소모품 → D14 1막 보스 → D20 상점 · D22 퀘스트 · D27 저장 |
+1. Unity **6000.5.9f1** 설치 → Unity Hub → Add → `fantasia` 폴더
+2. **글꼴 넣기 (필수 아님, 권장)**: 팀 글꼴 `ZEN-SERIF-TTF-Regular.ttf`를 `Assets/_Project/Resources/Fonts/`에 넣는다
+   - 글꼴 라이선스가 재배포 금지라 저장소에는 없음 (팀 공유 폴더에서 받기). 없으면 기본 글꼴로 실행됨
+3. `Scenes/MainMenu/MainMenu` 씬에서 Play, 또는 메뉴 `Fantasia > Build > Windows Test Build`로 만든 `Builds/Windows/Fantasia.exe` 실행
 
-자세한 내용과 기획 확인 대기 항목은 [작업 계획서](Docs/DevPlan/WorkPlan_M0-M1.md) 참고.
-
-## 실행·테스트
-
-**프로젝트 열기**: Unity **6000.5.9f1** 설치 → Unity Hub → Add → `fantasia` 폴더. (Built-in 렌더 파이프라인, URP 전환은 미정)
-
-**플레이**: `Overworld/BoardTest` 씬 Play → **Space** 주사위 → 초록 칸 클릭 이동 → 주황(인카운터) 칸 도착 시 조우 창 → 전투 씬 → 승리 후 보드 복귀.
-씬 내용이 이상하면 메뉴 `Fantasia > Setup Board Test Scene` / `Setup Combat Test Scene`으로 다시 만든다 (기존 씬 덮어씀).
-
-**Fantasia 메뉴**
-
-| 메뉴 | 용도 |
-|---|---|
-| `Data > Seed Sample Game Data` | 기획서 수치로 직업·무기·적·스킬·상태 데이터 생성/갱신 |
-| `Data > Validate Game Data` | 필수값·중복 ID·잘못된 참조 검사 |
-| `Data > Run ... Self-Test` | 전투 계산·순서·상태·스킬·조우 등을 System.md 수치와 대조 (콘솔에 "전부 통과") |
-| `Build > Windows Test Build` | `Builds/Windows/Fantasia.exe` 생성 |
-
-**자동 플레이 점검**: `Builds/Windows/Fantasia.exe -autoplay -autoplay-out <폴더> [-autoplay-enemy <적 Id>]`
-→ 보드 이동부터 전투·복귀까지 자동 진행하고 단계별 스크린샷 + 전투 로그(`autoplay_log.txt`)를 남긴다.
-패배·부활 점검: `-autoplay-hp <N>`(시작 HP) · `-autoplay-lp <N>`(시작 LP) · `-autoplay-no-revive`(봇이 부활 안 씀).
+**조작**: Space 주사위 → 밝은 칸 클릭으로 이동 · I 인벤토리 · Q 사건 기록 · B 상점(거점에서) · Esc 메뉴 · WASD·마우스 휠 카메라
 
 ## 아트 넣는 곳 (코드 수정 없이 교체)
 
 | 넣을 것 | 위치 |
 |---|---|
-| 패널·배너·버튼·게이지·슬롯·집중 칸·행동 아이콘·대상 표시·한글 글꼴 | `Assets/_Project/Resources/UITheme.asset` |
-| 캐릭터·적 3D 모델 (전투 필드·초상 공용, 정면 +Z) | 직업·적 데이터의 **Model** |
-| 2D 초상 (넣으면 3D보다 우선) | 직업·적 데이터의 **Portrait** |
-| 상태이상·스킬 아이콘 | 상태·스킬 데이터의 **Icon** |
+| 창 테두리·버튼·게이지 등 UI 그림 | `Assets/_Project/Resources/UITheme.asset` |
+| 캐릭터·적 3D 모델 | 직업·적 데이터의 **Model** 칸 |
+| 2D 초상화 (넣으면 3D보다 우선) | 직업·적 데이터의 **Portrait** 칸 |
+| 상태이상·스킬 아이콘 | 상태·스킬 데이터의 **Icon** 칸 |
 
-비어 있으면 단색 도형과 임시 인형으로 그린다.
-
-## 폴더 구조
-
-```
-Assets/_Project/
-├── Scripts/
-│   ├── Data/      # 데이터 정의(직업·적·무기·스킬·상태) + 파티·상태 런타임
-│   ├── Combat/    # 전투 진행·순서·판정·적 AI
-│   ├── World/     # 이동·월드 시계·조우 규칙
-│   ├── Board/     # 헥스 보드·보드 테스트
-│   ├── UI/        # 조우 창·전투 HUD·파티 HUD·초상·테마
-│   ├── Core/      # 세션(씬 간 유지)·자동 플레이 점검
-│   └── Editor/    # 시드·검증·셀프테스트·씬 생성·빌드
-├── Data/          # ScriptableObject 데이터 자산 (Jobs/Weapons/Enemies/Skills/StatusEffects)
-├── Resources/     # UITheme
-└── Scenes/        # Overworld/BoardTest · Combat/CombatTest · Dialogue/DialogueTest
-Docs/              # 기획·계획·리서치 (Unity 임포트 대상 아님)
-```
+비어 있으면 단색 도형과 임시 인형으로 보인다.
 
 ## 협업 규칙
 
-- 기본 브랜치 `main` · 라이선스 [GPLv3](LICENSE)
-- 바이너리 에셋 추가 전 `git lfs install` (`.gitattributes`에 LFS 패턴 설정됨)
-- **fileID만 바뀐 씬 diff는 커밋하지 않는다** — `git diff`로 오브젝트·값이 같으면 `git checkout -- <파일>`
-- 코드는 에디터·게임에서 동작 확인 후 커밋
-- 수치는 `Docs/Planning/System.md`가 기준 — 다른 문서와 다르면 System.md를 따른다
+- **문서는 누구나 이해할 수 있는 쉬운 말로 쓴다.** 어떤 기능인지 말로 헷갈리면 게임 스크린샷을 붙인다. 커밋 메시지·이슈·PR도 같다.
+- 받은 기획서에서 어느 화면·기능인지 애매하면 짐작하지 말고 스크린샷을 붙여 확인한다. 해석해서 넣은 부분은 "해석"으로 표시한다.
+- 수치는 `System.md` → `Decisions.md` 순서로 따른다.
+- 코드는 게임에서 동작을 확인한 뒤 커밋한다. 기본 브랜치 `main` · 라이선스 [GPLv3](LICENSE)
+- 그림·소리 파일은 Git LFS로 올라간다 (처음 한 번 `git lfs install`).
+- 씬 파일이 내부 번호만 바뀌었으면 커밋하지 않는다 (`git checkout -- <파일>`).
