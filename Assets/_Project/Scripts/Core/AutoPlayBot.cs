@@ -842,6 +842,14 @@ namespace Fantasia.Core
                 {
                     yield return new WaitForSeconds(0.3f);
                     if (!shotFirstTurn) { shotFirstTurn = true; if (shots) yield return Shot("battle_first_turn"); }
+                    // 촬영용 (-autoplay-wipe): 아군 전원을 쓰러뜨려 패배·게임 오버 화면을 띄운다
+                    if (Environment.GetCommandLineArgs().Contains("-autoplay-wipe"))
+                    {
+                        foreach (var m in BoardSession.Instance.Party.AliveMembers.ToList()) m.TakeDamage(m.CurrentHP);
+                        battle.DevCheckEnd();
+                        Note("촬영용: 아군 전원 쓰러뜨림");
+                        continue;
+                    }
 
                     var actor = battle.DevCurrent;
                     // 스킬을 쓸 상황이면 스킬(D11), 아니면 기본 공격 — 집중력이 남으면 추가 집중을 켠다.
