@@ -68,7 +68,7 @@ namespace Fantasia.Data
             ConsumableEffect.RestoreHP or ConsumableEffect.RestoreMP or ConsumableEffect.RestoreFocus or ConsumableEffect.Cure
                 or ConsumableEffect.RevealEvasion or ConsumableEffect.Firebomb or ConsumableEffect.Escape
                 or ConsumableEffect.AmbushBonus or ConsumableEffect.CampRest or ConsumableEffect.LifeLaurel => true,
-            // StatBuff(강장제류)는 2막 이후 판매·전리품 표에 없음 — 버프 상태 종류가 생기면 연결
+            ConsumableEffect.StatBuff => BuffStat == StatKind.Speed, // 신속의 앰플만 연결 (힘·지력 강장제는 2막 이후 — 버프 상태가 생기면)
             _ => false,
         };
 

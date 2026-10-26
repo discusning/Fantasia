@@ -40,6 +40,10 @@ namespace Fantasia.Combat
             Round = round;
             _round = order;
             _index = index;
+            _roundSpeeds.Clear();
+            foreach (var u in order) _roundSpeeds[u] = u.Speed; // 불러오기: 지금 속도로 근사
+            _lastSpeedOrder = ComputeOrder(_units, 0, _opening);
+            _orderChange.Clear();
             _shiftedThisRound.Clear();
             foreach (var u in shifted) _shiftedThisRound.Add(u);
         }
@@ -56,12 +60,42 @@ namespace Fantasia.Combat
             }
         }
 
+        // 라운드가 끝날 때 (다음 라운드 정렬 직전) — 라운드 단위 상태(속도 증가)의 기간을 줄인다.
+        public event System.Action RoundEnded;
+
+        // 이번 라운드 정렬에 쓴 속도 (타임라인 초상 아래 표시)
+        private readonly Dictionary<BattleUnit, int> _roundSpeeds = new();
+        public int RoundSpeedOf(BattleUnit unit) => _roundSpeeds.TryGetValue(unit, out int s) ? s : unit.Speed;
+
+        // 직전 라운드 대비 순서 변화 (+1 앞당겨짐 ↑, −1 늦춰짐 ↓). 생존자끼리만 비교 — 사망으로 당겨진 건 0.
+        // 비교 기준은 속도 정렬 순서 (기습 첫 라운드·방해함으로 밀린 자리는 빼고 순수 속도 순).
+        private List<BattleUnit> _lastSpeedOrder = new();
+        private readonly Dictionary<BattleUnit, int> _orderChange = new();
+        public int OrderChangeOf(BattleUnit unit) => _orderChange.TryGetValue(unit, out int c) ? c : 0;
+
         private void StartNextRound()
         {
+            if (Round > 0) RoundEnded?.Invoke();
             Round++;
             _round = ComputeOrder(_units, Round, _opening);
             _index = 0;
             _shiftedThisRound.Clear();
+
+            _roundSpeeds.Clear();
+            foreach (var u in _round) _roundSpeeds[u] = u.Speed;
+            var speedOrder = ComputeOrder(_units, 0, _opening); // 0 = 기습 보정 없는 순수 속도 순
+            _orderChange.Clear();
+            if (Round > 1)
+            {
+                var common = speedOrder.Where(_lastSpeedOrder.Contains).ToList();
+                var before = _lastSpeedOrder.Where(common.Contains).ToList();
+                for (int i = 0; i < common.Count; i++)
+                {
+                    int was = before.IndexOf(common[i]);
+                    if (was != i) _orderChange[common[i]] = was > i ? 1 : -1;
+                }
+            }
+            _lastSpeedOrder = speedOrder;
         }
 
         // 방해함/초기화. 실제로 밀렸으면 true (이미 행동함·이번 라운드 이미 밀림·더 뒤로 갈 곳 없음이면 false).
@@ -104,7 +138,8 @@ namespace Fantasia.Combat
         {
             public readonly BattleUnit Unit;
             public readonly int Round;
-            public Entry(BattleUnit unit, int round) { Unit = unit; Round = round; }
+            public readonly int Speed; // 이번 라운드 = 정렬에 쓴 속도, 다음 라운드 = 지금 속도(예상)
+            public Entry(BattleUnit unit, int round, int speed) { Unit = unit; Round = round; Speed = speed; }
         }
 
         // 타임라인 표시용: 현재 차례부터 앞으로 count개 — 이번 라운드 + 다음 라운드까지만 (속도 추가 기획 10/26).
@@ -114,7 +149,7 @@ namespace Fantasia.Combat
             var result = new List<Entry>();
             for (int i = System.Math.Max(_index, 0); i < _round.Count && result.Count < count; i++)
             {
-                if (_round[i].InBattle) result.Add(new Entry(_round[i], Round));
+                if (_round[i].InBattle) result.Add(new Entry(_round[i], Round, RoundSpeedOf(_round[i])));
             }
 
             int round = Round;
@@ -126,7 +161,7 @@ namespace Fantasia.Combat
                 foreach (var unit in next)
                 {
                     if (result.Count >= count) break;
-                    result.Add(new Entry(unit, round));
+                    result.Add(new Entry(unit, round, unit.Speed));
                 }
             }
             return result;

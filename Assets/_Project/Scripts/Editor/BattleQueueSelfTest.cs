@@ -19,6 +19,7 @@ namespace Fantasia.Editor
             failures += CheckAmbush();
             failures += CheckSkipsDownedAndRoundAdvance();
             failures += CheckTurnShift();
+            failures += CheckSpeedChanges();
 
             if (failures == 0) Debug.Log("[BattleQueueSelfTest] 전부 통과.");
             else Debug.LogError($"[BattleQueueSelfTest] {failures}건 실패. 위 로그 확인할 것.");
@@ -42,6 +43,72 @@ namespace Fantasia.Editor
                 return new BattleUnit(e, i);
             }).ToArray();
             return (allies, enemies);
+        }
+
+        // 속도 확정안 (10/26): 앰플 속도 +15는 사용한 라운드 그대로·다음 라운드 반영·이후 2라운드 끝 만료,
+        // 속도 감소는 큰 값 하나만 (기간 따로), 순서 변화 화살표는 생존자끼리 비교.
+        private static StatusEffectDefinition Status(string id, StatusEffectType type, int duration, int magnitude)
+        {
+            var d = ScriptableObject.CreateInstance<StatusEffectDefinition>();
+            d.Id = id;
+            d.DisplayName = id;
+            d.Effect = type;
+            d.DurationTurns = duration;
+            d.MaxStacks = 1;
+            d.Magnitude = magnitude;
+            return d;
+        }
+
+        private static int CheckSpeedChanges()
+        {
+            int errors = 0;
+            // 아군0 53 / 적0 58 / 아군1 33 — 아벨 모로 예시 (역병 의사 53 → 68이면 58보다 먼저)
+            var (a, e) = MakeUnits(new[] { 53, 33 }, new[] { 58 });
+            var queue = new BattleQueue(a.Concat(e), EncounterOutcome.FightStarted);
+            queue.RoundEnded += () => { foreach (var u in a.Concat(e)) u.Statuses.EndRound(); };
+            var speedUp = Status("status.speed_up", StatusEffectType.SpeedUp, 2, 15);
+
+            errors += Expect("R1 첫 차례", queue.Advance().DisplayName, "적0");
+            var doc = a[0];
+            doc.Statuses.Apply(speedUp); // R1 중 앰플
+            errors += Expect("앰플 즉시 속도 68", doc.Speed.ToString(), "68");
+            errors += Expect("R1 순서는 그대로 (적0 다음 아군0)", queue.Advance().DisplayName, "아군0");
+            doc.Statuses.BeginTurn(); // 개인 턴 시작으로는 기간이 줄지 않음
+            queue.Advance(); // 아군1
+            errors += Expect("R2: 앰플 반영 — 아군0이 먼저", queue.Advance().DisplayName, "아군0");
+            errors += Expect("R2 정렬 속도 표시 68", queue.RoundSpeedOf(doc).ToString(), "68");
+            errors += Expect("R2 ↑ 표시 (아군0)", queue.OrderChangeOf(doc).ToString(), "1");
+            errors += Expect("R2 ↓ 표시 (적0)", queue.OrderChangeOf(e[0]).ToString(), "-1");
+            errors += Expect("R2 변화 없음 (아군1)", queue.OrderChangeOf(a[1]).ToString(), "0");
+            queue.Advance(); queue.Advance();
+            errors += Expect("R3: 아직 유지 (사용 라운드 제외 2라운드)", queue.Advance().DisplayName, "아군0");
+            queue.Advance(); queue.Advance();
+            errors += Expect("R4: 만료 — 적0이 다시 먼저", queue.Advance().DisplayName, "적0");
+            errors += Expect("만료 뒤 속도 53", doc.Speed.ToString(), "53");
+            errors += Expect("R4 만료로 돌아온 순서도 ↓ 표시 (아군0)", queue.OrderChangeOf(doc).ToString(), "-1");
+
+            // 재사용은 중첩 없이 기간만 갱신
+            doc.Statuses.Apply(speedUp);
+            doc.Statuses.Apply(speedUp);
+            errors += Expect("앰플 중첩 없음", doc.Speed.ToString(), "68");
+
+            // 속도 감소: −25 위에 −15가 와도 −25, −25가 끝나면 남은 −15
+            var (b, _) = MakeUnits(new[] { 60 }, new int[0]);
+            var m = b[0];
+            m.Statuses.Apply(Status("status.slow25", StatusEffectType.Bind, 1, 25));
+            m.Statuses.Apply(Status("status.slow15", StatusEffectType.Bind, 3, 15));
+            errors += Expect("감소 큰 값 하나 (−25)", m.Speed.ToString(), "35");
+            m.Statuses.BeginTurn(); // −25 기간 끝
+            errors += Expect("−25 만료 뒤 −15 적용", m.Speed.ToString(), "45");
+
+            // 사망으로 당겨진 자리는 화살표 없음
+            var (c, d2) = MakeUnits(new[] { 50, 30 }, new[] { 40 });
+            var q2 = new BattleQueue(c.Concat(d2), EncounterOutcome.FightStarted);
+            q2.Advance(); q2.Advance(); q2.Advance();
+            d2[0].TakeDamage(99);
+            q2.Advance(); // R2: 아군0 > 아군1 (적0 사망)
+            errors += Expect("사망으로 당겨진 아군1 화살표 없음", q2.OrderChangeOf(c[1]).ToString(), "0");
+            return errors;
         }
 
         private static string Names(System.Collections.Generic.IEnumerable<BattleUnit> units) => string.Join(",", units.Select(u => u.DisplayName));

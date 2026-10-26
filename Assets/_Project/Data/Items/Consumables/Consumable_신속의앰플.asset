@@ -15,15 +15,18 @@ MonoBehaviour:
   Id: consumable.swift_ampoule
   DisplayName: "\uC2E0\uC18D\uC758 \uC570\uD50C"
   Icon: {fileID: 0}
-  EffectDescription: "\uC18D\uB3C4 +15, \uAC15\uC7A5\uC81C\uC640 \uB3D9\uC77C \uAE30\uAC04"
+  EffectDescription: "\uC544\uAD70 1\uBA85 \uC18D\uB3C4 +15 (\uD589\uB3D9 1\uD68C).
+    \uB2E4\uC74C \uB77C\uC6B4\uB4DC \uC21C\uC11C\uBD80\uD130 \uBC18\uC601, \uC0AC\uC6A9\uD55C
+    \uB77C\uC6B4\uB4DC\uB97C \uBE7C\uACE0 2\uB77C\uC6B4\uB4DC \uC720\uC9C0. \uB2E4\uC2DC
+    \uC4F0\uBA74 \uAE30\uAC04\uB9CC \uAC31\uC2E0"
   Effect: 11
   Amount: 15
-  Duration: 3
+  Duration: 2
   BuffStat: 1
   Cures: 
   AppliedStatuses: []
-  Usable: 3
+  Usable: 1
   Price: 65
-  CityStock: 1
+  CityStock: 2
   MaxStack: 10
-  AvailableFromAct2: 1
+  AvailableFromAct2: 0

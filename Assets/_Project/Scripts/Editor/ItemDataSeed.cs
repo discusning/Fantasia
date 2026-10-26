@@ -371,8 +371,8 @@ namespace Fantasia.Editor
                 ConsumableEffect.StatBuff, Both, 70, 1, act2: true, amount: 10, duration: 3, buffStat: StatKind.Strength);
             C("consumable.insight_distillate", "통찰의 증류액", "지력 +10, 강장제와 동일 기간",
                 ConsumableEffect.StatBuff, Both, 70, 1, act2: true, amount: 10, duration: 3, buffStat: StatKind.Intelligence);
-            C("consumable.swift_ampoule", "신속의 앰플", "속도 +15, 강장제와 동일 기간",
-                ConsumableEffect.StatBuff, Both, 65, 1, act2: true, amount: 15, duration: 3, buffStat: StatKind.Speed);
+            C("consumable.swift_ampoule", "신속의 앰플", "아군 1명 속도 +15 (행동 1회). 다음 라운드 순서부터 반영, 사용한 라운드를 빼고 2라운드 유지. 다시 쓰면 기간만 갱신",
+                ConsumableEffect.StatBuff, Battle, 65, 2, amount: 15, duration: 2, buffStat: StatKind.Speed); // 1막 판매 (속도 확정안 10/26)
             C("consumable.holy_silver_bullet", "성유 은탄", "다음 3회 활·총 공격의 인간형·망령형 대상 피해 +20%; 전투 종료 시 남은 횟수 소멸",
                 ConsumableEffect.SilverBullet, Battle, 85, 1, act2: true, amount: 20, duration: 3); // Amount = 피해 +%, Duration = 공격 횟수
             C("consumable.alchemy_firebomb", "연금술 화염병", "모든 적에게 고정 기본값 20의 마법 피해; 각 마법 방어 적용, 크리티컬 없음",

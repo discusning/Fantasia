@@ -42,18 +42,35 @@ namespace Fantasia.Data
             if (definition == null || definition.Effect == StatusEffectType.None) return null;
             if (ImmuneToConfusion && definition.Effect == StatusEffectType.Confusion) return null;
 
-            var existing = Find(definition.Effect);
+            // 속도 감소(속박·저지 사격)는 효과마다 따로 기간을 세고, 적용은 가장 큰 감소 하나 (SpeedPenalty).
+            // 같은 효과를 다시 걸면 그 효과의 기간만 갱신. 나머지 종류는 같은 종류 1개를 갱신·스택.
+            var existing = definition.Effect == StatusEffectType.Bind
+                ? _active.FirstOrDefault(a => a.Effect == StatusEffectType.Bind && (a.Definition == definition || (!string.IsNullOrEmpty(definition.Id) && a.Definition.Id == definition.Id)))
+                : Find(definition.Effect);
+            int turns = Duration(definition);
             if (existing != null)
             {
                 existing.Definition = definition;
-                existing.RemainingTurns = definition.DurationTurns;
+                existing.RemainingTurns = turns;
                 existing.Stacks = Mathf.Min(existing.Stacks + 1, Mathf.Max(1, definition.MaxStacks));
                 return existing;
             }
 
-            var added = new Active { Definition = definition, RemainingTurns = definition.DurationTurns, Stacks = 1 };
+            var added = new Active { Definition = definition, RemainingTurns = turns, Stacks = 1 };
             _active.Add(added);
             return added;
+        }
+
+        // 라운드 단위 상태(속도 증가): 개인 턴이 아니라 라운드가 끝날 때 1씩 준다.
+        // 사용한 라운드는 기간에서 제외 → 기간 +1로 시작해 사용한 라운드 끝의 1회를 흡수한다.
+        public static bool IsRoundBased(StatusEffectType effect) => effect == StatusEffectType.SpeedUp;
+        private static int Duration(StatusEffectDefinition d) => IsRoundBased(d.Effect) && d.DurationTurns > 0 ? d.DurationTurns + 1 : d.DurationTurns;
+
+        // 전투 라운드 끝 (다음 라운드 정렬 직전)
+        public void EndRound()
+        {
+            foreach (var a in _active) if (IsRoundBased(a.Effect) && a.RemainingTurns > 0) a.RemainingTurns--;
+            _active.RemoveAll(a => IsRoundBased(a.Effect) && a.RemainingTurns == 0);
         }
 
         public void Remove(StatusEffectType effect) => _active.RemoveAll(a => a.Effect == effect);
@@ -91,7 +108,7 @@ namespace Fantasia.Data
             bool confused = Has(StatusEffectType.Confusion);
             if (confused) parts.Add("혼란");
 
-            foreach (var a in _active) if (a.RemainingTurns > 0) a.RemainingTurns--;
+            foreach (var a in _active) if (a.RemainingTurns > 0 && !IsRoundBased(a.Effect)) a.RemainingTurns--;
             _active.RemoveAll(a => a.RemainingTurns == 0);
 
             return new TurnStart(damage, confused, string.Join(", ", parts));
@@ -102,7 +119,8 @@ namespace Fantasia.Data
 
         // 능력치 보정 — 같은 의미의 속도 감소는 가장 큰 값 하나만 (중독의 전 스탯 감소는 별개로 1회).
         public int AllStatPenalty => Find(StatusEffectType.Poison)?.Definition.StatPenalty ?? 0;
-        public int SpeedPenalty => Find(StatusEffectType.Bind)?.Definition.Magnitude ?? 0;
+        public int SpeedPenalty => _active.Where(a => a.Effect == StatusEffectType.Bind).Select(a => a.Definition.Magnitude).DefaultIfEmpty(0).Max();
+        public int SpeedBonus => _active.Where(a => a.Effect == StatusEffectType.SpeedUp).Select(a => a.Definition.Magnitude).DefaultIfEmpty(0).Max();
         public int AttackPenalty => Find(StatusEffectType.AttackDown)?.Definition.Magnitude ?? 0;
         public int DefensePenalty => Find(StatusEffectType.DefenseDown)?.Definition.Magnitude ?? 0;
         public bool EvasionRevealed => Has(StatusEffectType.EvasionRevealed);

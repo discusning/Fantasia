@@ -11,9 +11,12 @@ namespace Fantasia.Items
         public static bool TargetsAlly(ConsumableDefinition def) => def.Effect switch
         {
             ConsumableEffect.RestoreHP or ConsumableEffect.RestoreMP or ConsumableEffect.RestoreFocus
-                or ConsumableEffect.Cure or ConsumableEffect.LifeLaurel => true,
+                or ConsumableEffect.Cure or ConsumableEffect.LifeLaurel or ConsumableEffect.StatBuff => true,
             _ => false,
         };
+
+        // 신속의 앰플이 거는 상태 (속도 +15, 사용한 라운드 제외 이후 2라운드 — Data/Statuses "속도 증가")
+        public const string SpeedUpStatusId = "status.speed_up";
 
         public static bool TargetsEnemy(ConsumableDefinition def) => def.Effect == ConsumableEffect.RevealEvasion;
 
@@ -42,6 +45,8 @@ namespace Fantasia.Items
                 case ConsumableEffect.LifeLaurel:
                     if (target.CurrentLP >= PartyMember.MaxLP) { reason = $"LP 최대({PartyMember.MaxLP})"; return false; }
                     return true;
+                case ConsumableEffect.StatBuff when def.BuffStat == StatKind.Speed:
+                    return true; // 이미 걸려 있으면 중첩 없이 기간만 갱신
                 default:
                     reason = "이 대상에게 쓰는 아이템이 아님";
                     return false;
@@ -67,6 +72,11 @@ namespace Fantasia.Items
                     break;
                 case ConsumableEffect.LifeLaurel:
                     if (target.GainLP()) parts.Add($"LP +1 ({target.CurrentLP})");
+                    break;
+                case ConsumableEffect.StatBuff when def.BuffStat == StatKind.Speed:
+                    var speedUp = ItemCatalog.Current != null ? ItemCatalog.Current.Status(SpeedUpStatusId) : null;
+                    if (speedUp != null && target.Statuses.Apply(speedUp) != null)
+                        parts.Add($"속도 +{speedUp.Magnitude} (다음 라운드 순서부터)");
                     break;
             }
             if (def.Cures != null)

@@ -72,7 +72,9 @@ namespace Fantasia.UI
             if (statuses == null) return list;
             foreach (var a in statuses.All)
             {
-                string count = a.Stacks > 1 ? $"×{a.Stacks}" : a.RemainingTurns > 0 ? a.RemainingTurns.ToString() : "";
+                // 라운드 단위(속도 증가)는 사용한 라운드를 세지 않으므로 표시는 기간 이하로
+                int turns = Fantasia.Data.StatusSet.IsRoundBased(a.Effect) ? Mathf.Min(a.RemainingTurns, a.Definition.DurationTurns) : a.RemainingTurns;
+                string count = a.Stacks > 1 ? $"×{a.Stacks}" : turns > 0 ? turns.ToString() : "";
                 string label = string.IsNullOrEmpty(a.Definition.ShortLabel) ? a.Definition.DisplayName : a.Definition.ShortLabel;
                 list.Add(new Entry(label, a.Definition.Icon, count));
             }

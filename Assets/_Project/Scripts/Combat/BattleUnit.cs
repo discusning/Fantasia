@@ -49,7 +49,7 @@ namespace Fantasia.Combat
 
         // 속도 감소(속박·중독)는 다음 라운드 정렬에 반영된다 (BattleQueue가 라운드 시작 때 읽음).
         public int Speed => IsAlly ? Member.FinalStats.Speed
-            : Mathf.Max(0, Enemy.Speed - _enemyStatuses.SpeedPenalty - _enemyStatuses.AllStatPenalty);
+            : Mathf.Max(0, Enemy.Speed - _enemyStatuses.SpeedPenalty + _enemyStatuses.SpeedBonus - _enemyStatuses.AllStatPenalty);
         // [회피 상태] — 장막 걷기·성수로 일시 해제(EvasionRevealed)되면 일반 공격도 맞는다.
         public bool HasEvasionState => !IsAlly && Enemy.HasEvasionState && !_enemyStatuses.EvasionRevealed;
         public bool IsAlive => CurrentHP > 0;

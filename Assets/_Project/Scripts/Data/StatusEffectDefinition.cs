@@ -26,6 +26,7 @@ namespace Fantasia.Data
         DefenseDown,     // 물리·마법 방어 감소 (약점 간파)
         EvasionRevealed, // [회피 상태] 일시 해제 (장막 걷기·성수)
         AccuracyUp,      // 다음 무기 공격 슬롯 성공률 +Magnitude%p, 공격하면 소모 (영점 조정)
+        SpeedUp,         // 속도 +Magnitude (신속의 앰플) — 라운드 단위: 사용한 라운드 제외, 이후 DurationTurns 라운드 끝까지
     }
 
     // 상태 효과 정의 (System.md "버프와 디버프 > 상태 효과 수치와 처리 순서" 표,

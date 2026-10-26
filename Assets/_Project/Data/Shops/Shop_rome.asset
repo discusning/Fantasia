@@ -113,13 +113,13 @@ MonoBehaviour:
     MaxStock: 1
     Stage: 1
     Limited: 0
-  - Item: {fileID: 11400000, guid: dda72746e4044b34293299e3fa665c5d, type: 2}
-    MaxStock: 1
-    Stage: 1
-    Limited: 0
   - Item: {fileID: 11400000, guid: f2f52b9012a6df248af3950be272a793, type: 2}
     MaxStock: 1
     Stage: 1
+    Limited: 0
+  - Item: {fileID: 11400000, guid: dda72746e4044b34293299e3fa665c5d, type: 2}
+    MaxStock: 1
+    Stage: 0
     Limited: 0
   - Item: {fileID: 11400000, guid: 6693f71f21d9a8d46bd45a4286ea1c70, type: 2}
     MaxStock: 1

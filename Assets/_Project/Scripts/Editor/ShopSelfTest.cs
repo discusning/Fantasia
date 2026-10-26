@@ -23,8 +23,8 @@ namespace Fantasia.Editor
             int e = 0;
 
             // §12 도시별 최종 판매 규모 (확장 도시 제외, 모든 단계 해금·한정품 미구매)
-            e += Expect("런던 품목", london.Entries.Length, 37);
-            e += Expect("런던 수량", london.Entries.Sum(x => x.MaxStock), 65);
+            e += Expect("런던 품목", london.Entries.Length, 38); // + 신속의 앰플 (속도 확정안 10/26)
+            e += Expect("런던 수량", london.Entries.Sum(x => x.MaxStock), 68);
             e += Expect("베르사유 품목", versailles.Entries.Length, 51);
             e += Expect("베르사유 수량", versailles.Entries.Sum(x => x.MaxStock), 80);
             e += Expect("로마 품목", rome.Entries.Length, 71);

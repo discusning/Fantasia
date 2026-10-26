@@ -66,7 +66,10 @@ namespace Fantasia.UI
 
         private RectTransform _canvasRect;
 
-        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public RectTransform Rect; }
+        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public Text Speed; public Text Arrow; public RectTransform Rect; }
+        private int _arrowRound;
+        private Coroutine _arrowHide;
+        private readonly Dictionary<BattleUnit, int> _arrows = new();
         private readonly List<TimelineEntry> _timeline = new();
         private Text _roundText;
 
@@ -115,10 +118,21 @@ namespace Fantasia.UI
         public static bool PointerOverUI => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
 
         // ───────────── ① 타임라인 ─────────────
-        public void SetTimeline(IReadOnlyList<BattleQueue.Entry> entries, int currentRound)
+        public void SetTimeline(IReadOnlyList<BattleQueue.Entry> entries, int currentRound, System.Func<BattleUnit, int> orderChange = null)
         {
             _roundText.text = $"라운드 {currentRound}";
             int prevRound = currentRound;
+            // 새 라운드가 시작될 때 ↑/↓를 캐릭터별로 정해 두고 잠깐 보여준다 (칸이 앞으로 밀려도 같은 캐릭터에 붙음)
+            if (orderChange != null && currentRound != _arrowRound)
+            {
+                _arrowRound = currentRound;
+                _arrows.Clear();
+                if (currentRound > 1)
+                    foreach (var e in entries)
+                        if (e.Round == currentRound && orderChange(e.Unit) != 0) _arrows[e.Unit] = orderChange(e.Unit);
+                if (_arrowHide != null) StopCoroutine(_arrowHide);
+                _arrowHide = _arrows.Count > 0 ? StartCoroutine(HideArrows(2.5f)) : null;
+            }
             for (int i = 0; i < _timeline.Count; i++)
             {
                 var slot = _timeline[i];
@@ -138,8 +152,24 @@ namespace Fantasia.UI
                 slot.Round.gameObject.SetActive(newRound);
                 slot.Round.text = $"R{entries[i].Round} 예상";
                 slot.Mark.gameObject.SetActive(unit.Boss != null && unit.Boss.HasPending && unit.IsAlive);
+                slot.Speed.text = $"속도 {entries[i].Speed}";
+                bool arrow = !predicted && _arrows.ContainsKey(unit);
+                slot.Arrow.gameObject.SetActive(arrow);
+                if (arrow)
+                {
+                    slot.Arrow.text = _arrows[unit] > 0 ? "↑" : "↓";
+                    slot.Arrow.color = _arrows[unit] > 0 ? SlotSuccess : EnemyBorder;
+                }
                 prevRound = entries[i].Round;
             }
+        }
+
+        private System.Collections.IEnumerator HideArrows(float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            foreach (var t in _timeline) t.Arrow.gameObject.SetActive(false);
+            _arrows.Clear();
+            _arrowHide = null;
         }
 
         // ───────────── ② 적 HP 바 ─────────────
@@ -497,7 +527,12 @@ namespace Fantasia.UI
                 entry.Root = entry.Rect.gameObject;
                 entry.Border = entry.Root.GetComponent<Image>();
                 entry.Portrait = UGUIKit.CreateRect(fill, "Portrait", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
-                entry.Round = Label(entry.Rect, "RoundMark", new Vector2(-0.4f, -0.55f), new Vector2(1.4f, 0f), 10, TextAnchor.MiddleCenter, Gold, bold: true);
+                // 초상 아래: 이번 라운드 정렬에 쓴 속도 (다음 라운드 칸은 지금 속도 = 예상)
+                entry.Speed = Label(entry.Rect, "Speed", new Vector2(-0.2f, -0.42f), new Vector2(1.2f, 0f), 11, TextAnchor.MiddleCenter, new Color(0.9f, 0.87f, 0.8f), bold: true);
+                // 다음 라운드 시작 때 순서가 앞당겨지면 ↑, 늦춰지면 ↓ (잠깐)
+                entry.Arrow = Label(entry.Rect, "Arrow", new Vector2(-0.2f, 0.5f), new Vector2(0.45f, 1.15f), 16, TextAnchor.MiddleCenter, SlotSuccess, bold: true);
+                entry.Arrow.gameObject.SetActive(false);
+                entry.Round = Label(entry.Rect, "RoundMark", new Vector2(-0.4f, -0.85f), new Vector2(1.4f, -0.42f), 10, TextAnchor.MiddleCenter, Gold, bold: true);
                 entry.Round.gameObject.SetActive(false);
                 // 예고 중인 보스 표식
                 entry.Mark = Label(entry.Rect, "TelegraphMark", new Vector2(0.55f, 0.55f), new Vector2(1.15f, 1.2f), 14, TextAnchor.MiddleCenter, CritColor, bold: true);

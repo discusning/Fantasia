@@ -95,6 +95,7 @@ namespace Fantasia.Combat
                 Log("그림자의 기도 — 기습 실패 페널티 면역 (정상 속도순)");
             }
             _queue = new BattleQueue(_allies.Concat(_enemies), _setup.Opening);
+            _queue.RoundEnded += () => { foreach (var u in _allies.Concat(_enemies)) u.Statuses.EndRound(); }; // 라운드 단위 상태(속도 증가) 기간
             Log($"전투 시작 — 개시 {_setup.Opening} · 아군 {string.Join(", ", _allies.Select(u => $"{u.DisplayName}(HP {u.CurrentHP}/{u.MaxHP}, 속도 {u.Speed})"))}"
                 + $" · 적 {string.Join(", ", _enemies.Select(u => $"{u.DisplayName}(HP {u.CurrentHP}, 속도 {u.Speed})"))}");
             if (_setup.Opening == EncounterOutcome.AmbushSuccess || _setup.Opening == EncounterOutcome.AmbushFailure)
@@ -206,7 +207,7 @@ namespace Fantasia.Combat
         {
             SaveBattle($"전투 R{_queue.Round} {_current.DisplayName} 차례", confused: confused);
             Log($"[R{_queue.Round}] {_current.DisplayName} 차례 (속도 {_current.Speed}) — 순서: {string.Join(" > ", _queue.Preview(6).Select(x => x.Unit.DisplayName))}");
-            _hud.SetTimeline(_queue.Preview(10), _queue.Round);
+            _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
             _hud.RefreshEnemies(null);
 
             if (_current.IsAlly && confused)
@@ -390,7 +391,7 @@ namespace Fantasia.Combat
                 }.Where(s => s != null));
                 _hud.SetBossTelegraph(e, $"{p.Announce.Name} 예고 중 | 다음 보스 행동: {p.FollowUp.Description}\n{counter}");
             }
-            _hud.SetTimeline(_queue.Preview(10), _queue.Round);
+            _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
         }
 
         // 아군 행동 메뉴 열기 — 예고 중이면 「봉합 방해」 버튼도 (집중력이 없어도 활성)
@@ -518,9 +519,11 @@ namespace Fantasia.Combat
                     }
                     break;
                 default:
+                    int speedBefore = target.Speed;
                     string line = ConsumableRules.ApplyToMember(item, target.Member);
                     Log($"{user.DisplayName}: {line}");
                     _hud.PopText(_camera, ModelTop(target), item.DisplayName, BattleHud.SlotSuccess);
+                    NoticeSpeedChange(target, speedBefore);
                     break;
             }
             yield return new WaitForSeconds(0.6f);
@@ -764,7 +767,7 @@ namespace Fantasia.Combat
                 bool moved = _queue.Shift(target, onCritShift);
                 if (moved) _hud.PopText(_camera, ModelTop(target) + Vector3.up * (0.45f * line), shiftName, BattleHud.StatusColor);
                 Log($"  → {target.DisplayName} [{shiftName}] {(moved ? "— 이번 라운드 차례가 뒤로 밀림" : "— 효과 없음(이미 행동함·이번 라운드 이미 밀림·이미 남은 큐 뒤쪽)")}");
-                _hud.SetTimeline(_queue.Preview(10), _queue.Round);
+                _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
             }
         }
 
@@ -800,13 +803,26 @@ namespace Fantasia.Combat
             if (removed.Count > 0) _hud.PopText(_camera, ModelTop(target) + Vector3.up * 0.45f, "정화", BattleHud.SlotSuccess);
         }
 
+        // 전투 중 속도가 바뀌면 안내 — 이번 라운드 순서는 그대로, 다음 라운드 정렬부터 반영 (속도 확정안)
+        private void NoticeSpeedChange(BattleUnit unit, int before)
+        {
+            int now = unit.Speed;
+            if (now == before) return;
+            string text = $"{unit.DisplayName} 속도 {before} → {now} · 다음 라운드 순서에 반영";
+            _hud.ShowNotice(text, 2.2f);
+            Log($"  → {text}");
+            _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
+        }
+
         // 상태 여러 개 부여 + 팝업·로그. 다음 팝업 줄 번호를 돌려준다.
         private int ApplyStatuses(BattleUnit target, StatusEffectDefinition[] statuses, int line)
         {
             if (target == null || statuses == null) return line;
             foreach (var def in statuses)
             {
+                int speedBefore = target.Speed;
                 var applied = target.Statuses.Apply(def);
+                if (applied != null) NoticeSpeedChange(target, speedBefore);
                 if (applied == null) continue;
                 string stacks = applied.Stacks > 1 ? $" ×{applied.Stacks}" : "";
                 _hud.PopText(_camera, ModelTop(target) + Vector3.up * (0.45f * line++), def.DisplayName + stacks, BattleHud.StatusColor);
@@ -866,7 +882,7 @@ namespace Fantasia.Combat
             BoardSession.Instance.BattleSnapshotJson = null; // 전투 끝 — 이어하기는 보드에서
             RefreshBossTelegraph(); // 전투 종료 → 예고 해제
             foreach (var ally in _allies) ally.Statuses.ClearOnBattleEnd(); // 중독처럼 남는 것만 유지
-            _hud.SetTimeline(_queue.Preview(10), _queue.Round);
+            _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
             bool wiped = enemiesLeft && !_allies.Any(a => a.IsAlive);
             Log($"전투 종료 — {(!enemiesLeft ? "승리" : wiped ? "패배(전원 쓰러짐)" : "퇴각")} · 라운드 {_queue.Round} · 아군 HP {string.Join(", ", _allies.Select(u => $"{u.DisplayName} {u.CurrentHP}/{u.MaxHP} LP {u.Member.CurrentLP}"))}");
             PartyHudPanel.SetActive(null);

@@ -107,6 +107,10 @@ namespace Fantasia.Editor
             var slowed = EnsureStatus("Status_속도감소", "status.speed_down", "속도 감소", "속↓", StatusEffectType.Bind, StatusEffectKind.StatModifier,
                 duration: 2, maxStacks: 1, magnitude: 15, statPenalty: 0, clearedByVictory: true,
                 "속도 −15, 2턴 (저지 사격). 같은 의미의 속도 감소는 큰 값 하나만.");
+            // 신속의 앰플 (속도 확정안 10/26): 속도 +15, 라운드 단위 — 사용한 라운드 제외, 이후 2라운드 끝까지. 중첩 없이 기간만 갱신.
+            EnsureStatus("Status_속도증가", "status.speed_up", "속도 증가", "속↑", StatusEffectType.SpeedUp, StatusEffectKind.StatModifier,
+                duration: 2, maxStacks: 1, magnitude: 15, statPenalty: 0, clearedByVictory: true,
+                "속도 +15. 사용한 라운드는 그대로, 다음 라운드 순서부터 반영. 사용한 라운드를 빼고 2라운드가 끝날 때까지.");
 
             fieldInvestigation.Passive = PassiveType.AmbushSlotBonus;
             fieldInvestigation.PassiveValue = 0.10f;

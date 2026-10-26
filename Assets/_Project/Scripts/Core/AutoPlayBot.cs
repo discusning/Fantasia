@@ -806,6 +806,10 @@ namespace Fantasia.Core
             bool shotBanner = false, shotIntro = false, shotTelegraph = false, focusZeroed = false;
             bool kit = args.Contains("-autoplay-kit"), forceInterrupt = args.Contains("-autoplay-interrupt"), focusZero = args.Contains("-autoplay-focus0");
             int downs = 0, healsUsed = 0, interrupts = 0;
+            // 속도 점검 (-autoplay-ampoule): 역병 의사가 신속의 앰플을 자신에게 (효과가 끝나면 다시) — 다음 라운드 ↑ 화면 촬영
+            bool ampouleRun = args.Contains("-autoplay-ampoule");
+            int ampoulesUsed = 0, ampouleRound = -1;
+            bool shotArrows = false;
             var wasDowned = new System.Collections.Generic.HashSet<BattleUnit>();
             int focusBefore = battle.DevAllies.Sum(a => a.Member.CurrentFocus);
             float deadline = Time.time + 180f;
@@ -838,6 +842,13 @@ namespace Fantasia.Core
                     Note($"  예고 UI: {battle.DevHud.DevTelegraphText(telegraphBoss)?.Replace("\n", " / ")} · 봉합 방해 버튼 {(battle.DevHud.DevInterruptVisible ? "보임" : "없음")}");
                 }
 
+                // 앰플 쓴 다음 라운드 시작: 타임라인 ↑/↓·속도 표시 촬영 (화살표는 2.5초만 보임)
+                if (ampouleRun && !shotArrows && ampouleRound > 0 && battle.DevRound > ampouleRound && battle.DevAwaitingPlayer)
+                {
+                    shotArrows = true;
+                    Note($"  [R{battle.DevRound}] 앰플 반영 순서: {string.Join(" > ", battle.DevAllies.Concat(battle.DevEnemies).Where(u => u.InBattle).OrderByDescending(u => u.Speed).Select(u => $"{u.DisplayName}({u.Speed})"))}");
+                    if (shots) yield return Shot("battle_speed_arrows");
+                }
                 if (battle.DevAwaitingPlayer)
                 {
                     yield return new WaitForSeconds(0.3f);
@@ -870,6 +881,18 @@ namespace Fantasia.Core
                         battle.DevHud.DevPressInterrupt();
                         yield return new WaitForSeconds(0.5f);
                         if (shots) yield return Shot("boss_interrupt");
+                    }
+                    else if (ampouleRun && actor.Member.Job.Id == Fantasia.Data.JobId.PlagueDoctor
+                             && !actor.Statuses.Has(Fantasia.Data.StatusEffectType.SpeedUp)
+                             && BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition).FirstOrDefault(d => d.Id == "consumable.swift_ampoule") is { } ampoule)
+                    {
+                        ampoulesUsed++;
+                        ampouleRound = battle.DevRound;
+                        Note($"  [R{battle.DevRound}] 신속의 앰플 → {actor.DisplayName} (속도 {actor.Speed})");
+                        battle.DevUseItem(ampoule, actor);
+                        yield return new WaitForSeconds(0.5f);
+                        Note($"    → 속도 {actor.Speed} · 이번 라운드 순서 그대로");
+                        if (shots && ampoulesUsed == 1) yield return Shot("battle_ampoule_used");
                     }
                     else if (kit && antidote != null && poisoned != null && Fantasia.Items.ConsumableRules.CanUseOn(antidote, poisoned.Member, out _))
                     {
@@ -972,7 +995,7 @@ namespace Fantasia.Core
             {
                 // 플레이테스트 기록 (Boss_Abel_v1.0 "개발팀에서 함께 남길 결과")
                 bool won = battle.DevEnemies.All(e => !e.IsAlive);
-                Note($"보스전 결과: {(won ? "승리" : "패배")} · 라운드 {battle.DevRound} · 다운 {downs} · LP 소모 {battle.DevAllies.Sum(a => a.Member.Job.StartingLP - a.Member.CurrentLP)}"
+                Note($"보스전 결과: {(won ? "승리" : "패배")} · 라운드 {battle.DevRound}{(ampouleRun ? $" · 앰플 {ampoulesUsed}" : "")} · 다운 {downs} · LP 소모 {battle.DevAllies.Sum(a => a.Member.Job.StartingLP - a.Member.CurrentLP)}"
                      + $" · 회복/해독 {healsUsed} · 봉합 방해 {interrupts} · 레벨 {string.Join("/", battle.DevAllies.Select(a => a.Member.Level))}"
                      + $" · 남은 HP {string.Join("/", battle.DevAllies.Select(a => $"{a.CurrentHP}"))} · 남은 집중력 {string.Join("/", battle.DevAllies.Select(a => a.Member.CurrentFocus))} (시작 합 {focusBefore})"
                      + $" · 시드 {Seed}");
@@ -1075,6 +1098,7 @@ namespace Fantasia.Core
                 party.Inventory.AddConsumable(catalog.Consumable(Fantasia.Data.ConsumableIds.Antidote), 3);
                 party.Inventory.AddConsumable(catalog.Consumable(Fantasia.Data.ConsumableIds.FocusCandle), 1);
                 Note("준비물: 생명의 영약 3 · 해독제 3 · 집중의 향초 1");
+                if (args.Contains("-autoplay-ampoule") && catalog.Consumable("consumable.swift_ampoule") is { } amp) { party.Inventory.AddConsumable(amp, 2); Note("준비물 추가: 신속의 앰플 2"); }
             }
             if (args.Contains("-autoplay-fast")) Time.timeScale = 4f; // 반복 점검용 4배속
         }

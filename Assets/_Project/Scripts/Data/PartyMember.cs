@@ -88,7 +88,7 @@ namespace Fantasia.Data
                 foreach (var g in _equipped) if (g != null) stats += g.StatBonus;
                 stats += PrayerRules.StatBonus(Prayer); // 석상 기도
                 int all = Statuses.AllStatPenalty;
-                stats += new StatBlock(-all, -all - Statuses.SpeedPenalty, -all, -all, -all, -all);
+                stats += new StatBlock(-all, -all - Statuses.SpeedPenalty + Statuses.SpeedBonus, -all, -all, -all, -all);
                 return stats.ClampToCap();
             }
         }
