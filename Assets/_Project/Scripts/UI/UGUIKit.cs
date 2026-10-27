@@ -56,6 +56,17 @@ namespace Fantasia.UI
             return rt;
         }
 
+        // 아이콘 그림 (UITheme 아이콘 칸). 그림이 없으면 만들지 않고 null — 호출부는 글자만 보이게 둔다.
+        public static Image CreateIcon(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Sprite sprite)
+        {
+            if (sprite == null) return null;
+            var img = CreateImage(parent, name, anchorMin, anchorMax, Color.white);
+            img.sprite = sprite;
+            img.preserveAspect = true;
+            img.raycastTarget = false;
+            return img;
+        }
+
         public static Image CreateImage(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Color color)
         {
             var rt = CreateRect(parent, name, anchorMin, anchorMax);

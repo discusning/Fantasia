@@ -16,17 +16,52 @@ MonoBehaviour:
   PanelFill: {fileID: 0}
   Banner: {fileID: 0}
   Button: {fileID: 0}
-  BarBack: {fileID: 0}
-  BarFill: {fileID: 0}
+  BarBack: {fileID: 21300000, guid: 6e43da1b57a97b0459c32b2fcac9d97b, type: 3}
+  BarFill: {fileID: 21300000, guid: b7a8fd2b8398be043adac943f8bf3755, type: 3}
   SlotIcon: {fileID: 0}
-  FocusPip: {fileID: 0}
+  FocusPip: {fileID: 21300000, guid: 541174e905c849345a001dc5a835c765, type: 3}
   PortraitFrame: {fileID: 0}
   TimelineFrame: {fileID: 0}
+  TopBarFrame: {fileID: 0}
+  PhaseDialAllyActive: {fileID: 0}
+  PhaseDialAllyIdle: {fileID: 0}
+  PhaseDialEnemyActive: {fileID: 0}
+  PhaseDialEnemyIdle: {fileID: 0}
+  ThreatNotch: {fileID: 0}
+  RegionBanner: {fileID: 0}
+  AllyTurnBanner: {fileID: 0}
+  EnemyTurnBanner: {fileID: 0}
   AttackIcon: {fileID: 0}
   SkillIcon: {fileID: 0}
   ItemIcon: {fileID: 0}
   DefendIcon: {fileID: 0}
   RetreatIcon: {fileID: 0}
+  ReviveIcon: {fileID: 0}
   FocusToggleIcon: {fileID: 0}
+  BloodTrailIcon: {fileID: 21300000, guid: 6be2c7f749062b44bb4a9679fae38623, type: 3}
+  SoulIcon: {fileID: 21300000, guid: 88ce1cc14b9387447b21bb0372f191c9, type: 3}
+  CentIcon: {fileID: 21300000, guid: 909bab485367dd64a99f83b7f0558b91, type: 3}
+  LpIcon: {fileID: 21300000, guid: d9505c11a407a274bbb2edf7055786dd, type: 3}
+  LevelBadge: {fileID: 21300000, guid: 6785b80056b5aa149b271c5dbdec77be, type: 3}
+  StrengthIcon: {fileID: 21300000, guid: f75531cb5e45e7347a80f3052ed41349, type: 3}
+  SpeedIcon: {fileID: 21300000, guid: bd19f628b3a8c1143a18b93b42d8f660, type: 3}
+  VitalityIcon: {fileID: 21300000, guid: 14b52e8c67fd09647a7d54c9e5861425, type: 3}
+  IntelligenceIcon: {fileID: 21300000, guid: fdfa180451d229c4f951792e0fa2bbab, type: 3}
+  LuckIcon: {fileID: 21300000, guid: c8a286dbeaa5cef48827f4656940e306, type: 3}
+  PerceptionIcon: {fileID: 21300000, guid: 14148a2793bfe5549a5d4e431f074534, type: 3}
+  FocusPipEmpty: {fileID: 21300000, guid: 1f70f294ce5feeb41b6219c9b1c944f4, type: 3}
+  QuickSlotFrame: {fileID: 21300000, guid: 93a8f0e6e7daa0548bb655154c47d685, type: 3}
+  QuickSlotSelected: {fileID: 21300000, guid: a93db8685301f694b9917fc99c013084, type: 3}
+  QuestIcon: {fileID: 21300000, guid: 7fd2a313320e7f343b2034abdcee9542, type: 3}
+  EvidenceIcon: {fileID: 21300000, guid: 6569e55512cc9ec4dafda07356e6ef89, type: 3}
+  TreasureIcon: {fileID: 21300000, guid: 29f2d67e537dfb84bb6df8ed7d97ca12, type: 3}
+  ObjectiveOpen: {fileID: 21300000, guid: a6b6d21fb99eda340868c9704d698cf4, type: 3}
+  ObjectiveDone: {fileID: 21300000, guid: 5fdce0c9f9f018b46908455831dcba5e, type: 3}
+  HubMarker: {fileID: 21300000, guid: ae24f8382d35ca6489a6ffbe9da9b53d, type: 3}
+  HoundMarker: {fileID: 21300000, guid: fe21599c43985974daeaf0b88828b0d7, type: 3}
+  BossMarker: {fileID: 21300000, guid: 3786438c44958d7429c614d1d928f422, type: 3}
+  RecoveryMarker: {fileID: 21300000, guid: 7d983a65bf21a3b488230b16e8b09c09, type: 3}
+  EventMarker: {fileID: 21300000, guid: bb5d51546a57b9b44b66ba1dc824960d, type: 3}
+  ExitMarker: {fileID: 21300000, guid: e364e93f99f5ba9459e3e8c5e19d50e7, type: 3}
   TargetMarkerPrefab: {fileID: 0}
   Font: {fileID: 0}

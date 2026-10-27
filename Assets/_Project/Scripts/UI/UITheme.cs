@@ -48,6 +48,48 @@ namespace Fantasia.UI
         public Sprite ReviveIcon;
         public Sprite FocusToggleIcon;
 
+        // 아이콘 Z01~Z44 (Docs/Art/Fantasia_Icon_Usage_Guide.pdf) — 메뉴 Fantasia/UI/Apply Icon Set이 채운다.
+        // 비어 있으면 지금처럼 글자로만 보인다.
+        [Header("아이콘 — 자원·상태 (Z01~Z04, Z37)")]
+        public Sprite BloodTrailIcon;  // Z01 피의 흔적
+        public Sprite SoulIcon;        // Z02 영혼 흡수
+        public Sprite CentIcon;        // Z03 Cent
+        public Sprite LpIcon;          // Z04 LP
+        public Sprite LevelBadge;      // Z37 레벨 배지 (숫자는 글자로 위에)
+
+        [Header("아이콘 — 능력치 (Z05~Z10, 힘·속도·활력·지력·행운·인지 순)")]
+        public Sprite StrengthIcon, SpeedIcon, VitalityIcon, IntelligenceIcon, LuckIcon, PerceptionIcon;
+
+        [Header("아이콘 — 집중력·퀵 슬롯 (Z29·Z30·Z35·Z36)")]
+        public Sprite FocusPipEmpty;   // Z30 빈 칸 (보유 칸은 위 FocusPip = Z29)
+        public Sprite QuickSlotFrame;  // Z35
+        public Sprite QuickSlotSelected; // Z36
+
+        [Header("아이콘 — 의뢰·기록 (Z15~Z17, Z33·Z34)")]
+        public Sprite QuestIcon;       // Z15
+        public Sprite EvidenceIcon;    // Z16 검시 기록 (퀘스트 물건)
+        public Sprite TreasureIcon;    // Z17 보물·전리품
+        public Sprite ObjectiveOpen;   // Z33
+        public Sprite ObjectiveDone;   // Z34
+
+        [Header("아이콘 — 지도 칸 표식 (Z17, Z23~Z28)")]
+        public Sprite HubMarker;       // Z23 그리니치 거점
+        public Sprite HoundMarker;     // Z24 그림자 사냥개 칸
+        public Sprite BossMarker;      // Z25
+        public Sprite RecoveryMarker;  // Z26 우물(회복 칸)
+        public Sprite EventMarker;     // Z27
+        public Sprite ExitMarker;      // Z28
+
+        public Sprite StatIcon(Fantasia.Data.StatKind kind) => kind switch
+        {
+            Fantasia.Data.StatKind.Strength => StrengthIcon,
+            Fantasia.Data.StatKind.Speed => SpeedIcon,
+            Fantasia.Data.StatKind.Vitality => VitalityIcon,
+            Fantasia.Data.StatKind.Intelligence => IntelligenceIcon,
+            Fantasia.Data.StatKind.Luck => LuckIcon,
+            _ => PerceptionIcon,
+        };
+
         [Header("전장")]
         // 공격 대상 발밑 표시. 비우면 붉은 육각형 링을 코드로 그린다.
         public GameObject TargetMarkerPrefab;
@@ -73,11 +115,13 @@ namespace Fantasia.UI
         }
 
         // 스프라이트가 있으면 이미지에 입히고 true. tint=false면 색을 흰색으로 돌려 그림 원색을 쓴다.
-        public static bool Apply(Image image, Sprite sprite, bool tint = false)
+        // sliceHeight: 9-slice 그림을 얇은 칸(게이지 등)에 쓸 때, 그림 전체 높이를 화면 몇 단위로 볼지 — 모서리가 칸보다 커지지 않게.
+        public static bool Apply(Image image, Sprite sprite, bool tint = false, float sliceHeight = 0f)
         {
             if (image == null || sprite == null) return false;
             image.sprite = sprite;
             image.type = sprite.border != Vector4.zero ? Image.Type.Sliced : Image.Type.Simple;
+            if (image.type == Image.Type.Sliced && sliceHeight > 0f) image.pixelsPerUnitMultiplier = sprite.rect.height / sliceHeight;
             if (!tint) image.color = Color.white;
             return true;
         }

@@ -563,9 +563,9 @@ namespace Fantasia.UI
                 bar.Hp = Label(fill, "Hp", new Vector2(0.73f, 0.35f), new Vector2(0.99f, 1f), 26, TextAnchor.MiddleRight, HpColor, bold: true);
 
                 var back = UGUIKit.CreateImage(fill, "HpBar", new Vector2(0.23f, 0.36f), new Vector2(0.98f, 0.52f), new Color(0.16f, 0.15f, 0.17f));
-                UITheme.Apply(back, UITheme.Current.BarBack);
+                UITheme.Apply(back, UITheme.Current.BarBack, sliceHeight: 12f);
                 var hpFill = UGUIKit.CreateImage(back.transform, "Fill", Vector2.zero, Vector2.one, HpColor);
-                UITheme.Apply(hpFill, UITheme.Current.BarFill, tint: true);
+                UITheme.Apply(hpFill, UITheme.Current.BarFill, tint: true, sliceHeight: 12f);
                 bar.HpFill = (RectTransform)hpFill.transform;
 
                 // 상태 칸 — 상시 특성(회피 상태) + 걸린 상태 효과. 그림은 StatusEffectDefinition.Icon.

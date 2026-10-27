@@ -17,6 +17,7 @@ MonoBehaviour:
   Role: "\uC6D0\uAC70\uB9AC \uB2E8\uC77C \uACF5\uACA9\xB7\uD134 \uC9C0\uC5F0"
   Model: {fileID: 0}
   Portrait: {fileID: 0}
+  Icon: {fileID: 21300000, guid: ae96d0ba98162b543a8609ead6bdbb81, type: 3}
   StartingHP: 76
   StartingMP: 0
   StartingFocus: 3

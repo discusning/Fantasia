@@ -181,7 +181,8 @@ namespace Fantasia.UI
             Label(bar, "LeaderRole", new Vector2(0.06f, 0.05f), new Vector2(0.2f, 0.45f), 10, TextAnchor.MiddleLeft, TextDim, false).text = "파티장";
 
             // 피의 흔적 G — 10칸
-            Label(bar, "BloodLabel", new Vector2(0.2f, 0.55f), new Vector2(0.43f, 0.98f), 11, TextAnchor.MiddleLeft, Blood, true).text = "피의 흔적";
+            bool bloodIcon = UGUIKit.CreateIcon(bar, "BloodIcon", new Vector2(0.198f, 0.5f), new Vector2(0.214f, 1f), theme.BloodTrailIcon) != null; // Z01
+            Label(bar, "BloodLabel", new Vector2(bloodIcon ? 0.216f : 0.2f, 0.55f), new Vector2(0.43f, 0.98f), 11, TextAnchor.MiddleLeft, Blood, true).text = "피의 흔적";
             for (int i = 0; i < BloodNotches; i++)
             {
                 float x0 = 0.2f + i * 0.0225f;
@@ -217,18 +218,20 @@ namespace Fantasia.UI
             _enemyTag.rectTransform.sizeDelta = new Vector2(70f, 20f);
 
             // 영혼 수확 S — 연속 바 + 25·50·75 경고 눈금
-            Label(bar, "SoulLabel", new Vector2(0.57f, 0.55f), new Vector2(0.82f, 0.98f), 11, TextAnchor.MiddleLeft, Soul, true).text = "영혼 수확";
+            bool soulIcon = UGUIKit.CreateIcon(bar, "SoulIcon", new Vector2(0.568f, 0.5f), new Vector2(0.584f, 1f), theme.SoulIcon) != null; // Z02
+            Label(bar, "SoulLabel", new Vector2(soulIcon ? 0.586f : 0.57f, 0.55f), new Vector2(0.82f, 0.98f), 11, TextAnchor.MiddleLeft, Soul, true).text = "영혼 수확";
             var soulBack = UGUIKit.CreateImage(bar, "SoulBar", new Vector2(0.57f, 0.34f), new Vector2(0.8f, 0.54f), NotchOff);
-            UITheme.Apply(soulBack, theme.BarBack);
+            UITheme.Apply(soulBack, theme.BarBack, sliceHeight: 12f);
             var soulFill = UGUIKit.CreateImage(soulBack.transform, "Fill", Vector2.zero, new Vector2(0f, 1f), Soul);
-            UITheme.Apply(soulFill, theme.BarFill, tint: true);
+            UITheme.Apply(soulFill, theme.BarFill, tint: true, sliceHeight: 12f);
             _soulFill = soulFill.rectTransform;
             foreach (int w in SoulWarnings)
                 UGUIKit.CreateImage(soulBack.transform, $"Warn{w}", new Vector2(w / 100f - 0.004f, -0.25f), new Vector2(w / 100f + 0.004f, 1.25f), Gold);
             _soulValue = Label(bar, "SoulValue", new Vector2(0.57f, 0.02f), new Vector2(0.82f, 0.32f), 10, TextAnchor.MiddleLeft, TextDim, false);
 
             // 오른쪽: Cent
-            _cent = Label(bar, "Cent", new Vector2(0.84f, 0.1f), new Vector2(0.985f, 0.9f), 16, TextAnchor.MiddleRight, Gold, true);
+            UGUIKit.CreateIcon(bar, "CentIcon", new Vector2(0.84f, 0.12f), new Vector2(0.87f, 0.88f), theme.CentIcon); // Z03
+            _cent = Label(bar, "Cent", new Vector2(0.87f, 0.1f), new Vector2(0.985f, 0.9f), 16, TextAnchor.MiddleRight, Gold, true);
 
             // 바 아래 가운데: 지역명 배너
             var regionFill = UGUIKit.CreateThemedPanel(root, "Region", new Vector2(0.42f, 0.855f), new Vector2(0.58f, 0.895f), Gold, new Color(0.2f, 0.08f, 0.1f, 0.95f), 1.5f, theme.RegionBanner);

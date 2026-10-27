@@ -127,7 +127,26 @@ namespace Fantasia.Board
                         if (session != null && session.UsedMapTiles.Contains(coord)) tile.SetUsed(true);
                         break;
                 }
+                tile.SetMarker(MarkerFor(mapTile.Kind, tile), tileHeight);
             }
+        }
+
+        // 지도 칸 표식 (아이콘 사용 설명서): 거점·보스·우물·보물·이벤트·출구, 그림자 사냥개 칸은 사냥개.
+        // 다른 적 칸(쥐·거미·가고일)은 표식 기획 대기 — 색으로만.
+        private static Sprite MarkerFor(MapTileKind kind, HexTile tile)
+        {
+            var theme = Fantasia.UI.UITheme.Current;
+            return kind switch
+            {
+                MapTileKind.Hub => theme.HubMarker,
+                MapTileKind.Boss => theme.BossMarker,
+                MapTileKind.Recovery => theme.RecoveryMarker,
+                MapTileKind.Treasure => theme.TreasureIcon,
+                MapTileKind.Event => theme.EventMarker,
+                MapTileKind.Exit => theme.ExitMarker,
+                MapTileKind.Enemy when tile.Enemy != null && tile.Enemy.Id == "enemy.small.shadow_hound" => theme.HoundMarker,
+                _ => null,
+            };
         }
 
         // 진행이 바뀌었을 때 출구 칸 막힘 다시 계산

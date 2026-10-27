@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.life_elixir
   DisplayName: "\uC0DD\uBA85\uC758 \uC601\uC57D"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 263f0698acfd29f45b1e93a893e3dd0c, type: 3}
   EffectDescription: HP +50
   Effect: 1
   Amount: 50

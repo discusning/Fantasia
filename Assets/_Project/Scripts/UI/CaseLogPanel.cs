@@ -130,6 +130,9 @@ namespace Fantasia.UI
                 float x0 = 0.03f + i * 0.2f;
                 var b = UGUIKit.CreateThemedButton(win, $"Tab{i}", new Vector2(x0, 0.8f), new Vector2(x0 + 0.19f, 0.88f), TabNames[i], RowFill, 12);
                 b.onClick.AddListener(() => Open((Tab)index));
+                // 탭 아이콘: 진행 중 = 의뢰(Z15) · 완료 = 목표 완료(Z34) · 증거품 = 검시 기록(Z16)
+                var tabIcon = i == 0 ? UITheme.Current.QuestIcon : i == 1 ? UITheme.Current.ObjectiveDone : UITheme.Current.EvidenceIcon;
+                UGUIKit.CreateIcon(b.transform, "Icon", new Vector2(0.04f, 0.1f), new Vector2(0.22f, 0.9f), tabIcon);
                 _tabs.Add(b);
             }
             _body = UGUIKit.CreateText(win, "Body", new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.77f), "", 13, TextAnchor.UpperLeft);

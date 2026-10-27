@@ -181,6 +181,9 @@ namespace Fantasia.UI
             outerRect.anchoredPosition = new Vector2(-RightMargin, -TopMargin - index * (RowHeight + RowGap));
 
             // 개발용 "달성!" 버튼은 실제 퀘스트(ActOneStory) 도입으로 제거 — 제목이 줄 전체를 쓴다.
+            // 의뢰 아이콘(Z15)·목표 미완료 칸(Z33) — 그림이 없으면 글자만
+            UGUIKit.CreateIcon(inner, "QuestIcon", new Vector2(0.005f, 0.6f), new Vector2(0.075f, 0.95f), UITheme.Current.QuestIcon);
+            UGUIKit.CreateIcon(inner, "ObjectiveBox", new Vector2(0.015f, 0.2f), new Vector2(0.065f, 0.5f), UITheme.Current.ObjectiveOpen);
             var title = UGUIKit.CreateText(inner, "Title", new Vector2(0.08f, 0.62f), new Vector2(0.92f, 0.92f), "", 10, TextAnchor.MiddleLeft);
             title.color = MainQuestColor;
             title.fontStyle = FontStyle.Bold;

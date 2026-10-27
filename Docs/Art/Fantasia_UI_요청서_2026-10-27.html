@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>판타지아 UI 요청서</title>
+<style>
+  @page { size: A4; margin: 14mm 13mm 14mm 13mm; }
+  :root { --ink:#1d1a17; --dim:#5f5850; --gold:#9a7230; --line:#d9d2c6; --bg:#f7f3ec; --p1:#a33a2c; --p2:#b0791d; --p3:#5c6b74; --ok:#3f7a4a; }
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; color: var(--ink); font-size: 9.8pt; line-height: 1.55; margin: 0; }
+  h1 { font-size: 21pt; margin: 0 0 4px; }
+  h2 { font-size: 13.5pt; margin: 18px 0 8px; padding: 6px 10px; background: var(--ink); color: #fff; border-radius: 3px; page-break-after: avoid; }
+  h3 { font-size: 11.2pt; margin: 10px 0 4px; color: var(--gold); page-break-after: avoid; }
+  p { margin: 4px 0; }
+  .cover { border: 2px solid var(--ink); padding: 16px 18px; margin-bottom: 10px; }
+  .sub { color: var(--dim); font-size: 10pt; }
+  .meta { display: flex; gap: 16px; margin-top: 8px; font-size: 9pt; color: var(--dim); flex-wrap: wrap; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 2px; }
+  .stat { border: 1px solid var(--line); background: var(--bg); padding: 7px; text-align: center; border-radius: 3px; }
+  .stat b { display: block; font-size: 15pt; }
+  .stat span { font-size: 8.3pt; color: var(--dim); }
+  table { width: 100%; border-collapse: collapse; margin: 5px 0 9px; font-size: 9pt; }
+  td:first-child { white-space: nowrap; }
+  th, td { border: 1px solid var(--line); padding: 4px 6px; vertical-align: top; text-align: left; }
+  th { background: var(--bg); font-weight: 700; white-space: nowrap; }
+  tr { page-break-inside: avoid; }
+  .p { font-size: 7.8pt; padding: 1px 6px; border-radius: 9px; color: #fff; white-space: nowrap; font-weight: 700; }
+  .P1 { background: var(--p1); } .P2 { background: var(--p2); } .P3 { background: var(--p3); } .OK { background: var(--ok); }
+  .note { font-size: 8.8pt; color: var(--dim); }
+  .q { border: 1px solid var(--line); border-left: 5px solid var(--p1); background: #fff; padding: 8px 11px; margin: 8px 0 10px; border-radius: 3px; page-break-inside: avoid; }
+  .q h3 { margin-top: 0; color: var(--ink); }
+  .q .who { font-size: 8.3pt; color: var(--dim); }
+  .row { display: flex; gap: 10px; align-items: flex-start; }
+  .row > .txt { flex: 1; }
+  .row img.shot { width: 46%; border: 1px solid var(--line); border-radius: 2px; }
+  img.wide { width: 100%; border: 1px solid var(--line); border-radius: 2px; }
+  .ask { background: #fbf2e6; border: 1px dashed var(--p2); padding: 5px 8px; margin-top: 6px; border-radius: 3px; }
+  .ask b { color: var(--p1); }
+  .dev { font-size: 8.8pt; color: var(--ok); margin-top: 3px; }
+  .icons { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; margin: 6px 0; }
+  .icons div { text-align: center; font-size: 6.6pt; color: var(--dim); }
+  .icons img { width: 38px; height: 38px; background: #262a30; border-radius: 3px; padding: 2px; display: block; margin: 0 auto 1px; }
+  .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .thumbs div { font-size: 7.6pt; text-align: center; color: var(--dim); }
+  .thumbs img { width: 100%; height: 60px; object-fit: contain; background: #262a30; border-radius: 2px; }
+  ul { margin: 3px 0 3px 18px; padding: 0; } li { margin: 1px 0; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>판타지아 — UI 그림 요청서</h1>
+  <div class="sub">개발 → 기획 · 디자인 · 2026-10-27 · 10/26에 받은 아이콘 44종·노션 이미지 20장·사용 설명서를 게임에 맞춰 본 결과</div>
+  <div class="meta"><span>1차 완성 마감 <b>11/18</b></span><span>디자인 P1 희망 기한 <b>11/7</b> (게임에 넣고 확인할 시간)</span><span>기획 확인 희망 <b>10/30</b></span></div>
+  <div class="summary">
+    <div class="stat"><b>44종</b><span>받은 아이콘 (바로 사용)</span></div>
+    <div class="stat"><b>9건</b><span>기획 확인 요청</span></div>
+    <div class="stat"><b>14장</b><span>투명 원본이 필요한 그림</span></div>
+    <div class="stat"><b>약 50개</b><span>새로 필요한 그림 (P1 약 40)</span></div>
+  </div>
+</div>
+
+<h2>0. 한눈에 보기</h2>
+<table>
+  <tr><th>누구에게</th><th>무엇을</th><th>왜</th><th>쪽</th></tr>
+  <tr><td><b>기획</b></td><td>설명서 내용 중 확정 기획·게임과 다른 7가지 + 기존 UI 확인 2가지 결정</td><td>설명서대로 바꾸면 이미 확정·구현한 규칙이 바뀌거나, 게임에 없는 기능(낮·밤, 플레이어 이름)을 새로 만들어야 함</td><td>2장</td></tr>
+  <tr><td><b>디자인</b></td><td>노션 이미지 14장을 <b>배경이 투명한 PNG</b>로 다시 보내기</td><td>받은 JPG는 배경이 회색으로 채워져 있어 게임에 넣으면 네모난 회색 판이 그대로 보임</td><td>3장</td></tr>
+  <tr><td><b>디자인</b></td><td>아직 없는 그림 (초상화·상태 아이콘·소모품 아이콘·전투 버튼 등)</td><td>지금 게임은 그 자리를 글자나 단색 도형으로 표시 중</td><td>4장</td></tr>
+  <tr><td><b>개발</b></td><td>받은 아이콘 44종을 바로 적용 (규칙 변화 없는 그림 교체)</td><td>—</td><td>1장</td></tr>
+</table>
+<p class="note">읽는 법: <span class="p P1">P1</span> 1차(1막 런던) 완성에 필요 · <span class="p P2">P2</span> 있으면 좋음(마무리 기간) · <span class="p P3">P3</span> 2막 이후 · <span class="p OK">받음</span> 이미 있음.
+화면 사진은 모두 지금 게임(1920×1080)에서 찍은 것입니다.</p>
+
+<h2>1. 이번에 받은 것 — 바로 쓰는 아이콘 44종 <span class="p OK">받음</span></h2>
+<p>배경이 투명한 PNG라 게임에 그대로 쓸 수 있습니다. 개발이 아래 자리에 넣습니다 (게임 규칙은 바뀌지 않음).</p>
+<div class="icons">
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z02_영혼_흡수_영혼_수확.png">영혼</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z03_Cent_소지금.png">Cent</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z04_LP_부활_횟수.png">LP</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z05_힘.png">힘</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z06_속도.png">속도</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z07_활력_HP.png">활력</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z08_지력.png">지력</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z09_행운.png">행운</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z10_인지.png">인지</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z11_압박_붕대.png">붕대</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z12_생명의_영약.png">생명 영약</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z13_마력의_영약.png">마력 영약</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z14_해독제.png">해독제</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z15_의뢰_퀘스트.png">의뢰</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z16_검시_기록.png">검시 기록</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z17_전리품_보물.png">보물</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z20_명탐정_직업.png">명탐정</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z21_역병_의사_직업.png">역병 의사</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z22_저격수_직업.png">저격수</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z23_그리니치_거점.png">거점</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z24_그림자_사냥개.png">사냥개</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z25_보스.png">보스</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z26_우물.png">우물</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z27_이벤트.png">이벤트</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z28_지역_출구.png">출구</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z29_집중력_보유_칸.png">집중 있음</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z30_집중력_빈칸.png">집중 빈칸</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z33_퀘스트_목표_미완료.png">목표 미완료</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z34_퀘스트_목표_완료.png">목표 완료</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z35_퀵_슬롯_기본_테두리.png">퀵 슬롯</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z36_퀵_슬롯_선택_테두리.png">퀵 선택</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z37_레벨_배지.png">레벨</div>
+  <div><img src="../../Assets/_Project/UI/Sprites/Icons/Z18_아군_행동.png">아군 행동</div>
+</div>
+<p class="note">+ HP·MP 막대(Z38·Z39), 보관용(피의 흔적 조각 Z31·Z32, 턴 시계 Z40~Z44), 피의 흔적(Z01)·적 행동(Z19). 설명서에는 128/256/512 크기 3종이라고 되어 있지만 받은 폴더에는 512 크기 1종만 있었음 — 게임에서 줄여 쓰므로 문제없음.</p>
+
+<h2>2. 기획 확인 요청 — 설명서와 확정 기획·게임이 다른 부분</h2>
+<p>사용 설명서는 "후속 사용자 지시"를 근거로 몇 가지를 바꿨는데, 개발이 받은 확정 기획과 다르거나 게임에 없는 기능입니다. <b>개발이 짐작해서 정하지 않도록, 아래 질문에 답을 부탁드립니다.</b></p>
+
+<div class="q">
+  <h3>Q1. 우물(초록 회복 칸)의 효과 <span class="p P1">P1 · 이미 구현된 규칙과 충돌</span></h3>
+  <div class="who">기획</div>
+  <div class="row">
+    <img class="shot" src="../Images/UI/09_회복_보물_칸/01_회복_칸_선택.png">
+    <div class="txt">
+      <p><b>지금 게임</b> (10/26 지도 칸 확정안대로): 도착하면 [이용]/[지나가기]. 살아 있는 파티원 <b>전원 HP·MP 30% + 집중력 1</b> 회복, 칸마다 1회.</p>
+      <p><b>설명서</b>: 우물 그림으로 통일하고 <b>살아 있는 1명을 골라 집중력 +1</b>. "전원 HP/MP 30%는 적용하지 않는다".</p>
+      <div class="ask"><b>질문</b> 어느 쪽이 최신 확정인가요?<br>A. 지금 확정안 유지 (그림만 우물로) · B. 설명서대로 변경 (1명 선택 + 집중력 1)</div>
+      <div class="dev">개발: A면 그림만 교체. B면 선택 창 변경 약 0.3일.</div>
+    </div>
+  </div>
+</div>
+
+<div class="q">
+  <h3>Q2. 상단의 피의 흔적 10칸 삭제 <span class="p P1">P1</span></h3>
+  <div class="who">기획</div>
+  <img class="wide" src="UI_Reference/request_img/topbar_now.png">
+  <p><b>지금 게임</b>: 상단 왼쪽 빨간 10칸 = 피의 흔적. 다 차면 "사신이 가까워진다" → 피의 사냥(사신이 쫓아옴)이 시작됨. 플레이어가 위험을 미리 아는 유일한 표시.</p>
+  <p><b>설명서</b>: 상단 10칸 삭제. 피의 흔적 아이콘(Z01)은 경고창·도움말에서만.</p>
+  <div class="ask"><b>질문</b> 지우면 플레이어가 피의 흔적을 어디서 보나요?<br>A. 상단 유지 · B. 10칸 대신 작은 아이콘 + 숫자(예: 🩸 70/100)로 상단에 · C. 상단에서 빼고 경고(50·80·100 넘을 때 알림)만</div>
+  <div class="dev">개발 추천: B (공간은 줄이고 위험은 계속 보임).</div>
+</div>
+
+<div class="q">
+  <h3>Q3. 상단 가운데 원 = 해/달 (낮·밤) <span class="p P1">P1 · 새 기능 여부</span></h3>
+  <div class="who">기획</div>
+  <p><b>지금 게임</b>: 가운데 원(위 사진)은 <b>"아군 턴 / 적 턴 + 라운드 숫자"</b>. 게임에 <b>낮·밤 개념이 없음</b>.</p>
+  <p><b>설명서</b>: 가운데 원에 해(아침·낮)/달(저녁·새벽). 턴 시계 조각은 보관. "낮밤 전환 주기는 이번 자료에서 정하지 않는다".</p>
+  <div class="ask"><b>질문</b> ① 낮·밤을 새 시스템으로 넣나요? 넣는다면 바뀌는 주기(몇 라운드마다)와 효과(밤에 적이 강해지는 등)가 있나요? 효과 없이 그림만 바뀌나요?<br>
+  ② 지금 가운데에 있는 "아군 턴/적 턴"과 "라운드" 표시는 어디로 옮기나요? (지금 누구 차례인지는 플레이에 꼭 필요함)</div>
+  <div class="dev">개발: 그림만 바꾸는 낮·밤이면 0.5일, 효과가 있으면 규칙 기획서 필요.</div>
+</div>
+
+<div class="q">
+  <h3>Q4. 파티장 초상 옆 "플레이어 이름" <span class="p P2">P2 · 새 기능</span></h3>
+  <div class="who">기획</div>
+  <p><b>지금 게임</b>: 이름 입력이 없음. 그 자리에 파티장 직업명("명탐정")과 "파티장"이 표시됨.</p>
+  <p><b>설명서</b>: 파티장 초상 오른쪽에 플레이어 이름. 이름과 직업명은 구분.</p>
+  <div class="ask"><b>질문</b> A. 새 게임 때 이름 입력 창을 새로 만든다 (기본값 예: "탐정") · B. 이름 대신 지금처럼 파티장 직업명</div>
+  <div class="dev">개발: A는 입력 창 + 저장 연결 약 0.5일.</div>
+</div>
+
+<div class="q">
+  <h3>Q5. 이긴 적 칸·받은 보물 칸을 "일반 칸"으로 <span class="p P2">P2</span></h3>
+  <div class="who">기획</div>
+  <div class="row">
+    <img class="shot" src="../Images/UI/02_보드/06_전투_뒤_보드.png">
+    <div class="txt">
+      <p><b>지금 게임</b>: 처치한 적 칸·사용한 칸은 <b>어두운 색으로 남아</b> "이미 끝난 곳"을 구분.</p>
+      <p><b>설명서</b>: 승리한 적 칸·받은 보물 칸은 일반 칸과 똑같이. 퇴각·몰래 지나간 칸은 적 표식 유지(지금과 같음).</p>
+      <div class="ask"><b>질문</b> 일반 칸과 똑같이 보이게 할까요? (회복 칸·이벤트 칸을 쓴 뒤는 어떻게?)</div>
+      <div class="dev">개발: 표시만 바꾸면 되어 0.1일.</div>
+    </div>
+  </div>
+</div>
+
+<div class="q">
+  <h3>Q6. 행동 순서(타임라인) 칸 수 — 틀 8칸 vs 지금 최대 10칸 <span class="p P1">P1 · 디자인 함께</span></h3>
+  <div class="who">기획 · 디자인</div>
+  <div class="row">
+    <img class="shot" src="../Images/UI/04_전투/14_속도_순서_변화_화살표.png">
+    <div class="txt">
+      <p><b>지금 게임</b>: 이번 라운드 + 다음 라운드(흐리게, "R3 예상")를 이어서 최대 10칸. 초상 아래 속도 숫자, ↑↓ 화살표 (10/26 속도 확정안).</p>
+      <p><b>받은 틀(N04)</b>: 가운데 초상 칸 8개가 그림에 붙어 있음. 설명서: "그림을 늘리지 말고 칸 부분을 반복".</p>
+      <div class="ask"><b>요청</b> 디자인: <b>칸 1개짜리 조각</b>과 <b>좌우 끝 장식</b>을 따로 주면 개발이 인원수만큼 이어 붙입니다. "다음 라운드 예상" 칸 모양(흐리게? 다른 테두리?)도 정해 주세요.</div>
+    </div>
+  </div>
+</div>
+
+<div class="q">
+  <h3>Q7. 지도 적 표식 — 사냥개만 있음 <span class="p P1">P1 · 디자인 함께</span></h3>
+  <div class="who">기획 · 디자인</div>
+  <p><b>지금 게임</b>: 런던 적 칸 10곳 = 역병 쥐·연성 독거미·가고일·그림자 사냥개 조합(10/26 확정). 받은 지도 표식은 <b>사냥개(Z24) 1종</b>. 설명서도 "쥐·거미·가고일 칸까지 사냥개 얼굴로 통일하지 않는다".</p>
+  <div class="ask"><b>질문</b> A. 적 칸 공용 표식 1개 + 사냥개 칸만 사냥개 · B. 종류별 표식(쥐·거미·가고일) 3개 추가 · C. 칸에는 공용 표식, 마우스를 올리면 적 구성 글자</div>
+  <div class="dev">개발 추천: A + C (그림 1장 추가로 해결, 구성은 글자로 정확히).</div>
+</div>
+
+<div class="q" style="border-left-color: var(--p2)">
+  <h3>Q8. 대화 창에 인물 그림 칸 넣기 (기존 대기 항목) <span class="p P1">P1</span></h3>
+  <div class="who">기획</div>
+  <div class="row">
+    <img class="shot" src="../Images/UI/05_보스/02_보스_대화.png">
+    <div class="txt">
+      <p><b>지금 게임</b>: 대화 창에 이름·대사만 있음. 이번에 <b>점술마녀·제임스·아벨 모로 인물 그림(N18~N20)</b>을 받음.</p>
+      <div class="ask"><b>질문</b> 대화 창 왼쪽에 인물 그림 칸을 넣어도 될까요? (화면 구성 변경이라 OK가 필요) · 명탐정·역병 의사·저격수의 대화 그림도 필요한가요?</div>
+      <div class="dev">개발: OK면 0.5일. 받은 JPG는 직사각형이라 액자 안에 그대로 써도 됨.</div>
+    </div>
+  </div>
+</div>
+
+<div class="q" style="border-left-color: var(--p2)">
+  <h3>Q9. 조우 창에 적 구성 전체 표시 (기존 대기 항목) <span class="p P2">P2</span></h3>
+  <div class="who">기획</div>
+  <div class="row">
+    <img class="shot" src="../Images/UI/03_조우/01_조우_창.png">
+    <div class="txt">
+      <p><b>지금 게임</b>: 조우 창에 칸의 대표 적 1마리만 보이고, 전투에 들어가면 조합 전체(예: 쥐 2 + 가고일 1)가 나옴.</p>
+      <div class="ask"><b>질문</b> 조우 창에 "역병 쥐 ×2 · 가고일 유체 ×1"처럼 전체 구성을 보여줄까요?</div>
+    </div>
+  </div>
+</div>
+
+<h2 class="pb">3. 디자인 요청 ① — 배경이 투명한 PNG 원본 14장 <span class="p P1">P1</span></h2>
+<p><b>왜 필요한가</b>: 받은 노션 이미지 N01~N20은 JPG라서 <b>투명한 부분이 짙은 회색(#252A30)으로 채워져</b> 있습니다. 아래는 상단 배너(N07) JPG를 지금 게임 화면에 그대로 올려 본 모습입니다 — 빨간 테두리 안의 <b>회색 네모 판</b>이 게임 화면을 가립니다. 설명서도 "JPG는 확인·공유용이며 게임 UI의 투명 PNG를 대체하지 않는다"고 적고 있습니다.</p>
+<img class="wide" src="UI_Reference/request_img/jpg_banner_on_board.png">
+<h3>투명 PNG로 다시 받을 그림</h3>
+<div class="thumbs">
+  <div><img src="UI_Reference/Notion_N01-N20/N07_월드맵_상단배너.jpg">N07 상단 배너</div>
+  <div><img src="UI_Reference/Notion_N01-N20/N01_달_저녁-새벽.jpg">N01 달 · N02 해</div>
+  <div><img src="UI_Reference/Notion_N01-N20/N04_타임라인_빈틀.jpg">N04 타임라인 틀 (Q6: 칸 조각 분리)</div>
+  <div><img src="UI_Reference/Notion_N01-N20/N05_영혼흡수_게이지프레임.jpg">N05 영혼 게이지 틀 · N06 채움</div>
+  <div><img src="UI_Reference/Notion_N01-N20/N08_공통메뉴_외곽패널.jpg">N08 메뉴 창 바깥</div>
+  <div><img src="UI_Reference/Notion_N01-N20/N09_공통메뉴_내용패널.jpg">N09 메뉴 창 안쪽</div>
+  <div><img src="UI_Reference/Notion_N01-N20/N14_버튼_기본.jpg">N14~N17 버튼 4상태</div>
+  <div><img src="UI_Reference/Notion_N01-N20/N12_전투결과_승리표지판.jpg">N11 패배 · N12 승리 표지판</div>
+</div>
+<table>
+  <tr><th>번호</th><th>그림</th><th>게임에서 쓰는 곳 (지금 화면)</th><th>우선</th></tr>
+  <tr><td>N07</td><td>상단 배너</td><td>보드 화면 맨 위 (지금: 단색 판)</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>N01·N02</td><td>달·해</td><td>상단 가운데 원 — Q3 답에 따라</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>N04</td><td>타임라인 틀</td><td>전투 맨 위 행동 순서 — <b>칸 1개 조각 + 좌우 끝 장식 분리</b> (Q6)</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>N05·N06</td><td>영혼 게이지 틀·채움</td><td>상단 오른쪽 영혼 흡수 막대</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>N08·N09</td><td>메뉴 창 바깥·안쪽</td><td>상점·인벤토리·설정·사건 기록·이벤트·Esc 메뉴 (지금: 단색 테두리 창)</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>N14~N17</td><td>버튼 기본·강조·비활성·눌림</td><td>모든 버튼 (지금: 단색 버튼)</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>N11·N12</td><td>패배·승리 표지판</td><td>전투 결과 창 제목 (<a href="../Images/UI/04_전투/10_승리_결과.png">지금 화면</a>)</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>N18~N20</td><td>대화 인물</td><td>대화 창 (Q8) — JPG로도 사용 가능, 투명이면 더 좋음</td><td><span class="p P2">P2</span></td></tr>
+  <tr><td>N13</td><td>낮밤 전환 배너</td><td>설명서상 보류</td><td><span class="p P3">P3</span></td></tr>
+</table>
+<div class="box note" style="border:1px solid var(--line);background:var(--bg);padding:7px 10px;border-radius:3px">
+  <b>받는 형식</b> · PNG, 배경 투명 · 지금 JPG와 같은 크기(2048 폭 등) · 늘어나는 창·버튼은 <b>모서리 장식이 몇 픽셀인지</b> 알려 주시면 찌그러지지 않게 넣습니다(모르면 개발이 재서 정함) · 글자는 넣지 말 것(개발이 글꼴로 씀).
+</div>
+
+<h2>4. 디자인 요청 ② — 아직 없는 그림</h2>
+<p>지금 게임은 아래 자리를 <b>글자나 단색 도형</b>으로 표시하고 있습니다. 형식은 받은 아이콘과 같게 <b>512×512 투명 PNG</b>면 됩니다.</p>
+<table>
+  <tr><th>분류</th><th>필요한 그림</th><th>게임에서 쓰는 곳 (지금 화면)</th><th>개수</th><th>우선</th></tr>
+  <tr><td>초상화</td><td>명탐정 · 역병 의사 · 저격수</td><td>파티 카드, 타임라인, 상단 파티장 칸, 파티 구성 (<a href="../Images/UI/01_메뉴/05_파티_구성.png">지금: 임시 인형</a>)</td><td>3</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>초상화</td><td>역병 쥐 · 연성 독거미 유체 · 가고일 유체 · 그림자 사냥개 · 인조 그림자 사신 · 검시관 아벨 모로</td><td>적 HP 막대, 타임라인, 조우 창</td><td>6</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>지도 표식</td><td>적 칸 공용 표식 (또는 쥐·거미·가고일 3종 — Q7)</td><td>보드 적 칸 (지금: 주황 칸)</td><td>1~3</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>파티 카드</td><td>카드 틀 1장 (초상·이름·HP/MP·능력치·집중력·퀵 슬롯이 들어가는 판)</td><td>화면 아래 3장 (<a href="../Images/UI/02_보드/01_보드_시작.png">지금 화면</a>)</td><td>1</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>전투 버튼</td><td>공격 · 스킬 · 소모품 · 방어 · 부활 · 퇴각 · 추가 집중</td><td>전투 행동 메뉴 (<a href="../Images/UI/04_전투/02_아군_턴_행동_선택.png">지금: 글자 버튼</a>)</td><td>7</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>상태 아이콘</td><td>약한 출혈 · 중독 · 혼란 · 속박 · 속도 감소 · <b>속도 증가</b>(신속의 앰플) · 공격력 감소 · 방어 감소 · 회피 해제 · 영점 조정</td><td>파티 카드·적 HP 막대의 상태 칸 (지금: "속↑2" 같은 글자)</td><td>10</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>소모품</td><td>집중의 향초 · 지혈 연고 · 정신 안정 염 · 성수 · 휴대 수리 도구 · 룬 기관차 탑승권 · 탈출권 · 연금술 시약 · 연금술 화염병 · 안개 연막병 · 안개 야영 세트 · 생명의 월계관 · <b>신속의 앰플</b></td><td>런던 상점·인벤토리·퀵 슬롯 (받은 것: 붕대·생명·마력·해독제 4종)</td><td>13</td><td><span class="p P1">P1</span></td></tr>
+  <tr><td>이벤트</td><td>점술마녀 카드 앞면 3종 (부·회복·집중)</td><td>점술마녀 창 (<a href="../Images/UI/08_이벤트_칸/01_점술마녀.png">지금: 기호 ₵ ♥ ◆</a>)</td><td>3</td><td><span class="p P2">P2</span></td></tr>
+  <tr><td>표식</td><td>파티장 표식 (1번 캐릭터)</td><td>파티 카드·파티 구성</td><td>1</td><td><span class="p P2">P2</span></td></tr>
+  <tr><td>장비</td><td>무기 10계열 · 방어구·장신구</td><td>인벤토리·상점 (지금: 이름 글자)</td><td>약 15</td><td><span class="p P2">P2</span></td></tr>
+  <tr><td>지도</td><td>베르사유 궁전 · 제국 광장 거점</td><td>2막·3막 보드</td><td>2</td><td><span class="p P3">P3</span></td></tr>
+</table>
+
+<h2>5. 일정과 다음 순서</h2>
+<table>
+  <tr><th>순서</th><th>누가</th><th>할 일</th><th>희망 날짜</th></tr>
+  <tr><td>1</td><td>개발</td><td>받은 아이콘 44종 적용 (능력치·LP·레벨·집중력·퀵 슬롯·HP/MP 막대·Cent·영혼·의뢰·직업·지도 표식)</td><td>바로</td></tr>
+  <tr><td>2</td><td>기획</td><td>2장 Q1~Q9 답변 (특히 Q1~Q3은 상단 화면 구성이 걸려 있음)</td><td>10/30</td></tr>
+  <tr><td>3</td><td>디자인</td><td>3장 투명 PNG 원본 14장 + 4장 P1 그림</td><td>11/7</td></tr>
+  <tr><td>4</td><td>개발</td><td>받는 대로 교체 → 화면 캡처로 확인 결과 공유</td><td>받은 다음 날</td></tr>
+  <tr><td>5</td><td>모두</td><td>마무리 기간 플레이 확인</td><td>11/8~11/18</td></tr>
+</table>
+<p class="note" style="margin-top:4px">근거: 아이콘·UI 사용 설명서(2026-10-26, <code>Docs/Art/Fantasia_Icon_Usage_Guide.pdf</code>), 지도 칸 확정안(<code>Docs/Planning/MapTiles.md</code>), 속도 확정안(<code>Docs/Planning/Speed.md</code>), 이전 요청 목록(<code>Docs/Art/Fantasia_에셋_UI_요청목록_2026-10-25.pdf</code>) · 게임 화면 전체: <code>Docs/Images/UI/</code></p>
+
+</body>
+</html>

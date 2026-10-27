@@ -90,6 +90,33 @@ namespace Fantasia.Board
             RefreshColor();
         }
 
+        // 칸 위에 눕혀 놓는 표식 그림 (거점·보스·우물·보물·이벤트·출구·사냥개 — Z17, Z23~Z28).
+        // 다 쓴 칸(처치·사용)은 표식을 숨긴다. 그림이 없으면 색으로만 구분 (지금과 같음).
+        private SpriteRenderer _marker;
+
+        public void SetMarker(Sprite sprite, float topY)
+        {
+            if (sprite == null) return;
+            if (_marker == null)
+            {
+                var go = new GameObject("Marker");
+                go.transform.SetParent(transform, false);
+                _marker = go.AddComponent<SpriteRenderer>();
+            }
+            _marker.sprite = sprite;
+            var t = _marker.transform;
+            t.localPosition = new Vector3(0f, topY + 0.02f, 0f);
+            t.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            float size = 1.15f; // 칸 폭(약 1.6)보다 조금 작게
+            t.localScale = Vector3.one * (size / Mathf.Max(sprite.bounds.size.x, 0.01f));
+            RefreshMarker();
+        }
+
+        private void RefreshMarker()
+        {
+            if (_marker != null) _marker.enabled = !IsUsed && !IsCleared;
+        }
+
         public void SetEventTile(bool isEvent)
         {
             IsEventTile = isEvent;
@@ -132,6 +159,7 @@ namespace Fantasia.Board
                 : _isReachable ? reachableColor
                 : baseColor;
             if (_isReachable && !IsBlocked && color != reachableColor) color = Color.Lerp(color, reachableColor, 0.55f);
+            RefreshMarker();
             ApplyColor(color);
         }
 

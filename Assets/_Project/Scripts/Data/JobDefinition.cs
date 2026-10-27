@@ -21,6 +21,8 @@ namespace Fantasia.Data
         // 2D 초상 그림이 따로 생기면 여기에 — 넣으면 3D 모델보다 우선한다.
         // Texture Type을 Sprite (2D and UI)로 임포트할 것.
         public Sprite Portrait;
+        // 직업 아이콘 (Z20~Z22) — 파티 카드 이름 앞, 파티 구성. 비우면 글자만.
+        public Sprite Icon;
 
         [Header("시작 자원 (System.md 직업별 초기 HP/MP/집중력/LP 표)")]
         public int StartingHP;

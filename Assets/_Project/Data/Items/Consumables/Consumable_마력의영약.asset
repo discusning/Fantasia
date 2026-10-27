@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.mana_elixir
   DisplayName: "\uB9C8\uB825\uC758 \uC601\uC57D"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: f8c5cf0bca3df8d4fb23b4ee06220f53, type: 3}
   EffectDescription: MP +30
   Effect: 2
   Amount: 30

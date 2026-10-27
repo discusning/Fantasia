@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Fantasia.Data;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,6 +18,8 @@ namespace Fantasia.UI
         public static PartyHudPanel Instance { get; private set; }
 
         private const int CardCount = 3;
+        // 카드 아래 능력치 순서 (힘·지력·활력·속도·행운·인지)
+        private static readonly StatKind[] StatOrder = { StatKind.Strength, StatKind.Intelligence, StatKind.Vitality, StatKind.Speed, StatKind.Luck, StatKind.Perception };
         private const int QuickSlotCount = PartyMember.QuickSlotCount; // System.md "퀵 슬롯" — 소모품 종류를 가리키고 수량은 파티 인벤토리
 
         // 퀵 슬롯 클릭 (전투: 지금 차례 캐릭터가 사용 / 보드: 월드 사용) · 카드(초상) 클릭 → 인벤토리 창
@@ -47,7 +50,10 @@ namespace Fantasia.UI
             public Text HpText;
             public RectTransform MpFill;
             public Text MpText;
-            public Text Stats;
+            public Text Stats;           // 능력치 아이콘이 없을 때 한 줄 글자
+            public Text[] StatValues;    // 능력치 아이콘이 있을 때 칸별 숫자 (StatOrder 순)
+            public Image JobIcon;
+            public RectTransform NameRect;
             public readonly List<Image> FocusPips = new();
             public Text Status;  // 카드 위 상태 문구 (행동 중인 캐릭터만)
             public StatusChipRow Statuses; // 걸린 상태 효과 (이름 배너 오른쪽)
@@ -142,7 +148,11 @@ namespace Fantasia.UI
 
             card.Level.text = m.Level.ToString();
             card.Name.text = m.IsPermanentlyDead ? $"{m.Job.DisplayName} (사망)" : m.IsDowned ? $"{m.Job.DisplayName} (쓰러짐)" : m.Job.DisplayName;
-            card.Lp.text = $"LP {m.CurrentLP}";
+            bool jobIcon = m.Job.Icon != null;
+            card.JobIcon.enabled = jobIcon;
+            card.JobIcon.sprite = m.Job.Icon;
+            card.NameRect.anchorMin = new Vector2(jobIcon ? 0.14f : 0.04f, 0f);
+            card.Lp.text = UITheme.Current.LpIcon != null ? m.CurrentLP.ToString() : $"LP {m.CurrentLP}";
             card.Statuses.Show(StatusChipRow.EntriesFor(m.Statuses, false));
             card.BigHp.text = m.CurrentHP.ToString();
 
@@ -155,7 +165,10 @@ namespace Fantasia.UI
             card.MpText.color = usesMp ? TextLight : TextDim;
 
             var s = m.FinalStats;
-            card.Stats.text = $"힘 {s.Strength}   지력 {s.Intelligence}   활력 {s.Vitality}   속도 {s.Speed}   행운 {s.Luck}   인지 {s.Perception}";
+            if (card.StatValues != null)
+                for (int k = 0; k < StatOrder.Length; k++) card.StatValues[k].text = s.Get(StatOrder[k]).ToString();
+            else
+                card.Stats.text = $"힘 {s.Strength}   지력 {s.Intelligence}   활력 {s.Vitality}   속도 {s.Speed}   행운 {s.Luck}   인지 {s.Perception}";
 
             // 퀵 슬롯: 아이콘(없으면 이름 앞 두 글자) + 남은 개수
             var inventory = _party.Inventory;
@@ -172,10 +185,13 @@ namespace Fantasia.UI
             }
 
             // 집중력: 최대치만큼 칸을 보이고 현재치만큼 채운다 (최대 6칸).
+            var theme = UITheme.Current;
+            bool pipArt = theme.FocusPip != null && theme.FocusPipEmpty != null; // 보유 칸·빈 칸 그림 (Z29·Z30)
             for (int i = 0; i < card.FocusPips.Count; i++)
             {
                 card.FocusPips[i].gameObject.SetActive(i < m.MaxFocus);
-                card.FocusPips[i].color = i < m.CurrentFocus ? FocusOn : FocusOff;
+                if (pipArt) card.FocusPips[i].sprite = i < m.CurrentFocus ? theme.FocusPip : theme.FocusPipEmpty;
+                else card.FocusPips[i].color = i < m.CurrentFocus ? FocusOn : FocusOff;
             }
         }
 
@@ -218,14 +234,32 @@ namespace Fantasia.UI
             // 초상 클릭 → 그 캐릭터의 인벤토리·장비 창
             var portraitHit = UGUIKit.CreateImage(fill, "PortraitHit", new Vector2(0f, 0f), new Vector2(0.255f, 1f), Color.clear);
             portraitHit.gameObject.AddComponent<Button>().onClick.AddListener(() => { if (card.Member != null) CardClicked?.Invoke(card.Member); });
-            var levelFill = UGUIKit.CreateBorderedPanel(fill, "LevelBadge", new Vector2(0.03f, 0.13f), new Vector2(0.03f, 0.13f), BorderActive, new Color(0.2f, 0.08f, 0.1f), 1.5f);
-            ((RectTransform)levelFill.parent).sizeDelta = new Vector2(30f, 30f);
-            card.Level = MakeText(levelFill, "Value", Vector2.zero, Vector2.one, 16, TextAnchor.MiddleCenter, TextLight, bold: true);
+            var theme = UITheme.Current;
+            Transform levelHolder;
+            var badge = UGUIKit.CreateIcon(fill, "LevelBadge", new Vector2(0.03f, 0.13f), new Vector2(0.03f, 0.13f), theme.LevelBadge); // Z37
+            if (badge != null)
+            {
+                badge.rectTransform.sizeDelta = new Vector2(34f, 34f);
+                levelHolder = badge.transform;
+            }
+            else
+            {
+                var levelFill = UGUIKit.CreateBorderedPanel(fill, "LevelBadge", new Vector2(0.03f, 0.13f), new Vector2(0.03f, 0.13f), BorderActive, new Color(0.2f, 0.08f, 0.1f), 1.5f);
+                ((RectTransform)levelFill.parent).sizeDelta = new Vector2(30f, 30f);
+                levelHolder = levelFill;
+            }
+            card.Level = MakeText(levelHolder, "Value", Vector2.zero, Vector2.one, 16, TextAnchor.MiddleCenter, TextLight, bold: true);
 
-            // 이름 배너 + LP (위)
-            var nameFill = UGUIKit.CreateThemedPanel(fill, "NameBanner", new Vector2(0.26f, 0.8f), new Vector2(0.8f, 0.98f), BorderNormal, new Color(0.24f, 0.16f, 0.26f), 1f, UITheme.Current.Banner);
+            // 이름 배너(직업 아이콘 + 이름) + LP (위)
+            var nameFill = UGUIKit.CreateThemedPanel(fill, "NameBanner", new Vector2(0.26f, 0.8f), new Vector2(0.8f, 0.98f), BorderNormal, new Color(0.24f, 0.16f, 0.26f), 1f, theme.Banner);
+            card.JobIcon = UGUIKit.CreateImage(nameFill, "JobIcon", new Vector2(0.01f, 0.02f), new Vector2(0.13f, 0.98f), Color.white);
+            card.JobIcon.preserveAspect = true;
+            card.JobIcon.raycastTarget = false;
+            card.JobIcon.enabled = false;
             card.Name = MakeText(nameFill, "Name", new Vector2(0.04f, 0f), Vector2.one, 13, TextAnchor.MiddleLeft, TextLight, bold: true);
-            card.Lp = MakeText(fill, "LP", new Vector2(0.81f, 0.8f), new Vector2(0.98f, 0.98f), 12, TextAnchor.MiddleCenter, HpColor, bold: true);
+            card.NameRect = card.Name.rectTransform;
+            bool lpIcon = UGUIKit.CreateIcon(fill, "LpIcon", new Vector2(0.81f, 0.8f), new Vector2(0.88f, 0.98f), theme.LpIcon) != null; // Z04
+            card.Lp = MakeText(fill, "LP", new Vector2(lpIcon ? 0.88f : 0.81f, 0.8f), new Vector2(0.98f, 0.98f), lpIcon ? 14 : 12, TextAnchor.MiddleCenter, HpColor, bold: true);
             card.Statuses = new StatusChipRow(fill, "Status", new Vector2(0.56f, 0.815f), new Vector2(0.8f, 0.965f), 3, 8);
 
             // 큰 HP 숫자 + 퀵 슬롯 4칸 (가운데)
@@ -234,6 +268,8 @@ namespace Fantasia.UI
             {
                 float x0 = 0.49f + q * 0.123f;
                 var slot = UGUIKit.CreateThemedPanel(fill, $"QuickSlot{q}", new Vector2(x0, 0.43f), new Vector2(x0 + 0.11f, 0.76f), BorderNormal, new Color(0.13f, 0.12f, 0.14f), 1f);
+                var frame = UGUIKit.CreateIcon(slot.parent, "Frame", Vector2.zero, Vector2.one, theme.QuickSlotFrame); // Z35
+                if (frame != null) { frame.preserveAspect = false; slot.parent.GetComponent<Image>().color = Color.clear; }
                 var icon = UGUIKit.CreateImage(slot, "Icon", new Vector2(0.1f, 0.1f), new Vector2(0.9f, 0.9f), Color.white);
                 icon.preserveAspect = true;
                 icon.enabled = false;
@@ -253,7 +289,18 @@ namespace Fantasia.UI
             (card.MpFill, card.MpText) = BuildBar(fill, "MpBar", new Vector2(0.26f, 0.13f), new Vector2(0.98f, 0.24f), MpColor);
 
             // 6대 스탯 (아래)
-            card.Stats = MakeText(fill, "Stats", new Vector2(0.26f, 0f), new Vector2(0.99f, 0.12f), 9, TextAnchor.MiddleLeft, TextDim, bold: false);
+            // 능력치 아이콘(Z05~Z10)이 다 있으면 아이콘 + 숫자 6칸, 아니면 한 줄 글자
+            if (StatOrder.All(k => theme.StatIcon(k) != null))
+            {
+                card.StatValues = new Text[StatOrder.Length];
+                for (int k = 0; k < StatOrder.Length; k++)
+                {
+                    float x0 = 0.26f + k * 0.122f;
+                    UGUIKit.CreateIcon(fill, $"StatIcon{k}", new Vector2(x0, 0.005f), new Vector2(x0 + 0.04f, 0.125f), theme.StatIcon(StatOrder[k]));
+                    card.StatValues[k] = MakeText(fill, $"Stat{k}", new Vector2(x0 + 0.043f, 0f), new Vector2(x0 + 0.12f, 0.13f), 11, TextAnchor.MiddleLeft, TextLight, bold: false);
+                }
+            }
+            else card.Stats = MakeText(fill, "Stats", new Vector2(0.26f, 0f), new Vector2(0.99f, 0.12f), 9, TextAnchor.MiddleLeft, TextDim, bold: false);
 
             // 집중력 표시 — 카드 위쪽 바깥에 마름모 칸 (최대 6)
             for (int f = 0; f < PartyMember.AbsoluteMaxFocus; f++)
@@ -262,7 +309,9 @@ namespace Fantasia.UI
                 var rt = (RectTransform)pip.transform;
                 rt.sizeDelta = new Vector2(11f, 11f);
                 rt.anchoredPosition = new Vector2(f * 17f, 11f);
-                if (UITheme.Apply(pip, UITheme.Current.FocusPip, tint: true)) rt.localRotation = Quaternion.identity;
+                bool pipArt = theme.FocusPip != null && theme.FocusPipEmpty != null; // Z29·Z30 — 칸 그림을 바꿔 끼움
+                if (pipArt) { UITheme.Apply(pip, theme.FocusPipEmpty); rt.sizeDelta = new Vector2(24f, 24f); rt.anchoredPosition = new Vector2(f * 21f, 11f); }
+                else if (UITheme.Apply(pip, theme.FocusPip, tint: true)) rt.localRotation = Quaternion.identity;
                 else rt.localRotation = Quaternion.Euler(0f, 0f, 45f);
                 card.FocusPips.Add(pip);
             }
@@ -283,9 +332,9 @@ namespace Fantasia.UI
         private static (RectTransform fill, Text label) BuildBar(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Color color)
         {
             var back = UGUIKit.CreateImage(parent, name, anchorMin, anchorMax, BarBack);
-            UITheme.Apply(back, UITheme.Current.BarBack);
+            UITheme.Apply(back, UITheme.Current.BarBack, sliceHeight: 12f);
             var fill = UGUIKit.CreateImage(back.transform, "Fill", Vector2.zero, Vector2.one, color);
-            UITheme.Apply(fill, UITheme.Current.BarFill, tint: true);
+            UITheme.Apply(fill, UITheme.Current.BarFill, tint: true, sliceHeight: 12f);
             var label = MakeText(back.transform, "Value", Vector2.zero, Vector2.one, 10, TextAnchor.MiddleCenter, TextLight, bold: true);
             return ((RectTransform)fill.transform, label);
         }
