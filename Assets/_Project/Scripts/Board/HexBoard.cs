@@ -127,16 +127,22 @@ namespace Fantasia.Board
                         if (session != null && session.UsedMapTiles.Contains(coord)) tile.SetUsed(true);
                         break;
                 }
-                tile.SetMarker(MarkerFor(mapTile.Kind, tile), tileHeight);
+                tile.SetMarker(MarkerFor(mapTile, tile), tileHeight);
             }
         }
 
+        private static bool OnlyHounds(string label)
+        {
+            var e = Fantasia.World.MapTileRules.EncounterAt(label);
+            return e != null && e.EnemyIds.All(id => id == "enemy.small.shadow_hound");
+        }
+
         // 지도 칸 표식 (아이콘 사용 설명서): 거점·보스·우물·보물·이벤트·출구, 그림자 사냥개 칸은 사냥개.
-        // 다른 적 칸(쥐·거미·가고일)은 표식 기획 대기 — 색으로만.
-        private static Sprite MarkerFor(MapTileKind kind, HexTile tile)
+        // 적 칸 (UI 솔루션 Q7): 그림자 사냥개만 나오는 칸 = 사냥개(Z24), 나머지 일반 적 칸 = 공용 적 표식.
+        private static Sprite MarkerFor(MapTile mapTile, HexTile tile)
         {
             var theme = Fantasia.UI.UITheme.Current;
-            return kind switch
+            return mapTile.Kind switch
             {
                 MapTileKind.Hub => theme.HubMarker,
                 MapTileKind.Boss => theme.BossMarker,
@@ -144,7 +150,8 @@ namespace Fantasia.Board
                 MapTileKind.Treasure => theme.TreasureIcon,
                 MapTileKind.Event => theme.EventMarker,
                 MapTileKind.Exit => theme.ExitMarker,
-                MapTileKind.Enemy when tile.Enemy != null && tile.Enemy.Id == "enemy.small.shadow_hound" => theme.HoundMarker,
+                MapTileKind.Enemy when OnlyHounds(mapTile.Label) => theme.HoundMarker,
+                MapTileKind.Enemy when tile.IsEncounter => theme.EnemyMarker,
                 _ => null,
             };
         }

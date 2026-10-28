@@ -71,6 +71,9 @@ namespace Fantasia.Core
         // ── 회차·저장 (Save.md) ──
         public enum RunState { Active, Ended, ActCleared }
         public string RunId { get; set; } = "";
+        // 플레이어 이름 (UI 솔루션 Q4) — 새 게임 시작 전 입력, 회차마다 저장. 파티장 직업명과 별개.
+        public const string DefaultPlayerName = "탐정";
+        public string PlayerName { get; set; } = DefaultPlayerName;
         public RunState Run { get; set; } = RunState.Active;
         // 누적 플레이 시간 (메인 메뉴·창 비활성 시간 제외 — Save.md 36 기본안)
         public float PlaySeconds { get; set; }
@@ -93,6 +96,7 @@ namespace Fantasia.Core
         public void ResetForNewGame()
         {
             Party = null;
+            PlayerName = DefaultPlayerName;
             PendingBattle = null;
             PendingEncounterCoord = null;
             PlayerPosition = default;

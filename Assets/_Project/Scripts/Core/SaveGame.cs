@@ -109,6 +109,7 @@ namespace Fantasia.Core
             public int version = Version;
             public string savedAt;
             public string runId;
+            public string playerName;     // 플레이어 이름 (UI 솔루션 Q4) — 예전 저장에는 없음 → 기본 "탐정"
             public int runState;          // BoardSession.RunState
             public float playSeconds;
             public uint[] rng;            // GameRandom 상태
@@ -149,6 +150,7 @@ namespace Fantasia.Core
             {
                 savedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
                 runId = s.RunId,
+                playerName = s.PlayerName,
                 runState = (int)s.Run,
                 playSeconds = s.PlaySeconds,
                 rng = GameRandom.State,
@@ -286,6 +288,7 @@ namespace Fantasia.Core
             s.ResetForNewGame();
             s.Party = party;
             s.RunId = d.runId;
+            s.PlayerName = string.IsNullOrWhiteSpace(d.playerName) ? BoardSession.DefaultPlayerName : d.playerName;
             s.Run = (BoardSession.RunState)d.runState;
             s.PlaySeconds = d.playSeconds;
             GameRandom.State = d.rng;

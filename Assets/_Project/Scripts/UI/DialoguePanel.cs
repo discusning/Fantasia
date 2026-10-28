@@ -122,6 +122,9 @@ namespace Fantasia.UI
         private GameObject _root;
         private Text _speakerText;
         private Text _bodyText;
+        private GameObject _portraitFrame;
+        private Image _portraitSprite;
+        private RawImage _portraitRender;
         private GameObject _nextButtonRoot;
         private Text _nextButtonLabel;
         private GameObject _acceptButtonRoot;
@@ -224,10 +227,38 @@ namespace Fantasia.UI
             _root.SetActive(true);
         }
 
+        // 화자 그림 (UI 솔루션 Q8): 테마의 인물 그림(점술마녀·제임스·아벨 모로) → 같은 이름의 직업 초상 → 없으면 칸 숨김
+        private void ShowSpeakerPortrait(string speaker)
+        {
+            var sprite = UITheme.Current.PortraitForSpeaker(speaker);
+            Texture render = null;
+            if (sprite == null && Fantasia.Data.ItemCatalog.Current != null)
+            {
+                var job = System.Array.Find(Fantasia.Data.ItemCatalog.Current.Jobs, j => j != null && j.DisplayName == speaker);
+                if (job != null)
+                {
+                    if (job.Portrait != null) sprite = job.Portrait;
+                    else render = PortraitStudio.TextureFor(job);
+                }
+            }
+            bool has = sprite != null || render != null;
+            _portraitFrame.SetActive(has);
+            _portraitSprite.enabled = sprite != null;
+            _portraitSprite.sprite = sprite;
+            _portraitRender.enabled = sprite == null && render != null;
+            _portraitRender.texture = render;
+            float left = has ? 0.18f : 0.04f;
+            _speakerText.rectTransform.anchorMin = new Vector2(left, _speakerText.rectTransform.anchorMin.y);
+            _bodyText.rectTransform.anchorMin = new Vector2(left, _bodyText.rectTransform.anchorMin.y);
+        }
+
+        public bool DevPortraitShown => _portraitFrame != null && _portraitFrame.activeSelf;
+
         private void ShowCurrentLine()
         {
             var line = _lines[_lineIndex];
             _speakerText.text = line.Speaker;
+            ShowSpeakerPortrait(line.Speaker);
             _bodyText.text = line.Text;
 
             bool isLast = _lineIndex == _lines.Length - 1;
@@ -317,6 +348,13 @@ namespace Fantasia.UI
             outerRect.sizeDelta = new Vector2(900f, 160f);
             outerRect.anchoredPosition = new Vector2(0f, 40f);
 
+            // 인물 칸 (UI 솔루션 Q8): 왼쪽 액자 — 그림이 있는 화자만, 없으면 숨기고 글을 넓게
+            var portraitArea = UGUIKit.CreateBorderedPanel(inner, "PortraitFrame", new Vector2(0.015f, 0.06f), new Vector2(0.155f, 0.94f), new Color(0.72f, 0.6f, 0.38f), new Color(0.12f, 0.11f, 0.13f), 1.5f);
+            _portraitFrame = portraitArea.parent.gameObject;
+            _portraitSprite = UGUIKit.CreateImage(portraitArea, "Sprite", Vector2.zero, Vector2.one, Color.white);
+            _portraitSprite.preserveAspect = true;
+            _portraitRender = UGUIKit.CreateRect(portraitArea, "Render", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
+            _portraitFrame.SetActive(false);
             _speakerText = UGUIKit.CreateText(inner, "Speaker", new Vector2(0.04f, 0.8f), new Vector2(0.6f, 0.94f), "", 14, TextAnchor.MiddleLeft);
             _speakerText.color = new Color(0.95f, 0.85f, 0.55f);
             _speakerText.fontStyle = FontStyle.Bold;

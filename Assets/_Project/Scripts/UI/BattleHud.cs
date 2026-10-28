@@ -16,7 +16,8 @@ namespace Fantasia.UI
     // 들어오면 코드 수정 없이 바뀐다. 전투 진행은 BattleController가 이 클래스의 메서드를 부른다.
     public class BattleHud : MonoBehaviour
     {
-        private const int TimelineLength = 10;
+        private const int TimelineLength = 10;  // 한 화면 칸 수 (UI 솔루션 Q6)
+        public const int TimelineMax = 12;      // 이번 + 다음 라운드 최대 (아군 3 + 적 3) × 2 — 넘치면 넘겨 봄
         private const int MaxEnemyBars = 3;
         private const int StatusIconSlots = 4;
         private const float SecondsPerSlot = 0.3f;
@@ -66,7 +67,10 @@ namespace Fantasia.UI
 
         private RectTransform _canvasRect;
 
-        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public Text Speed; public Text Arrow; public RectTransform Rect; }
+        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public Text Speed; public Text Arrow; public Image Dashed; public GameObject Divider; public RectTransform Rect; }
+        private IReadOnlyList<BattleQueue.Entry> _timelineEntries;
+        private int _timelineRound, _timelineOffset;
+        private Button _timelinePrev, _timelineNext;
         private int _arrowRound;
         private Coroutine _arrowHide;
         private readonly Dictionary<BattleUnit, int> _arrows = new();
@@ -120,12 +124,11 @@ namespace Fantasia.UI
         // ───────────── ① 타임라인 ─────────────
         public void SetTimeline(IReadOnlyList<BattleQueue.Entry> entries, int currentRound, System.Func<BattleUnit, int> orderChange = null)
         {
-            _roundText.text = $"라운드 {currentRound}";
-            int prevRound = currentRound;
             // 새 라운드가 시작될 때 ↑/↓를 캐릭터별로 정해 두고 잠깐 보여준다 (칸이 앞으로 밀려도 같은 캐릭터에 붙음)
             if (orderChange != null && currentRound != _arrowRound)
             {
                 _arrowRound = currentRound;
+                _timelineOffset = 0; // 새 라운드는 현재 차례부터 (UI 솔루션 Q6)
                 _arrows.Clear();
                 if (currentRound > 1)
                     foreach (var e in entries)
@@ -133,26 +136,50 @@ namespace Fantasia.UI
                 if (_arrowHide != null) StopCoroutine(_arrowHide);
                 _arrowHide = _arrows.Count > 0 ? StartCoroutine(HideArrows(2.5f)) : null;
             }
+            _timelineEntries = entries;
+            _timelineRound = currentRound;
+            RenderTimeline();
+        }
+
+        // 타임라인 그리기 (UI 솔루션 Q6): 한 화면 최대 10칸 — 넘치면 ◀ ▶로 넘겨 본다 (자르지 않음).
+        // 이번 라운드 = 밝게·실선, 다음 라운드 = 초상 60% 밝기 + 점선 테두리 + "전투 R3 예상" + 앞에 구분선.
+        private void RenderTimeline()
+        {
+            var entries = _timelineEntries;
+            if (entries == null) return;
+            int currentRound = _timelineRound;
+            _roundText.text = $"전투 R{currentRound}";
+            int maxOffset = Mathf.Max(0, entries.Count - _timeline.Count);
+            _timelineOffset = Mathf.Clamp(_timelineOffset, 0, maxOffset);
+            _timelinePrev.gameObject.SetActive(maxOffset > 0);
+            _timelineNext.gameObject.SetActive(maxOffset > 0);
+            _timelinePrev.interactable = _timelineOffset > 0;
+            _timelineNext.interactable = _timelineOffset < maxOffset;
+
+            int prevRound = _timelineOffset > 0 ? entries[_timelineOffset - 1].Round : currentRound;
             for (int i = 0; i < _timeline.Count; i++)
             {
                 var slot = _timeline[i];
-                bool has = i < entries.Count;
+                int idx = _timelineOffset + i;
+                bool has = idx < entries.Count;
                 slot.Root.SetActive(has);
                 if (!has) continue;
 
-                var unit = entries[i].Unit;
+                var unit = entries[idx].Unit;
                 slot.Portrait.texture = PortraitStudio.TextureFor(unit.Definition);
-                // 다음 라운드는 "예상" — 흐리게 표시 (속도 변화·쓰러짐에 따라 바뀔 수 있음)
-                bool predicted = entries[i].Round != currentRound;
+                bool predicted = entries[idx].Round != currentRound;
                 var border = unit.IsAlly ? AllyBorder : EnemyBorder;
-                slot.Border.color = predicted ? new Color(border.r, border.g, border.b, 0.45f) : border;
-                slot.Portrait.color = predicted ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
-                // 다음 라운드가 시작되는 칸에 라운드 표시 (속도 변화는 이 칸부터 반영된다).
-                bool newRound = entries[i].Round != prevRound;
+                slot.Border.color = predicted ? new Color(border.r, border.g, border.b, 0.15f) : border;
+                slot.Dashed.enabled = predicted;
+                slot.Dashed.color = border;
+                slot.Portrait.color = predicted ? new Color(0.6f, 0.6f, 0.6f, 1f) : Color.white;
+                // 다음 라운드가 시작되는 칸에 "전투 R3 예상" + 구분선 (속도 변화는 이 칸부터 반영된다).
+                bool newRound = entries[idx].Round != prevRound;
                 slot.Round.gameObject.SetActive(newRound);
-                slot.Round.text = $"R{entries[i].Round} 예상";
+                slot.Round.text = $"전투 R{entries[idx].Round} 예상";
+                slot.Divider.SetActive(newRound);
                 slot.Mark.gameObject.SetActive(unit.Boss != null && unit.Boss.HasPending && unit.IsAlive);
-                slot.Speed.text = $"속도 {entries[i].Speed}";
+                slot.Speed.text = $"속도 {entries[idx].Speed}";
                 bool arrow = !predicted && _arrows.ContainsKey(unit);
                 slot.Arrow.gameObject.SetActive(arrow);
                 if (arrow)
@@ -160,8 +187,36 @@ namespace Fantasia.UI
                     slot.Arrow.text = _arrows[unit] > 0 ? "↑" : "↓";
                     slot.Arrow.color = _arrows[unit] > 0 ? SlotSuccess : EnemyBorder;
                 }
-                prevRound = entries[i].Round;
+                prevRound = entries[idx].Round;
             }
+        }
+
+        private void ScrollTimeline(int step)
+        {
+            _timelineOffset += step;
+            RenderTimeline();
+        }
+
+        // 다음 라운드 칸 점선 테두리 (아트가 오기 전 코드로 그림). 9-slice라 칸 크기에 맞춰 늘어난다.
+        private static Sprite _dashed;
+        private static Sprite DashedFrame()
+        {
+            if (_dashed != null) return _dashed;
+            const int size = 32, thick = 2, dash = 4, gap = 3;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+            var px = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                bool edge = x < thick || y < thick || x >= size - thick || y >= size - thick;
+                int along = (x < thick || x >= size - thick) ? y : x;
+                bool on = edge && along % (dash + gap) < dash;
+                px[y * size + x] = on ? new Color32(255, 255, 255, 255) : new Color32(255, 255, 255, 0);
+            }
+            tex.SetPixels32(px);
+            tex.Apply();
+            _dashed = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(7, 7, 7, 7));
+            return _dashed;
         }
 
         private System.Collections.IEnumerator HideArrows(float seconds)
@@ -532,15 +587,31 @@ namespace Fantasia.UI
                 // 다음 라운드 시작 때 순서가 앞당겨지면 ↑, 늦춰지면 ↓ (잠깐)
                 entry.Arrow = Label(entry.Rect, "Arrow", new Vector2(-0.2f, 0.5f), new Vector2(0.45f, 1.15f), 16, TextAnchor.MiddleCenter, SlotSuccess, bold: true);
                 entry.Arrow.gameObject.SetActive(false);
-                entry.Round = Label(entry.Rect, "RoundMark", new Vector2(-0.4f, -0.85f), new Vector2(1.4f, -0.42f), 10, TextAnchor.MiddleCenter, Gold, bold: true);
+                // 다음 라운드(예상) 칸: 점선 테두리 + 앞에 구분선 (Q6)
+                entry.Dashed = UGUIKit.CreateImage(entry.Rect, "Dashed", Vector2.zero, Vector2.one, Color.white);
+                entry.Dashed.sprite = DashedFrame();
+                entry.Dashed.type = Image.Type.Tiled;
+                entry.Dashed.raycastTarget = false;
+                entry.Dashed.enabled = false;
+                entry.Divider = UGUIKit.CreateImage(entry.Rect, "Divider", new Vector2(-0.09f, -0.15f), new Vector2(-0.06f, 1.15f), Gold).gameObject;
+                entry.Divider.SetActive(false);
+                entry.Round = Label(entry.Rect, "RoundMark", new Vector2(-0.6f, -0.85f), new Vector2(1.6f, -0.42f), 10, TextAnchor.MiddleCenter, Gold, bold: true);
                 entry.Round.gameObject.SetActive(false);
                 // 예고 중인 보스 표식
                 entry.Mark = Label(entry.Rect, "TelegraphMark", new Vector2(0.55f, 0.55f), new Vector2(1.15f, 1.2f), 14, TextAnchor.MiddleCenter, CritColor, bold: true);
                 entry.Mark.text = "!";
                 entry.Mark.gameObject.SetActive(false);
+                entry.Root.SetActive(false); // 행동 순서가 정해지기 전(전투 전 대화 등)에는 빈칸을 보이지 않음
                 _timeline.Add(entry);
                 x += w + 0.008f;
             }
+            // 10칸이 넘으면 좌우로 넘겨 보기 (Q6) — 넘치지 않으면 숨김
+            _timelinePrev = UGUIKit.CreateThemedButton(strip, "TimelinePrev", new Vector2(-0.05f, 0.15f), new Vector2(-0.008f, 0.85f), "◀", PanelFill, 12);
+            _timelineNext = UGUIKit.CreateThemedButton(strip, "TimelineNext", new Vector2(1.008f, 0.15f), new Vector2(1.05f, 0.85f), "▶", PanelFill, 12);
+            _timelinePrev.onClick.AddListener(() => ScrollTimeline(-1));
+            _timelineNext.onClick.AddListener(() => ScrollTimeline(1));
+            _timelinePrev.gameObject.SetActive(false);
+            _timelineNext.gameObject.SetActive(false);
         }
 
         private void BuildEnemyBars(Transform parent)

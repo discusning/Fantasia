@@ -34,7 +34,9 @@ namespace Fantasia.UI
         public Sprite TopBarFrame;
         public Sprite PhaseDialAllyActive, PhaseDialAllyIdle;   // 시계 왼쪽(아군) 반원 — 활성/비활성
         public Sprite PhaseDialEnemyActive, PhaseDialEnemyIdle; // 시계 오른쪽(적) 반원
-        public Sprite ThreatNotch;     // 피의 흔적 칸
+        public Sprite ThreatNotch;     // 피의 흔적 칸 (UI 솔루션 Q2로 10칸은 화면에서 뺌 — 보관)
+        public Sprite DaySun;          // 가운데 원 해 (N02 투명 PNG 오면) — 아침·낮
+        public Sprite NightMoon;       // 가운데 원 달 (N01 투명 PNG 오면) — 저녁·새벽
         public Sprite RegionBanner;    // 지역명 배너
         public Sprite AllyTurnBanner;  // 턴 전환 배너 — 아군 턴
         public Sprite EnemyTurnBanner; // 턴 전환 배너 — 적 턴
@@ -75,6 +77,16 @@ namespace Fantasia.UI
         [Header("아이콘 — 지도 칸 표식 (Z17, Z23~Z28)")]
         public Sprite HubMarker;       // Z23 그리니치 거점
         public Sprite HoundMarker;     // Z24 그림자 사냥개 칸
+        public Sprite EnemyMarker;     // 일반 적 칸 공용 표식 (디자인 새 그림 오기 전 Z19 교차 칼)
+
+        [Header("대화 인물 (UI 솔루션 Q8) — 화자 이름이 같으면 대화 창 왼쪽에. 직업 화자는 직업 초상을 씀")]
+        public SpeakerPortrait[] SpeakerPortraits = System.Array.Empty<SpeakerPortrait>();
+
+        public Sprite PortraitForSpeaker(string speaker)
+        {
+            foreach (var p in SpeakerPortraits) if (p != null && p.Sprite != null && p.Speaker == speaker) return p.Sprite;
+            return null;
+        }
         public Sprite BossMarker;      // Z25
         public Sprite RecoveryMarker;  // Z26 우물(회복 칸)
         public Sprite EventMarker;     // Z27
@@ -125,5 +137,15 @@ namespace Fantasia.UI
             if (!tint) image.color = Color.white;
             return true;
         }
+    }
+}
+
+namespace Fantasia.UI
+{
+    [System.Serializable]
+    public class SpeakerPortrait
+    {
+        public string Speaker;  // 대사의 화자 이름과 같게 (예: "아벨 모로")
+        public Sprite Sprite;
     }
 }

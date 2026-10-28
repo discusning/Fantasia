@@ -29,6 +29,7 @@ namespace Fantasia.UI
         private static readonly Color Bad = new Color(0.88f, 0.38f, 0.33f);
 
         private GameObject _root, _cardsRow, _targetRow, _resultBox;
+        private Image _witchArt;
         private Text _title, _chip, _odds, _note, _footer, _cent, _resultText, _confirmLabel;
         private Image _resultSlot;
         private Button _confirm, _leave;
@@ -52,6 +53,16 @@ namespace Fantasia.UI
             p.Begin(EventKind.FortuneTeller, party, judge, onClosed);
             p._waitRounds = waitRounds;
             p._playWitch = play;
+            p.Refresh();
+        }
+
+        // 우물(회복 칸): 1명 골라 집중력 +1 — 분수대와 같은 화면, 문구만 다름 (UI 솔루션 Q1)
+        public static void OpenWell(Party party, Func<PartyMember, string> use, Action<string> onClosed)
+        {
+            var p = Ensure();
+            p.Begin(EventKind.Well, party, null, onClosed);
+            p._fountainUsed = false;
+            p._useFountain = use;
             p.Refresh();
         }
 
@@ -114,6 +125,8 @@ namespace Fantasia.UI
             bool statue = _kind == EventKind.Statue;
             _title.text = EventTiles.Label(_kind);
             _cardsRow.SetActive(witch);
+            _witchArt.sprite = UITheme.Current.PortraitForSpeaker("점술마녀");
+            _witchArt.enabled = witch && _witchArt.sprite != null;
             _prayerRow.SetActive(statue);
             if (statue)
             {
@@ -154,10 +167,11 @@ namespace Fantasia.UI
             }
             else
             {
-                _chip.text = "선택한 캐릭터 LP +1 · 칸마다 1회";
-                _odds.text = "맑은 물에 손을 담그면 생명의 기운이 깃든다.";
-                _note.text = _fountainUsed ? "<color=#E0675A>이미 기운을 받은 분수대입니다</color>" : $"LP 최대 {PartyMember.MaxLP}";
-                _footer.text = "캐릭터를 고르고 확정하세요";
+                bool well = _kind == EventKind.Well;
+                _chip.text = well ? "생존 동료 1명의 집중력 1 회복 · 이 우물에서 1회" : "선택한 캐릭터 LP +1 · 칸마다 1회";
+                _odds.text = well ? "차가운 우물물이 정신을 맑게 한다." : "맑은 물에 손을 담그면 생명의 기운이 깃든다.";
+                _note.text = well ? "HP·MP·LP·상태 이상은 회복되지 않습니다" : _fountainUsed ? "<color=#E0675A>이미 기운을 받은 분수대입니다</color>" : $"LP 최대 {PartyMember.MaxLP}";
+                _footer.text = well ? "집중력이 가득 찬 동료는 고를 수 없습니다 · 떠나면 횟수를 쓰지 않음" : "캐릭터를 고르고 확정하세요";
             }
 
             // 대상 고르기: 회복·집중 카드, 분수대
@@ -170,8 +184,8 @@ namespace Fantasia.UI
                 _targets[i].button.gameObject.SetActive(has);
                 if (!has) continue;
                 var m = members[i];
-                bool usable = witch ? m.IsAlive : EventTiles.CanUseFountain(m);
-                string state = witch ? (_card == FortuneCard.Recovery ? $"HP {m.CurrentHP}/{m.MaxHP}" : $"집중 {m.CurrentFocus}/{m.MaxFocus}") : $"LP {m.CurrentLP}/{PartyMember.MaxLP}";
+                bool usable = witch ? m.IsAlive : _kind == EventKind.Well ? Fantasia.World.MapTileRules.CanUseWell(m) : EventTiles.CanUseFountain(m);
+                string state = witch ? (_card == FortuneCard.Recovery ? $"HP {m.CurrentHP}/{m.MaxHP}" : $"집중 {m.CurrentFocus}/{m.MaxFocus}") : _kind == EventKind.Well ? $"집중 {m.CurrentFocus}/{m.MaxFocus}" : $"LP {m.CurrentLP}/{PartyMember.MaxLP}";
                 _targets[i].label.text = $"{(m == _target ? "▶ " : "")}{m.Job.DisplayName}\n<size=10>{state}</size>";
                 _targets[i].button.interactable = usable;
             }
@@ -181,7 +195,7 @@ namespace Fantasia.UI
                 : !_fountainUsed && _target != null);
             _confirm.gameObject.SetActive(!_done);
             _confirm.interactable = ready;
-            _confirmLabel.text = witch ? "선택 확정" : "기운 받기";
+            _confirmLabel.text = witch ? "선택 확정" : _kind == EventKind.Well ? "회복" : "기운 받기";
             _leave.GetComponentInChildren<Text>().text = _done ? "닫기" : "떠나기";
         }
 
@@ -237,7 +251,7 @@ namespace Fantasia.UI
                 if (_target == null) return;
                 string message = _useFountain(_target);
                 _done = true;
-                _lastMessage = $"분수대 — {message}";
+                _lastMessage = $"{EventTiles.Label(_kind)} — {message}";
                 StartCoroutine(Reveal(true, message));
             }
             Refresh();
@@ -281,6 +295,11 @@ namespace Fantasia.UI
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.45f));
             _root = dim.gameObject;
             var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.24f, 0.2f), new Vector2(0.76f, 0.9f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            // 점술마녀 인물 그림 (UI 솔루션 Q8, N18) — 창 왼쪽 바깥, 카드를 가리지 않게
+            _witchArt = UGUIKit.CreateImage(UGUIKit.Safe16x9(dim.transform), "WitchArt", new Vector2(0.06f, 0.28f), new Vector2(0.23f, 0.84f), Color.white);
+            _witchArt.preserveAspect = true;
+            _witchArt.raycastTarget = false;
+            _witchArt.enabled = false;
             win.parent.gameObject.AddComponent<Button>(); // 창 안 클릭이 보드로 새지 않게
 
             _title = Label(win, "Title", new Vector2(0.2f, 0.86f), new Vector2(0.8f, 0.97f), 26, Gold, true);

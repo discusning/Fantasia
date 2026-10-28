@@ -24,7 +24,8 @@ namespace Fantasia.UI
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
         private static readonly Color TextDim = new Color(0.55f, 0.53f, 0.5f);
 
-        private GameObject _menu, _partySelect, _confirm;
+        private GameObject _menu, _partySelect, _confirm, _namePanel;
+        private InputField _nameInput;
         private Button _continueButton;
         private Text _continueInfo, _message;
         private JobDefinition[] _jobs;
@@ -143,6 +144,7 @@ namespace Fantasia.UI
             if (_chosen.Any(j => j == null)) return;
             var session = BoardSession.Instance;
             session.ResetForNewGame();
+            session.PlayerName = CleanName(_nameInput != null ? _nameInput.text : null);
             var party = new Party();
             foreach (var job in _chosen) party.AddMember(new PartyMember(job));
             party.GiveStartingItems(ItemCatalog.Current);
@@ -202,7 +204,58 @@ namespace Fantasia.UI
             }
             _message = Label(_partySelect.transform, "Message", new Vector2(0.05f, 0.1f), new Vector2(0.6f, 0.16f), 12, TextAnchor.MiddleLeft, TextDim, false);
             UGUIKit.CreateThemedButton(_partySelect.transform, "Back", new Vector2(0.05f, 0.03f), new Vector2(0.2f, 0.1f), "뒤로", ButtonFill, 14).onClick.AddListener(ShowMenu);
-            UGUIKit.CreateThemedButton(_partySelect.transform, "Depart", new Vector2(0.75f, 0.03f), new Vector2(0.95f, 0.1f), "출발", StartFill, 18).onClick.AddListener(OnDepart);
+            UGUIKit.CreateThemedButton(_partySelect.transform, "Depart", new Vector2(0.75f, 0.03f), new Vector2(0.95f, 0.1f), "출발", StartFill, 18).onClick.AddListener(ShowNameInput);
+            BuildNameInput(bg.transform);
+        }
+
+        // ── 플레이어 이름 (UI 솔루션 Q4): 파티 구성 → [출발] → 이름 입력 → [시작] ──
+        // 기본 "탐정", 10글자, 앞뒤 공백·줄바꿈·제어 문자 제거, 서식 태그로 해석하지 않음. Enter로 바로 시작하지 않는다 (한글 조합 중 오작동 방지).
+        public const int NameMaxLength = 10;
+
+        public static string CleanName(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return BoardSession.DefaultPlayerName;
+            var sb = new System.Text.StringBuilder();
+            foreach (char c in raw.Trim()) if (!char.IsControl(c)) sb.Append(c);
+            string name = sb.ToString().Trim();
+            if (name.Length > NameMaxLength) name = name.Substring(0, NameMaxLength);
+            return name.Length == 0 ? BoardSession.DefaultPlayerName : name;
+        }
+
+        private void ShowNameInput()
+        {
+            if (_chosen.Any(j => j == null)) return;
+            _namePanel.SetActive(true);
+            if (string.IsNullOrEmpty(_nameInput.text)) _nameInput.text = BoardSession.DefaultPlayerName;
+            _nameInput.Select();
+        }
+
+        private void BuildNameInput(Transform parent)
+        {
+            var dim = UGUIKit.CreateImage(parent, "NameDim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.6f));
+            _namePanel = dim.gameObject;
+            var box = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "NameBox", new Vector2(0.33f, 0.36f), new Vector2(0.67f, 0.64f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            Label(box, "Title", new Vector2(0.05f, 0.76f), new Vector2(0.95f, 0.95f), 18, TextAnchor.MiddleCenter, Gold, true).text = "플레이어 이름";
+            Label(box, "Hint", new Vector2(0.05f, 0.62f), new Vector2(0.95f, 0.76f), 11, TextAnchor.MiddleCenter, TextDim, false).text = $"상단에 표시됩니다 · 최대 {NameMaxLength}글자 · 비우면 \"{BoardSession.DefaultPlayerName}\"";
+
+            var field = UGUIKit.CreateImage(box, "Input", new Vector2(0.12f, 0.38f), new Vector2(0.88f, 0.6f), new Color(0.16f, 0.15f, 0.17f));
+            var text = UGUIKit.CreateText(field.transform, "Text", Vector2.zero, Vector2.one, "", 16, TextAnchor.MiddleCenter);
+            text.color = TextLight;
+            text.supportRichText = false;
+            text.rectTransform.offsetMin = new Vector2(10f, 2f);
+            text.rectTransform.offsetMax = new Vector2(-10f, -2f);
+            var placeholder = UGUIKit.CreateText(field.transform, "Placeholder", Vector2.zero, Vector2.one, BoardSession.DefaultPlayerName, 16, TextAnchor.MiddleCenter);
+            placeholder.color = TextDim;
+            _nameInput = field.gameObject.AddComponent<InputField>();
+            _nameInput.textComponent = text;
+            _nameInput.placeholder = placeholder;
+            _nameInput.characterLimit = NameMaxLength;
+            _nameInput.lineType = InputField.LineType.SingleLine;
+            _nameInput.text = BoardSession.DefaultPlayerName;
+
+            UGUIKit.CreateThemedButton(box, "Cancel", new Vector2(0.1f, 0.08f), new Vector2(0.45f, 0.28f), "취소", ButtonFill, 14).onClick.AddListener(() => _namePanel.SetActive(false));
+            UGUIKit.CreateThemedButton(box, "Start", new Vector2(0.55f, 0.08f), new Vector2(0.9f, 0.28f), "시작", StartFill, 14).onClick.AddListener(OnDepart);
+            _namePanel.SetActive(false);
         }
 
         private static Text Label(Transform parent, string name, Vector2 min, Vector2 max, int size, TextAnchor align, Color color, bool bold)
@@ -219,5 +272,7 @@ namespace Fantasia.UI
         public void DevCycle(int slot, int step) => Cycle(slot, step);
         public string DevPartyNames => string.Join(", ", _chosen.Select(j => j != null ? j.DisplayName : "-"));
         public string DevContinueInfo => _continueInfo != null ? _continueInfo.text : "";
+        public void DevSetName(string name) { ShowNameInput(); _nameInput.text = name; }
+        public bool DevNamePanelOpen => _namePanel != null && _namePanel.activeSelf;
     }
 }

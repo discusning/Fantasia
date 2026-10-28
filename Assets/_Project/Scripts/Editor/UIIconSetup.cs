@@ -26,12 +26,20 @@ namespace Fantasia.Editor
             theme.IntelligenceIcon = S("Z08"); theme.LuckIcon = S("Z09"); theme.PerceptionIcon = S("Z10");
             theme.QuestIcon = S("Z15"); theme.EvidenceIcon = S("Z16"); theme.TreasureIcon = S("Z17");
             theme.HubMarker = S("Z23"); theme.HoundMarker = S("Z24"); theme.BossMarker = S("Z25");
+            theme.EnemyMarker = S("Z19"); // 공용 적 표식 — 새 그림이 오면 그 파일로 바꿀 것 (UI 솔루션 Q7)
             theme.RecoveryMarker = S("Z26"); theme.EventMarker = S("Z27"); theme.ExitMarker = S("Z28");
             theme.FocusPip = S("Z29"); theme.FocusPipEmpty = S("Z30");
             theme.ObjectiveOpen = S("Z33"); theme.ObjectiveDone = S("Z34");
             theme.QuickSlotFrame = S("Z35"); theme.QuickSlotSelected = S("Z36");
             theme.LevelBadge = S("Z37");
             theme.BarBack = S("Z38"); theme.BarFill = S("Z39");
+            // 대화 인물 (UI 솔루션 Q8) — 받은 JPG(N18~N20)는 액자 안이라 그대로 씀
+            theme.SpeakerPortraits = new[]
+            {
+                new SpeakerPortrait { Speaker = "점술마녀", Sprite = P("N18") },
+                new SpeakerPortrait { Speaker = "제임스", Sprite = P("N19") },
+                new SpeakerPortrait { Speaker = "아벨 모로", Sprite = P("N20") },
+            };
             EditorUtility.SetDirty(theme);
 
             // 직업 (Z20~Z22)
@@ -54,6 +62,15 @@ namespace Fantasia.Editor
                 .Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault(p => System.IO.Path.GetFileName(p).StartsWith(code + "_"));
             var sprite = path != null ? AssetDatabase.LoadAssetAtPath<Sprite>(path) : null;
             if (sprite == null) Debug.LogWarning($"[UIIconSetup] {code} 그림 없음 — 그 자리는 글자로 보임");
+            return sprite;
+        }
+
+        private static Sprite P(string code)
+        {
+            var path = AssetDatabase.FindAssets("t:Sprite", new[] { "Assets/_Project/UI/Sprites/Portraits" })
+                .Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault(p => System.IO.Path.GetFileName(p).StartsWith(code + "_"));
+            var sprite = path != null ? AssetDatabase.LoadAssetAtPath<Sprite>(path) : null;
+            if (sprite == null) Debug.LogWarning($"[UIIconSetup] {code} 인물 그림 없음");
             return sprite;
         }
 

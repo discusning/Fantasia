@@ -40,6 +40,16 @@ namespace Fantasia.World
         public static Encounter EncounterAt(string label) =>
             label != null && Encounters.TryGetValue(label, out var e) ? e : null;
 
+        // 적 구성 글 (UI 솔루션 Q7·Q9): 같은 적끼리 묶어 "역병 쥐 ×2 · 가고일 유체 ×1" — 지도 툴팁·조우 창·전투가 같은 목록을 쓴다.
+        public static List<(EnemyDefinition enemy, int count)> Group(IEnumerable<EnemyDefinition> enemies) =>
+            enemies.Where(e => e != null).GroupBy(e => e.Id).Select(g => (g.First(), g.Count())).ToList();
+
+        public static string CompositionText(IEnumerable<EnemyDefinition> enemies)
+        {
+            var groups = Group(enemies);
+            return $"{string.Join(" · ", groups.Select(g => $"{g.enemy.DisplayName} ×{g.count}"))} / 총 {groups.Sum(g => g.count)}마리";
+        }
+
         public static List<EnemyDefinition> ResolveEnemies(Encounter encounter, ItemCatalog catalog)
         {
             if (encounter == null || catalog == null) return null;
@@ -47,28 +57,16 @@ namespace Fantasia.World
             return list.All(e => e != null) ? list : null;
         }
 
-        // ── 3. 회복 칸 (전체 6곳 공통): 생존 파티원 HP·MP 최대치의 30%(올림), 집중력 +1. 무료, 타일별 플레이당 1회 ──
-        // LP·부활·상태 이상 제거 없음. 회복할 자원이 아무에게도 없으면 횟수를 쓰지 않는다.
-        public const float RecoveryHpRatio = 0.3f, RecoveryMpRatio = 0.3f;
-        public const int RecoveryFocus = 1;
+        // ── 3. 회복 칸 = 우물 (전체 6곳, UI 솔루션 Q1 2026-10-27 — 10/26 "전원 HP·MP 30%"를 대체) ──
+        // 살아 있는 1명을 골라 집중력 +1. 무료, 우물마다 플레이당 1회. HP·MP·LP·부활·상태 이상은 없음.
+        // 집중력을 채울 사람이 없거나 취소하면 횟수를 쓰지 않는다.
+        public const int WellFocus = 1;
 
-        public static bool RecoveryWouldHelp(Party party) => party.AliveMembers.Any(m =>
-            m.CurrentHP < m.MaxHP || m.CurrentMP < m.MaxMP || m.CurrentFocus < m.MaxFocus);
+        public static bool CanUseWell(PartyMember m) => m != null && m.IsAlive && m.CurrentFocus < m.MaxFocus;
+        public static bool WellWouldHelp(Party party) => party.AliveMembers.Any(CanUseWell);
 
-        // 회복을 적용하고 (HP, MP, 집중력) 합계를 돌려준다
-        public static (int hp, int mp, int focus) ApplyRecovery(Party party)
-        {
-            int hp = 0, mp = 0, focus = 0;
-            foreach (var m in party.AliveMembers.ToList())
-            {
-                int before = m.CurrentHP;
-                m.Heal(UnityEngine.Mathf.CeilToInt(m.MaxHP * RecoveryHpRatio));
-                hp += m.CurrentHP - before;
-                if (m.MaxMP > 0) mp += m.RestoreMP(UnityEngine.Mathf.CeilToInt(m.MaxMP * RecoveryMpRatio));
-                focus += m.RestoreFocus(RecoveryFocus);
-            }
-            return (hp, mp, focus);
-        }
+        // 선택한 1명에게 집중력 +1 (최대치까지). 실제로 오른 양을 돌려준다.
+        public static int ApplyWell(PartyMember m) => CanUseWell(m) ? m.RestoreFocus(WellFocus) : 0;
 
         // ── 4. 보물 칸: 고정 보상, 타일별 파티 공유 1회, 표의 보상 전부 지급 (무작위 전리품 없음) ──
         public sealed class Treasure

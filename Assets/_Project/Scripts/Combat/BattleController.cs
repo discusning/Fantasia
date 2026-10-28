@@ -207,7 +207,7 @@ namespace Fantasia.Combat
         {
             SaveBattle($"전투 R{_queue.Round} {_current.DisplayName} 차례", confused: confused);
             Log($"[R{_queue.Round}] {_current.DisplayName} 차례 (속도 {_current.Speed}) — 순서: {string.Join(" > ", _queue.Preview(6).Select(x => x.Unit.DisplayName))}");
-            _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
+            _hud.SetTimeline(_queue.Preview(BattleHud.TimelineMax), _queue.Round, _queue.OrderChangeOf);
             _hud.RefreshEnemies(null);
 
             if (_current.IsAlly && confused)
@@ -391,7 +391,7 @@ namespace Fantasia.Combat
                 }.Where(s => s != null));
                 _hud.SetBossTelegraph(e, $"{p.Announce.Name} 예고 중 | 다음 보스 행동: {p.FollowUp.Description}\n{counter}");
             }
-            _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
+            _hud.SetTimeline(_queue.Preview(BattleHud.TimelineMax), _queue.Round, _queue.OrderChangeOf);
         }
 
         // 아군 행동 메뉴 열기 — 예고 중이면 「봉합 방해」 버튼도 (집중력이 없어도 활성)
@@ -767,7 +767,7 @@ namespace Fantasia.Combat
                 bool moved = _queue.Shift(target, onCritShift);
                 if (moved) _hud.PopText(_camera, ModelTop(target) + Vector3.up * (0.45f * line), shiftName, BattleHud.StatusColor);
                 Log($"  → {target.DisplayName} [{shiftName}] {(moved ? "— 이번 라운드 차례가 뒤로 밀림" : "— 효과 없음(이미 행동함·이번 라운드 이미 밀림·이미 남은 큐 뒤쪽)")}");
-                _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
+                _hud.SetTimeline(_queue.Preview(BattleHud.TimelineMax), _queue.Round, _queue.OrderChangeOf);
             }
         }
 
@@ -811,7 +811,7 @@ namespace Fantasia.Combat
             string text = $"{unit.DisplayName} 속도 {before} → {now} · 다음 라운드 순서에 반영";
             _hud.ShowNotice(text, 2.2f);
             Log($"  → {text}");
-            _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
+            _hud.SetTimeline(_queue.Preview(BattleHud.TimelineMax), _queue.Round, _queue.OrderChangeOf);
         }
 
         // 상태 여러 개 부여 + 팝업·로그. 다음 팝업 줄 번호를 돌려준다.
@@ -882,7 +882,7 @@ namespace Fantasia.Combat
             BoardSession.Instance.BattleSnapshotJson = null; // 전투 끝 — 이어하기는 보드에서
             RefreshBossTelegraph(); // 전투 종료 → 예고 해제
             foreach (var ally in _allies) ally.Statuses.ClearOnBattleEnd(); // 중독처럼 남는 것만 유지
-            _hud.SetTimeline(_queue.Preview(10), _queue.Round, _queue.OrderChangeOf);
+            _hud.SetTimeline(_queue.Preview(BattleHud.TimelineMax), _queue.Round, _queue.OrderChangeOf);
             bool wiped = enemiesLeft && !_allies.Any(a => a.IsAlive);
             Log($"전투 종료 — {(!enemiesLeft ? "승리" : wiped ? "패배(전원 쓰러짐)" : "퇴각")} · 라운드 {_queue.Round} · 아군 HP {string.Join(", ", _allies.Select(u => $"{u.DisplayName} {u.CurrentHP}/{u.MaxHP} LP {u.Member.CurrentLP}"))}");
             PartyHudPanel.SetActive(null);

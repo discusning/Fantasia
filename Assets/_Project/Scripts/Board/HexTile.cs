@@ -112,9 +112,35 @@ namespace Fantasia.Board
             RefreshMarker();
         }
 
+        // 끝난 칸 표시 (UI 솔루션 Q5): 이긴 적·받은 보물 = 표식 없는 일반 칸 /
+        // 쓴 우물·이벤트 = 표식을 회색으로 남기고 "사용 완료" (위치를 기억할 수 있게).
+        private TextMesh _usedLabel;
+        private bool FinishedAsNormal => IsCleared || (IsUsed && MapKind == MapTileKind.Treasure);
+        private bool UsedButKept => IsUsed && (MapKind == MapTileKind.Recovery || MapKind == MapTileKind.Event);
+
         private void RefreshMarker()
         {
-            if (_marker != null) _marker.enabled = !IsUsed && !IsCleared;
+            if (_marker != null)
+            {
+                _marker.enabled = !FinishedAsNormal;
+                _marker.color = UsedButKept ? new Color(0.55f, 0.55f, 0.55f, 0.85f) : Color.white;
+            }
+            if (UsedButKept && _usedLabel == null && _marker != null)
+            {
+                var go = new GameObject("UsedLabel");
+                go.transform.SetParent(transform, false);
+                go.transform.localPosition = new Vector3(0f, _marker.transform.localPosition.y + 0.01f, -0.55f);
+                go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                _usedLabel = go.AddComponent<TextMesh>();
+                _usedLabel.font = Fantasia.UI.UGUIKit.UIFont;
+                go.GetComponent<MeshRenderer>().sharedMaterial = _usedLabel.font.material;
+                _usedLabel.text = "사용 완료";
+                _usedLabel.fontSize = 48;
+                _usedLabel.characterSize = 0.035f;
+                _usedLabel.anchor = TextAnchor.MiddleCenter;
+                _usedLabel.color = new Color(0.9f, 0.9f, 0.88f);
+            }
+            if (_usedLabel != null) _usedLabel.gameObject.SetActive(UsedButKept);
         }
 
         public void SetEventTile(bool isEvent)
@@ -147,6 +173,7 @@ namespace Fantasia.Board
         {
             Color color = MapKind == MapTileKind.Exit ? (IsBlocked ? exitLockedColor : (_isReachable ? reachableColor : exitOpenColor))
                 : IsBlocked ? blockedColor
+                : FinishedAsNormal ? (_isReachable ? reachableColor : baseColor) // 이긴 적·받은 보물 = 일반 칸 (Q5)
                 : IsUsed ? usedColor
                 : MapKind == MapTileKind.Hub ? hubColor
                 : IsBoss && !IsCleared ? bossColor

@@ -7,7 +7,7 @@ namespace Fantasia.World
 {
     // 이벤트 칸 (System.md "이벤트 칸" + "이벤트 수치·도시 거점 보완").
     // 종류: 기관차(2차) · 점술마녀 · 십자가 석상(기도 6종 — Data/Prayer.cs) · 분수대.
-    public enum EventKind { None, FortuneTeller, Fountain, Statue, Train }
+    public enum EventKind { None, FortuneTeller, Fountain, Statue, Train, Well } // Well = 회복 칸(우물) 선택 창 — 이벤트 칸 배정에는 안 씀
 
     public enum FortuneCard { Wealth, Recovery, Focus }
 
@@ -29,6 +29,7 @@ namespace Fantasia.World
             EventKind.Fountain => "분수대",
             EventKind.Statue => "십자가 석상",
             EventKind.Train => "기관차",
+            EventKind.Well => "우물",
             _ => "이벤트",
         };
 

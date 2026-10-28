@@ -67,10 +67,12 @@ namespace Fantasia.UI
         }
 
         // hero: 판정에 쓸 캐릭터 (지금은 조우를 시작한 1명 — 3인 보드 표현은 기획 확인 중).
-        public static void Show(EnemyDefinition enemy, PartyMember hero, Action<EncounterOutcome> onResolved)
+        // group: 이 칸에서 싸울 적 전체 (UI 솔루션 Q9) — 비우면 enemy 1마리
+        public static void Show(EnemyDefinition enemy, PartyMember hero, Action<EncounterOutcome> onResolved, IReadOnlyList<EnemyDefinition> group = null)
         {
             EnsureExists();
             Instance.ShowInternal(enemy, hero, onResolved);
+            Instance.ShowComposition(group ?? new[] { enemy });
         }
 
         private void Awake() => Initialize();
@@ -343,6 +345,7 @@ namespace Fantasia.UI
             BuildPortrait(backdrop.transform);
             BuildChoiceCard(backdrop.transform);
             BuildOddsPanel(backdrop.transform);
+            BuildComposition(backdrop.transform);
 
             _root.SetActive(false);
         }
@@ -410,6 +413,49 @@ namespace Fantasia.UI
             _footerText.color = TextAccent;
 
         }
+
+        // ── 적 구성 (UI 솔루션 Q9): 같은 적끼리 묶어 초상·이름·마리 수 2열 + 제목에 총 수·종류 수 ──
+        private const int CompositionRows = 6;
+        private Text _compositionTitle;
+        private readonly List<(GameObject root, RawImage portrait, Text name)> _compositionRows = new();
+
+        private void BuildComposition(Transform parent)
+        {
+            var panel = UGUIKit.CreateBorderedPanel(parent, "Composition", new Vector2(0.4f, 0.6f), new Vector2(0.64f, 0.8f), BorderGold, PanelFill, 2.5f);
+            var bannerFill = UGUIKit.CreateBorderedPanel(panel, "CompositionBanner", new Vector2(0.1f, 0.84f), new Vector2(0.9f, 1.1f), BorderGold, new Color(0.2f, 0.08f, 0.1f), 2f);
+            _compositionTitle = UGUIKit.CreateText(bannerFill, "Title", Vector2.zero, Vector2.one, "", 14, TextAnchor.MiddleCenter);
+            _compositionTitle.color = TextLight;
+            _compositionTitle.fontStyle = FontStyle.Bold;
+            for (int i = 0; i < CompositionRows; i++)
+            {
+                float x0 = i % 2 == 0 ? 0.04f : 0.52f, y1 = 0.78f - (i / 2) * 0.25f;
+                var row = UGUIKit.CreateRect(panel, $"Enemy{i}", new Vector2(x0, y1 - 0.22f), new Vector2(x0 + 0.44f, y1));
+                var frame = UGUIKit.CreateBorderedPanel(row, "Portrait", new Vector2(0f, 0f), new Vector2(0.3f, 1f), BorderGold, new Color(0.13f, 0.12f, 0.15f), 1f);
+                var portrait = UGUIKit.CreateRect(frame, "Image", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
+                var name = UGUIKit.CreateText(row, "Name", new Vector2(0.34f, 0f), new Vector2(1f, 1f), "", 13, TextAnchor.MiddleLeft);
+                name.color = TextLight;
+                name.supportRichText = true;
+                _compositionRows.Add((row.gameObject, portrait, name));
+            }
+        }
+
+        private void ShowComposition(IReadOnlyList<EnemyDefinition> enemies)
+        {
+            var groups = MapTileRules.Group(enemies);
+            int total = 0;
+            foreach (var g in groups) total += g.count;
+            _compositionTitle.text = $"적 구성 · 총 {total}마리 · {groups.Count}종류";
+            for (int i = 0; i < _compositionRows.Count; i++)
+            {
+                bool has = i < groups.Count;
+                _compositionRows[i].root.SetActive(has);
+                if (!has) continue;
+                _compositionRows[i].portrait.texture = PortraitStudio.TextureFor(groups[i].enemy);
+                _compositionRows[i].name.text = $"{groups[i].enemy.DisplayName}  <color=#D9B45A><b>×{groups[i].count}</b></color>";
+            }
+        }
+
+        public static string DevCompositionTitle => Instance != null ? Instance._compositionTitle.text : null;
 
         private void BuildOddsPanel(Transform parent)
         {

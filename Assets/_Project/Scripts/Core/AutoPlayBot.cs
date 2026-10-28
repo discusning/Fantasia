@@ -345,6 +345,9 @@ namespace Fantasia.Core
                 yield return new WaitForSeconds(0.5f);
                 yield return Shot("party_select_swapped");
                 menu.DevCycle(0, -1);
+                menu.DevSetName("홈즈"); // 플레이어 이름 입력 창 (UI 솔루션 Q4)
+                yield return new WaitForSeconds(0.4f);
+                yield return Shot("name_input");
                 menu.OnDepart();
                 if (Seed >= 0) GameRandom.Seed(Seed); // 새 게임이 난수를 새로 정하므로 같은 시드로 다시
                 Note($"출발: {menu.DevPartyNames}");
@@ -567,8 +570,23 @@ namespace Fantasia.Core
                 board.DevArriveAt("S16");
                 yield return WaitFor(() => ConfirmPanel.IsOpen, 5f, "회복 칸 다시");
                 ConfirmPanel.DevChoose(true);
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "우물 선택 창");
+                EventPanel.DevPickTarget(1);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("recovery_pick");
+                EventPanel.DevLeave(); // 취소 → 횟수 안 씀
                 yield return new WaitForSeconds(0.5f);
-                Note($"[이용]: {board.DevResultMessage} → {State()}");
+                Note($"[이용] 뒤 취소: {board.DevResultMessage} → {State()}");
+                board.DevArriveAt("S16");
+                yield return WaitFor(() => ConfirmPanel.IsOpen, 5f, "회복 칸 세 번째");
+                ConfirmPanel.DevChoose(true);
+                yield return WaitFor(() => EventPanel.IsOpen, 5f, "우물 선택 창 다시");
+                EventPanel.DevPickTarget(1);
+                EventPanel.DevConfirm();
+                yield return new WaitForSeconds(1.2f);
+                EventPanel.DevLeave();
+                yield return new WaitForSeconds(0.5f);
+                Note($"[회복] 역병 의사: {board.DevResultMessage} → {State()}");
                 yield return Shot("recovery_used");
                 board.DevArriveAt("S16");
                 yield return new WaitForSeconds(1f);

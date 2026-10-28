@@ -28,6 +28,8 @@ MonoBehaviour:
   PhaseDialEnemyActive: {fileID: 0}
   PhaseDialEnemyIdle: {fileID: 0}
   ThreatNotch: {fileID: 0}
+  DaySun: {fileID: 0}
+  NightMoon: {fileID: 0}
   RegionBanner: {fileID: 0}
   AllyTurnBanner: {fileID: 0}
   EnemyTurnBanner: {fileID: 0}
@@ -59,6 +61,14 @@ MonoBehaviour:
   ObjectiveDone: {fileID: 21300000, guid: 5fdce0c9f9f018b46908455831dcba5e, type: 3}
   HubMarker: {fileID: 21300000, guid: ae24f8382d35ca6489a6ffbe9da9b53d, type: 3}
   HoundMarker: {fileID: 21300000, guid: fe21599c43985974daeaf0b88828b0d7, type: 3}
+  EnemyMarker: {fileID: 21300000, guid: 0d77769ec89cdce4184afa191292e253, type: 3}
+  SpeakerPortraits:
+  - Speaker: "\uC810\uC220\uB9C8\uB140"
+    Sprite: {fileID: 21300000, guid: 82ef886083e3a8f499cf51425f2ed420, type: 3}
+  - Speaker: "\uC81C\uC784\uC2A4"
+    Sprite: {fileID: 21300000, guid: 6bc66b47e77876b438f773b5e7b537c4, type: 3}
+  - Speaker: "\uC544\uBCA8 \uBAA8\uB85C"
+    Sprite: {fileID: 21300000, guid: 73c7c5bfafb6fd04f9a907d93ec2366c, type: 3}
   BossMarker: {fileID: 21300000, guid: 3786438c44958d7429c614d1d928f422, type: 3}
   RecoveryMarker: {fileID: 21300000, guid: 7d983a65bf21a3b488230b16e8b09c09, type: 3}
   EventMarker: {fileID: 21300000, guid: bb5d51546a57b9b44b66ba1dc824960d, type: 3}

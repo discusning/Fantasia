@@ -294,6 +294,7 @@ namespace Fantasia.Board
 
         private void Update()
         {
+            UpdateTileTooltip();
             if (SaveErrorPanel.IsOpen || PauseMenu.IsOpen) return; // 저장 실패·게임 중 메뉴 — 진행 일시정지
             if (Input.GetKeyDown(KeyCode.Q) && !EncounterPanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen || ConfirmPanel.IsOpen || ActClearPanel.IsOpen || EventPanel.IsOpen) return;
@@ -459,7 +460,7 @@ namespace Fantasia.Board
                 _pendingIsReaper = false;
                 // 판정 결과가 이미 확정·저장된 상태에서 이어하면 창 없이 그 결과로 (Save.md)
                 if (BoardSession.Instance.PendingEncounterOutcome >= 0) { OnEncounterResolved((EncounterOutcome)BoardSession.Instance.PendingEncounterOutcome); yield break; }
-                EncounterPanel.Show(landedTile.Enemy, Leader, OnEncounterResolved);
+                EncounterPanel.Show(landedTile.Enemy, Leader, OnEncounterResolved, TileEnemies(landedTile)); // 적 전체 구성 (Q9)
                 yield break;
             }
 
@@ -471,7 +472,8 @@ namespace Fantasia.Board
 
             // 이벤트 칸 추가 이동이 생기면 한 번 더 움직이고, 아니면 아군 턴 종료.
             // 거점 도착으로 상점이 열렸으면 닫을 때까지 기다림 (서비스·제작을 쓰면 상점이 아군 턴을 끝냄)
-            while (Fantasia.UI.ShopPanel.IsOpen || EventPanel.IsOpen) yield return null; // 상점·이벤트 창을 닫을 때까지
+            // 상점·이벤트·우물 창을 닫을 때까지 (우물은 확인창 → 선택 창 순서라 한 프레임 넘겨 다시 확인)
+            while (Fantasia.UI.ShopPanel.IsOpen || EventPanel.IsOpen || ConfirmPanel.IsOpen) { yield return null; if (!ConfirmPanel.IsOpen) yield return null; }
             if (_turnEnding || Clock.Phase != WorldPhase.AllyTurn) yield break;
             if (!TryGrantEventBonusMove(landedTile)) StartCoroutine(EndAllyTurn());
         }
@@ -499,26 +501,51 @@ namespace Fantasia.Board
             }
         }
 
+        // 적 칸 위에 마우스를 올리면 적 구성 (UI 솔루션 Q7): "역병 쥐 ×2 · 가고일 유체 ×1 / 총 3마리"
+        private void UpdateTileTooltip()
+        {
+            var cam = Camera.main;
+            bool blocked = cam == null || SaveErrorPanel.IsOpen || PauseMenu.IsOpen || BoardHintPanel.AnyModalOpen || BattleHud.PointerOverUI;
+            HexTile tile = null;
+            if (!blocked && Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out var hit)) tile = hit.collider.GetComponent<HexTile>();
+            var enemies = tile != null && !tile.IsCleared ? TileEnemies(tile) : null;
+            if (enemies == null) { TileTooltip.Hide(); return; }
+            TileTooltip.Show($"<b>{tile.MapLabel}</b>\n{Fantasia.World.MapTileRules.CompositionText(enemies)}", Input.mousePosition);
+        }
+
+        // 그 칸에서 싸우게 될 적 목록 — 지도 툴팁·조우 창·전투가 같은 목록을 쓴다 (Q7·Q9)
+        public List<EnemyDefinition> TileEnemies(HexTile tile)
+        {
+            if (tile == null || !tile.IsEncounter || tile.Enemy == null) return null;
+            if (tile.Enemy.IsBoss) return new List<EnemyDefinition> { tile.Enemy };
+            var fixedGroup = Fantasia.World.MapTileRules.ResolveEnemies(Fantasia.World.MapTileRules.EncounterAt(CoordLabel(tile.Coordinate)), ItemCatalog.Current);
+            return fixedGroup ?? new List<EnemyDefinition> { tile.Enemy };
+        }
+
         // 지도 좌표 이름 (예: J06)
         private static string CoordLabel(HexCoord c) { var (row, col) = WorldMapData.AxialToOffset(c); return WorldMapData.Label(row, col); }
 
-        // 회복 칸 (MapTileRules, 전체 6곳): [이용] / [지나가기]. 회복할 자원이 아무에게도 없으면 횟수를 쓰지 않는다.
+        // 회복 칸 = 우물 (UI 솔루션 Q1): [이용] / [지나가기] → 1명 골라 집중력 +1. 우물마다 1회.
+        // 모두 집중력이 가득 찼거나, 취소·지나가기면 횟수를 쓰지 않는다.
         private void OfferRecovery(HexTile tile)
         {
-            string effect = $"생존 파티원 HP·MP 최대치의 {Fantasia.World.MapTileRules.RecoveryHpRatio * 100f:0}% · 집중력 +{Fantasia.World.MapTileRules.RecoveryFocus} 회복 (무료, 이 칸 1회)";
-            if (!Fantasia.World.MapTileRules.RecoveryWouldHelp(_testParty))
+            if (!Fantasia.World.MapTileRules.WellWouldHelp(_testParty))
             {
-                _encounterResultMessage = $"{tile.MapLabel} — 회복할 것이 없어 그대로 둠 (다음에 이용 가능)";
+                _encounterResultMessage = $"{tile.MapLabel} — 모든 동료의 집중력이 가득 찼습니다 (다음에 이용 가능)";
                 return;
             }
-            ConfirmPanel.Show($"{tile.MapLabel}\n{effect}\nLP·상태 이상은 회복되지 않습니다.", "이용", "지나가기", () =>
+            ConfirmPanel.Show($"{tile.MapLabel}\n생존 동료 1명의 집중력 {Fantasia.World.MapTileRules.WellFocus} 회복 · 이 우물에서 1회", "이용", "지나가기", () =>
             {
-                var (hp, mp, focus) = Fantasia.World.MapTileRules.ApplyRecovery(_testParty);
-                BoardSession.Instance.UsedMapTiles.Add(tile.Coordinate);
-                tile.SetUsed(true);
-                _encounterResultMessage = $"{tile.MapLabel} — HP +{hp} · MP +{mp} · 집중력 +{focus}";
-                ItemAcquiredToast.Show("회복 칸: 파티 회복");
-                SaveGame.Checkpoint("칸 효과");
+                var session = BoardSession.Instance;
+                EventPanel.OpenWell(_testParty, member =>
+                {
+                    if (session.UsedMapTiles.Contains(tile.Coordinate) || !Fantasia.World.MapTileRules.CanUseWell(member)) return "회복할 수 없다";
+                    int gained = Fantasia.World.MapTileRules.ApplyWell(member);
+                    session.UsedMapTiles.Add(tile.Coordinate);
+                    tile.SetUsed(true);
+                    SaveGame.Checkpoint("칸 효과");
+                    return $"{member.Job.DisplayName} 집중력 +{gained} ({member.CurrentFocus}/{member.MaxFocus})";
+                }, message => _encounterResultMessage = message != null ? $"{tile.MapLabel} {message}" : $"{tile.MapLabel} — 떠남 (다음에 이용 가능)");
             }, () => _encounterResultMessage = $"{tile.MapLabel} — 지나감 (다음에 이용 가능)");
         }
 
