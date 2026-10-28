@@ -28,11 +28,18 @@ namespace Fantasia.Core
 
         // 저장 지점 (Save.md 3): 진행 중 회차만.
         // 실패하면 경고 → 진행 일시정지 → 재시도 → 저장 성공 후 재개 (세이브 추가 수정안 — SaveErrorPanel)
+        // 성능 점검용: 마지막 자동 저장에 걸린 시간·이번 실행의 저장 횟수
+        public static double LastSaveMs { get; private set; }
+        public static int SaveCount { get; private set; }
+
         public static bool Checkpoint(string reason)
         {
             var s = BoardSession.Instance;
             if (s == null || s.Party == null || s.Run == BoardSession.RunState.Ended) return false;
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             bool ok = Save(s);
+            LastSaveMs = watch.Elapsed.TotalMilliseconds; // 성능 점검용 (PerfMonitor)
+            SaveCount++;
             if (ok) { Debug.Log($"[SaveGame] 저장 — {reason}"); Saved?.Invoke(reason); }
             else if (Application.isPlaying) Fantasia.UI.SaveErrorPanel.Show(reason, LastError, () => Save(s));
             return ok;

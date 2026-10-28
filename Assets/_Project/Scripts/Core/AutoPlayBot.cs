@@ -84,12 +84,22 @@ namespace Fantasia.Core
                 };
             }
 
+            // 성능 점검 (-autoplay-perf): 프레임·메모리·저장 시간 기록. -autoplay-uncapped면 수직 동기화를 꺼서 여유 성능까지 잼
+            PerfMonitor perf = null;
+            if (args.Contains("-autoplay-perf"))
+            {
+                if (args.Contains("-autoplay-uncapped")) { QualitySettings.vSyncCount = 0; Application.targetFrameRate = -1; }
+                if (args.Contains("-autoplay-aa0")) QualitySettings.antiAliasing = 0; // 비교용: 안티에일리어싱 끔
+                perf = PerfMonitor.Begin(_outDir);
+            }
+
             if (args.Contains("-autoplay-full-resume")) yield return FullRun(resume: true);
             else if (args.Contains("-autoplay-resume")) yield return ResumeRun();
             else if (args.Contains("-autoplay-menu")) yield return MenuRun();
             else if (args.Contains("-autoplay-full")) yield return FullRun(resume: false);
             else yield return Play();
 
+            if (perf != null) Note("성능 요약:\n" + perf.Finish());
             File.WriteAllText(Path.Combine(_outDir, "autoplay_log.txt"), _log.ToString(), Encoding.UTF8);
             yield return new WaitForSeconds(0.5f);
             Application.Quit();
