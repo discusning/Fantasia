@@ -136,7 +136,7 @@ namespace Fantasia.Items
             return new ShopResult(true, $"{gear.DisplayName} 판매 +{price} Cent{(price == 0 ? " (최초 지급 장비)" : "")}");
         }
 
-        // ── 서비스 (City.md §4) — 2026-10-24 결정: 파티 일괄 적용, 1인 가격 × 생존 인원, 이용하면 아군 턴 종료 ──
+        // ── 서비스 (City.md §4) — 1막 기획 결정서 B2: 생존 1명씩 선택, 1인 가격, 이용하면 아군 턴 종료 ──
         public static int ServicePrice(ShopService s) => s switch { ShopService.Inn => 30, ShopService.Treatment => 50, _ => 45 };
 
         public static string ServiceLabel(ShopService s) => s switch
@@ -153,33 +153,44 @@ namespace Fantasia.Items
             _ => "집중력 최대치까지 회복",
         };
 
-        public static ShopResult UseService(Party party, ShopService s)
+        // 서비스가 그 캐릭터에게 실제로 효과가 있는지 — 없으면 비용·행동을 쓰지 않는다 (결정서 02)
+        public static bool ServiceWouldHelp(PartyMember m, ShopService s)
         {
-            var members = party.AliveMembers.ToList();
-            int cost = ServicePrice(s) * members.Count;
-            if (members.Count == 0) return new ShopResult(false, "이용할 파티원 없음");
+            if (m == null || !m.IsAlive) return false;
+            return s switch
+            {
+                ShopService.Inn => m.CurrentHP < m.MaxHP || m.CurrentMP < m.MaxMP || m.CurrentFocus < m.MaxFocus || m.Statuses.Has(StatusEffectType.Confusion),
+                ShopService.Treatment => m.Statuses.Has(StatusEffectType.Poison) || m.Statuses.Has(StatusEffectType.WeakBleed),
+                _ => m.CurrentFocus < m.MaxFocus,
+            };
+        }
+
+        // 1막 기획 결정서 02 (B2): 생존 캐릭터 1명을 골라 1인 가격. 성공하면 월드 행동(아군 턴) 종료.
+        // 취소·돈 부족·적용할 효과 없음은 비용·행동을 쓰지 않는다. 비율 회복은 올림, 최대치 제한.
+        public static ShopResult UseService(Party party, ShopService s, PartyMember m)
+        {
+            int cost = ServicePrice(s);
+            if (m == null || !m.IsAlive || !party.Members.Contains(m)) return new ShopResult(false, "이용할 동료를 고르세요");
+            if (!ServiceWouldHelp(m, s)) return new ShopResult(false, $"{m.Job.DisplayName}: {ServiceLabel(s)} 효과를 받을 것이 없음");
             if (party.Cent < cost) return new ShopResult(false, $"Cent 부족 ({cost} 필요)");
             party.SpendCent(cost);
-            foreach (var m in members)
+            switch (s)
             {
-                switch (s)
-                {
-                    case ShopService.Inn:
-                        m.Heal(m.MaxHP / 2);
-                        m.RestoreMP(m.MaxMP / 2);
-                        m.RestoreFocus(1);
-                        m.Statuses.Remove(StatusEffectType.Confusion);
-                        break;
-                    case ShopService.Treatment:
-                        m.Statuses.Remove(StatusEffectType.Poison);
-                        m.Statuses.Remove(StatusEffectType.WeakBleed);
-                        break;
-                    case ShopService.Meditation:
-                        m.RestoreFocus(m.MaxFocus);
-                        break;
-                }
+                case ShopService.Inn:
+                    m.Heal((m.MaxHP + 1) / 2);
+                    m.RestoreMP((m.MaxMP + 1) / 2);
+                    m.RestoreFocus(1);
+                    m.Statuses.Remove(StatusEffectType.Confusion);
+                    break;
+                case ShopService.Treatment:
+                    m.Statuses.Remove(StatusEffectType.Poison);
+                    m.Statuses.Remove(StatusEffectType.WeakBleed);
+                    break;
+                case ShopService.Meditation:
+                    m.RestoreFocus(m.MaxFocus);
+                    break;
             }
-            return new ShopResult(true, $"{ServiceLabel(s)} — 파티 {members.Count}명 −{cost} Cent · 아군 턴 종료", endsAllyTurn: true);
+            return new ShopResult(true, $"{ServiceLabel(s)} — {m.Job.DisplayName} −{cost} Cent · 아군 턴 종료", endsAllyTurn: true);
         }
 
         // ── 작업대 제작 (System.md "연금술 제작·상점 서비스") — 시약 + 제작비, 1개 확정, 월드 행동 종료 ──

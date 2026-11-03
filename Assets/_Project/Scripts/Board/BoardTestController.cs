@@ -98,6 +98,16 @@ namespace Fantasia.Board
                 return;
             }
 
+            Fantasia.UI.ShopPanel.EnsureExists();
+            StartCoroutine(EnterFlow());
+        }
+
+        private IEnumerator EnterFlow()
+        {
+            RefreshTopBar(announce: false);
+            yield return StoryOnEnter();
+            yield return SettleSideQuests();
+
             // 전투로 끝난 아군 턴이면 돌아오자마자 적 턴 진행, 아니면 지금 페이즈 표시.
             if (BoardSession.Instance.AllyTurnEndedByBattle)
             {
@@ -111,6 +121,39 @@ namespace Fantasia.Board
                 else if (!Clock.HasRolledThisTurn) AutoSave();
                 else ResumeAllyTurn();
             }
+        }
+
+        // 1막 기획 결정서: 새 게임 첫 아군 턴에 시작 대화 1번 (05) / 보스 처치 후 대화 도중 종료했으면 그 대화만 다시 (T16-35, 보상 재지급 없음)
+        private IEnumerator StoryOnEnter()
+        {
+            var s = BoardSession.Instance;
+            if (!_board.UsesWorldMap || s.Run != BoardSession.RunState.Active) yield break;
+            DialoguePanel.DialogueLine[] lines = null;
+            string flag = null;
+            if (!s.StoryFlags.Contains(ActOneStory.FlagIntroDone) && Clock.WorldRound <= 1 && !Clock.HasRolledThisTurn && Clock.Phase == WorldPhase.AllyTurn)
+                (lines, flag) = (ActOneStory.Intro, ActOneStory.FlagIntroDone);
+            else if (s.StoryFlags.Contains(ActOneStory.FlagBossDefeated) && !s.StoryFlags.Contains(ActOneStory.FlagAfterDialogueDone))
+                (lines, flag) = (ActOneStory.AfterBattle, ActOneStory.FlagAfterDialogueDone);
+            if (lines == null) yield break;
+            DialoguePanel.Play(lines, skipCloses: true);
+            while (DialoguePanel.IsOpen) yield return null;
+            s.StoryFlags.Add(flag);
+            SaveGame.Checkpoint("대화 완료");
+        }
+
+        // 런던 선택 의뢰: 수락한 의뢰의 목표 칸을 모두 이겼으면 보상 + 완료 대사 (전투에서 돌아올 때·수락할 때)
+        private IEnumerator SettleSideQuests()
+        {
+            var done = SideQuests.SettleAll(BoardSession.Instance);
+            if (done.Count == 0) yield break;
+            foreach (var q in done)
+            {
+                ItemAcquiredToast.Show($"의뢰 완료: {q.Title} — {SideQuests.RewardCent} Cent · 경험치 {SideQuests.RewardExp}");
+                Debug.Log($"[Quest] 의뢰 완료 {q.Id} — {q.CompleteLine}");
+            }
+            DialoguePanel.Play(done.Select(q => new DialoguePanel.DialogueLine("내레이션", q.CompleteLine)).ToArray(), skipCloses: true);
+            SaveGame.Checkpoint("의뢰 완료"); // 보상 확정 → 저장 → 대사
+            while (DialoguePanel.IsOpen) yield return null;
         }
 
         // 아군 턴 도중 저장에서 이어하기 (Save.md 3): 확정된 주사위 → 같은 이동력으로 칸 선택부터 / 이동 완료 → 도착 처리부터
@@ -295,6 +338,7 @@ namespace Fantasia.Board
         private void Update()
         {
             UpdateTileTooltip();
+            Fantasia.UI.ShopPanel.SetReopenButton(OnHubTile && !_isMoving && !_turnEnding && Clock.Phase == WorldPhase.AllyTurn && !BoardHintPanel.AnyModalOpen && !SaveErrorPanel.IsOpen && !PauseMenu.IsOpen, OpenShopHere);
             if (SaveErrorPanel.IsOpen || PauseMenu.IsOpen) return; // 저장 실패·게임 중 메뉴 — 진행 일시정지
             if (Input.GetKeyDown(KeyCode.Q) && !EncounterPanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen || ConfirmPanel.IsOpen || ActClearPanel.IsOpen || EventPanel.IsOpen) return;
@@ -725,12 +769,13 @@ namespace Fantasia.Board
             Fantasia.UI.ShopPanel.Open(shop, _testParty, ShopStages, () => Clock.WorldRound - 1);
         }
 
-        // 판매 단계: 2막 = 런던 보스(M11) 처치, 고성 = 베르사유 보스(I25) 처치
+        // 판매 단계: 2막 = 2막 진입(런던 보스 M11 처치 + 2막 구현), 고성 = 베르사유 보스(I25) 처치
         private (bool act2, bool castle) ShopStages()
         {
             var cleared = BoardSession.Instance.ClearedEncounters;
             bool Cleared(string label) => _board.UsesWorldMap && cleared.Contains(_board.Map.TileAt(label).Coord);
-            return (Cleared("M11"), Cleared("I25"));
+            // 결정서 08: 2막 고급 상품은 실제 2막 진입 때 — 1막 클리어 직전(아벨 처치)에는 열지 않음
+            return (HexBoard.Act2Available && Cleared("M11"), Cleared("I25"));
         }
 
         private bool OnHubTile => _board != null && _board.UsesWorldMap && _board.TryGetTile(_currentCoord, out var t) && t.MapKind == MapTileKind.Hub;
@@ -969,6 +1014,7 @@ namespace Fantasia.Board
 
         public void DevRoll() => TryRoll();
         public void DevOpenShop() => OpenShopHere();
+        public void DevRefreshTopBar() => RefreshTopBar(announce: false);
         public void DevLoadLastSave() => LoadLastSave();
         // 런던 거점으로 옮겨 제임스 보고 (자동 플레이 점검용)
         public void DevReportToJames() { DevTeleport(ActOneStory.HubLabel); StartCoroutine(ReportToJames()); }

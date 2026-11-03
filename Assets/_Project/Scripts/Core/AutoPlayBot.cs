@@ -32,6 +32,7 @@ namespace Fantasia.Core
             var bootArgs = Environment.GetCommandLineArgs();
             int resumeIndex = Array.IndexOf(bootArgs, "-autoplay-resume");
             if (resumeIndex < 0) resumeIndex = Array.IndexOf(bootArgs, "-autoplay-full-resume"); // 통플레이를 저장 지점부터 이어서
+            if (resumeIndex < 0) resumeIndex = Array.IndexOf(bootArgs, "-autoplay-qa-resume");   // QA: 대화 도중 꺼진 저장에서 이어하기
             if (resumeIndex >= 0 && resumeIndex + 1 < bootArgs.Length && File.Exists(bootArgs[resumeIndex + 1])) File.Copy(bootArgs[resumeIndex + 1], SaveGame.SavePath, true);
             var go = new GameObject("AutoPlayBot");
             DontDestroyOnLoad(go);
@@ -93,7 +94,10 @@ namespace Fantasia.Core
                 perf = PerfMonitor.Begin(_outDir);
             }
 
-            if (args.Contains("-autoplay-full-resume")) yield return FullRun(resume: true);
+            if (args.Contains("-autoplay-qa-resume")) yield return QaResumeRun();
+            else if (args.Contains("-autoplay-qa-report")) yield return QaReportRun();
+            else if (args.Contains("-autoplay-qa")) yield return QaRun();
+            else if (args.Contains("-autoplay-full-resume")) yield return FullRun(resume: true);
             else if (args.Contains("-autoplay-resume")) yield return ResumeRun();
             else if (args.Contains("-autoplay-menu")) yield return MenuRun();
             else if (args.Contains("-autoplay-full")) yield return FullRun(resume: false);
@@ -134,6 +138,7 @@ namespace Fantasia.Core
                 yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
             }
             yield return new WaitForSeconds(1f);
+            yield return SkipIntro();
             yield return Shot("full_start");
             Note((resume ? "통플레이 이어하기 — 파티: " : "통플레이 시작 — 파티: ") + string.Join(", ", BoardSession.Instance.Party.Members.Select(m => m.Job.DisplayName)));
 
@@ -226,19 +231,26 @@ namespace Fantasia.Core
             return enemies.Concat(extras).ToList();
         }
 
-        // 거점 상점: 영약·해독제 조금 사고, 많이 다쳤으면 숙박 (숙박은 턴을 끝냄)
+        // 거점 상점: 의뢰 2개 수락(처음 한 번), 영약·해독제 조금 사고, 많이 다친 1명 숙박 (숙박은 턴을 끝냄 — 결정서 B2)
+        private bool _shopShots;
         private IEnumerator ShopVisit()
         {
             var ui = ShopPanel.Instance;
             var party = BoardSession.Instance.Party;
             int before = party.Cent;
+            ui.DevSelectTab(6); // 의뢰
+            for (int row = 0; row < ui.DevRowCount; row++) { ui.DevSelectRow(row); ui.DevAct(); }
+            if (!_shopShots) { ui.DevSelectRow(0); yield return new WaitForSeconds(0.3f); yield return Shot("shop_quests"); }
             ui.DevSelectTab(0);
             for (int i = 0; i < 2 && party.Cent >= 90; i++) { ui.DevSelectRow(1); ui.DevAct(); } // 생명의 영약
             if (party.Cent >= 65) { ui.DevSelectRow(4); ui.DevAct(); }                            // 해독제
             yield return new WaitForSeconds(0.3f);
-            bool rest = party.AliveMembers.Any(m => m.CurrentHP < m.MaxHP * 0.6f || (m.MaxMP > 0 && m.CurrentMP < m.MaxMP * 0.4f)) && party.Cent >= 30 * party.AliveMembers.Count();
-            Note($"  상점: Cent {before} → {party.Cent}{(rest ? " · 숙박" : "")}");
-            if (rest) { ui.DevSelectTab(3); ui.DevSelectRow(0); ui.DevAct(); }
+            bool rest = party.AliveMembers.Any(m => m.CurrentHP < m.MaxHP * 0.6f || (m.MaxMP > 0 && m.CurrentMP < m.MaxMP * 0.4f)) && party.Cent >= 30;
+            ui.DevSelectTab(3);
+            ui.DevSelectRow(0); // 숙박 — 가장 다친 동료가 기본 선택
+            if (!_shopShots) { _shopShots = true; yield return new WaitForSeconds(0.3f); yield return Shot("shop_service_target"); }
+            Note($"  상점: Cent {before} → {party.Cent}{(rest ? " · 숙박 1명" : "")}");
+            if (rest) ui.DevAct();
             else ShopPanel.Close();
             yield return new WaitForSeconds(0.3f);
         }
@@ -366,6 +378,7 @@ namespace Fantasia.Core
             // ── 1. 보드 ──
             yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드 씬 로드");
             yield return new WaitForSeconds(1f);
+            yield return SkipIntro();
             var board = FindFirstObjectByType<BoardTestController>();
             yield return Shot("board_start");
             ApplyStartOverrides();
@@ -1133,6 +1146,242 @@ namespace Fantasia.Core
 
         // 같은 시드 비교용 (-autoplay-seed N)
         private static int Seed = -1;
+
+        // ── 결정서 반영 QA (-autoplay-qa): 항목마다 [QA 통과]/[QA 실패] 한 줄 + 필요한 화면만 촬영 ──
+        private int _qaPass, _qaFail;
+        private void Qa(bool ok, string what)
+        {
+            if (ok) _qaPass++; else _qaFail++;
+            Note($"[QA {(ok ? "통과" : "실패")}] {what}");
+        }
+
+        private IEnumerator QaRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            if (Seed >= 0) GameRandom.Seed(Seed);
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return WaitFor(() => DialoguePanel.IsOpen, 3f, "시작 대화");
+            int lines = 0;
+            while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); lines++; yield return new WaitForSeconds(0.15f); }
+            var board = FindFirstObjectByType<BoardTestController>();
+            var s = BoardSession.Instance;
+            var party = s.Party;
+            yield return WaitFor(() => board.DevIsIdle, 10f, "보드 대기");
+            Qa(lines == 8, $"시작 대화 8줄 (실제 {lines})");
+            Qa(s.StoryFlags.Contains(ActOneStory.FlagIntroDone), "시작 대화 본 기록 저장");
+            var doctor = party.Members.FirstOrDefault(m => m.Job.Id == Fantasia.Data.JobId.PlagueDoctor);
+            Qa(doctor != null && doctor.MaxMP == 140 && doctor.CurrentMP == 140, $"역병 의사 MP 140/140 (실제 {doctor?.CurrentMP}/{doctor?.MaxMP})");
+            Qa(s.Quests.Any(q => q.Objective == ActOneStory.QuestCaseObjective), "메인 의뢰 목표 문구");
+
+            // 상점: 제목·무기 3종·의뢰 탭
+            board.DevOpenShop();
+            yield return WaitFor(() => ShopPanel.IsOpen, 3f, "상점");
+            var ui = ShopPanel.Instance;
+            Qa(ui.DevTitle == "그리니치 거점", $"상점 제목 (실제 {ui.DevTitle})");
+            ui.DevSelectTab(1);
+            ui.DevSelectRow(0);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_shop_weapons");
+            Qa(ui.DevRowCount == 3, $"런던 무기 진열 3종 (실제 {ui.DevRowCount})");
+            ui.DevSelectTab(6);
+            Qa(ui.DevRowCount == 2, $"의뢰 탭 2개 (실제 {ui.DevRowCount})");
+            ui.DevSelectRow(0);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_quest_before_accept");
+            var q1 = SideQuests.All[0];
+            ui.DevAct();
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_quest_accepted");
+            Qa(SideQuests.IsAccepted(s, q1) && !SideQuests.IsDone(s, q1), "의뢰 1 수락 → 진행 중 0/2");
+            Qa(s.Quests.Any(q => q.Title == q1.Title), "의뢰 1 사건 기록에 올라감");
+
+            // 서비스: 명탐정만 다치게 → 숙박 기본 대상 = 명탐정, 1명분 30 Cent, 그 사람만 회복, 턴 끝
+            var hurt = party.Members[0];
+            hurt.TakeDamage(60);
+            var before = party.Members.Select(m => (m.CurrentHP, m.CurrentMP, m.CurrentFocus)).ToList();
+            ui.DevSelectTab(3);
+            ui.DevSelectRow(0);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_service_target");
+            Qa(ui.DevServiceTarget == hurt, $"숙박 기본 대상 = 가장 다친 {hurt.Job.DisplayName} (실제 {ui.DevServiceTarget?.Job.DisplayName})");
+            int cent = party.Cent;
+            ui.DevAct();
+            int expectHp = Mathf.Min(hurt.MaxHP, before[0].CurrentHP + (hurt.MaxHP + 1) / 2);
+            Qa(cent - party.Cent == 30, $"숙박 1명 30 Cent (실제 {cent - party.Cent})");
+            Qa(hurt.CurrentHP == expectHp, $"{hurt.Job.DisplayName} HP {before[0].CurrentHP} → {hurt.CurrentHP} (기대 {expectHp})");
+            Qa(Enumerable.Range(1, party.Members.Count - 1).All(i => party.Members[i].CurrentHP == before[i].CurrentHP && party.Members[i].CurrentFocus == before[i].CurrentFocus), "다른 동료는 그대로");
+            Qa(!ShopPanel.IsOpen, "숙박 뒤 상점 닫힘 (아군 턴 끝)");
+
+            // 거점 [상점 열기] 버튼: 적 턴 뒤 다시 아군 턴 대기일 때
+            yield return new WaitForSeconds(1f);
+            yield return WaitFor(() => board.DevIsIdle && !board.DevAwaitingSelection, 20f, "다음 아군 턴");
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("qa_reopen_button");
+            Qa(ShopPanel.DevReopenVisible, "거점에서 [상점 열기] 버튼 보임");
+            board.DevOpenShop();
+            yield return WaitFor(() => ShopPanel.IsOpen, 3f, "상점 다시");
+            yield return null;
+            Qa(ShopPanel.IsOpen && !ShopPanel.DevReopenVisible, "상점 열면 버튼 숨김");
+            ShopPanel.Close();
+            yield return new WaitForSeconds(0.2f);
+
+            // 사건 기록 (Q)
+            CaseLogPanel.Toggle();
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("qa_case_log");
+            CaseLogPanel.Toggle();
+
+            // 의뢰 완료: P04는 이긴 것으로 두고 Q01을 실제로 싸움 → 보드로 돌아오면 알림 + 완료 대사
+            WorldMapData.TryParseLabel("P04", out var p04);
+            s.ClearedEncounters.Add(p04);
+            int centBeforeQuest = party.Cent;
+            board.DevArriveAt("Q01");
+            yield return WaitFor(() => EncounterPanel.IsOpen, 5f, "Q01 조우");
+            EncounterPanel.DevChoose(1);
+            yield return RunBattle(shots: false);
+            var b = _lastBattle;
+            bool won = b != null && b.DevFinished && b.DevEnemies.All(e => !e.IsAlive);
+            Qa(won, "Q01 전투 승리");
+            int battleCent = party.Cent - centBeforeQuest;
+            ItemAcquiredToast.DevLast = null;
+            yield return new WaitForSeconds(0.5f);
+            b?.DevContinue();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null && DialoguePanel.IsOpen, 10f, "의뢰 완료 대사");
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_quest_complete");
+            Qa(SideQuests.IsDone(s, q1), "의뢰 1 완료");
+            Qa(ItemAcquiredToast.DevLast != null && ItemAcquiredToast.DevLast.Contains("의뢰 완료"), $"완료 알림 (실제 {ItemAcquiredToast.DevLast})");
+            Qa(party.Cent - centBeforeQuest - battleCent == SideQuests.RewardCent, $"의뢰 보상 {SideQuests.RewardCent} Cent (실제 {party.Cent - centBeforeQuest - battleCent})");
+            while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); yield return new WaitForSeconds(0.15f); }
+            board = FindFirstObjectByType<BoardTestController>();
+            yield return WaitFor(() => board.DevIsIdle, 15f, "보드 대기");
+            Qa(s.CompletedQuests.Any(q => q.Title == q1.Title), "사건 기록 완료 목록에 의뢰 1");
+
+            // 피의 흔적 알림: 50 넘김 → 사냥 끝(0·유예 2) → 다시 50 넘김
+            s.BloodTrail = 45; board.DevRefreshTopBar();
+            ItemAcquiredToast.DevLast = null;
+            s.BloodTrail = 55; board.DevRefreshTopBar();
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_blood_50_first");
+            Qa(ItemAcquiredToast.DevLast != null && ItemAcquiredToast.DevLast.Contains("50"), $"피의 흔적 50 첫 알림 (실제 {ItemAcquiredToast.DevLast})");
+            s.BloodTrail = 85; board.DevRefreshTopBar();
+            s.BloodTrail = 0; s.Hunt.GraceRounds = 2; board.DevRefreshTopBar();
+            yield return new WaitForSeconds(2.5f);
+            yield return Shot("qa_blood_grace");
+            Qa(BoardTopBar.DevBloodText.Contains("유예 2라운드"), $"사냥 뒤 유예 표시 (실제 {BoardTopBar.DevBloodText})");
+            s.Hunt.GraceRounds = 0;
+            ItemAcquiredToast.DevLast = null;
+            s.BloodTrail = 55; board.DevRefreshTopBar();
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_blood_50_again");
+            Qa(ItemAcquiredToast.DevLast != null && ItemAcquiredToast.DevLast.Contains("50"), $"0으로 돌아간 뒤 50 알림 다시 (실제 {ItemAcquiredToast.DevLast})");
+            s.BloodTrail = 0; board.DevRefreshTopBar();
+
+            // 게임 오버: LP를 모두 쓴 상태에서 전멸 → "조사대 전멸" + [새 게임] [메인 메뉴]
+            foreach (var m in party.Members) while (m.TrySpendLP()) { }
+            board.DevArriveAt("O07");
+            yield return WaitFor(() => EncounterPanel.IsOpen, 5f, "O07 조우");
+            EncounterPanel.DevChoose(1);
+            yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투");
+            var battle = FindFirstObjectByType<BattleController>();
+            float until = Time.time + 20f;
+            while (Time.time < until && !battle.DevAwaitingPlayer) { if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance(); yield return null; }
+            foreach (var m in party.AliveMembers.ToList()) m.TakeDamage(m.CurrentHP);
+            battle.DevCheckEnd();
+            yield return WaitFor(() => battle.DevFinished, 10f, "전멸 판정");
+            yield return new WaitForSeconds(1f);
+            yield return Shot("qa_game_over");
+            Qa(battle.DevHud.DevResultTitle == ActOneStory.GameOverTitle, $"게임 오버 제목 (실제 {battle.DevHud.DevResultTitle})");
+            Qa(battle.DevHud.DevResultButtons == "새 게임 / 메인 메뉴", $"게임 오버 버튼 (실제 {battle.DevHud.DevResultButtons})");
+            battle.DevContinue(); // [새 게임]
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            menu = FindFirstObjectByType<MainMenuController>();
+            yield return Shot("qa_after_new_game");
+            Qa(menu != null && menu.DevPartySelectOpen, "[새 게임] → 파티 구성 화면 바로 열림");
+
+            Note($"QA 결과: 통과 {_qaPass} · 실패 {_qaFail}");
+            Note("자동 플레이 완료");
+        }
+
+        // 보고 대화 QA (-autoplay-qa-report): 보스 처치 상태로 거점 옆 칸 → 주사위·이동으로 S05 도착 → 보고 대화가 열린 순간 저장 복사
+        // (= 대화 도중 꺼진 상태, qa_report_save.json) → 끝까지 진행해 1막 클리어 화면 촬영
+        private IEnumerator QaReportRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return SkipIntro();
+            var board = FindFirstObjectByType<BoardTestController>();
+            var s = BoardSession.Instance;
+            yield return WaitFor(() => board.DevIsIdle, 10f, "보드 대기");
+            ActOneStory.MarkBossDefeated(s);
+            s.StoryFlags.Add(ActOneStory.FlagAfterDialogueDone);
+            var map = board.DevBoard.Map;
+            var hub = map.TileAt(ActOneStory.HubLabel).Coord;
+            var next = map.PassableNeighbors(hub).First(c => map.Tiles[c].Kind != MapTileKind.Enemy);
+            board.DevTeleport(map.Tiles[next].Label);
+            yield return new WaitForSeconds(0.3f);
+            board.DevRoll();
+            yield return WaitFor(() => board.DevAwaitingSelection, 5f, "칸 선택");
+            board.DevMoveToward(new System.Collections.Generic.List<HexCoord> { hub });
+            yield return WaitFor(() => DialoguePanel.IsOpen, 15f, "보고 대화");
+            Qa(DialoguePanel.IsOpen && board.DevPosition.Equals(hub), "S05 도착 → 제임스 보고 대화");
+            File.Copy(SaveGame.SavePath, Path.Combine(_outDir, "qa_report_save.json"), true);
+            Note("보고 대화 도중 저장 복사 → qa_report_save.json");
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_report_dialogue");
+            while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); yield return new WaitForSeconds(0.2f); }
+            yield return WaitFor(() => ActClearPanel.IsOpen, 10f, "1막 클리어");
+            yield return new WaitForSeconds(1.5f);
+            yield return Shot("qa_report_clear");
+            Qa(ActClearPanel.IsOpen, "보고 끝 → 1막 클리어 화면");
+            Note($"QA 결과: 통과 {_qaPass} · 실패 {_qaFail}");
+            Note("자동 플레이 완료");
+        }
+
+        // 이어하기 QA (-autoplay-qa-resume): 저장 파일에서 이어하기 → 대사가 다시 나오는지
+        private IEnumerator QaResumeRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            Note($"이어하기 정보: {menu.DevContinueInfo.Replace("\n", " / ")}");
+            menu.OnContinue();
+            yield return WaitFor(() => DialoguePanel.IsOpen, 15f, "이어하기 뒤 대화");
+            yield return new WaitForSeconds(0.5f);
+            yield return Shot("qa_resume_dialogue");
+            Qa(DialoguePanel.IsOpen, "이어하기 뒤 대화 다시 나옴");
+            int lines = 0;
+            while (DialoguePanel.IsOpen && lines < 20) { DialoguePanel.DevAdvance(); lines++; yield return new WaitForSeconds(0.2f); }
+            yield return new WaitForSeconds(1.5f);
+            var s = BoardSession.Instance;
+            Note($"대화 {lines}줄 · 처치 후 대화 기록 {s.StoryFlags.Contains(ActOneStory.FlagAfterDialogueDone)} · 보고 {s.StoryFlags.Contains(ActOneStory.FlagReported)} · 클리어 창 {ActClearPanel.IsOpen}");
+            if (ActClearPanel.IsOpen) yield return Shot("qa_resume_clear");
+            Note($"QA 결과: 통과 {_qaPass} · 실패 {_qaFail}");
+            Note("자동 플레이 완료");
+        }
+
+        // 새 게임 시작 대화 (1막 기획 결정서 05) — 첫 줄을 찍고 끝까지 넘김
+        private IEnumerator SkipIntro()
+        {
+            yield return WaitFor(() => DialoguePanel.IsOpen, 3f, "시작 대화");
+            if (!DialoguePanel.IsOpen) yield break;
+            yield return Shot("intro_dialogue");
+            int lines = 0;
+            while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); lines++; yield return new WaitForSeconds(0.15f); }
+            Note($"시작 대화 {lines}번 넘김");
+            yield return new WaitForSeconds(0.5f);
+        }
 
         private IEnumerator WaitFor(Func<bool> condition, float timeout, string what)
         {

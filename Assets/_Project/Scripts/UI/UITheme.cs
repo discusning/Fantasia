@@ -35,6 +35,9 @@ namespace Fantasia.UI
         public Sprite PhaseDialAllyActive, PhaseDialAllyIdle;   // 시계 왼쪽(아군) 반원 — 활성/비활성
         public Sprite PhaseDialEnemyActive, PhaseDialEnemyIdle; // 시계 오른쪽(적) 반원
         public Sprite ThreatNotch;     // 피의 흔적 칸 (UI 솔루션 Q2로 10칸은 화면에서 뺌 — 보관)
+        public Sprite TopBarCircle;    // 상단 가운데 큰 원 틀 (N07에서 잘라 씀) — 안에 해·달
+        public Sprite SoulFrame;       // 영혼 수확 게이지 틀 (N05, 25·50·75 칸막이 포함)
+        public Sprite SoulFill;        // 영혼 수확 게이지 채움 (N06, 흰색 — 색은 코드에서)
         public Sprite DaySun;          // 가운데 원 해 (N02 투명 PNG 오면) — 아침·낮
         public Sprite NightMoon;       // 가운데 원 달 (N01 투명 PNG 오면) — 저녁·새벽
         public Sprite RegionBanner;    // 지역명 배너

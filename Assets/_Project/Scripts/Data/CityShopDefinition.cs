@@ -51,7 +51,8 @@ namespace Fantasia.Data
         public string Id;            // city.london 등
         public string DisplayName;   // 런던
         public string HubLabel;      // 월드맵 거점 칸 (S05)
-        public string Landmark;      // 그리니치 전망대·수사대 상점
+        public string Landmark;      // 그리니치 전망대·수사대 상점 (상점 부제)
+        public string Title;         // 상점 제목 — 그리니치 거점 (1막 기획 결정서 B3). 비면 "런던 상점"
         public ShopEntry[] Entries = Array.Empty<ShopEntry>();
     }
 }

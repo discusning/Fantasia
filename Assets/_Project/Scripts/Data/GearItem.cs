@@ -46,7 +46,7 @@ namespace Fantasia.Data
         public int PhysicalDefense => IsWeapon ? 0 : Scale(Armor.PhysicalDefense);
         public int MagicDefense => IsWeapon ? 0 : Scale(Armor.MagicDefense);
         public int MaxHPBonus => IsWeapon ? 0 : Scale(Armor.MaxHPBonus);
-        public int MaxMPBonus => IsWeapon ? 0 : Scale(Armor.MaxMPBonus);
+        public int MaxMPBonus => IsWeapon ? Weapon.MaxMPBonus : Scale(Armor.MaxMPBonus); // 무기 최대 MP 보너스 적용 (결정서 T15 — 지팡이 +8)
         public int MaxFocusBonus => IsWeapon ? 0 : Armor.MaxFocusBonus;
 
         public int Price

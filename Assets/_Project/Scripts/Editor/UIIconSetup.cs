@@ -19,6 +19,11 @@ namespace Fantasia.Editor
             SetBorder("Z38_공통_게이지_바탕.png", new Vector4(48, 40, 48, 40));
             SetBorder("Z39_공통_게이지_채움.png", new Vector4(48, 40, 48, 40));
 
+            // 상단 바 조각 (N07 배너를 잘라 만든 것 — HUD/Cut): 나무판은 좌우만 늘어나게 (왼쪽 초상 칸 190px·오른쪽 끝 40px 고정)
+            const string Cut = "Assets/_Project/UI/Sprites/HUD/Cut/";
+            SetBorderAt(Cut + "TopBar_Plank.png", new Vector4(190, 0, 40, 0));
+            SetBorderAt(Cut + "TopBar_RegionTab.png", new Vector4(40, 0, 40, 0));
+
             var theme = AssetDatabase.LoadAssetAtPath<UITheme>("Assets/_Project/Resources/UITheme.asset");
             if (theme == null) { Debug.LogError("[UIIconSetup] UITheme.asset 없음"); return; }
             theme.BloodTrailIcon = S("Z01"); theme.SoulIcon = S("Z02"); theme.CentIcon = S("Z03"); theme.LpIcon = S("Z04");
@@ -33,6 +38,14 @@ namespace Fantasia.Editor
             theme.QuickSlotFrame = S("Z35"); theme.QuickSlotSelected = S("Z36");
             theme.LevelBadge = S("Z37");
             theme.BarBack = S("Z38"); theme.BarFill = S("Z39");
+            // 상단 바 그림 (UI 적용 ①)
+            theme.TopBarFrame = A(Cut + "TopBar_Plank.png");
+            theme.TopBarCircle = A(Cut + "TopBar_Circle.png");
+            theme.RegionBanner = A(Cut + "TopBar_RegionTab.png");
+            theme.DaySun = A(Cut + "Sun.png");
+            theme.NightMoon = A(Cut + "Moon.png");
+            theme.SoulFrame = A(Cut + "Soul_Frame.png");
+            theme.SoulFill = A(Cut + "Soul_Fill.png");
             // 대화 인물 (UI 솔루션 Q8) — 받은 JPG(N18~N20)는 액자 안이라 그대로 씀
             theme.SpeakerPortraits = new[]
             {
@@ -72,6 +85,21 @@ namespace Fantasia.Editor
             var sprite = path != null ? AssetDatabase.LoadAssetAtPath<Sprite>(path) : null;
             if (sprite == null) Debug.LogWarning($"[UIIconSetup] {code} 인물 그림 없음");
             return sprite;
+        }
+
+        private static Sprite A(string path)
+        {
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null) Debug.LogWarning($"[UIIconSetup] 그림 없음: {path}");
+            return sprite;
+        }
+
+        private static void SetBorderAt(string path, Vector4 border)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null || importer.spriteBorder == border) return;
+            importer.spriteBorder = border;
+            importer.SaveAndReimport();
         }
 
         private static void SetBorder(string file, Vector4 border)

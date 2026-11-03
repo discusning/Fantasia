@@ -60,7 +60,8 @@ namespace Fantasia.Editor
             var m = new PartyMember(job);
             int errors = 0;
             errors += Expect("역병 의사 MaxHP", m.MaxHP, 132);
-            errors += Expect("역병 의사 MaxMP", m.MaxMP, 132);
+            errors += Expect("역병 의사 MaxMP (132 + 지팡이 +8, 결정서 T15)", m.MaxMP, 140);
+            errors += Expect("역병 의사 시작 MP = 최대치", m.CurrentMP, 140);
             errors += Expect("역병 의사 FinalMagicAttack(기본8+스태프보너스6)", m.FinalMagicAttack, 14);
             errors += Expect("역병 의사 FinalPhysicalAttack(맨손 기본4, 마법무기라 보너스 미적용)", m.FinalPhysicalAttack, 4);
             return errors;

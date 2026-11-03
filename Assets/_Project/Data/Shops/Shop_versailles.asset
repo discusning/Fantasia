@@ -16,6 +16,7 @@ MonoBehaviour:
   DisplayName: "\uBCA0\uB974\uC0AC\uC720"
   HubLabel: F18
   Landmark: "\uAD81\uC804 \uC678\uACFD \uC2DC\uBBFC \uC0C1\uAC00"
+  Title: "\uBCA0\uB974\uC0AC\uC720 \uAD81\uC804"
   Entries:
   - Item: {fileID: 11400000, guid: 15b4ed3769c47344c85987941a9ddda8, type: 2}
     MaxStock: 5

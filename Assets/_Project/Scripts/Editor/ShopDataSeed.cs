@@ -28,10 +28,10 @@ namespace Fantasia.Editor
             "신속의 앰플|3|0|1|Base|", // 1막(런던) 판매, 초기 재고 3 — 속도 확정안 10/26
             // §5 한정품
             "생명의 월계관|1|1|1|Base|limited", "마리의 집문서|0|0|1|Castle|limited",
-            // §7 노말 무기 (Lv1)
-            "탐정의 접이식 단검|1|1|1|Base|", "야경대 세이버|1|1|1|Base|", "교단 사냥 대검|1|1|1|Base|", "수비대 장창|1|1|1|Base|",
-            "안개 사냥 활|1|1|1|Base|", "부싯돌 권총|1|1|1|Base|", "야경대 화승총|1|1|1|Base|", "검역소 지팡이|1|1|1|Base|",
-            "초급 역병 처방서|1|1|1|Base|", "거리악사의 바이올린|1|1|1|Base|",
+            // §7 노말 무기 (Lv1) — 런던 진열은 3종 (1막 기획 결정서 B1: 단검·지팡이·권총). 데이터·전리품은 10종 그대로
+            "탐정의 접이식 단검|1|1|1|Base|", "야경대 세이버|0|1|1|Base|", "교단 사냥 대검|0|1|1|Base|", "수비대 장창|0|1|1|Base|",
+            "안개 사냥 활|0|1|1|Base|", "부싯돌 권총|1|1|1|Base|", "야경대 화승총|0|1|1|Base|", "검역소 지팡이|1|1|1|Base|",
+            "초급 역병 처방서|0|1|1|Base|", "거리악사의 바이올린|0|1|1|Base|",
             // §8 희귀 무기 (Lv4, 2막 진입 후)
             "은도금 해부단검|1|1|1|Act2|", "백은 수사검|0|1|1|Act2|", "성유강 대검|0|0|1|Act2|", "룬각인 미늘창|0|0|1|Act2|",
             "연금술 석궁|0|0|1|Act2|", "은탄 수사권총|1|1|1|Act2|", "눈금 조준 장총|0|0|1|Act2|", "연금술 룬 스태프|1|1|1|Act2|",
@@ -47,11 +47,11 @@ namespace Fantasia.Editor
             "교단 사냥 갑주|0|0|1|Castle|", "은실 장막 로브|0|0|1|Castle|", "룬 각인 모자|0|0|1|Castle|", "야경대의 휘장|0|0|1|Castle|",
         };
 
-        private static readonly (string id, string name, string hub, string landmark)[] Cities =
+        private static readonly (string id, string name, string hub, string landmark, string title)[] Cities =
         {
-            ("city.london", "런던", "S05", "그리니치 전망대·수사대 상점"),
-            ("city.versailles", "베르사유", "F18", "궁전 외곽 시민 상가"),
-            ("city.rome", "로마", "S31", "제국 광장·성소 시장"),
+            ("city.london", "런던", "S05", "그리니치 전망대·수사대 상점", "그리니치 거점"), // 결정서 B3
+            ("city.versailles", "베르사유", "F18", "궁전 외곽 시민 상가", "베르사유 궁전"),
+            ("city.rome", "로마", "S31", "제국 광장·성소 시장", "제국 광장"),
         };
 
         [MenuItem("Fantasia/Data/Seed Shop Data")]
@@ -65,7 +65,7 @@ namespace Fantasia.Editor
             int missing = 0;
             for (int c = 0; c < Cities.Length; c++)
             {
-                var (id, name, hub, landmark) = Cities[c];
+                var (id, name, hub, landmark, title) = Cities[c];
                 string path = $"{ShopDir}/Shop_{id.Substring(5)}.asset";
                 var shop = AssetDatabase.LoadAssetAtPath<CityShopDefinition>(path);
                 if (shop == null) { shop = ScriptableObject.CreateInstance<CityShopDefinition>(); AssetDatabase.CreateAsset(shop, path); }
@@ -73,6 +73,7 @@ namespace Fantasia.Editor
                 shop.DisplayName = name;
                 shop.HubLabel = hub;
                 shop.Landmark = landmark;
+                shop.Title = title;
 
                 var entries = new List<ShopEntry>();
                 foreach (var row in Table)

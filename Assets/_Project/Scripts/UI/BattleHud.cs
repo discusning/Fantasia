@@ -110,6 +110,10 @@ namespace Fantasia.UI
         private Text _resultBody;
         private Text _resultButtonLabel;
         private Action _onResultContinue;
+        private Action _onResultSecond;
+        private GameObject _resultSecondButton;
+        private RectTransform _resultButtonRect;
+        private Text _resultSecondLabel;
 
         public static BattleHud Create()
         {
@@ -537,8 +541,27 @@ namespace Fantasia.UI
             _resultBody.text = body;
             _onResultContinue = onContinue;
             _resultButtonLabel.text = buttonLabel;
+            _onResultSecond = null;
+            _resultSecondButton.SetActive(false);
+            _resultButtonRect.anchorMin = new Vector2(0.3f, 0.04f);
+            _resultButtonRect.anchorMax = new Vector2(0.7f, 0.15f);
             _resultPanel.SetActive(true);
         }
+
+        // 버튼 2개 결과 창 (게임 오버: [새 게임] [메인 메뉴] — 1막 기획 결정서 06)
+        public void ShowResult(string title, string body, string firstLabel, Action first, string secondLabel, Action second)
+        {
+            ShowResult(title, body, first, firstLabel);
+            _onResultSecond = second;
+            _resultSecondLabel.text = secondLabel;
+            _resultSecondButton.SetActive(true);
+            _resultButtonRect.anchorMin = new Vector2(0.08f, 0.04f);
+            _resultButtonRect.anchorMax = new Vector2(0.48f, 0.15f);
+        }
+
+        public void DevPressResultSecond() => _onResultSecond?.Invoke();
+        public string DevResultTitle => _resultTitle != null ? _resultTitle.text : "";
+        public string DevResultButtons => _resultButtonLabel == null ? "" : _resultSecondButton != null && _resultSecondButton.activeSelf ? $"{_resultButtonLabel.text} / {_resultSecondLabel.text}" : _resultButtonLabel.text;
 
         // ───────────── 구성 ─────────────
         private void Build()
@@ -827,6 +850,13 @@ namespace Fantasia.UI
             button.GetComponentInChildren<Text>().color = TextLight;
             _resultButtonLabel = button.GetComponentInChildren<Text>();
             button.onClick.AddListener(() => _onResultContinue?.Invoke());
+            _resultButtonRect = (RectTransform)button.transform;
+            var second = UGUIKit.CreateThemedButton(panel, "Second", new Vector2(0.52f, 0.04f), new Vector2(0.92f, 0.15f), "메인 메뉴", ButtonFill, 13);
+            _resultSecondLabel = second.GetComponentInChildren<Text>();
+            _resultSecondLabel.color = TextLight;
+            second.onClick.AddListener(() => _onResultSecond?.Invoke());
+            _resultSecondButton = second.gameObject;
+            _resultSecondButton.SetActive(false);
             _resultPanel.SetActive(false);
         }
 

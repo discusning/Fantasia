@@ -905,7 +905,12 @@ namespace Fantasia.Combat
                     ActOneStory.MarkBossDefeated(session);
                     EndPlayLog("승리 (보스)", LastRewards, 0);
                     SaveGame.Checkpoint("보스 처치·보상·증거품"); // 보상 확정 → 저장 → 대화·보상 창
-                    StartCoroutine(PlayDialogueThen(ActOneStory.AfterBattle, () => _hud.ShowResult("승리", $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard)));
+                    StartCoroutine(PlayDialogueThen(ActOneStory.AfterBattle, () =>
+                    {
+                        session.StoryFlags.Add(ActOneStory.FlagAfterDialogueDone); // 도중 종료면 이어하기 때 이 대화만 다시 (결정서 T16-35)
+                        SaveGame.Checkpoint("처치 후 대화");
+                        _hud.ShowResult("승리", $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard);
+                    }));
                 }
                 else { EndPlayLog("승리", LastRewards, 0); SaveGame.Checkpoint("전투 승리·보상"); _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
             }
@@ -937,7 +942,7 @@ namespace Fantasia.Combat
                     Log("  → 전원 영구 사망 — 플레이 종료");
                     EndPlayLog("전멸 (회차 종료)", null, lost);
                     SaveGame.EndRun(session); // Save.md 1: 회차 종료 기록을 먼저 저장한 뒤 게임 오버 표시
-                    _hud.ShowResult("게임 오버", $"파티 전원이 영구 사망했다.{downed}\n처음부터 다시 시작한다.", RestartGame, "처음부터 다시");
+                    _hud.ShowResult(ActOneStory.GameOverTitle, $"{ActOneStory.GameOverBody}{downed}", "새 게임", NewGameAfterWipe, "메인 메뉴", RestartGame); // 결정서 06
                 }
                 else
                 {
@@ -971,10 +976,17 @@ namespace Fantasia.Combat
             return lines.Count > 0 ? "\n" + string.Join("\n", lines) : "";
         }
 
+        // 게임 오버 [새 게임]: 파티 구성 화면부터
+        private void NewGameAfterWipe()
+        {
+            Fantasia.UI.MainMenuController.OpenPartySelectOnStart = true;
+            RestartGame();
+        }
+
         private void RestartGame()
         {
             BoardSession.Instance.ResetForNewGame();
-            // 메인 메뉴가 빌드에 있으면 메뉴로 (게임 오버 화면은 문구 기획 후)
+            // 게임 오버 [메인 메뉴] (메인 메뉴 씬이 빌드에 없으면 보드로)
             SceneManager.LoadScene(Application.CanStreamedLevelBeLoaded(Fantasia.UI.MainMenuController.SceneName) ? Fantasia.UI.MainMenuController.SceneName : BoardSceneName);
         }
 

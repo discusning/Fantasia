@@ -17,7 +17,7 @@ namespace Fantasia.Editor
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.alphaIsTransparency = true;
             importer.mipmapEnabled = false;
-            importer.maxTextureSize = 1024;
+            importer.maxTextureSize = 2048; // 배너·버튼 원본 폭 2048 — 줄이면 9-slice 경계가 어긋남
         }
     }
 }

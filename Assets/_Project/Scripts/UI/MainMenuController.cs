@@ -15,6 +15,8 @@ namespace Fantasia.UI
     {
         public const string SceneName = "MainMenu";
         private const string BoardSceneName = "BoardTest";
+        // 게임 오버 [새 게임] — 메인 메뉴를 거치지 않고 파티 구성부터 (1막 기획 결정서 06)
+        public static bool OpenPartySelectOnStart;
 
         private static readonly Color Gold = new Color(0.72f, 0.6f, 0.38f);
         private static readonly Color Fill = new Color(0.08f, 0.07f, 0.09f, 0.97f);
@@ -42,6 +44,7 @@ namespace Fantasia.UI
             for (int i = 0; i < _chosen.Length && i < _jobs.Length; i++) _chosen[i] = _jobs[i];
             Build();
             ShowMenu();
+            if (OpenPartySelectOnStart) { OpenPartySelectOnStart = false; ShowPartySelect(); }
         }
 
         // ───────────── 메뉴 ─────────────
@@ -130,13 +133,20 @@ namespace Fantasia.UI
                 body.text = job == null ? "" : string.Join("\n",
                     job.Role,
                     "",
-                    $"HP {job.StartingHP}{(job.UsesMP ? $" · MP {job.StartingMP}" : "")} · LP {job.StartingLP}",
+                    StartLine(job),
                     $"힘 {job.Stats.Strength} · 속도 {job.Stats.Speed} · 활력 {job.Stats.Vitality}",
                     $"지력 {job.Stats.Intelligence} · 행운 {job.Stats.Luck} · 인지 {job.Stats.Perception}",
                     $"시작 무기: {(job.StartingWeapon != null ? job.StartingWeapon.DisplayName : "없음")}",
                     $"기술: {string.Join(", ", (job.Skills ?? new SkillDefinition[0]).Where(s => s != null).Select(s => s.DisplayName))}");
             }
             _message.text = _chosen.All(j => j != null) ? "1번 캐릭터가 파티장 — 보드 이동·기습·몰래 지나가기 판정을 맡습니다." : "직업 데이터가 부족합니다.";
+        }
+
+        // 시작 무기 보너스까지 넣은 실제 시작값 (역병 의사 MP 132 + 지팡이 8 = 140, 결정서 T15)
+        private static string StartLine(JobDefinition job)
+        {
+            var m = new PartyMember(job);
+            return $"HP {m.MaxHP}{(job.UsesMP ? $" · MP {m.MaxMP}" : "")} · LP {job.StartingLP}";
         }
 
         public void OnDepart()
@@ -274,5 +284,6 @@ namespace Fantasia.UI
         public string DevContinueInfo => _continueInfo != null ? _continueInfo.text : "";
         public void DevSetName(string name) { ShowNameInput(); _nameInput.text = name; }
         public bool DevNamePanelOpen => _namePanel != null && _namePanel.activeSelf;
+        public bool DevPartySelectOpen => _partySelect != null && _partySelect.activeSelf;
     }
 }

@@ -22,15 +22,18 @@ MonoBehaviour:
   FocusPip: {fileID: 21300000, guid: 541174e905c849345a001dc5a835c765, type: 3}
   PortraitFrame: {fileID: 0}
   TimelineFrame: {fileID: 0}
-  TopBarFrame: {fileID: 0}
+  TopBarFrame: {fileID: 21300000, guid: 2445102b21edb1e4d8bd545c438ac0a1, type: 3}
   PhaseDialAllyActive: {fileID: 0}
   PhaseDialAllyIdle: {fileID: 0}
   PhaseDialEnemyActive: {fileID: 0}
   PhaseDialEnemyIdle: {fileID: 0}
   ThreatNotch: {fileID: 0}
-  DaySun: {fileID: 0}
-  NightMoon: {fileID: 0}
-  RegionBanner: {fileID: 0}
+  TopBarCircle: {fileID: 21300000, guid: c2bd6cf5f082dec4b8035723e8bceb8c, type: 3}
+  SoulFrame: {fileID: 21300000, guid: 7d27c70635bca7d47937c3cb5df14f3c, type: 3}
+  SoulFill: {fileID: 21300000, guid: 827c56bd3bdc8c04793b5bfe20fadcf8, type: 3}
+  DaySun: {fileID: 21300000, guid: b87d3e6b3884e22409872774524874c2, type: 3}
+  NightMoon: {fileID: 21300000, guid: 1e037f983cc323644b0fa09add0461e4, type: 3}
+  RegionBanner: {fileID: 21300000, guid: f113e41fad198ca49bb9d97466491eb8, type: 3}
   AllyTurnBanner: {fileID: 0}
   EnemyTurnBanner: {fileID: 0}
   AttackIcon: {fileID: 0}

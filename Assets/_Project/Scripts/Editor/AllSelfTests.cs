@@ -23,6 +23,7 @@ namespace Fantasia.Editor
             ShopSelfTest.Run();
             SaveSelfTest.Run();
             EventSelfTest.Run();
+            SideQuestSelfTest.Run();
         }
     }
 }

@@ -49,9 +49,16 @@ namespace Fantasia.UI
         private Text _actionLabel;
         private readonly List<(Button button, Image fill, Text name, Text price, Text stock)> _rows = new();
         private readonly List<Button> _tabs = new();
+        // 서비스 받을 동료 (결정서 B2 — 1명씩). 비교 카드 자리에 동료 버튼 3개
+        private PartyMember _serviceTarget;
+        private GameObject _targetCard;
+        private readonly List<(Button button, Image fill, Text label)> _targetButtons = new();
+        // 거점에서 상점 다시 열기 버튼 (결정서 T9 — B키 또는 화면 버튼). 창 밖에 따로
+        private GameObject _reopenButton;
+        private Action _onReopen;
 
         // 목록 한 줄이 가리키는 것
-        private readonly List<object> _shown = new(); // ShopEntry · ShopService · int(레시피) · PartyInventory.Stack · GearItem
+        private readonly List<object> _shown = new(); // ShopEntry · ShopService · int(레시피) · PartyInventory.Stack · GearItem · SideQuests.Def
 
         public static ShopPanel EnsureExists()
         {
@@ -78,6 +85,15 @@ namespace Fantasia.UI
         public static void Close()
         {
             if (Instance != null) Instance._root.SetActive(false);
+        }
+
+        // 보드가 매 프레임 알려 줌: 거점 칸·아군 턴·대기 중이면 [상점] 버튼 보이기
+        public static void SetReopenButton(bool visible, Action onClick)
+        {
+            if (Instance == null || Instance._reopenButton == null) return;
+            Instance._onReopen = onClick;
+            bool show = visible && !IsOpen;
+            if (Instance._reopenButton.activeSelf != show) Instance._reopenButton.SetActive(show);
         }
 
         private void OnDestroy()
@@ -110,6 +126,7 @@ namespace Fantasia.UI
                     _shown.AddRange(_party.Inventory.Consumables.Where(s => s.Definition.Price > 0).Cast<object>());
                     _shown.AddRange(_party.Inventory.Gear.Cast<object>());
                     break;
+                case Tab.Quests: if (_shop.HubLabel == ActOneStory.HubLabel) _shown.AddRange(SideQuests.All); break; // 런던 의뢰만 (결정서 A3)
             }
         }
 
@@ -119,7 +136,7 @@ namespace Fantasia.UI
             BuildList();
             var (act2, castle) = _stages();
             int done = _completedRounds();
-            _title.text = $"{_shop.DisplayName} 상점";
+            _title.text = string.IsNullOrEmpty(_shop.Title) ? $"{_shop.DisplayName} 상점" : _shop.Title;
             _cent.text = $"{_party.Cent} Cent";
             _restock.text = $"재입고까지 {ShopRules.RoundsUntilRestock(done)}라운드";
             for (int i = 0; i < _tabs.Count; i++) _tabs[i].targetGraphic.color = (int)_tab == i ? RowSelected : RowFill;
@@ -148,15 +165,6 @@ namespace Fantasia.UI
             }
             _subtitle.text = _shop.Landmark;
 
-            if (_tab == Tab.Quests)
-            {
-                _detailName.text = "의뢰";
-                _detailBody.text = "도시 의뢰는 퀘스트 시스템(D22)과 함께 열립니다.\n의뢰별 최초 1회 보상 (1막 80 Cent · 경험치 40).";
-                _actionButton.gameObject.SetActive(false);
-                _compareCard.SetActive(false);
-                _detailIcon.enabled = false;
-                return;
-            }
             ShowDetail(_selected >= 0 && _selected < _shown.Count ? _shown[_selected] : null, act2, castle, done);
         }
 
@@ -171,8 +179,12 @@ namespace Fantasia.UI
                         : left > 0 ? $"{left}/{e.MaxStock}" : $"품절 · {ShopRules.RoundsUntilRestock(done)}R 후";
                     return (e.DisplayName, $"{e.Price}", stock, !unlocked || left <= 0);
                 case ShopService s:
-                    int n = _party.AliveMembers.Count();
-                    return (ShopRules.ServiceLabel(s), $"{ShopRules.ServicePrice(s) * n}", $"{ShopRules.ServicePrice(s)} × {n}명", false);
+                    return (ShopRules.ServiceLabel(s), $"{ShopRules.ServicePrice(s)}", "1명", false);
+                case SideQuests.Def q:
+                    var session = BoardSession.Instance;
+                    string state = SideQuests.IsDone(session, q) ? "완료" : SideQuests.IsAccepted(session, q)
+                        ? $"진행 {SideQuests.TargetsWon(session, q)}/{q.Targets.Length}" : "수락 가능";
+                    return (q.Title, $"{SideQuests.RewardCent}", state, SideQuests.IsDone(session, q));
                 case int recipe:
                     var (id, reagents, fee) = ShopRules.Recipes[recipe];
                     var result = ItemCatalog.Current.Consumable(id);
@@ -234,10 +246,12 @@ namespace Fantasia.UI
             nameRt.anchorMax = new Vector2(0.95f, icon != null ? 0.68f : 0.98f);
             bodyRt.anchorMax = new Vector2(0.95f, icon != null ? 0.57f : 0.85f);
             ShowCompare(o);
+            ShowTargets(o as ShopService?);
             if (o == null)
             {
                 _detailName.text = "";
-                _detailBody.text = _tab == Tab.Services ? "서비스는 파티 전원에게 적용되고, 이용하면 아군 턴이 끝납니다."
+                _detailBody.text = _tab == Tab.Services ? "서비스는 고른 동료 1명에게 적용되고, 이용하면 아군 턴이 끝납니다."
+                    : _tab == Tab.Quests ? (_shown.Count > 0 ? "의뢰는 선택입니다. 하지 않아도 보스에 갈 수 있습니다." : "이 도시의 의뢰는 아직 없습니다.")
                     : _tab == Tab.Workbench ? "시약과 제작비로 1개를 확정 제작합니다. 제작하면 아군 턴이 끝납니다."
                     : _tab == Tab.Sell ? "되팔기는 정상 가격의 40% (최초 지급 장비는 0). 판 물건은 상점 재고에 더해지지 않습니다."
                     : "목록에서 상품을 고르세요.";
@@ -256,8 +270,19 @@ namespace Fantasia.UI
                     break;
                 case ShopService s:
                     _detailName.text = ShopRules.ServiceLabel(s);
-                    _detailBody.text = $"{ShopRules.ServiceDescription(s)}\n파티 전원 · 1인 {ShopRules.ServicePrice(s)} Cent\n이용하면 아군 턴 종료";
-                    _actionLabel.text = "이용";
+                    _detailBody.text = $"{ShopRules.ServiceDescription(s)}\n고른 동료 1명 · {ShopRules.ServicePrice(s)} Cent\n이용하면 아군 턴 종료\n\n오른쪽에서 받을 동료를 고르세요.";
+                    _actionLabel.text = _serviceTarget != null ? $"{_serviceTarget.Job.DisplayName} 이용" : "이용";
+                    break;
+                case SideQuests.Def q:
+                    var session = BoardSession.Instance;
+                    bool accepted = SideQuests.IsAccepted(session, q), finished = SideQuests.IsDone(session, q);
+                    _detailName.text = q.Title;
+                    _detailBody.text = $"“{q.AcceptLine}”\n\n목표: {q.Objective}\n진행: {SideQuests.TargetsWon(session, q)}/{q.Targets.Length}칸 승리"
+                                       + $"\n보상: {SideQuests.RewardCent} Cent + 생존 동료마다 경험치 {SideQuests.RewardExp} (1회)"
+                                       + "\n두 칸을 모두 이기면 자동 완료 · 이미 이긴 칸도 인정"
+                                       + (finished ? "\n\n<color=#D9B45A>완료한 의뢰</color>" : accepted ? "\n\n<color=#D9B45A>진행 중</color>" : "");
+                    _actionButton.gameObject.SetActive(!accepted);
+                    _actionLabel.text = "수락";
                     break;
                 case int recipe:
                     var (id, reagents, fee) = ShopRules.Recipes[recipe];
@@ -310,13 +335,14 @@ namespace Fantasia.UI
             ShopResult result = _shown[_selected] switch
             {
                 ShopEntry e => ShopRules.Buy(State, _shop, e, _party, act2, castle),
-                ShopService s => ShopRules.UseService(_party, s),
+                ShopService s => ShopRules.UseService(_party, s, _serviceTarget),
+                SideQuests.Def q => AcceptQuest(q),
                 int recipe => ShopRules.Craft(_party, ItemCatalog.Current, recipe),
                 PartyInventory.Stack st => ShopRules.SellConsumable(_party, st.Definition),
                 GearItem g => ShopRules.SellGear(_party, g),
                 _ => new ShopResult(false, ""),
             };
-            if (result.Ok) PlaytestLog.Cent(_tab switch { Tab.Sell => "상점 판매", Tab.Services => "상점 서비스", Tab.Workbench => "작업대 제작", _ => "상점 구입" }, _party.Cent - centBefore, _party.Cent, $"{_shop.DisplayName}: {result.Message}");
+            if (result.Ok && _tab != Tab.Quests) PlaytestLog.Cent(_tab switch { Tab.Sell => "상점 판매", Tab.Services => "상점 서비스", Tab.Workbench => "작업대 제작", _ => "상점 구입" }, _party.Cent - centBefore, _party.Cent, $"{_shop.DisplayName}: {result.Message}");
             if (result.Ok) SaveGame.Checkpoint("상점 거래"); // 저장 → 표시
             _message.text = result.Message;
             _message.color = result.Ok ? Gold : Bad;
@@ -329,6 +355,45 @@ namespace Fantasia.UI
                 return;
             }
             Refresh();
+        }
+
+        // 의뢰 수락 — 이미 이긴 목표는 소급 인정, 둘 다 끝냈으면 바로 정산 (결정서 A3)
+        private ShopResult AcceptQuest(SideQuests.Def q)
+        {
+            var session = BoardSession.Instance;
+            if (!SideQuests.Accept(session, q)) return new ShopResult(false, "이미 받은 의뢰");
+            var done = SideQuests.SettleAll(session);
+            if (done.Contains(q))
+            {
+                ItemAcquiredToast.Show($"의뢰 완료: {q.Title} — {SideQuests.RewardCent} Cent · 경험치 {SideQuests.RewardExp}");
+                return new ShopResult(true, $"의뢰 완료 (이미 이긴 칸 인정) — {q.CompleteLine}");
+            }
+            return new ShopResult(true, $"의뢰 수락: {q.Title}");
+        }
+
+        // 서비스를 고르면 비교 카드 자리에 받을 동료 3명 (효과 없는 동료는 흐리게)
+        private void ShowTargets(ShopService? service)
+        {
+            _targetCard.SetActive(service.HasValue);
+            if (!service.HasValue) return;
+            var members = _party.Members;
+            if (_serviceTarget == null || !members.Contains(_serviceTarget) || !ShopRules.ServiceWouldHelp(_serviceTarget, service.Value))
+                _serviceTarget = members.Where(m => ShopRules.ServiceWouldHelp(m, service.Value))
+                    .OrderBy(m => m.MaxHP > 0 ? (float)m.CurrentHP / m.MaxHP : 1f).FirstOrDefault();
+            for (int i = 0; i < _targetButtons.Count; i++)
+            {
+                var (button, fill, label) = _targetButtons[i];
+                bool has = i < members.Count;
+                button.gameObject.SetActive(has);
+                if (!has) continue;
+                var m = members[i];
+                bool helps = ShopRules.ServiceWouldHelp(m, service.Value);
+                button.interactable = helps;
+                fill.color = m == _serviceTarget ? RowSelected : RowFill;
+                string mp = m.MaxMP > 0 ? $" · MP {m.CurrentMP}/{m.MaxMP}" : "";
+                label.text = !m.IsAlive ? $"{m.Job.DisplayName}\n쓰러짐" : $"{(m == _serviceTarget ? "▶ " : "")}{m.Job.DisplayName}\nHP {m.CurrentHP}/{m.MaxHP}{mp} · 집중 {m.CurrentFocus}/{m.MaxFocus}{(helps ? "" : "\n받을 효과 없음")}";
+                label.color = helps ? TextLight : TextDim;
+            }
         }
 
         // ───────────── 구성 ─────────────
@@ -413,6 +478,29 @@ namespace Fantasia.UI
             _actionLabel = _actionButton.GetComponentInChildren<Text>();
             _actionButton.onClick.AddListener(OnAction);
 
+            // 서비스 받을 동료 (비교 카드와 같은 자리)
+            var targets = UGUIKit.CreateThemedPanel(win, "Targets", new Vector2(0.74f, 0.12f), new Vector2(0.985f, 0.79f), Gold, CardFill, 1.5f, UITheme.Current.PanelFrame);
+            _targetCard = targets.parent.gameObject;
+            Label(targets, "Head", new Vector2(0.05f, 0.88f), new Vector2(0.95f, 0.98f), 13, TextAnchor.MiddleLeft, Gold, true).text = "받을 동료";
+            for (int i = 0; i < Party.MaxSize; i++)
+            {
+                int index = i;
+                float y1 = 0.86f - i * 0.28f;
+                var bg = UGUIKit.CreateImage(targets, $"Target{i}", new Vector2(0.05f, y1 - 0.25f), new Vector2(0.95f, y1), RowFill);
+                var b = bg.gameObject.AddComponent<Button>();
+                b.targetGraphic = bg;
+                b.onClick.AddListener(() => { if (index < _party.Members.Count) _serviceTarget = _party.Members[index]; Refresh(); });
+                var label = Label(bg.transform, "Label", new Vector2(0.05f, 0f), new Vector2(0.95f, 1f), 11, TextAnchor.MiddleLeft, TextLight, false);
+                _targetButtons.Add((b, bg, label));
+            }
+            _targetCard.SetActive(false);
+
+            // 거점 [상점] 다시 열기 — 창이 닫혀 있을 때만, 화면 왼쪽 안내 칸 아래
+            var reopen = UGUIKit.CreateThemedButton(canvasGO.transform, "ReopenShop", new Vector2(0.006f, 0.6f), new Vector2(0.12f, 0.655f), "상점 열기 (B)", new Color(0.45f, 0.18f, 0.16f), 13);
+            reopen.onClick.AddListener(() => _onReopen?.Invoke());
+            _reopenButton = reopen.gameObject;
+            _reopenButton.SetActive(false);
+
             _root.SetActive(false);
             return this;
         }
@@ -431,5 +519,8 @@ namespace Fantasia.UI
         public void DevSelectRow(int row) { _selected = row; Refresh(); }
         public void DevAct() => OnAction();
         public int DevRowCount => _shown.Count;
+        public string DevTitle => _title.text;
+        public PartyMember DevServiceTarget => _serviceTarget;
+        public static bool DevReopenVisible => Instance != null && Instance._reopenButton != null && Instance._reopenButton.activeSelf;
     }
 }

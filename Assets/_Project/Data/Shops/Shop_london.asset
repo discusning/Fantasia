@@ -16,6 +16,7 @@ MonoBehaviour:
   DisplayName: "\uB7F0\uB358"
   HubLabel: S05
   Landmark: "\uADF8\uB9AC\uB2C8\uCE58 \uC804\uB9DD\uB300\xB7\uC218\uC0AC\uB300 \uC0C1\uC810"
+  Title: "\uADF8\uB9AC\uB2C8\uCE58 \uAC70\uC810"
   Entries:
   - Item: {fileID: 11400000, guid: 15b4ed3769c47344c85987941a9ddda8, type: 2}
     MaxStock: 5
@@ -97,39 +98,11 @@ MonoBehaviour:
     MaxStock: 1
     Stage: 0
     Limited: 0
-  - Item: {fileID: 11400000, guid: 1f2331f8207d0c342b5a01544c2caa24, type: 2}
-    MaxStock: 1
-    Stage: 0
-    Limited: 0
-  - Item: {fileID: 11400000, guid: 840e29cb9f73be44ca3ca3cec60f0405, type: 2}
-    MaxStock: 1
-    Stage: 0
-    Limited: 0
-  - Item: {fileID: 11400000, guid: 20ce2689ae186a54a9684267489e52c4, type: 2}
-    MaxStock: 1
-    Stage: 0
-    Limited: 0
-  - Item: {fileID: 11400000, guid: f72b96e242fa2064eab81e976ea649c5, type: 2}
-    MaxStock: 1
-    Stage: 0
-    Limited: 0
   - Item: {fileID: 11400000, guid: d2b0e850044afe84fa0d0e59ce7ce960, type: 2}
     MaxStock: 1
     Stage: 0
     Limited: 0
-  - Item: {fileID: 11400000, guid: b9b1dfa19622a2448ab93500657e846a, type: 2}
-    MaxStock: 1
-    Stage: 0
-    Limited: 0
   - Item: {fileID: 11400000, guid: b054934836a506c4dbcc9623ddd811f7, type: 2}
-    MaxStock: 1
-    Stage: 0
-    Limited: 0
-  - Item: {fileID: 11400000, guid: 63a1b8413fa47f342a325e9ff6d9f30e, type: 2}
-    MaxStock: 1
-    Stage: 0
-    Limited: 0
-  - Item: {fileID: 11400000, guid: 2c6d9c2ce48d0f54faa7a0267d5351b3, type: 2}
     MaxStock: 1
     Stage: 0
     Limited: 0

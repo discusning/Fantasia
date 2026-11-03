@@ -23,8 +23,8 @@ namespace Fantasia.Editor
             int e = 0;
 
             // §12 도시별 최종 판매 규모 (확장 도시 제외, 모든 단계 해금·한정품 미구매)
-            e += Expect("런던 품목", london.Entries.Length, 38); // + 신속의 앰플 (속도 확정안 10/26)
-            e += Expect("런던 수량", london.Entries.Sum(x => x.MaxStock), 68);
+            e += Expect("런던 품목", london.Entries.Length, 31); // + 신속의 앰플 (10/26), 노말 무기 10종 → 3종 (결정서 B1)
+            e += Expect("런던 수량", london.Entries.Sum(x => x.MaxStock), 61);
             e += Expect("베르사유 품목", versailles.Entries.Length, 51);
             e += Expect("베르사유 수량", versailles.Entries.Sum(x => x.MaxStock), 80);
             e += Expect("로마 품목", rome.Entries.Length, 71);
@@ -33,7 +33,7 @@ namespace Fantasia.Editor
             // 1차 빌드 숨김: 파티(명탐정·역병 의사·저격수)가 못 쓰는 무기(장창·바이올린)와 미구현 시스템 품목
             var jobs = new[] { detective.Id, doctor.Id, sniper.Id };
             var londonBase = london.Entries.Where(x => x.Stage == ShopStage.Base && !ShopRules.IsHidden(x, jobs)).ToList();
-            e += Expect("런던 1막 노말 무기 (3직업용)", londonBase.Count(x => x.Item is WeaponDefinition), 8);
+            e += Expect("런던 1막 무기 진열 3종 (결정서 B1)", londonBase.Count(x => x.Item is WeaponDefinition), 3);
             e += Expect("런던 1막 방어구·장신구", londonBase.Count(x => x.Item is ArmorDefinition), 4);
             e += Check(londonBase.All(x => !(x.Item is ConsumableDefinition c) || c.Effect != ConsumableEffect.RepairWeapon), "수리 도구 숨김 (파손 2차)");
 
@@ -88,14 +88,18 @@ namespace Fantasia.Editor
             ShopRules.SellGear(party, start);
             e += Expect("최초 지급 무기 되팔기 0", party.Cent - cent, 0);
 
-            // 서비스: 파티 일괄, 1인 가격 × 생존 인원, 아군 턴 종료
+            // 서비스 (1막 기획 결정서 B2): 생존 1명 선택, 1인 가격, 아군 턴 종료. 효과 없음·돈 부족은 비용 없음
             var svc = NewParty(detective, doctor, sniper);
-            svc.Members[0].TakeDamage(60);
+            svc.Members[0].TakeDamage(61);
             cent = svc.Cent;
-            var inn = ShopRules.UseService(svc, ShopService.Inn);
+            svc.Members[1].RestoreFocus(10);
+            var full = ShopRules.UseService(svc, ShopService.Inn, svc.Members[1]);
+            e += Check(!full.Ok && svc.Cent == cent, "숙박: 회복할 것 없는 동료 → 비용 없음");
+            var inn = ShopRules.UseService(svc, ShopService.Inn, svc.Members[0]);
             e += Check(inn.Ok && inn.EndsAllyTurn, "숙박 이용 → 아군 턴 종료");
-            e += Expect("숙박 30 × 3명", cent - svc.Cent, 90);
-            e += Expect("숙박 HP 50% 회복", svc.Members[0].CurrentHP, Mathf.Min(svc.Members[0].MaxHP, svc.Members[0].MaxHP - 60 + svc.Members[0].MaxHP / 2));
+            e += Expect("숙박 1명 30 Cent", cent - svc.Cent, 30);
+            e += Expect("숙박 HP 50% 회복 (올림)", svc.Members[0].CurrentHP, Mathf.Min(svc.Members[0].MaxHP, svc.Members[0].MaxHP - 61 + (svc.Members[0].MaxHP + 1) / 2));
+            e += Check(ShopRules.UseService(svc, ShopService.Treatment, svc.Members[2]).Ok == false, "정밀 치료: 상태 이상 없으면 이용 안 됨");
 
             // 작업대: 시약 2 + 10 Cent → 붕대 1
             var craft = NewParty(detective, doctor, sniper);

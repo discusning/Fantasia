@@ -36,10 +36,12 @@ namespace Fantasia.UI
             var party = string.Join("\n", d.members.Select(m =>
                 $"  {JobName(m.job)} · Lv {m.level} · {(m.dead ? "영구 사망" : $"HP {m.hp} · LP {m.lp}")}"));
             var evidence = d.keyItems.Count > 0 ? string.Join(", ", d.keyItems) : "없음";
-            return $"검시관 아벨 모로 처치 · 제임스에게 보고 완료\n\n"
+            // 문구: 1막 기획 결정서 06 (2026-11-01)
+            return $"{ActOneStory.ClearSummary}\n\n"
+                   + $"검시관 아벨 모로 처치 · 제임스에게 보고 완료 · 이긴 전투 {d.cleared.Count}곳\n"
                    + $"플레이 시간 {(int)t.TotalHours}:{t.Minutes:00} · 월드 {d.worldRound}라운드 · Cent {d.cent}\n"
                    + $"확보한 증거: {evidence}\n\n파티\n{party}\n\n"
-                   + "<color=#D9B45A>다음 목적지: 2막 베르사유 — 추후 공개</color>";
+                   + $"<color=#D9B45A>다음 목적지: {ActOneStory.ClearNext}</color>";
         }
 
         private static string JobName(int id) =>

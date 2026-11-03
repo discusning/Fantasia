@@ -51,8 +51,10 @@ namespace Fantasia.UI
         }
 
         // "X 획득" 배너. icon이 없으면 색 칸만.
+        public static string DevLast; // 자동 플레이 QA: 마지막으로 띄운 알림
         public static void Show(string label, Sprite icon = null, Color? tint = null)
         {
+            DevLast = label;
             EnsureExists();
             Instance.Display(label, icon, tint ?? new Color(0.75f, 0.65f, 0.4f));
         }

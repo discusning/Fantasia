@@ -16,6 +16,7 @@ MonoBehaviour:
   DisplayName: "\uB85C\uB9C8"
   HubLabel: S31
   Landmark: "\uC81C\uAD6D \uAD11\uC7A5\xB7\uC131\uC18C \uC2DC\uC7A5"
+  Title: "\uC81C\uAD6D \uAD11\uC7A5"
   Entries:
   - Item: {fileID: 11400000, guid: 15b4ed3769c47344c85987941a9ddda8, type: 2}
     MaxStock: 5
