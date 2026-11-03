@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>판타지아 기획 요청서</title>
+<style>
+  @page { size: A4; margin: 15mm 14mm 15mm 14mm; }
+  :root { --ink:#1d1a17; --dim:#5f5850; --gold:#9a7230; --line:#d9d2c6; --bg:#f7f3ec; --a:#a33a2c; --b:#b0791d; --c:#5c6b74; --ok:#3d6b45; }
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4px; letter-spacing: -0.5px; }
+  h2 { font-size: 14pt; margin: 20px 0 8px; padding: 6px 10px; background: var(--ink); color: #fff; border-radius: 3px; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 12px 0 4px; color: var(--gold); page-break-after: avoid; }
+  p { margin: 4px 0; }
+  .cover { border: 2px solid var(--ink); padding: 16px 20px; margin-bottom: 12px; }
+  .sub { color: var(--dim); font-size: 10.5pt; }
+  .meta { display: flex; gap: 16px; margin-top: 8px; font-size: 9.5pt; color: var(--dim); flex-wrap: wrap; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 4px; }
+  .stat { border: 1px solid var(--line); background: var(--bg); padding: 8px; text-align: center; border-radius: 3px; }
+  .stat b { display: block; font-size: 16pt; }
+  .stat span { font-size: 8.5pt; color: var(--dim); }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9pt; }
+  th, td { border: 1px solid var(--line); padding: 5px 6px; vertical-align: top; text-align: left; }
+  th { background: var(--bg); font-weight: 700; }
+  tr { page-break-inside: avoid; }
+  .item { border: 1px solid var(--line); border-left: 5px solid var(--c); padding: 9px 12px; margin: 10px 0; border-radius: 2px; }
+  .item.A { border-left-color: var(--a); } .item.B { border-left-color: var(--b); }
+  .head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .no { font-weight: 800; font-size: 12pt; }
+  .q { font-weight: 700; font-size: 11pt; }
+  .tag { font-size: 8pt; padding: 1px 7px; border-radius: 9px; color: #fff; white-space: nowrap; }
+  .tag.A { background: var(--a); } .tag.B { background: var(--b); } .tag.C { background: var(--c); } .tag.OK { background: var(--ok); }
+  .row { display: grid; grid-template-columns: 84px 1fr; gap: 5px 10px; font-size: 9.4pt; margin: 3px 0; }
+  .row .k { color: var(--dim); font-weight: 700; }
+  .ask { background: #fbeee9; border: 1px dashed var(--a); padding: 6px 10px; border-radius: 3px; margin-top: 6px; font-size: 9.4pt; }
+  .ask b { color: var(--a); }
+  .ex { background: var(--bg); padding: 6px 10px; border-radius: 2px; font-size: 9pt; margin-top: 6px; white-space: pre-wrap; font-family: "Malgun Gothic", sans-serif; }
+  ul { margin: 3px 0 3px 18px; padding: 0; } li { margin: 1px 0; }
+  .shot { margin: 8px 0 4px; text-align: center; page-break-inside: avoid; }
+  .shot img { width: 100%; border: 1px solid var(--line); }
+  .shot.half img { width: 72%; }
+  .cap { font-size: 8.5pt; color: var(--dim); margin-top: 2px; }
+  .note { font-size: 9pt; color: var(--dim); }
+  .legend { display: flex; gap: 14px; font-size: 9pt; margin: 6px 0; flex-wrap: wrap; }
+  .pb { page-break-before: always; }
+  .done td:first-child { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>판타지아 — 기획팀 요청서</h1>
+  <div class="sub">개발팀 → 기획팀 · 2026-10-30 기준 · 1차(1막 런던) 완성을 위해 기획에서 정해 주셔야 하는 것</div>
+  <div class="meta"><span>작성 2026-10-30</span><span>최종 마감 2026-11-18</span><span>마무리 기간 11/8~11/18 (새 내용 추가 없음)</span></div>
+  <div class="summary">
+    <div class="stat"><b>5건</b><span>꼭 정해야 하는 것 (A)</span></div>
+    <div class="stat"><b>7건</b><span>문서끼리 다른 것 — 하나만 고르기 (B)</span></div>
+    <div class="stat"><b>16건</b><span>개발이 정한 값 — OK/수정만</span></div>
+    <div class="stat"><b>11/3</b><span>A 답변 희망일</span></div>
+  </div>
+  <p style="margin-top:8px">지금 게임은 답이 없는 부분을 <b>개발이 정한 임시값</b>으로 돌리고 있습니다. 답이 없어도 게임은 끝까지 돌아가지만,
+  <b>임시값이 그대로 최종 빌드에 들어갑니다.</b> 11/8부터는 버그 수정만 하므로, 그 전에 답을 받아야 반영하고 다시 확인할 수 있습니다.</p>
+</div>
+
+<h2>읽는 법</h2>
+<div class="legend">
+  <span><span class="tag A">A 꼭 정하기</span> 1막 플레이에 바로 보임 · <b>11/3까지</b></span>
+  <span><span class="tag B">B 하나 고르기</span> 기획 문서끼리 내용이 다름 · <b>11/5까지</b></span>
+  <span><span class="tag OK">OK만</span> 개발이 정한 값 · <b>11/6까지</b> (답이 없으면 지금 값으로 확정)</span>
+  <span><span class="tag C">C 제안</span> 하면 좋은 것 · 11/6까지 OK 없으면 하지 않음</span>
+</div>
+<p>각 항목은 <b>무엇을 묻는지 → 지금 게임은 어떻게 되어 있는지 → 왜 정해야 하는지 → 정해 주실 것</b> 순서입니다. 화면으로 봐야 헷갈리지 않는 것은 게임 캡처를 붙였습니다.</p>
+<p><b>답 주시는 방법:</b> 번호와 답만 적어 주시면 됩니다. 예) <span class="ex" style="display:inline;padding:1px 6px">A2: 이대로 · B1: 8종 · T3: OK · T5: 수정 — 턴 소모 없이</span></p>
+
+<h3>이미 답을 받아 게임에 들어간 것 (확인용)</h3>
+<table class="done">
+  <tr><th>받은 기획</th><th>게임 반영</th></tr>
+  <tr><td>지도 칸 규칙 (10/26)</td><td>런던 적 칸 10곳 조합·보상, 보물 칸 3곳 고정 보상</td></tr>
+  <tr><td>이벤트 칸·십자가 석상 (10/26)</td><td>M02 점술마녀·S10 분수대, 기도 6종</td></tr>
+  <tr><td>속도·신속의 앰플 (10/26)</td><td>앰플 판매(재고 3), 타임라인 속도 숫자·↑↓</td></tr>
+  <tr><td>저장 확정안·추가 수정안 (10/25)</td><td>자동 저장, 전투 중 저장, 설정 5개, 전멸 기록, 저장 실패 창</td></tr>
+  <tr><td>1막 보스전 수정 요청서 (10/25)</td><td>아벨 모로 수치·예고·봉합 저지·대사·증거품</td></tr>
+  <tr><td>UI 솔루션 Q1~Q9 (10/28)</td><td>우물 집중력 +1, 피의 흔적 숫자 표시, 해·달, 플레이어 이름, 적 구성 표시 등 9개 전부</td></tr>
+</table>
+
+<!-- ───────────── A ───────────── -->
+<h2 class="pb">A. 꼭 정해야 하는 것 (11/3까지)</h2>
+
+<div class="item A">
+  <div class="head"><span class="no">A1</span><span class="q">우물이 바뀐 뒤, 1막 회복이 너무 부족하지 않은지</span><span class="tag A">A</span></div>
+  <div class="row"><span class="k">무엇을</span><span>UI 솔루션 Q1로 <b>우물(초록 회복 칸) 효과가 바뀌었습니다.</b> 이 변화가 1막 난이도에 주는 영향을 기획에서 판단해 주셔야 합니다.</span></div>
+  <div class="row"><span class="k">바뀐 내용</span><span>
+    <ul>
+      <li>전: 우물에 서면 <b>파티 3명 모두 HP·MP 30% + 집중력 1</b> 회복 (지도 칸 확정안 10/26)</li>
+      <li>지금: <b>1명만 골라 집중력 +1</b>. HP·MP는 회복되지 않음 (아래 캡처)</li>
+    </ul></span></div>
+  <div class="row"><span class="k">왜 중요</span><span>런던 우물 2곳(S16·X13)은 상점까지 돌아가지 않고 HP를 채울 수 있는 <b>유일한 길 위 회복</b>이었습니다.
+    지금 1막에서 HP를 채우는 방법은 ① 거점으로 돌아가 숙박(파티 90 Cent, 아군 턴 끝남) ② 회복약(붕대 20 Cent·HP 20 / 생명의 영약 50 Cent·HP 50) 두 가지뿐입니다.
+    시작 자금이 180 Cent라서, 전투가 이어지면 <b>회복약을 사느라 무기·장비를 살 돈이 줄어들 가능성</b>이 있습니다.</span></div>
+  <div class="shot"><img src="img/well.png"><div class="cap">지금 우물 창 — HP가 절반인 상태(아래 카드 54/108)여도 집중력만 1명 회복. "HP·MP·LP·상태 이상은 회복되지 않습니다" 안내.</div></div>
+  <div class="ask"><b>정해 주실 것</b> — 아래 중 하나
+    <ul>
+      <li>① <b>이대로</b> (집중력 +1만, 회복은 숙박·회복약으로)</li>
+      <li>② <b>회복약을 싸게 / 더 많이</b> — 붕대·영약 가격 또는 재고 숫자를 알려 주세요</li>
+      <li>③ <b>숙박을 싸게</b> — 1인 30 Cent → ? Cent</li>
+      <li>④ <b>우물에 HP도 조금</b> — 예: 고른 1명 HP 20% + 집중력 1</li>
+    </ul>
+    개발이 자동 플레이로 "우물 변경 전/후 보스 도착 시 남은 Cent·회복약 사용량"을 측정해 따로 전달하겠습니다. 숫자를 보고 정하셔도 됩니다.</div>
+</div>
+
+<div class="item A">
+  <div class="head"><span class="no">A2</span><span class="q">아벨 모로(1막 보스) 난이도 — 이대로 갈지, 더 세게 할지</span><span class="tag A">A</span></div>
+  <div class="row"><span class="k">지금 결과</span><span>보스전 수정 요청서 수치(HP 300·공격 24·마력 30·봉합 60)대로 넣었습니다. 자동 플레이로 <b>43판 해 보니 전부 승리, 쓰러진 아군 0명</b>이었습니다.
+    레벨 1 파티도 회복약을 많이 쓰면 이깁니다. 신속의 앰플을 쓴 9판도 전부 승리 (5~10라운드).</span></div>
+  <div class="row"><span class="k">주의</span><span>자동 플레이는 사람보다 회복약을 아끼지 않고 씁니다. <b>사람이 직접 하면 결과가 다를 수 있습니다.</b>
+    또 A1(우물 변경)로 보스 앞에서의 HP 상태가 전보다 나빠졌을 수 있습니다.</span></div>
+  <div class="shot half"><img src="img/boss.png"><div class="cap">보스 기술 예고 화면 — "금지된 봉합" 예고 뒤 1.2배 이상 기술로 막아야 함</div></div>
+  <div class="ask"><b>정해 주실 것</b>
+    <ul>
+      <li>기획에서 <b>직접 1~2판</b> 해 보시고 ① 이대로 / ② 더 세게 중 골라 주세요 (게임 파일은 팀장에게 요청)</li>
+      <li>더 세게라면 <b>어느 숫자를</b>: 보스 HP / 공격력 / 봉합 회복량 / 권장 레벨 — 숫자로 주시면 바로 바꿉니다 (각 0.1일)</li>
+      <li>목표 라운드 수(지금 요청서 기준 5~9라운드)와 "아군 1명 정도는 쓰러질 만큼" 같은 느낌 기준도 함께 주시면 맞춰서 조정합니다</li>
+    </ul></div>
+</div>
+
+<div class="item A">
+  <div class="head"><span class="no">A3</span><span class="q">런던 의뢰(서브 퀘스트) 내용</span><span class="tag A">A</span></div>
+  <div class="row"><span class="k">지금</span><span>상점의 [의뢰] 탭이 비어 있고 안내 문구만 있습니다. 진행 중인 의뢰는 메인 퀘스트 "제임스의 의뢰" 하나뿐입니다.</span></div>
+  <div class="row"><span class="k">왜 중요</span><span>기획서에 의뢰마다 첫 완료 보상(1막 기준 80 Cent·경험치 40)이 있습니다. 의뢰가 없으면 1막에서 받는 돈·경험치가 기획보다 적어서,
+    보스 도착 레벨(권장 3)과 돈 흐름이 계획과 달라집니다. A1·A2 판단에도 영향이 있습니다.</span></div>
+  <div class="row"><span class="k">준비 상태</span><span>의뢰 받기·목표 표시·완료 확인·보상 지급 기능은 다 있습니다. <b>내용만 받으면 의뢰 1개당 반나절 이내</b>로 넣을 수 있습니다.</span></div>
+  <div class="ask"><b>정해 주실 것</b> — 의뢰마다 아래 6가지 (런던만, 1~3개)
+    <div class="ex">① 의뢰 이름          예) 사라진 약제사
+② 어디서 받는지      예) 그리니치 거점 상점 [의뢰] 탭
+③ 목표 (어느 칸에서 무엇을)   예) O18 칸의 적을 처치 / J06 보물 칸에서 물건 찾기
+④ 완료 조건 · 보고 장소     예) 목표 달성 후 거점으로 돌아오면 완료
+⑤ 보상               예) 80 Cent · 경험치 40 (기획서 기준) / 다른 값이면 숫자
+⑥ 받을 때·완료할 때 대사 1~2줄 (없으면 개발이 짧게 임시 문구)</div>
+    <p class="note">스토리 문구가 늦게 오는 건 알고 있습니다. <b>①~⑤만 먼저</b> 주시면 틀을 넣어 두고 대사는 나중에 바꿉니다. <b>11/7 이후에 오면 1차에는 못 넣습니다.</b></p></div>
+</div>
+
+<div class="item A">
+  <div class="head"><span class="no">A4</span><span class="q">게임 안 문구 3곳 — 1막 시작 장면 · 게임 오버 · 1막 클리어</span><span class="tag A">A</span></div>
+  <div class="row"><span class="k">지금</span><span>세 곳 모두 개발이 쓴 임시 문구입니다.
+    <ul>
+      <li><b>1막 시작</b>: 새 게임 → 이름 입력 → 바로 지도가 열림. 도입 장면(신문·제임스 방문)은 스토리 문서에 장면만 있고 대사가 없음</li>
+      <li><b>게임 오버</b>: "파티 전원이 영구 사망했다. … 처음부터 다시 시작한다." (아래 왼쪽)</li>
+      <li><b>1막 클리어</b>: 제목 "1막 클리어", 부제 "런던 — 검시소의 장부", "다음 목적지: 2막 베르사유 — 추후 공개" (아래 오른쪽)</li>
+    </ul></span></div>
+  <table style="border:none"><tr>
+    <td style="border:none;width:50%"><div class="shot"><img src="img/gameover.png"><div class="cap">게임 오버 (임시 문구)</div></div></td>
+    <td style="border:none;width:50%"><div class="shot"><img src="img/act1clear.png"><div class="cap">1막 클리어 결과 (임시 문구)</div></div></td>
+  </tr></table>
+  <div class="ask"><b>정해 주실 것</b>
+    <ul>
+      <li>1막 시작: 대화 몇 줄 (말하는 사람 + 대사). 대화 창 왼쪽 그림은 제임스 그림이 이미 있음</li>
+      <li>게임 오버: 제목 1줄 + 본문 2~3줄 + 버튼 문구 (지금 [처음부터 다시])</li>
+      <li>1막 클리어: 제목·부제·다음 목적지 문구 OK 또는 수정본</li>
+    </ul>
+    <p class="note">문구만 바꾸는 것이라 늦게 와도 됩니다. 다만 <b>11/12 이후에 오면</b> 최종 확인 시간이 부족합니다.</p></div>
+</div>
+
+<div class="item A">
+  <div class="head"><span class="no">A5</span><span class="q">피의 사냥 세부 4가지</span><span class="tag A">A</span></div>
+  <div class="row"><span class="k">무엇을</span><span>피의 흔적이 100이 되면 "피의 사냥"이 시작되어 사신 4마리가 나타납니다 (상단 바 "100 / 100 피의 사냥 진행 중"). 큰 규칙은 받았지만 아래 4가지는 기획서에 없어서 개발이 정해 두었습니다.</span></div>
+  <div class="shot"><img src="img/bloodhunt.png"><div class="cap">피의 사냥 중 — 상단 바 왼쪽 "100 / 100 피의 사냥 진행 중", 지도 위 검은 사신 말</div></div>
+  <table>
+    <tr><th style="width:4%">#</th><th style="width:30%">질문</th><th style="width:28%">지금 값</th><th>왜 정해야 하나</th></tr>
+    <tr><td>1</td><td>사신을 1마리 잡아 성공하면 주는 보상</td><td>100 Cent + 생명의 영약 1개 (+ 처치 보상 35 Cent·경험치 40)</td><td>예전 기획 "3마리 다 잡기" 보상을 그대로 씀. 1마리만 잡아도 되니 보상이 크면 일부러 사냥을 기다리게 됨</td></tr>
+    <tr><td>2</td><td>실패하면 영혼 수확도 +5 오르나요?</td><td>안 오름</td><td>예전 기획엔 있었고 새 정리엔 없음</td></tr>
+    <tr><td>3</td><td>피의 사냥 동안 주사위 −2 유지?</td><td>유지 (1·2가 나오면 못 움직이고 턴 끝)</td><td>사신에게서 도망치기 어려워지는 핵심 규칙</td></tr>
+    <tr><td>4</td><td>끝난 뒤 쉬는 시간</td><td>2라운드 동안 피의 흔적이 안 오름</td><td>없으면 바로 다시 차기 시작</td></tr>
+  </table>
+  <div class="ask"><b>정해 주실 것</b> — 1~4 각각 "OK" 또는 바꿀 값. 숫자만 바꾸면 되어 반영은 바로 됩니다.</div>
+</div>
+
+<!-- ───────────── B ───────────── -->
+<h2 class="pb">B. 문서끼리 내용이 다른 것 — 하나만 골라 주세요 (11/5까지)</h2>
+<p>기획 문서 두 곳의 내용이 서로 달라서, 개발이 한쪽을 골라 넣어 둔 것입니다. <b>"어느 쪽"인지만</b> 알려 주시면 됩니다.</p>
+
+<div class="item B">
+  <div class="head"><span class="no">B1</span><span class="q">런던 상점 무기 수 — 3종? 8종?</span><span class="tag B">B</span></div>
+  <div class="row"><span class="k">다른 곳</span><span>도시 설계안(City)은 "1차 노말 무기 <b>3종</b>". 판매표(City_Shop)의 "구현 안 된 직업 무기만 숨김" 규칙대로면 1차 3직업이 쓰는 무기 <b>8종</b>.</span></div>
+  <div class="row"><span class="k">지금 게임</span><span>8종 판매 (단검·세이버·대검·활·권총·화승총·지팡이·처방서). 장창·바이올린(2차 직업용)만 숨김.</span></div>
+  <div class="shot"><img src="img/shop_weapon.png"><div class="cap">런던 상점 [무기] 탭 — 지금 8종 + 잠긴 2종</div></div>
+  <div class="ask"><b>골라 주실 것</b>: 8종 그대로 / 3종 (3종이면 어느 3개인지)</div>
+</div>
+
+<div class="item B">
+  <div class="head"><span class="no">B2</span><span class="q">도시 서비스(숙박·치료·명상) — 1명씩? 3명 한꺼번에?</span><span class="tag B">B</span></div>
+  <div class="row"><span class="k">다른 곳</span><span>도시 설계안: "선택한 캐릭터 1명, 1인 30 Cent". 10/24 결정: "도시 서비스는 3명 일괄".</span></div>
+  <div class="row"><span class="k">지금 게임</span><span>3명 한꺼번에, 값은 1인 가격 × 살아 있는 인원 (숙박 30×3 = 90 Cent). 이용하면 아군 턴 끝.</span></div>
+  <div class="shot"><img src="img/shop_service.png"><div class="cap">[서비스] 탭 — 재고 칸에 "30 × 3명", 가격 90</div></div>
+  <div class="ask"><b>골라 주실 것</b>: 3명 일괄(지금) / 1명씩 (1명씩이면 1명 쓸 때마다 턴이 끝나는지도)</div>
+</div>
+
+<div class="item B">
+  <div class="head"><span class="no">B3</span><span class="q">그리니치 "거점"? "전망대"?</span><span class="tag B">B</span></div>
+  <div class="row"><span class="k">다른 곳</span><span>월드맵: "그리니치 거점" / 기존 기획서·도시 설계안: "그리니치 전망대"</span></div>
+  <div class="row"><span class="k">지금 게임</span><span>둘 다 보임 — 위 상점 캡처 제목 아래 "그리니치 전망대·수사대 상점", 지도 칸 이름은 "그리니치 거점"</span></div>
+  <div class="ask"><b>골라 주실 것</b>: 화면에 쓸 이름 하나 (상점 부제 문구도 함께)</div>
+</div>
+
+<div class="item B">
+  <div class="head"><span class="no">B4</span><span class="q">도시 사이 거리 — "50~60칸"? 지도대로 "거점→출구 10~11칸"?</span><span class="tag B">B</span></div>
+  <div class="row"><span class="k">왜 중요</span><span>피의 흔적·영혼 수확이 차는 속도, 상점 재입고(3라운드)는 "도시 사이 50~60칸"을 전제로 정해졌습니다. 실제 지도는 훨씬 가깝습니다.</span></div>
+  <div class="row"><span class="k">지금 게임</span><span>지도대로. 게이지 속도는 예전 숫자 그대로.</span></div>
+  <div class="ask"><b>골라 주실 것</b>: 지도 기준 OK / 게이지 속도 조정 필요 (필요하면 숫자)</div>
+</div>
+
+<div class="item B">
+  <div class="head"><span class="no">B5</span><span class="q">기관차 — 계속 쓰나요?</span><span class="tag B">B</span></div>
+  <div class="row"><span class="k">다른 곳</span><span>기존 기획서엔 기관차 칸(가 본 도시로 이동)과 상점 "룬 기관차 탑승권"이 있는데, 월드맵엔 기관차 칸이 없습니다.</span></div>
+  <div class="row"><span class="k">지금 게임</span><span>기관차 없음, 탑승권은 상점에서 숨김. 1차(도시 1개)에는 영향 없음.</span></div>
+  <div class="ask"><b>골라 주실 것</b>: 뺀다 / 2차에서 쓴다 (쓰면 어느 칸인지는 2차 때)</div>
+</div>
+
+<div class="item B">
+  <div class="head"><span class="no">B6</span><span class="q">피의 사냥 사신이 열린 출구를 넘어 다른 지역까지 따라오나요?</span><span class="tag C">2막 때</span></div>
+  <div class="row"><span class="k">지금 게임</span><span>파티가 있는 지역 안에서만 나타나고 움직임. 1차는 출구가 잠겨 있어 영향 없음. 2막 만들기 전까지만 정하면 됩니다.</span></div>
+</div>
+
+<div class="item B">
+  <div class="head"><span class="no">B7</span><span class="q">베르사유·로마 이벤트 칸 4곳의 종류</span><span class="tag C">2막 때</span></div>
+  <div class="row"><span class="k">대상</span><span>베르사유 A15·A21, 로마 Q26·X28 — 점술마녀·분수대·십자가 석상 중 무엇인지 (석상이 어디 있는지). 이벤트 칸 확정안에 런던 2곳만 있었습니다. 1차에는 영향 없음.</span></div>
+</div>
+
+<!-- ───────────── OK ───────────── -->
+<h2 class="pb">개발이 정한 값 — "OK" 또는 "수정"만 (11/6까지)</h2>
+<p>기획서에 없거나 뜻이 두 가지로 읽혀서 개발이 정해 넣은 것입니다. <b>답이 없으면 11/6에 지금 값으로 확정</b>하겠습니다.</p>
+
+<h3>최근 반영하면서 해석한 것</h3>
+<table>
+  <tr><th style="width:5%">#</th><th style="width:24%">항목</th><th>지금 게임</th></tr>
+  <tr><td>T1</td><td>부의 기도 "약탈 면역"<br>그림자의 기도 "기습 실패 페널티 면역"</td><td>기도를 받은 사람이 <b>1명이라도 있으면 파티 전체</b>에 적용 (약탈·기습이 파티 단위로 일어나서). 기습 실패여도 첫 라운드에 적이 전부 먼저 움직이지 않고 평소 속도 순서</td></tr>
+  <tr><td>T2</td><td>우물 사용 횟수</td><td>창을 닫거나 [떠나기]를 누르면 횟수를 안 씀. 3명 모두 집중력이 가득이면 창이 안 뜨고 횟수도 안 씀. 쓰러진 동료는 고를 수 없음</td></tr>
+  <tr><td>T3</td><td>피의 흔적 알림</td><td>50·80을 <b>아래에서 위로 넘을 때만</b> 1번. 불러오기·창 다시 열기로는 다시 안 뜸</td></tr>
+  <tr><td>T4</td><td>해·달 순서</td><td>월드 1라운드 = 아침 → 낮 → 저녁 → 새벽, 4라운드마다 반복. 아침·낮은 해, 저녁·새벽은 달. 게임 효과 없음</td></tr>
+  <tr><td>T5</td><td>플레이어 이름</td><td>최대 10글자, 비워 두면 "탐정". 예전 저장 파일은 "탐정"</td></tr>
+</table>
+<div class="shot half"><img src="img/statue.png"><div class="cap">십자가 석상 기도 선택 창 (T1 관련)</div></div>
+
+<h3>예전부터 남아 있는 것</h3>
+<table>
+  <tr><th style="width:5%">#</th><th style="width:24%">항목</th><th>지금 게임</th></tr>
+  <tr><td>T6</td><td>제임스 보고 장소</td><td>보스를 잡은 뒤 런던 거점(S05)에 도착하면 자동으로 보고 대화</td></tr>
+  <tr><td>T7</td><td>보스 권장 레벨 경고에서 [돌아가기]</td><td>바로 전 칸으로 물러나고 아군 턴 끝 (다른 불이익 없음)</td></tr>
+  <tr><td>T8</td><td>보스 예고 뒤 아군 차례가 없을 때</td><td>보스 차례를 "금지된 봉합 준비"(아무 효과 없음)로 한 번 미룸 → 아군이 막을 기회가 생김</td></tr>
+  <tr><td>T9</td><td>상점 여는 법</td><td>거점 칸에 도착하면 자동으로 열림 + 거점에 있으면 B 키. 사고팔기는 턴을 안 씀</td></tr>
+  <tr><td>T10</td><td>지도에서 회복약 사용</td><td>아군 턴마다 캐릭터별 1번 (기획서 "이동 끝나기 전 1번"을 파티 1인 이동에 맞춤)</td></tr>
+  <tr><td>T11</td><td>전투에 이긴 뒤 쓰러져 있던 동료</td><td>LP 1을 쓰고 HP 30%로 일어남. LP가 없으면 영구 사망</td></tr>
+  <tr><td>T12</td><td>가고일 "공격력 −3" 기간</td><td>2턴</td></tr>
+  <tr><td>T13</td><td>적이 누구를 때리나</td><td>모든 적 무작위 (보스는 요청서 규칙대로)</td></tr>
+  <tr><td>T14</td><td>방어력 관통 계산의 소수점</td><td>내림 (방어 5, 관통 50% → 남은 방어 2)</td></tr>
+  <tr><td>T15</td><td>무기의 "최대 MP +8" 같은 보너스</td><td>지금은 최대 MP에 <b>안 더함</b> (역병 의사 MP 132가 이미 지팡이 포함인지 몰라서)</td></tr>
+  <tr><td>T16</td><td>저장 예외 33·35·36</td><td>
+    33 저장 파일이 깨지면: "불러올 수 없음" 표시, 파일은 지우지 않음, 새 게임만 가능<br>
+    35 대화 중에 끄면: 보스 전 대화 → 다시 켜면 대화 없이 전투부터 / 보스 처치 뒤·보고 대화 → 결과는 저장됨, 대화는 다시 안 봄<br>
+    36 플레이 시간: 메인 메뉴·Esc 메뉴·게임 창이 꺼져 있을 때는 안 셈</td></tr>
+</table>
+
+<!-- ───────────── C ───────────── -->
+<h2>C. 개발 제안 — 하고 싶으면 OK (11/6까지, 없으면 하지 않음)</h2>
+<div class="item">
+  <div class="head"><span class="no">C1</span><span class="q">메인 메뉴·파티 구성 화면 "사건 파일" 꾸미기</span><span class="tag C">C</span></div>
+  <div class="row"><span class="k">지금</span><span>기능만 있는 단순한 화면 (아래). 제안 내용: 서류철 모양 직업 카드, 이어하기를 신문 기사처럼, 배경은 실제 지도를 밤·안개로 (자세한 것: MainMenu_Proposal.md, 예전 요청 24~28).</span></div>
+  <table style="border:none"><tr>
+    <td style="border:none;width:50%"><div class="shot"><img src="img/mainmenu.png"><div class="cap">지금 메인 메뉴</div></div></td>
+    <td style="border:none;width:50%"><div class="shot"><img src="img/party.png"><div class="cap">지금 파티 구성</div></div></td>
+  </tr></table>
+  <div class="ask"><b>정해 주실 것</b>: 한다 / 안 한다. 한다면 약 1.5일이고 그림(카드 틀)이 디자인에서 와야 합니다. 시간상 <b>안 하고 지금 화면에 그림만 입히는 것</b>을 개발은 추천합니다.</div>
+</div>
+<div class="item">
+  <div class="head"><span class="no">C2</span><span class="q">설정 창에 "그래픽 품질"·"수직 동기화" 추가</span><span class="tag C">C</span></div>
+  <div class="row"><span class="k">지금</span><span>설정은 확정안대로 5개 (볼륨 3개·해상도·전체 화면). 그래픽 품질은 컴퓨터를 보고 자동으로 정해짐. 노트북 내장 그래픽 + 4K 화면에서 지도가 가끔 30fps로 떨어지는데, 사용자가 직접 품질을 낮출 방법이 없음.</span></div>
+  <div class="shot half"><img src="img/settings.png"><div class="cap">지금 설정 창</div></div>
+  <div class="ask"><b>정해 주실 것</b>: 추가 / 추가 안 함 (작업 반나절)</div>
+</div>
+
+<!-- ───────────── 일정 ───────────── -->
+<h2>일정</h2>
+<table>
+  <tr><th style="width:18%">날짜</th><th style="width:40%">받으면 좋은 것</th><th>이유</th></tr>
+  <tr><td><b>~11/3</b></td><td>A1 우물·회복, A2 보스 난이도, A3 런던 의뢰(①~⑤만이라도), A5 피의 사냥</td><td>플레이 내용과 밸런스가 바뀜 — 반영 뒤 다시 돌려 볼 시간 필요</td></tr>
+  <tr><td><b>~11/5</b></td><td>B1~B5</td><td>고르기만 하면 되는 것</td></tr>
+  <tr><td><b>~11/6</b></td><td>T1~T16 OK/수정, C1·C2</td><td>답 없으면 지금 값으로 확정, 제안은 하지 않음</td></tr>
+  <tr><td><b>~11/12</b></td><td>A4 문구 3곳, A3 대사</td><td>문구 교체는 빠르지만 최종 확인 시간 필요</td></tr>
+  <tr><td>11/8~11/18</td><td colspan="2">처음부터 끝까지 플레이 확인·버그 수정·최종 빌드. <b>새 규칙·새 화면은 넣지 않습니다.</b></td></tr>
+</table>
+<p class="note">관련 문서 (개발 저장소): Docs/Planning/Decisions.md · PlannerRequests_2026-10-24.md · Fantasia_기획_리소스_대기목록_2026-10-25.pdf · 디자인 요청은 Docs/Art/Design_Request_1028 (별도 문서)</p>
+
+</body>
+</html>
