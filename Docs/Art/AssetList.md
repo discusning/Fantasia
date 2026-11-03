@@ -223,6 +223,27 @@
 
 - 형식: OGG 또는 WAV, 배경음은 이음매 없이 반복되게
 
+### 효과음 넣는 법 (2026-11-03, 코드 수정 없음)
+- `Assets/_Project/Resources/Sfx/` 폴더에 **아래 이름 그대로** 파일을 넣으면 바로 소리가 남 (예: `UI_Click.wav`)
+- 소리 크기는 `Resources/SfxLibrary` 에셋의 같은 이름 칸 Volume (기본 0.8). 칸에 Clip을 직접 끼워도 됨
+- 파일이 없는 소리는 무음으로 지나감 (오류 없음)
+
+| 이름 | 나는 때 | 이름 | 나는 때 |
+|---|---|---|---|
+| `UI_Click` | 버튼 클릭 | `Battle_SlotSuccess` | 확률 칸 성공 (칸마다) |
+| `UI_Open` | 상점·인벤토리 열기 | `Battle_SlotFail` | 확률 칸 실패 |
+| `UI_Close` | 상점·인벤토리 닫기 | `Battle_Hit` | 명중 |
+| `UI_ItemGet` | 아이템 획득 알림 | `Battle_Crit` | 크리티컬 |
+| `UI_Coin` | 사기·팔기·서비스·제작 | `Battle_Miss` | 빗나감·회피 |
+| `Board_Dice` | 주사위 | `Battle_Heal` | 회복 (스킬·회복약) |
+| `Board_Step` | 말 이동 (칸마다) | `Battle_Down` | 쓰러짐 |
+| `Board_TurnAlly` | 아군 턴 시작 | `Battle_Revive` | 부활 |
+| `Board_TurnEnemy` | 적 턴 시작 | `Result_Victory` | 전투 승리 |
+| `Board_Encounter` | 조우 창 | `Result_Defeat` | 전투 패배·전멸 |
+
+- 아직 자리 없음 (P2): 보물·회복 칸, 출구 열림, 상태 걸림, 방어, 장착, 경고 3종
+- 배경음은 `Resources/MusicLibrary` 에셋 칸에 Clip 연결 (런던 보드·일반 전투·보스전 3곡 자리)
+
 ## 10. 기획·아트에 확인할 것
 
 1. 아트 방향: 로우폴리 3D(For the King 느낌) 그대로 가는지
