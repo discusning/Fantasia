@@ -17,8 +17,6 @@ namespace Fantasia.Core
         // 보드
         public const string Dice = "Board_Dice";             // 주사위 굴림
         public const string Step = "Board_Step";             // 말 이동 (칸마다)
-        public const string TurnAlly = "Board_TurnAlly";     // 아군 턴 시작
-        public const string TurnEnemy = "Board_TurnEnemy";   // 적 턴 시작
         public const string Encounter = "Board_Encounter";   // 조우 창
         // 전투
         public const string SlotSuccess = "Battle_SlotSuccess"; // 확률 칸 성공 (칸마다)
@@ -35,7 +33,7 @@ namespace Fantasia.Core
         public static readonly string[] All =
         {
             UiClick, UiOpen, UiClose, ItemGet, Coin,
-            Dice, Step, TurnAlly, TurnEnemy, Encounter,
+            Dice, Step, Encounter, // 턴 전환은 판 연출 소리 (중복 방지)
             SlotSuccess, SlotFail, Hit, Crit, Miss, Heal, Down, Revive, Victory, Defeat,
         };
     }

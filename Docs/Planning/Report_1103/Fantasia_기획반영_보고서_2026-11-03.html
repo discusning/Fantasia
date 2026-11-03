@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>판타지아 기획 반영 보고 11-03</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 14mm 14mm; }
+  :root { --ink:#1d1a17; --dim:#5f5850; --gold:#9a7230; --line:#d9d2c6; --bg:#f7f3ec; --ok:#3d6b45; --warn:#a33a2c; --wait:#5c6b74; }
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 21pt; margin: 0 0 4px; letter-spacing: -0.5px; }
+  h2 { font-size: 13.5pt; margin: 18px 0 8px; padding: 6px 10px; background: var(--ink); color: #fff; border-radius: 3px; page-break-after: avoid; }
+  h3 { font-size: 11pt; margin: 10px 0 4px; color: var(--gold); page-break-after: avoid; }
+  p { margin: 4px 0; }
+  .cover { border: 2px solid var(--ink); padding: 16px 20px; margin-bottom: 10px; }
+  .sub { color: var(--dim); font-size: 10.5pt; }
+  .meta { display: flex; gap: 16px; margin-top: 8px; font-size: 9.5pt; color: var(--dim); flex-wrap: wrap; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 4px; }
+  .stat { border: 1px solid var(--line); background: var(--bg); padding: 8px; text-align: center; border-radius: 3px; }
+  .stat b { display: block; font-size: 16pt; }
+  .stat span { font-size: 8.5pt; color: var(--dim); }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9pt; }
+  th, td { border: 1px solid var(--line); padding: 5px 6px; vertical-align: top; text-align: left; }
+  th { background: var(--bg); font-weight: 700; }
+  tr { page-break-inside: avoid; }
+  .tag { font-size: 8pt; padding: 1px 7px; border-radius: 9px; color: #fff; white-space: nowrap; }
+  .tag.ok { background: var(--ok); } .tag.warn { background: var(--warn); } .tag.wait { background: var(--wait); }
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 4px 0; }
+  .cmp > div { border: 1px solid var(--line); padding: 6px 9px; border-radius: 3px; font-size: 9.3pt; }
+  .cmp .before { background: #f3f0ea; }
+  .cmp .after { background: #eef5ef; border-color: #b9d3bd; }
+  .cmp b.h { display: block; font-size: 8.5pt; color: var(--dim); margin-bottom: 2px; }
+  ul { margin: 3px 0 3px 18px; padding: 0; } li { margin: 1px 0; }
+  .shot { margin: 8px 0 4px; text-align: center; page-break-inside: avoid; }
+  .shot img { width: 100%; border: 1px solid var(--line); }
+  .shot.m img { width: 82%; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; page-break-inside: avoid; }
+  .pair .shot img { width: 100%; }
+  .cap { font-size: 8.5pt; color: var(--dim); margin-top: 2px; }
+  .note { font-size: 9pt; color: var(--dim); }
+  .box { background: var(--bg); border-left: 4px solid var(--gold); padding: 6px 10px; margin: 6px 0; font-size: 9.3pt; }
+  .ask { background: #fbeee9; border: 1px dashed var(--warn); padding: 6px 10px; border-radius: 3px; margin-top: 6px; font-size: 9.4pt; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>판타지아 — 기획 반영 보고</h1>
+  <div class="sub">개발팀 → 기획·디자인팀 · 「1막 게임기획 보고서 (11/3)」 권고안 적용 결과</div>
+  <div class="meta"><span>작성 2026-11-03</span><span>팀장 확정: 권고안대로 (사냥 제한 3라운드 포함)</span><span>최종 마감 2026-11-18</span></div>
+  <div class="summary">
+    <div class="stat"><b>9 / 12</b><span>보고서 항목 게임에 반영</span></div>
+    <div class="stat"><b>3건</b><span>기다리는 항목 (B2·C1·C2)</span></div>
+    <div class="stat"><b>30 / 30</b><span>자동 점검(QA) 통과</span></div>
+    <div class="stat"><b>1막 클리어</b><span>처음부터 끝까지 자동 플레이 성공</span></div>
+  </div>
+</div>
+
+<h2>한눈에 보기</h2>
+<table>
+  <tr><th style="width:42px">번호</th><th style="width:130px">항목</th><th>게임에 어떻게 들어갔나</th><th style="width:54px">상태</th></tr>
+  <tr><td>A1</td><td>피의 사냥</td><td>사신 3마리 · 3라운드 안에 전부 잡기 · 라운드마다 1칸 다가옴</td><td><span class="tag ok">반영</span></td></tr>
+  <tr><td>A2</td><td>월드 라운드</td><td>지금 게임과 같음 — 바꾼 것 없음</td><td><span class="tag ok">같음</span></td></tr>
+  <tr><td>A3</td><td>저장 실패</td><td>멈추는 창 없앰 → 알림만 띄우고 계속 진행</td><td><span class="tag ok">반영</span></td></tr>
+  <tr><td>B1</td><td>잠김 무기</td><td>2막 무기 3개를 1막 상점 목록에서 숨김 (데이터는 그대로)</td><td><span class="tag ok">반영</span></td></tr>
+  <tr><td>B2</td><td>메뉴 그림 위치</td><td>그림 받으면 넣음. 11/5까지 없으면 지금 메뉴 그대로</td><td><span class="tag wait">대기</span></td></tr>
+  <tr><td>B3·B4</td><td>턴 판</td><td>아군·적 턴 바뀔 때 사슬 판이 약 1초 떨어짐</td><td><span class="tag ok">반영</span></td></tr>
+  <tr><td>B5·B6</td><td>결과 판</td><td>승리·보스·패배·전멸·1막 클리어 5종, 판에는 제목 + 한 줄 요약</td><td><span class="tag ok">반영</span></td></tr>
+  <tr><td>B7</td><td>판 소리</td><td>받은 소리 2개(사슬·멈춤) 그대로, 한 번씩만</td><td><span class="tag ok">반영</span></td></tr>
+  <tr><td>C1</td><td>효과음 파일</td><td>재생 장치는 완성. 파일 넣으면 바로 소리 남 (11/7 목표)</td><td><span class="tag wait">대기</span></td></tr>
+  <tr><td>C2</td><td>캐릭터 그림</td><td>1차는 지금 인형 그대로. 11/7까지 받은 것만 검토</td><td><span class="tag wait">대기</span></td></tr>
+</table>
+<p class="note">아래 사진은 모두 실제 게임 화면입니다 (1920×1080, 자동 플레이 중 촬영).</p>
+
+<h2>A1 · 피의 사냥</h2>
+<div class="cmp">
+  <div class="before"><b class="h">예전</b>사신 4마리 · 1마리만 잡으면 끝 · 아군 턴마다 2칸 · 아군 턴 3번 제한</div>
+  <div class="after"><b class="h">지금</b>사신 <b>3마리</b> · <b>전부</b> 잡아야 끝 · 라운드마다 <b>1칸</b> · <b>3월드 라운드</b> 제한</div>
+</div>
+<ul>
+  <li>피의 흔적이 100이 되면 파티 근처 <b>1~2칸</b>에 사신 3마리가 나타남 (빈 칸이 모자라면 조금 더 먼 칸)</li>
+  <li>나타난 바로 그 아군 턴에는 사신이 움직이지 않음 → 도망·준비할 시간</li>
+  <li>사신 1마리 잡을 때마다: 35 Cent + 경험치 40 (전투 보상)</li>
+  <li><b>3마리 전부</b> 잡으면: 100 Cent + 생명의 영약 1개, 피의 흔적 0</li>
+  <li><b>3라운드 안에 못 잡으면</b>: 살아 있는 1명이 HP 1 (MP·LP는 그대로), 영혼 수확 +5, 남은 사신 사라짐</li>
+  <li>끝난 뒤 2라운드 동안은 피의 흔적이 오르지 않음 (유예)</li>
+  <li>안내 칸에 "남은 라운드 · 남은 사신" 이 계속 보임</li>
+</ul>
+<div class="shot"><img src="img/blood_hunt.png"><div class="cap">사신 3마리 출현 직후 — 왼쪽 위 안내 "3라운드 안에 전부 처치 / 남은 라운드 3 · 남은 사신 3", 위 바에 "피의 사냥 진행 중"</div></div>
+
+<h2 class="pb">A3 · 저장 실패</h2>
+<div class="cmp">
+  <div class="before"><b class="h">예전</b>저장 실패 창이 떠서 게임이 멈춤 → [다시 시도]를 눌러야 진행</div>
+  <div class="after"><b class="h">지금</b>게임은 <b>멈추지 않음</b>. 알림만 뜨고, 다음 자동 저장 때 다시 시도</div>
+</div>
+<ul>
+  <li>알림 문구: "저장에 실패했습니다. 게임은 계속 진행되며 다음 자동저장 때 다시 시도합니다." (4초)</li>
+  <li>저장이 다시 성공할 때까지 왼쪽 위 안내 칸에 빨간 <b>"저장 실패"</b> 줄이 계속 남음</li>
+  <li>실패가 이어져도 알림은 처음 1번만 (같은 알림이 계속 뜨지 않게)</li>
+  <li>메인 메뉴로 나가기 · 게임 종료 전에 실패 중이면 한 번 더 저장 시도 (막지는 않음)</li>
+  <li>저장은 임시 파일에 먼저 쓰기 때문에, 실패해도 <b>마지막으로 성공한 저장 파일은 그대로</b> 남음 → 메인 메뉴의 저장 시각도 성공한 것만 보임</li>
+</ul>
+<div class="shot"><img src="img/save_fail.png"><div class="cap">일부러 저장을 막아 본 화면 — 위쪽 알림 + 왼쪽 위 빨간 "저장 실패" 줄. 막은 것을 풀자 다음 저장 성공, 빨간 줄도 사라짐</div></div>
+
+<h2>B1 · 상점의 잠김 무기</h2>
+<p>1막에서는 살 수 없는 2막 무기 3개(은도금 해부단검 · 은탄 수사권총 · 연금술 룬 스태프)를 목록에서 뺐습니다. 데이터는 지워지지 않아서 2막이 열리면 다시 보입니다.</p>
+<div class="pair">
+  <div class="shot"><img src="img/shop_before.png"><div class="cap">예전 — "잠김" 무기 3개가 같이 보임</div></div>
+  <div class="shot"><img src="img/shop_after.png"><div class="cap">지금 — 살 수 있는 3개만</div></div>
+</div>
+
+<h2 class="pb">B3·B4·B7 · 턴 판 (아군 턴 / 적 턴)</h2>
+<ul>
+  <li>월드에서 아군 턴 ↔ 적 턴이 바뀔 때만 나옴 (전투 안의 개인 턴에는 안 나옴)</li>
+  <li>위 바에 매달린 판이 떨어져 멈추기까지 약 <b>1초</b>, 잠깐 머문 뒤 흐려지며 사라짐</li>
+  <li>판이 내려오는 동안은 <b>주사위(Space)·칸 클릭을 받지 않음</b> → 턴이 두 번 시작되지 않게</li>
+  <li>적 턴은 짧아서(0.9초) 바로 아군 턴이 옴 → 판을 다시 떨어뜨리지 않고 <b>글자만 바꿈</b> (보고서 "제목만 바꿈")</li>
+  <li>소리: 받은 사슬·멈춤 소리 2개를 한 번씩. 설정의 효과음 볼륨을 따름</li>
+  <li>예전에 따로 만든 "턴 전환 효과음" 자리 2개는 판 소리와 겹쳐서 뺌 (효과음 표 20 → 18종)</li>
+</ul>
+<div class="pair">
+  <div class="shot"><img src="img/turn_ally.png"><div class="cap">아군 턴 — "명탐정이(가) 파티를 이끈다"</div></div>
+  <div class="shot"><img src="img/turn_enemy.png"><div class="cap">적 턴 — "교단이 움직인다..."</div></div>
+</div>
+
+<h2 class="pb">B5·B6 · 결과 판</h2>
+<table>
+  <tr><th style="width:120px">상황</th><th style="width:110px">판 제목</th><th>판 아래 한 줄</th><th style="width:70px">판 그림</th></tr>
+  <tr><td>일반 전투 승리</td><td>전투 승리</td><td>"40 Cent · 경험치 20 · 전리품 획득"</td><td>승리 판</td></tr>
+  <tr><td>보스 처치</td><td>아벨 모로 격파</td><td>"180 Cent · 경험치 100 · 전리품 획득"</td><td>승리 판</td></tr>
+  <tr><td>전투 패배 (LP로 복귀)</td><td>전투 패배</td><td>"약탈 n Cent · 안전 타일에서 다시 일어남"</td><td>패배 판</td></tr>
+  <tr><td>전원 영구 사망</td><td>조사대 전멸</td><td>"모든 캐릭터가 영구 사망했다"</td><td>패배 판</td></tr>
+  <tr><td>제임스 보고 후</td><td>1막 클리어</td><td>"런던 — 검시소의 장부"</td><td>승리 판</td></tr>
+  <tr><td>퇴각</td><td colspan="3">판 없이 예전 결과 창 그대로 (보고서대로)</td></tr>
+</table>
+<ul>
+  <li>판에는 <b>제목 + 한 줄 요약</b>만. 자세한 보상(아이템·퀘스트 물건·누가 경험치를 받았는지)은 판 아래 칸에</li>
+  <li>판이 바닥에 닿는 순간 아래 칸이 나타나고, 판이 완전히 멈춘 뒤(약 <b>1.7초</b>) 버튼이 나옴 → 연출 중에 잘못 눌러 넘어가지 않게</li>
+  <li>보스 보상 8줄도 아래 칸에 다 들어감 (디자인 요청서에 적었던 "8줄 안 들어감" 문제 해결)</li>
+</ul>
+<div class="pair">
+  <div class="shot"><img src="img/result_victory.png"><div class="cap">전투 승리</div></div>
+  <div class="shot"><img src="img/result_boss.png"><div class="cap">아벨 모로 격파 — 보상 8줄이 아래 칸에</div></div>
+</div>
+<div class="pair">
+  <div class="shot"><img src="img/result_wipe.png"><div class="cap">조사대 전멸 — [새 게임] [메인 메뉴]</div></div>
+  <div class="shot"><img src="img/act_clear.png"><div class="cap">1막 클리어 — 아래에 플레이 기록</div></div>
+</div>
+<p class="note">"전투 패배" 판은 조사대 전멸과 같은 패배 판 그림에 제목·한 줄만 다릅니다 (자동 플레이에서는 이 상황이 안 나와 사진 없음).</p>
+
+<h2 class="pb">점검 결과</h2>
+<table>
+  <tr><th style="width:150px">점검</th><th>결과</th></tr>
+  <tr><td>셀프 테스트 (규칙 계산)</td><td>20종 모두 통과 — 피의 사냥 새 규칙(3마리·3라운드·실패·유예·전부 처치 보상) 포함</td></tr>
+  <tr><td>QA 자동 점검</td><td>30 / 30 통과 — 런던 무기 3종, 승리 판, "판 멈추기 전 버튼 숨김 → 멈춘 뒤 보임", 전멸 판 버튼 포함</td></tr>
+  <tr><td>처음부터 끝까지</td><td>1막 클리어 · 전투 8번 모두 승리 · 턴 판 정상 · 오류 0 · 약 4분 (자동 플레이 속도)</td></tr>
+  <tr><td>저장 실패</td><td>알림 뜸 · 게임 안 멈춤 · 막힌 것 풀면 다음 저장 성공 · 빨간 줄 사라짐</td></tr>
+  <tr><td>1막 클리어 화면</td><td>처음에 판 아래 장식이 첫 줄을 가림 → 글 칸을 내려서 고침</td></tr>
+</table>
+
+<h2>확인 부탁 · 남은 것</h2>
+<div class="ask"><b>기획 확인 1 — 피의 사냥 난이도</b><br>
+자동 플레이 1번째 판에서는 3라운드 동안 사신 2마리만 잡고 실패했습니다 (규칙대로 역병 의사 HP 1, 영혼 수확 +5).
+자동 플레이는 사신을 쫓아가지 않고 원래 길을 가기 때문에 <b>짐작</b>으로는 사람이 하면 더 쉽습니다.
+직접 해 보시고 3라운드가 빡빡하면 알려 주세요 (숫자 1개만 바꾸면 됨).</div>
+<div class="ask"><b>디자인 확인 — 사슬 윗끝</b><br>
+결과 판 사슬 윗끝이 화면 위에서 잘려 보입니다 (디자인·애니메이션 요청서 11/3에 적은 것). 답 오면 맞추겠습니다.</div>
+<div class="box">
+  기다리는 것: B2 메뉴 그림(11/5) · C1 효과음 파일(11/7, 11/10까지 없으면 허락된 대체 음원) · C2 캐릭터 그림(11/7 받은 것만)<br>
+  일정: 11/8부터 새 규칙·새 화면 없음 · 11/12 글자 확정 · 11/18 마감
+</div>
+
+</body>
+</html>

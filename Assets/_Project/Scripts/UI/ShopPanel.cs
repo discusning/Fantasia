@@ -116,8 +116,10 @@ namespace Fantasia.UI
         {
             _shown.Clear();
             var jobs = _party.Members.Select(m => m.Job.Id).ToList();
+            var (act2, castle) = _stages != null ? _stages() : (false, false);
+            // 아직 안 열린 단계(2막·고성) 상품은 목록에서 숨김 — 데이터는 그대로 (보고서 11/3 B1)
             IEnumerable<ShopEntry> Entries(Func<ShopEntry, bool> kind) =>
-                _shop.Entries.Where(e => kind(e) && !ShopRules.IsHidden(e, jobs));
+                _shop.Entries.Where(e => kind(e) && !ShopRules.IsHidden(e, jobs) && ShopRules.StageUnlocked(e.Stage, act2, castle));
             switch (_tab)
             {
                 case Tab.Supplies: _shown.AddRange(Entries(e => e.Item is ConsumableDefinition)); break;

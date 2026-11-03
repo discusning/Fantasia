@@ -139,6 +139,8 @@ namespace Fantasia.Core
             float start = Time.realtimeSinceStartup;
             float limit = start + 40 * 60;
             int turns = 0, battles = 0, wins = 0, shopVisits = 0, events = 0;
+            int turnDrops = 0; string lastTurnTitle = ""; // 턴 안내 판 나온 횟수
+            var shotTitles = new System.Collections.Generic.HashSet<string>(); // 보고용 사진: 장면마다 1장
             string ending = "시간 초과";
 
             yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
@@ -168,9 +170,28 @@ namespace Fantasia.Core
             while (Time.realtimeSinceStartup < limit)
             {
                 yield return null;
+                string turnTitle = BoardTopBar.DevTurnDropVisible ? BoardTopBar.DevTurnDropTitle : "";
+                if (turnTitle != "" && turnTitle != lastTurnTitle)
+                {
+                    turnDrops++;
+                    string tt = turnTitle;
+                    if (!shotTitles.Contains("turn:" + tt))
+                    {
+                        shotTitles.Add("turn:" + tt);
+                        yield return new WaitForSecondsRealtime(tt == "적 턴" ? 0.4f : 0.45f); // 판이 닿은 뒤
+                        yield return Shot(tt == "아군 턴" ? "full_turn_ally" : "full_turn_enemy");
+                    }
+                }
+                if (BoardSession.Instance != null && BoardSession.Instance.Hunt.Active && !shotTitles.Contains("hunt"))
+                {
+                    shotTitles.Add("hunt");
+                    yield return new WaitForSecondsRealtime(1.5f);
+                    yield return Shot("full_blood_hunt");
+                }
+                lastTurnTitle = turnTitle;
                 if (ActClearPanel.IsOpen)
                 {
-                    yield return new WaitForSeconds(0.5f);
+                    yield return new WaitForSecondsRealtime(2.2f);
                     yield return Shot("full_act_clear");
                     ending = "1막 클리어";
                     ActClearPanel.DevClose();
@@ -178,7 +199,6 @@ namespace Fantasia.Core
                     break;
                 }
                 if (FindFirstObjectByType<MainMenuController>() != null) { ending = "메인 메뉴로 돌아감 (전멸 등)"; break; }
-                if (SaveErrorPanel.IsOpen) { Note("저장 실패 창 — 재시도"); SaveErrorPanel.DevRetry(); yield return new WaitForSecondsRealtime(0.5f); continue; }
 
                 if (SceneManager.GetActiveScene().name == "CombatTest")
                 {
@@ -187,7 +207,9 @@ namespace Fantasia.Core
                     var b = _lastBattle;
                     if (b == null || !b.DevFinished) { Note("실패: 전투가 끝나지 않음"); yield return Shot("full_battle_stuck"); ending = "전투 멈춤"; break; }
                     if (b.DevEnemies.All(e => !e.IsAlive)) wins++;
-                    yield return new WaitForSeconds(0.6f);
+                    yield return new WaitForSecondsRealtime(2f); // 결과 판이 멈출 때까지
+                    string rt = b.DevHud.DevResultTitle;
+                    if (!shotTitles.Contains("result:" + rt)) { shotTitles.Add("result:" + rt); yield return Shot("full_result_" + (rt == "아벨 모로 격파" ? "boss" : rt == "전투 승리" ? "victory" : "other")); }
                     b.DevContinue();
                     yield return WaitFor(() => SceneManager.GetActiveScene().name != "CombatTest", 10f, "전투 뒤 씬 전환");
                     yield return new WaitForSeconds(1f);
@@ -222,7 +244,7 @@ namespace Fantasia.Core
             }
 
             var s = BoardSession.Instance;
-            Note($"통플레이 결과: {ending} · 보드 턴 {turns} · 월드 라운드 {s?.World.WorldRound} · 전투 {battles} (승리 {wins}) · 상점 방문 {shopVisits} · 이벤트 {events}"
+            Note($"통플레이 결과: {ending} · 보드 턴 {turns} · 월드 라운드 {s?.World.WorldRound} · 전투 {battles} (승리 {wins}) · 상점 방문 {shopVisits} · 이벤트 {events} · 턴 안내 판 {turnDrops}회"
                  + $" · 레벨 {string.Join("/", s?.Party?.Members.Select(m => m.Level) ?? new int[0])} · Cent {s?.Party?.Cent} · 피의 흔적 {s?.BloodTrail} · 영혼 수확 {s?.SoulHarvest}"
                  + $" · 실제 시간 {(Time.realtimeSinceStartup - start) / 60f:0.0}분");
             yield return Shot("full_end");
@@ -311,22 +333,27 @@ namespace Fantasia.Core
             SettingsPanel.DevStepVolume(0, +1);
             SettingsPanel.DevClose();
 
-            // 저장 실패: 임시 파일 자리에 폴더를 만들어 쓰기를 막는다 → 경고·일시정지 → 막힌 것 풀고 재시도 → 재개
+            // 저장 실패 (보고서 11/3 A3): 임시 파일 자리에 폴더를 만들어 쓰기를 막는다 → 안내만 하고 계속 진행 → 풀면 다음 저장 지점에서 성공
             string blocker = SaveGame.SavePath + ".tmp";
             Directory.CreateDirectory(blocker);
             menu.DevOpenPartySelect();
             yield return new WaitForSecondsRealtime(0.5f);
             menu.OnDepart(); // 새 게임 저장 → 실패
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
             yield return new WaitForSecondsRealtime(0.8f);
-            Note($"저장 실패 창 {(SaveErrorPanel.IsOpen ? "열림" : "안 열림")} · timeScale {Time.timeScale}");
+            Note($"저장 실패 중: 안내 \"{SaveFailNotice.DevLast}\" (화면 {SaveFailNotice.DevVisible}) · timeScale {Time.timeScale} · 실패 표시 {SaveGame.IsFailing}");
             yield return Shot("save_error");
-            SaveErrorPanel.DevRetry(); // 아직 막힘 → 계속 일시정지
-            yield return new WaitForSecondsRealtime(0.3f);
-            Note($"막힌 채 재시도 → 창 {(SaveErrorPanel.IsOpen ? "유지" : "닫힘")} · timeScale {Time.timeScale}");
             Directory.Delete(blocker);
-            SaveErrorPanel.DevRetry();
-            yield return new WaitForSecondsRealtime(0.5f);
-            Note($"풀고 재시도 → 창 {(SaveErrorPanel.IsOpen ? "유지" : "닫힘")} · timeScale {Time.timeScale} · 저장 파일 {(SaveGame.HasSave ? "있음" : "없음")}");
+            bool retried = SaveGame.Checkpoint("자동 점검 — 다음 저장 지점");
+            Note($"풀고 다음 저장 → 성공 {retried} · 실패 표시 {SaveGame.IsFailing} · 저장 파일 {(SaveGame.HasSave ? "있음" : "없음")}");
+            // 보드에서 저장 실패 → 알림 화면 촬영 (보고용) → 풀고 다시 저장
+            if (DialoguePanel.IsOpen) { while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); yield return new WaitForSecondsRealtime(0.15f); } }
+            Directory.CreateDirectory(blocker);
+            SaveGame.Checkpoint("자동 점검 — 보드 저장 실패");
+            yield return new WaitForSecondsRealtime(0.6f);
+            yield return Shot("save_fail_board");
+            Directory.Delete(blocker);
+            Note($"보드 저장 실패 → 다시 저장 {SaveGame.Checkpoint("자동 점검 — 다시 저장")} · 실패 표시 {SaveGame.IsFailing}");
             yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
             yield return new WaitForSeconds(1.5f);
             yield return Shot("board_k12_notice");
@@ -780,6 +807,7 @@ namespace Fantasia.Core
                     Note($"제임스 보고 → K12 {(hexBoard.IsExitOpen(exit) ? "열림" : "잠김")} · 회차 상태 {BoardSession.Instance.Run} · 진행: {string.Join(", ", BoardSession.Instance.Quests.Select(q => q.Title))}");
                     // 1막 클리어 결과 화면 → 메인 메뉴 → 이어하기 = 결과 화면
                     yield return WaitFor(() => ActClearPanel.IsOpen, 3f, "클리어 결과 화면");
+                    yield return new WaitForSecondsRealtime(2.2f);
                     yield return Shot("act1_clear");
                     ActClearPanel.DevClose();
                     yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
@@ -1272,7 +1300,15 @@ namespace Fantasia.Core
             Qa(won, "Q01 전투 승리");
             int battleCent = party.Cent - centBeforeQuest;
             ItemAcquiredToast.DevLast = null;
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.3f);
+            if (b != null)
+            {
+                Qa(b.DevHud.DevResultDropPlaying && b.DevHud.DevResultTitle == "전투 승리", $"승리 판 \"{b.DevHud.DevResultTitle}\" · 요약 \"{b.DevHud.DevResultSummary}\"");
+                Qa(!b.DevHud.DevResultButtonsVisible, "판이 멈추기 전 버튼 숨김");
+                yield return new WaitForSecondsRealtime(1.9f);
+                Qa(b.DevHud.DevResultButtonsVisible, "판이 멈춘 뒤 버튼 보임");
+                yield return Shot("qa_victory_panel");
+            }
             b?.DevContinue();
             yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null && DialoguePanel.IsOpen, 10f, "의뢰 완료 대사");
             yield return new WaitForSeconds(0.3f);
@@ -1317,7 +1353,7 @@ namespace Fantasia.Core
             foreach (var m in party.AliveMembers.ToList()) m.TakeDamage(m.CurrentHP);
             battle.DevCheckEnd();
             yield return WaitFor(() => battle.DevFinished, 10f, "전멸 판정");
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSecondsRealtime(2.2f); // 판이 멈추고 버튼이 나올 때까지
             yield return Shot("qa_game_over");
             Qa(battle.DevHud.DevResultTitle == ActOneStory.GameOverTitle, $"게임 오버 제목 (실제 {battle.DevHud.DevResultTitle})");
             Qa(battle.DevHud.DevResultButtons == "새 게임 / 메인 메뉴", $"게임 오버 버튼 (실제 {battle.DevHud.DevResultButtons})");
@@ -1365,9 +1401,10 @@ namespace Fantasia.Core
             yield return Shot("qa_report_dialogue");
             while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); yield return new WaitForSeconds(0.2f); }
             yield return WaitFor(() => ActClearPanel.IsOpen, 10f, "1막 클리어");
-            yield return new WaitForSeconds(1.5f);
+            yield return new WaitForSecondsRealtime(2.2f);
             yield return Shot("qa_report_clear");
             Qa(ActClearPanel.IsOpen, "보고 끝 → 1막 클리어 화면");
+            Qa(ActClearPanel.DevButtonVisible, "1막 클리어 판 멈춘 뒤 버튼");
             Note($"QA 결과: 통과 {_qaPass} · 실패 {_qaFail}");
             Note("자동 플레이 완료");
         }

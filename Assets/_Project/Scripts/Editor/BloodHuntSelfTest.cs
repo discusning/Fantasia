@@ -38,56 +38,71 @@ namespace Fantasia.Editor
             e += Expect("9라운드 S", s, 18);
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
             e += Check(hunt.Active, "10라운드 G 100 → 피의 사냥 시작");
-            e += Expect("사신 4마리", hunt.Reapers.Count, 4);
-            e += Expect("남은 아군 턴 3", hunt.AllyTurnsLeft, 3);
+            e += Expect("사신 3마리", hunt.Reapers.Count, 3);
+            e += Expect("남은 라운드 3", hunt.AllyTurnsLeft, 3);
             int london = map.RegionOf(start);
             e += Check(hunt.Reapers.All(c => map.RegionOf(c) == london), "사신은 파티가 있는 지역(런던)에만");
             e += Check(hunt.Reapers.All(c => map.Tiles[c].Kind == MapTileKind.Walkable), "사신은 빈 이동 칸에만 (특수 칸 X)");
-            e += Check(hunt.Reapers.All(c => c.DistanceTo(start) >= BloodHuntRules.MinSpawnDistance), "파티에서 3칸 이상");
-            e += Check(hunt.Reapers.Distinct().Count() == 4, "사신끼리 겹치지 않음");
+            e += Check(hunt.Reapers.All(c => c.DistanceTo(start) >= 1 && c.DistanceTo(start) <= 3), $"파티 근처에 생성 (거리 {string.Join(",", hunt.Reapers.Select(c => c.DistanceTo(start)))})");
+            e += Check(hunt.Reapers.Distinct().Count() == 3, "사신끼리 겹치지 않음");
 
-            // 아군 턴마다 2칸씩 다가옴
-            var before = hunt.Reapers.Select(c => map.Distance(c, start)).ToList();
+            // 생성 직후 아군 턴에는 안 움직임 → 그다음부터 1칸씩
+            var spawned = hunt.Reapers.ToList();
             BloodHuntRules.MoveReapers(hunt, map, start);
-            var after = hunt.Reapers.Select(c => map.Distance(c, start)).ToList();
-            e += Check(Enumerable.Range(0, 4).All(i => after[i] == System.Math.Max(0, before[i] - 2) || after[i] == before[i] - 1),
-                $"사신이 최대 2칸 접근 (전 {string.Join(",", before)} → 후 {string.Join(",", after)})");
+            e += Check(hunt.Reapers.SequenceEqual(spawned), "생성 직후 아군 턴: 사신 그대로");
+            var far = new BloodHuntState { Active = true, AllyTurnsLeft = 3 };
+            far.Reapers.Add(map.TileAt("S10").Coord);
+            int d0 = map.Distance(far.Reapers[0], start);
+            BloodHuntRules.MoveReapers(far, map, start);
+            e += Expect("사신 1칸 접근", map.Distance(far.Reapers[0], start), d0 - 1);
 
-            // 3아군 턴 동안 못 잡으면 실패: 1명 HP·MP 1, G 0, 사냥 끝
+            // 3라운드 동안 다 못 잡으면 실패: 1명 HP 1 (MP 유지), S +5, G 0, 사냥 끝
             int sBefore = s;
+            int mpBefore = party.Members.Sum(m => m.CurrentMP);
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
-            e += Check(hunt.Active && hunt.AllyTurnsLeft == 1, "2번 지나도 진행 중 (남은 1)");
+            e += Check(hunt.Active && hunt.AllyTurnsLeft == 1, "2라운드 지나도 진행 중 (남은 1)");
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out var victim);
-            e += Check(!hunt.Active, "3아군 턴 뒤 실패로 종료");
-            e += Check(victim != null && victim.CurrentHP == 1 && (victim.MaxMP == 0 || victim.CurrentMP == 1), "치명적 공격: 1명 HP·MP 1");
+            e += Check(!hunt.Active, "3라운드 뒤 실패로 종료");
+            e += Check(victim != null && victim.CurrentHP == 1, "치명적 공격: 1명 HP 1");
+            e += Expect("실패해도 MP 유지", party.Members.Sum(m => m.CurrentMP), mpBefore);
             e += Expect("실패 후 G 0", g, 0);
-            e += Expect("실패해도 S는 라운드 +2만 (실패 +5 없음)", s, sBefore + 6);
+            e += Expect("실패 S = 라운드 +2 ×3 + 실패 +5", s, sBefore + 6 + 5);
 
-            // 유예 2라운드 동안 G 안 오름
+            // 유예 2라운드 동안 G 안 오름 (S는 오름)
+            int sGrace = s;
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
             e += Expect("유예 2라운드 G", g, 0);
+            e += Expect("유예 중에도 S +2", s, sGrace + 4);
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
             e += Expect("유예 끝나면 G +10", g, 10);
 
-            // 성공: 1마리 처치 → G 0, 종료, 100 Cent + 생명의 영약
+            // 1마리씩 처치 → 마지막에 완수: G 0, 종료, 100 Cent + 생명의 영약
             hunt.Clear();
             hunt.Active = true;
             hunt.AllyTurnsLeft = 2;
+            var a = map.TileAt("S07").Coord; var b = map.TileAt("S10").Coord; var c3 = map.TileAt("S16").Coord;
+            hunt.Reapers.AddRange(new[] { a, b, c3 });
             g = 100;
             int cent = party.Cent;
-            BloodHuntRules.Succeed(hunt, ref g, party, ItemCatalog.Current);
-            e += Check(!hunt.Active && g == 0, "성공 → 종료, G 0");
-            e += Expect("성공 보상 Cent", party.Cent, cent + 100);
-            e += Expect("성공 보상 영약", party.Inventory.CountOf(ItemCatalog.Current.Consumable(ConsumableIds.LifeElixir)), 1);
+            BloodHuntRules.OnReaperKilled(hunt, b, ref g, party, ItemCatalog.Current);
+            e += Check(hunt.Active && hunt.Reapers.Count == 2 && !hunt.Reapers.Contains(b), "1마리 처치: 그 사신만 사라지고 계속");
+            e += Expect("1마리 처치로는 완수 보상 없음", party.Cent, cent);
+            BloodHuntRules.OnReaperKilled(hunt, a, ref g, party, ItemCatalog.Current);
+            BloodHuntRules.OnReaperKilled(hunt, c3, ref g, party, ItemCatalog.Current);
+            e += Check(!hunt.Active && g == 0, "3마리 처치 → 완수, G 0");
+            e += Expect("완수 보상 Cent", party.Cent, cent + 100);
+            e += Expect("완수 보상 영약", party.Inventory.CountOf(ItemCatalog.Current.Consumable(ConsumableIds.LifeElixir)), 1);
 
             // 파티 칸에 닿으면 그 사신 번호
             hunt.Clear();
             hunt.Active = true;
             hunt.AllyTurnsLeft = 3;
-            hunt.Reapers.Add(map.TileAt("S07").Coord); // S05에서 2칸
-            e += Expect("2칸 거리 사신이 파티 칸 도착", BloodHuntRules.MoveReapers(hunt, map, start), 0);
+            hunt.Reapers.Add(map.TileAt("S07").Coord);
+            int dS07 = map.Distance(hunt.Reapers[0], start);
+            for (int k = 1; k < dS07; k++) BloodHuntRules.MoveReapers(hunt, map, start);
+            e += Expect($"{dS07}칸 거리 사신이 {dS07}번째 아군 턴에 파티 칸 도착", BloodHuntRules.MoveReapers(hunt, map, start), 0);
 
             // S 상한 100, 75에서 붉은 하늘 문구
             hunt.Clear();

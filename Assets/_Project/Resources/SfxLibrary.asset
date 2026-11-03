@@ -34,12 +34,6 @@ MonoBehaviour:
   - Id: Board_Step
     Clip: {fileID: 0}
     Volume: 0.8
-  - Id: Board_TurnAlly
-    Clip: {fileID: 0}
-    Volume: 0.8
-  - Id: Board_TurnEnemy
-    Clip: {fileID: 0}
-    Volume: 0.8
   - Id: Board_Encounter
     Clip: {fileID: 0}
     Volume: 0.8

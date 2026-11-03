@@ -914,10 +914,10 @@ namespace Fantasia.Combat
                     {
                         session.StoryFlags.Add(ActOneStory.FlagAfterDialogueDone); // 도중 종료면 이어하기 때 이 대화만 다시 (결정서 T16-35)
                         SaveGame.Checkpoint("처치 후 대화");
-                        SfxPlayer.Play(SfxIds.Victory); _hud.ShowResult("승리", $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard);
+                        SfxPlayer.Play(SfxIds.Victory); _hud.ShowPanelResult(true, "아벨 모로 격파", RewardSummary(), $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard);
                     }));
                 }
-                else { EndPlayLog("승리", LastRewards, 0); SaveGame.Checkpoint("전투 승리·보상"); SfxPlayer.Play(SfxIds.Victory); _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
+                else { EndPlayLog("승리", LastRewards, 0); SaveGame.Checkpoint("전투 승리·보상"); SfxPlayer.Play(SfxIds.Victory); _hud.ShowPanelResult(true, "전투 승리", RewardSummary(), $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
             }
             else if (!wiped)
             {
@@ -947,14 +947,14 @@ namespace Fantasia.Combat
                     Log("  → 전원 영구 사망 — 플레이 종료");
                     EndPlayLog("전멸 (회차 종료)", null, lost);
                     SaveGame.EndRun(session); // Save.md 1: 회차 종료 기록을 먼저 저장한 뒤 게임 오버 표시
-                    SfxPlayer.Play(SfxIds.Defeat); _hud.ShowResult(ActOneStory.GameOverTitle, $"{ActOneStory.GameOverBody}{downed}", "새 게임", NewGameAfterWipe, "메인 메뉴", RestartGame); // 결정서 06
+                    SfxPlayer.Play(SfxIds.Defeat); _hud.ShowPanelResult(false, ActOneStory.GameOverTitle, "모든 캐릭터가 영구 사망했다", $"{ActOneStory.GameOverBody}{downed}", NewGameAfterWipe, "새 게임", "메인 메뉴", RestartGame); // 결정서 06
                 }
                 else
                 {
                     session.PlayerPosition = session.LastSafeCoord;
                     EndPlayLog("패배", null, lost);
                     SaveGame.Checkpoint("전투 패배");
-                    SfxPlayer.Play(SfxIds.Defeat); _hud.ShowResult("패배", $"파티가 쓰러졌다. 약탈 {lost} Cent ({percent}%).{downed}\n직전 안전 타일에서 다시 일어났다.", ReturnToBoard);
+                    SfxPlayer.Play(SfxIds.Defeat); _hud.ShowPanelResult(false, "전투 패배", lost > 0 ? $"약탈 {lost} Cent · 안전 타일에서 다시 일어남" : "안전 타일에서 다시 일어남", $"파티가 쓰러졌다. 약탈 {lost} Cent ({percent}%).{downed}\n직전 안전 타일에서 다시 일어났다.", ReturnToBoard);
                 }
             }
             return true;
@@ -1035,6 +1035,16 @@ namespace Fantasia.Combat
 
         public BattleRewards LastRewards { get; private set; }
 
+        // 결과 판 한 줄 요약: "180 Cent · 경험치 100 · 전리품 획득" (보고서 11/3 B6)
+        private string RewardSummary()
+        {
+            var r = LastRewards;
+            if (r == null) return "";
+            var parts = new List<string> { $"{r.Cent} Cent", $"경험치 {r.Experience}" };
+            if (r.Items.Count > 0) parts.Add("전리품 획득");
+            return string.Join(" · ", parts);
+        }
+
         // ───── 자동 플레이 점검(Dev/AutoPlayBot)용 — 버튼·클릭과 같은 처리를 부른다 ─────
         public bool DevAwaitingPlayer => _phase == Phase.ChoosingAction;
         public bool DevFinished => _phase == Phase.Finished;
@@ -1093,7 +1103,7 @@ namespace Fantasia.Combat
         // ───────────── 대상 선택 (전장 클릭) ─────────────
         private void Update()
         {
-            if (SaveErrorPanel.IsOpen || PauseMenu.IsOpen) return; // 저장 실패·게임 중 메뉴 — 진행 일시정지
+            if (PauseMenu.IsOpen) return; // 게임 중 메뉴 — 진행 일시정지
             // 사건 기록 (Q) — 전투 중엔 열람만
             if (Input.GetKeyDown(KeyCode.Q) && !DialoguePanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen) return;

@@ -27,7 +27,8 @@ namespace Fantasia.Core
         public static event Action<string> Saved; // 자동 플레이 점검용 (저장 지점 이름)
 
         // 저장 지점 (Save.md 3): 진행 중 회차만.
-        // 실패하면 경고 → 진행 일시정지 → 재시도 → 저장 성공 후 재개 (세이브 추가 수정안 — SaveErrorPanel)
+        // 실패하면 안내만 하고 계속 진행 → 다음 저장 지점에서 다시 시도 (1막 게임기획 보고서 11/3 A3, 팀장 확정).
+        // 이전 정상 파일은 그대로 남는다 (임시 파일에 쓰고 바꿔치기).
         // 성능 점검용: 마지막 자동 저장에 걸린 시간·이번 실행의 저장 횟수
         public static double LastSaveMs { get; private set; }
         public static int SaveCount { get; private set; }
@@ -40,9 +41,28 @@ namespace Fantasia.Core
             bool ok = Save(s);
             LastSaveMs = watch.Elapsed.TotalMilliseconds; // 성능 점검용 (PerfMonitor)
             SaveCount++;
-            if (ok) { Debug.Log($"[SaveGame] 저장 — {reason}"); Saved?.Invoke(reason); }
-            else if (Application.isPlaying) Fantasia.UI.SaveErrorPanel.Show(reason, LastError, () => Save(s));
+            if (ok) { _failing = false; Debug.Log($"[SaveGame] 저장 — {reason}"); Saved?.Invoke(reason); }
+            else NotifyFailure(reason);
             return ok;
+        }
+
+        public const string FailureMessage = "저장에 실패했습니다. 게임은 계속 진행되며 다음 자동저장 때 다시 시도합니다.";
+        private static bool _failing;
+        public static bool IsFailing => _failing;
+
+        // 실패 안내: 연속 실패 중에는 알림 1번 (보드 안내 칸의 "저장 실패"는 성공할 때까지 계속 보임)
+        private static void NotifyFailure(string reason)
+        {
+            Debug.LogWarning($"[SaveGame] 저장 실패 — 계속 진행 ({reason}): {LastError}");
+            if (_failing || !Application.isPlaying) { _failing = true; return; }
+            _failing = true;
+            Fantasia.UI.SaveFailNotice.Show(FailureMessage);
+        }
+
+        // 메인 메뉴·종료 전: 마지막 저장이 실패했으면 한 번 더 시도 (성공한 저장은 이미 최신 확정 지점)
+        public static void RetryIfFailed(string reason)
+        {
+            if (_failing) Checkpoint(reason);
         }
 
         // 전멸 확정: 종료 기록을 먼저 저장 (게임 오버 화면보다 앞) + 종료 회차 목록 + 최근 종료 회차 기록 1건
@@ -56,7 +76,7 @@ namespace Fantasia.Core
                 runId = s.RunId, act = "1막", region = string.IsNullOrEmpty(s.RegionName) ? "런던" : s.RegionName,
                 tile = WorldMapData.Label(row, col), worldRound = s.World.WorldRound, endedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
             });
-            if (!Save(s) && Application.isPlaying) Fantasia.UI.SaveErrorPanel.Show("회차 종료", LastError, () => Save(s));
+            if (!Save(s)) NotifyFailure("회차 종료"); else _failing = false;
             Debug.Log($"[SaveGame] 회차 종료 저장 — {s.RunId}");
         }
 
@@ -132,7 +152,7 @@ namespace Fantasia.Core
             public int worldRound, phase;
             public bool rolled, eventBonusUsed;
             public int bloodTrail, soulHarvest;
-            public bool huntActive, reaperKilled;
+            public bool huntActive, reaperKilled, huntJustSpawned;
             public int huntTurnsLeft, huntGrace;
             public List<Coord> reapers = new();
             public int ambushBonus;
@@ -181,6 +201,7 @@ namespace Fantasia.Core
                 soulHarvest = s.SoulHarvest,
                 huntActive = s.Hunt.Active,
                 reaperKilled = s.Hunt.ReaperKilled,
+                huntJustSpawned = s.Hunt.JustSpawned,
                 huntTurnsLeft = s.Hunt.AllyTurnsLeft,
                 huntGrace = s.Hunt.GraceRounds,
                 reapers = s.Hunt.Reapers.Select(C).ToList(),
@@ -315,6 +336,7 @@ namespace Fantasia.Core
             s.SoulHarvest = d.soulHarvest;
             s.Hunt.Active = d.huntActive;
             s.Hunt.ReaperKilled = d.reaperKilled;
+            s.Hunt.JustSpawned = d.huntJustSpawned;
             s.Hunt.AllyTurnsLeft = d.huntTurnsLeft;
             s.Hunt.GraceRounds = d.huntGrace;
             foreach (var c in d.reapers) s.Hunt.Reapers.Add(H(c));

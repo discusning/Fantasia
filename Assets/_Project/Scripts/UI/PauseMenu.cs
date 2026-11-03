@@ -93,6 +93,7 @@ namespace Fantasia.UI
 
         private void ToMainMenu()
         {
+            Fantasia.Core.SaveGame.RetryIfFailed("메인 메뉴로 나가기 전");
             Close();
             Time.timeScale = 1f;
             SceneManager.LoadScene(MainMenuController.SceneName);
@@ -130,7 +131,7 @@ namespace Fantasia.UI
                         case 0: Close(); break;
                         case 1: OpenSettings(); break;
                         case 2: Ask("메인 메뉴로 나갈까요?\n이어하기는 마지막 자동 저장 지점부터 시작합니다.", ToMainMenu); break;
-                        default: Ask("게임을 종료할까요?\n이어하기는 마지막 자동 저장 지점부터 시작합니다.", Application.Quit); break;
+                        default: Ask("게임을 종료할까요?\n이어하기는 마지막 자동 저장 지점부터 시작합니다.", () => { Fantasia.Core.SaveGame.RetryIfFailed("게임 종료 전"); Application.Quit(); }); break;
                     }
                 });
             }

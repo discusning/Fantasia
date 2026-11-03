@@ -338,8 +338,8 @@ namespace Fantasia.Board
         private void Update()
         {
             UpdateTileTooltip();
-            Fantasia.UI.ShopPanel.SetReopenButton(OnHubTile && !_isMoving && !_turnEnding && Clock.Phase == WorldPhase.AllyTurn && !BoardHintPanel.AnyModalOpen && !SaveErrorPanel.IsOpen && !PauseMenu.IsOpen, OpenShopHere);
-            if (SaveErrorPanel.IsOpen || PauseMenu.IsOpen) return; // 저장 실패·게임 중 메뉴 — 진행 일시정지
+            Fantasia.UI.ShopPanel.SetReopenButton(OnHubTile && !_isMoving && !_turnEnding && Clock.Phase == WorldPhase.AllyTurn && !BoardHintPanel.AnyModalOpen && !PauseMenu.IsOpen, OpenShopHere);
+            if (PauseMenu.IsOpen) return; // 게임 중 메뉴 — 진행 일시정지
             if (Input.GetKeyDown(KeyCode.Q) && !EncounterPanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen || ConfirmPanel.IsOpen || ActClearPanel.IsOpen || EventPanel.IsOpen) return;
             if (Input.GetKeyDown(KeyCode.I) && !EncounterPanel.IsOpen) InventoryPanel.Toggle(_testParty, Leader);
@@ -361,7 +361,7 @@ namespace Fantasia.Board
 
             if (_isMoving || _turnEnding) return;
 
-            if (Input.GetKeyDown(KeyCode.Space) && Time.frameCount != DialoguePanel.LastClosedFrame) TryRoll(); // 대화를 닫은 Space가 주사위로 새지 않게
+            if (Input.GetKeyDown(KeyCode.Space) && !BoardTopBar.TurnDropBusy && Time.frameCount != DialoguePanel.LastClosedFrame) TryRoll(); // 대화를 닫은 Space가 주사위로 새지 않게
 
             if (_awaitingSelection && Input.GetMouseButtonDown(0)) TrySelectTile();
         }
@@ -551,7 +551,7 @@ namespace Fantasia.Board
         private void UpdateTileTooltip()
         {
             var cam = Camera.main;
-            bool blocked = cam == null || SaveErrorPanel.IsOpen || PauseMenu.IsOpen || BoardHintPanel.AnyModalOpen || BattleHud.PointerOverUI;
+            bool blocked = cam == null || PauseMenu.IsOpen || BoardTopBar.TurnDropBusy || BoardHintPanel.AnyModalOpen || BattleHud.PointerOverUI;
             HexTile tile = null;
             if (!blocked && Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out var hit)) tile = hit.collider.GetComponent<HexTile>();
             var enemies = tile != null && !tile.IsCleared ? TileEnemies(tile) : null;
@@ -923,10 +923,10 @@ namespace Fantasia.Board
             var allyLog = WorldTurnRules.BeginAllyTurn(_testParty);
             var lines = enemyLog.Concat(allyLog).ToList();
 
-            // 피의 사냥: 아군 턴마다 사신이 2칸씩 다가옴 — 파티 칸에 닿으면 바로 조우
+            // 피의 사냥: 아군 턴마다 사신이 1칸씩 다가옴 (생성 직후 턴은 제외) — 파티 칸에 닿으면 바로 조우
             int caught = _board.UsesWorldMap ? BloodHuntRules.MoveReapers(Hunt, _board.Map, _currentCoord, _board.IsExitOpen) : -1;
             RefreshReaperFigures();
-            if (Hunt.Active) lines.Add($"사신이 다가온다 (남은 아군 턴 {Hunt.AllyTurnsLeft})");
+            if (Hunt.Active) lines.Add($"사신이 다가온다 (남은 라운드 {Hunt.AllyTurnsLeft} · 남은 사신 {Hunt.Reapers.Count})");
 
             _worldMessage = lines.Count > 0 ? string.Join(" / ", lines) : null;
             foreach (var line in lines) Debug.Log("[World] " + line);
@@ -958,7 +958,7 @@ namespace Fantasia.Board
             EncounterPanel.Show(ReaperEnemy, Leader, OnEncounterResolved);
         }
 
-        // 사신전에서 이기고 돌아왔으면 성공 처리 (보상), 아니면 사신은 그대로
+        // 사신전에서 이기고 돌아왔으면 그 사신 제거 (마지막이면 완수 보상), 아니면 사신은 그대로
         private void ResolveReaperFightResult()
         {
             var session = BoardSession.Instance;
@@ -967,8 +967,9 @@ namespace Fantasia.Board
             if (!Hunt.ReaperKilled) return;
             int g = session.BloodTrail;
             int centBefore = _testParty.Cent;
-            string message = BloodHuntRules.Succeed(Hunt, ref g, _testParty, ItemCatalog.Current);
-            PlaytestLog.Cent("피의 사냥 성공", _testParty.Cent - centBefore, _testParty.Cent, message);
+            string message = BloodHuntRules.OnReaperKilled(Hunt, _currentCoord, ref g, _testParty, ItemCatalog.Current);
+            RefreshReaperFigures();
+            PlaytestLog.Cent("피의 사냥 사신 처치", _testParty.Cent - centBefore, _testParty.Cent, message);
             session.BloodTrail = g;
             _encounterResultMessage = message;
             ItemAcquiredToast.Show(message);

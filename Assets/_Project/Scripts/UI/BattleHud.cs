@@ -114,6 +114,9 @@ namespace Fantasia.UI
         private GameObject _resultSecondButton;
         private RectTransform _resultButtonRect;
         private Text _resultSecondLabel;
+        private RectTransform _resultCard, _resultBodyRect;
+        private PanelDropView _victoryDrop, _defeatDrop, _shownDrop;
+        private Coroutine _resultReveal;
 
         public static BattleHud Create()
         {
@@ -538,6 +541,7 @@ namespace Fantasia.UI
         public void ShowResult(string title, string body, Action onContinue, string buttonLabel = "보드로 돌아가기")
         {
             HideActions();
+            UseCardLayout();
             _resultTitle.text = title;
             _resultBody.text = body;
             _onResultContinue = onContinue;
@@ -559,6 +563,73 @@ namespace Fantasia.UI
             _resultButtonRect.anchorMin = new Vector2(0.08f, 0.04f);
             _resultButtonRect.anchorMax = new Vector2(0.48f, 0.15f);
         }
+
+        // ⑥-2 판 떨어지는 결과 (보고서 11/3 B5·B6): 승리·패배·전멸.
+        // 사슬 판에 제목 + 한 줄 요약, 자세한 보상은 판 아래 칸 (판이 닿으면 나타남), 버튼은 판이 멈춘 뒤 (약 1.7초).
+        // 퇴각은 예전 결과 창 그대로 (ShowResult). 판 그림이 없으면 예전 결과 창으로.
+        public void ShowPanelResult(bool victory, string title, string summary, string body, Action onContinue, string buttonLabel = "보드로 돌아가기",
+            string secondLabel = null, Action second = null)
+        {
+            if (secondLabel != null) ShowResult(title, body, buttonLabel, onContinue, secondLabel, second);
+            else ShowResult(title, body, onContinue, buttonLabel);
+            EnsureResultDrops();
+            var drop = victory ? _victoryDrop : _defeatDrop;
+            if (drop == null) return;
+
+            // 판 아래 칸: 제목 줄 없이 자세한 내용 + 버튼
+            _resultTitle.gameObject.SetActive(false);
+            _resultBodyRect.anchorMin = new Vector2(0.06f, 0.19f);
+            _resultBodyRect.anchorMax = new Vector2(0.94f, 0.96f);
+            _resultCard.anchorMin = _resultCard.anchorMax = new Vector2(0.5f, 1f);
+            _resultCard.pivot = new Vector2(0.5f, 1f);
+            _resultCard.sizeDelta = new Vector2(470f, 260f);
+            _resultCard.anchoredPosition = new Vector2(0f, -(drop.BoardBottom + 6f));
+            _resultCard.gameObject.SetActive(false);
+            _shownDrop = drop;
+            drop.Play(title, summary);
+            if (_resultReveal != null) StopCoroutine(_resultReveal);
+            _resultReveal = StartCoroutine(RevealResultCard(drop));
+        }
+
+        private IEnumerator RevealResultCard(PanelDropView drop)
+        {
+            bool second = _resultSecondButton.activeSelf;
+            _resultButtonRect.gameObject.SetActive(false);
+            _resultSecondButton.SetActive(false);
+            float landAt = Time.unscaledTime + drop.Drop.startDelay + drop.Drop.fallDuration;
+            yield return new WaitUntil(() => Time.unscaledTime >= landAt || !drop.Drop.IsPlaying);
+            _resultCard.gameObject.SetActive(true); // 판이 닿는 순간 자세한 내용
+            yield return new WaitUntil(() => !drop.Drop.IsPlaying);
+            _resultButtonRect.gameObject.SetActive(true); // 판이 멈춘 뒤 버튼 (입력 두 번 방지)
+            _resultSecondButton.SetActive(second);
+            _resultReveal = null;
+        }
+
+        private void UseCardLayout()
+        {
+            if (_resultReveal != null) { StopCoroutine(_resultReveal); _resultReveal = null; }
+            if (_shownDrop != null) { _shownDrop.Hide(); _shownDrop = null; }
+            _resultTitle.gameObject.SetActive(true);
+            _resultBodyRect.anchorMin = new Vector2(0.06f, 0.19f);
+            _resultBodyRect.anchorMax = new Vector2(0.94f, 0.81f);
+            _resultCard.anchorMin = new Vector2(0.32f, 0.27f);
+            _resultCard.anchorMax = new Vector2(0.68f, 0.78f);
+            _resultCard.pivot = new Vector2(0.5f, 0.5f);
+            _resultCard.offsetMin = _resultCard.offsetMax = Vector2.zero;
+            _resultCard.gameObject.SetActive(true);
+            _resultButtonRect.gameObject.SetActive(true);
+        }
+
+        private void EnsureResultDrops()
+        {
+            if (_victoryDrop != null || _defeatDrop != null) return;
+            _victoryDrop = PanelDropView.Create(_resultPanel.transform, PanelDropView.Victory, 640f, 0f, 34, 15);
+            _defeatDrop = PanelDropView.Create(_resultPanel.transform, PanelDropView.Defeat, 640f, 0f, 34, 15);
+        }
+
+        public bool DevResultDropPlaying => _shownDrop != null && _shownDrop.Root.activeSelf;
+        public string DevResultSummary => _shownDrop != null ? _shownDrop.Summary.text : "";
+        public bool DevResultButtonsVisible => _resultCard != null && _resultCard.gameObject.activeInHierarchy && _resultButtonRect.gameObject.activeSelf;
 
         public void DevPressResultSecond() => _onResultSecond?.Invoke();
         public string DevResultTitle => _resultTitle != null ? _resultTitle.text : "";
@@ -842,12 +913,14 @@ namespace Fantasia.UI
             var dim = UGUIKit.CreateImage(parent, "ResultRoot", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.5f));
             _resultPanel = dim.gameObject;
             var panel = UGUIKit.CreateThemedPanel(dim.transform, "ResultCard", new Vector2(0.32f, 0.27f), new Vector2(0.68f, 0.78f), Gold, PanelFill, 2.5f);
+            _resultCard = (RectTransform)panel.parent;
             _resultTitle = Label(panel, "Title", new Vector2(0.05f, 0.82f), new Vector2(0.95f, 0.97f), 26, TextAnchor.MiddleCenter, CritColor, bold: true);
             // 보상 줄이 많아도(아이템 3칸·퀘스트 물건·레벨 업) 잘리지 않게 글자 크기 자동 축소
             _resultBody = Label(panel, "Body", new Vector2(0.06f, 0.19f), new Vector2(0.94f, 0.81f), 12, TextAnchor.MiddleCenter, TextLight, bold: false);
             _resultBody.resizeTextForBestFit = true;
             _resultBody.resizeTextMinSize = 8;
             _resultBody.resizeTextMaxSize = 13;
+            _resultBodyRect = _resultBody.rectTransform;
             var button = UGUIKit.CreateThemedButton(panel, "Continue", new Vector2(0.3f, 0.04f), new Vector2(0.7f, 0.15f), "보드로 돌아가기", ButtonFill, 13);
             button.GetComponentInChildren<Text>().color = TextLight;
             _resultButtonLabel = button.GetComponentInChildren<Text>();

@@ -50,6 +50,8 @@ namespace Fantasia.UI
         private Image _splashFill;
         private Text _splashTitle, _splashSub;
         private Coroutine _splashRoutine;
+        private PanelDropView _turnDrop;      // 판 떨어지는 턴 안내 (보고서 11/3 B3·B4) — 없으면 예전 배너
+        private CanvasGroup _turnDropGroup;
         private WorldPhase? _shownPhase;
 
         public static BoardTopBar Instance => _instance;
@@ -127,18 +129,46 @@ namespace Fantasia.UI
         public static readonly string[] TimeOfDayNames = { "아침", "낮", "저녁", "새벽" };
         public static int TimeOfDayIndex(int worldRound) => (Mathf.Max(1, worldRound) - 1) % 4;
 
-        // 턴 전환 배너 — 화면 가운데 0.25초 페이드 인, 0.8초 유지, 0.35초 페이드 아웃.
+        // 턴 전환 안내 — 상단 바에 매달린 판이 약 1초 동안 떨어져 멈춘 뒤 0.35초 머물고 0.3초에 사라짐 (보고서 11/3 B3·B4).
+        // 월드 아군·적 턴 전환에만 (전투 개인 턴에는 안 씀). 판 그림이 없으면 예전 배너 (0.25초 페이드 인, 0.8초 유지, 0.35초 페이드 아웃).
         private void ShowSplash(bool ally, PartyMember leader)
         {
-            Fantasia.Core.SfxPlayer.Play(ally ? Fantasia.Core.SfxIds.TurnAlly : Fantasia.Core.SfxIds.TurnEnemy);
+            string sub = ally ? $"{(leader != null ? leader.Job.DisplayName : "파티장")}이(가) 파티를 이끈다" : "교단이 움직인다...";
+            if (_turnDrop != null)
+            {
+                if (_splashRoutine != null) StopCoroutine(_splashRoutine);
+                _splashRoutine = StartCoroutine(TurnDrop(ally ? "아군 턴" : "적 턴", sub, ally));
+                return;
+            }
             var art = ally ? UITheme.Current.AllyTurnBanner : UITheme.Current.EnemyTurnBanner;
             if (!UITheme.Apply(_splashFill, art)) _splashFill.color = ally ? new Color(0.3f, 0.22f, 0.08f, 0.92f) : new Color(0.15f, 0.08f, 0.25f, 0.92f);
             _splashTitle.text = ally ? "아군 턴" : "적 턴";
             _splashTitle.color = ally ? AllyColor : EnemyColor;
-            _splashSub.text = ally ? $"{(leader != null ? leader.Job.DisplayName : "파티장")}이(가) 파티를 이끈다" : "교단이 움직인다...";
+            _splashSub.text = sub;
             if (_splashRoutine != null) StopCoroutine(_splashRoutine);
             _splashRoutine = StartCoroutine(Splash());
         }
+
+        // 판이 아직 떠 있으면(적 턴 0.9초 → 바로 아군 턴) 다시 떨어뜨리지 않고 글자만 바꿔 머문다 (보고서 B3 "제목만 바꿈")
+        private IEnumerator TurnDrop(string title, string sub, bool ally)
+        {
+            _turnDrop.Title.color = ally ? AllyColor : EnemyColor;
+            bool showing = _turnDrop.Root.activeSelf && _turnDropGroup.alpha > 0.5f;
+            _turnDropGroup.alpha = 1f;
+            if (showing) { _turnDrop.Title.text = title; _turnDrop.Summary.text = sub; _turnDrop.Drop.ShowImmediate(); }
+            else _turnDrop.Play(title, sub);
+            yield return new WaitForSeconds(TurnDropSeconds + 0.35f);
+            for (float t = 0f; t < 0.3f; t += Time.deltaTime) { _turnDropGroup.alpha = 1f - t / 0.3f; yield return null; }
+            _turnDrop.Hide();
+        }
+
+        // 턴 판 길이 약 1초 (떨어짐 0.35초 + 출렁 0.6초), 승패 판은 받은 기본값 1.7초 그대로
+        public const float TurnDropSeconds = 0.95f;
+        // 판이 내려오는 동안 보드 입력(주사위·칸 클릭)을 받지 않음 — 턴 시작이 두 번 눌리지 않게 (B3)
+        public static bool TurnDropBusy => DevTurnDropVisible;
+        public static bool DevTurnDropVisible => _devLast != null && _devLast._turnDrop != null && _devLast._turnDrop.Root.activeSelf;
+        public static string DevTurnDropTitle => _devLast != null && _devLast._turnDrop != null ? _devLast._turnDrop.Title.text : "";
+        private static BoardTopBar _devLast;
 
         private IEnumerator Splash()
         {
@@ -155,6 +185,7 @@ namespace Fantasia.UI
         {
             ShowSplash(ally, leader);
             if (_splashRoutine != null) StopCoroutine(_splashRoutine);
+            if (_turnDrop != null) { _turnDropGroup.alpha = 1f; _turnDrop.Root.SetActive(true); _turnDrop.Drop.ShowImmediate(); return; }
             _splash.SetActive(true);
             _splashGroup.alpha = 1f;
         }
@@ -299,7 +330,22 @@ namespace Fantasia.UI
                 _leaderRole.color = new Color(0.85f, 0.8f, 0.72f);
             }
             BuildSplash(root);
+            BuildTurnDrop(root);
+            _devLast = this;
             return this;
+        }
+
+        private void BuildTurnDrop(Transform root)
+        {
+            _turnDrop = PanelDropView.Create(root, PanelDropView.Turn, 500f, 0f, 30, 14);
+            if (_turnDrop == null) return;
+            _turnDrop.Drop.startDelay = 0f;
+            _turnDrop.Drop.fallDuration = 0.35f;
+            _turnDrop.Drop.settleDuration = 0.6f;
+            _turnDrop.Root.transform.SetAsFirstSibling(); // 상단 바 뒤 — 사슬이 바에 매달려 보이게
+            _turnDropGroup = _turnDrop.Root.AddComponent<CanvasGroup>();
+            _turnDropGroup.blocksRaycasts = false;
+            _turnDropGroup.interactable = false;
         }
 
         private void BuildSplash(Transform root)

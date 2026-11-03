@@ -373,6 +373,8 @@ namespace Fantasia.Editor
 
         // D24 피의 사냥 사신 (System.md "기존 일반 적의 보완 스탯": 인조 그림자 사신 HP 60·속도 60·망령형·3슬롯 40%,
         // 물리 공격 14·물리/마법 방어 5/5, 처치당 35 Cent·경험치 40)
+        public static void RefreshShadowReaper() { EnsureShadowReaper(); AssetDatabase.SaveAssets(); }
+
         private static EnemyDefinition EnsureShadowReaper()
         {
             var e = LoadOrCreate<EnemyDefinition>(EnemyDir, "Enemy_인조그림자사신");
@@ -392,7 +394,7 @@ namespace Fantasia.Editor
             e.FixedRewardCent = 35;
             e.FixedRewardExp = 40;
             e.DeploymentAct = "피의 사냥";
-            e.TraitDescription = "피의 흔적이 가득 차면 나타나는 사신. 3아군 턴 안에 한 마리라도 잡아야 한다.";
+            e.TraitDescription = "피의 흔적이 가득 차면 나타나는 사신 3마리. 3라운드 안에 모두 잡아야 한다.";
             EditorUtility.SetDirty(e);
             return e;
         }

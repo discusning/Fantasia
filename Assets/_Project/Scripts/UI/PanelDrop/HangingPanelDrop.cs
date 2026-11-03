@@ -190,13 +190,13 @@ namespace Fantasia.UI
             {
                 rattlePlayed = true;
                 if (chainRattle != null && audioSource != null)
-                    audioSource.PlayOneShot(chainRattle, chainVolume);
+                    audioSource.PlayOneShot(chainRattle, chainVolume * Fantasia.Core.SfxPlayer.VolumeScale); // 설정의 효과음 볼륨 (판타지아 추가)
             }
             if (!landed && t >= fall)
             {
                 landed = true;
                 if (panelStop != null && audioSource != null)
-                    audioSource.PlayOneShot(panelStop, stopVolume);
+                    audioSource.PlayOneShot(panelStop, stopVolume * Fantasia.Core.SfxPlayer.VolumeScale);
                 onLanded.Invoke();
                 if (!this || !isActiveAndEnabled || version != playVersion) return;
             }

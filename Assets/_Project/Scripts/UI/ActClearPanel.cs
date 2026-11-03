@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using Fantasia.Core;
 using UnityEngine;
@@ -16,6 +17,8 @@ namespace Fantasia.UI
         private GameObject _root;
         private Text _body, _buttonLabel;
         private Action _onClose;
+        private PanelDropView _drop;           // 판 떨어지는 "1막 클리어" (보고서 11/3 B5) — 없으면 예전 제목 글자
+        private GameObject _titleGO, _subGO, _buttonGO;
 
         private static readonly Color Gold = new Color(0.72f, 0.6f, 0.38f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
@@ -27,7 +30,32 @@ namespace Fantasia.UI
             _instance._buttonLabel.text = buttonLabel;
             _instance._onClose = onClose;
             _instance._root.SetActive(true);
+            _instance.PlayDrop();
         }
+
+        private void PlayDrop()
+        {
+            if (_drop == null) return;
+            _titleGO.SetActive(false);
+            _subGO.SetActive(false);
+            _body.gameObject.SetActive(false);
+            _buttonGO.SetActive(false);
+            _drop.Play("1막 클리어", "런던 — 검시소의 장부");
+            StopAllCoroutines();
+            StartCoroutine(Reveal());
+        }
+
+        // 판이 닿으면 기록, 멈춘 뒤(약 1.7초) 버튼
+        private IEnumerator Reveal()
+        {
+            float landAt = Time.unscaledTime + _drop.Drop.startDelay + _drop.Drop.fallDuration;
+            yield return new WaitUntil(() => Time.unscaledTime >= landAt || !_drop.Drop.IsPlaying);
+            _body.gameObject.SetActive(true);
+            yield return new WaitUntil(() => !_drop.Drop.IsPlaying);
+            _buttonGO.SetActive(true);
+        }
+
+        public static bool DevButtonVisible => _instance != null && _instance._buttonGO.activeInHierarchy;
 
         private static string Summary(SaveGame.Data d)
         {
@@ -77,6 +105,11 @@ namespace Fantasia.UI
             _body.supportRichText = true;
             var button = UGUIKit.CreateThemedButton(dim.transform, "Close", new Vector2(0.4f, 0.07f), new Vector2(0.6f, 0.15f), "", new Color(0.45f, 0.18f, 0.16f), 16);
             button.onClick.AddListener(Close);
+            _buttonGO = button.gameObject;
+            _titleGO = title.gameObject;
+            _subGO = sub.gameObject;
+            _drop = PanelDropView.Create(dim.transform, PanelDropView.Victory, 440f, 0f, 30, 14);
+            if (_drop != null) { _body.rectTransform.anchorMin = new Vector2(0.28f, 0.17f); _body.rectTransform.anchorMax = new Vector2(0.72f, 0.58f); }
             _buttonLabel = button.GetComponentInChildren<Text>();
             _root.SetActive(false);
             return this;

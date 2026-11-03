@@ -31,8 +31,8 @@ MonoBehaviour:
   OnCritTurnShift: 0
   Targeting: 0
   TraitDescription: "\uD53C\uC758 \uD754\uC801\uC774 \uAC00\uB4DD \uCC28\uBA74 \uB098\uD0C0\uB098\uB294
-    \uC0AC\uC2E0. 3\uC544\uAD70 \uD134 \uC548\uC5D0 \uD55C \uB9C8\uB9AC\uB77C\uB3C4
-    \uC7A1\uC544\uC57C \uD55C\uB2E4."
+    \uC0AC\uC2E0 3\uB9C8\uB9AC. 3\uB77C\uC6B4\uB4DC \uC548\uC5D0 \uBAA8\uB450 \uC7A1\uC544\uC57C
+    \uD55C\uB2E4."
   DeploymentAct: "\uD53C\uC758 \uC0AC\uB0E5"
   FixedRewardCent: 35
   FixedRewardExp: 40

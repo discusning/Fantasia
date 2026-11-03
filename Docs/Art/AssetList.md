@@ -237,10 +237,11 @@
 | `UI_Coin` | 사기·팔기·서비스·제작 | `Battle_Miss` | 빗나감·회피 |
 | `Board_Dice` | 주사위 | `Battle_Heal` | 회복 (스킬·회복약) |
 | `Board_Step` | 말 이동 (칸마다) | `Battle_Down` | 쓰러짐 |
-| `Board_TurnAlly` | 아군 턴 시작 | `Battle_Revive` | 부활 |
-| `Board_TurnEnemy` | 적 턴 시작 | `Result_Victory` | 전투 승리 |
-| `Board_Encounter` | 조우 창 | `Result_Defeat` | 전투 패배·전멸 |
+| `Board_Encounter` | 조우 창 | `Battle_Revive` | 부활 |
+| | | `Result_Victory` | 전투 승리 |
+| | | `Result_Defeat` | 전투 패배·전멸 |
 
+- 턴 전환 소리는 판 떨어지는 연출에 들어 있는 사슬·멈춤 소리 (`Resources/PanelDrop`, 따로 없음)
 - 아직 자리 없음 (P2): 보물·회복 칸, 출구 열림, 상태 걸림, 방어, 장착, 경고 3종
 - 배경음은 `Resources/MusicLibrary` 에셋 칸에 Clip 연결 (런던 보드·일반 전투·보스전 3곡 자리)
 

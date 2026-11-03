@@ -18,7 +18,7 @@ namespace Fantasia.UI
         private static readonly List<Func<bool>> Modals = new()
         {
             () => InventoryPanel.IsOpen, () => ShopPanel.IsOpen, () => DialoguePanel.IsOpen, () => EncounterPanel.IsOpen,
-            () => CaseLogPanel.IsOpen, () => ConfirmPanel.IsOpen, () => ActClearPanel.IsOpen, () => SaveErrorPanel.IsOpen,
+            () => CaseLogPanel.IsOpen, () => ConfirmPanel.IsOpen, () => ActClearPanel.IsOpen,
             () => SettingsPanel.IsOpen, () => LandmarkInfoPanel.IsOpen, () => PauseMenu.IsOpen,
         };
 
