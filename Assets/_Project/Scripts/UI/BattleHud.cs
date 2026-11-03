@@ -493,6 +493,7 @@ namespace Fantasia.UI
             {
                 yield return new WaitForSeconds(i < forced ? 0.1f : SecondsPerSlot);
                 _rollSlots[i].color = outcome[i] ? SlotSuccess : SlotFailure;
+                Fantasia.Core.SfxPlayer.Play(outcome[i] ? Fantasia.Core.SfxIds.SlotSuccess : Fantasia.Core.SfxIds.SlotFail);
                 _rollSlotLabels[i].text = i < forced ? "집중" : outcome[i] ? "성공" : "실패";
             }
 
@@ -678,6 +679,7 @@ namespace Fantasia.UI
                 var button = bar.Root.AddComponent<Button>();
                 button.targetGraphic = bar.Border;
                 var captured = bar;
+                button.onClick.AddListener(Fantasia.Core.SfxPlayer.Click);
                 button.onClick.AddListener(() => { if (captured.Unit != null) EnemyBarClicked?.Invoke(captured.Unit); });
                 _enemyBars.Add(bar);
             }

@@ -94,8 +94,30 @@ namespace Fantasia.Core
                 perf = PerfMonitor.Begin(_outDir);
             }
 
+            // 효과음 점검 (-autoplay-sfx-beep): 소리 파일 대신 짧은 삐 소리를 끼워 실제 재생 경로까지 확인
+            if (args.Contains("-autoplay-sfx-beep"))
+                for (int b = 0; b < SfxIds.All.Length; b++)
+                {
+                    int rate = 44100, len = rate / 12;
+                    float hz = 440f * Mathf.Pow(2f, b / 12f);
+                    var data = new float[len];
+                    for (int s = 0; s < len; s++) data[s] = Mathf.Sin(2f * Mathf.PI * hz * s / rate) * 0.3f * (1f - (float)s / len);
+                    var clip = AudioClip.Create(SfxIds.All[b], len, 1, rate, false);
+                    clip.SetData(data, 0);
+                    SfxPlayer.DevInject(SfxIds.All[b], clip);
+                }
+            if (args.Contains("-autoplay-sfx-beep"))
+            {
+                // 버튼 클릭 소리: UGUIKit 버튼을 하나 만들어 눌러 봄 (봇은 버튼 대신 기능을 바로 부르므로)
+                var probe = new GameObject("SfxClickProbe", typeof(RectTransform));
+                UGUIKit.CreateButton(probe.transform, "Probe", Vector2.zero, Vector2.one, "", Color.gray, 10).onClick.Invoke();
+                Note($"효과음 점검: 버튼 클릭 → UI_Click {(SfxPlayer.DevCalls.ContainsKey(SfxIds.UiClick) ? "불림" : "안 불림")}");
+                Destroy(probe);
+            }
+
             if (args.Contains("-autoplay-qa-resume")) yield return QaResumeRun();
             else if (args.Contains("-autoplay-qa-report")) yield return QaReportRun();
+            else if (args.Contains("-autoplay-paneldrop")) yield return PanelDropRun();
             else if (args.Contains("-autoplay-qa")) yield return QaRun();
             else if (args.Contains("-autoplay-full-resume")) yield return FullRun(resume: true);
             else if (args.Contains("-autoplay-resume")) yield return ResumeRun();
@@ -104,6 +126,7 @@ namespace Fantasia.Core
             else yield return Play();
 
             if (perf != null) Note("성능 요약:\n" + perf.Finish());
+            Note(SfxSummary());
             File.WriteAllText(Path.Combine(_outDir, "autoplay_log.txt"), _log.ToString(), Encoding.UTF8);
             yield return new WaitForSeconds(0.5f);
             Application.Quit();
@@ -1345,6 +1368,102 @@ namespace Fantasia.Core
             yield return new WaitForSeconds(1.5f);
             yield return Shot("qa_report_clear");
             Qa(ActClearPanel.IsOpen, "보고 끝 → 1막 클리어 화면");
+            Note($"QA 결과: 통과 {_qaPass} · 실패 {_qaFail}");
+            Note("자동 플레이 완료");
+        }
+
+        // 효과음 호출 요약: 불린 ID·횟수, 안 불린 ID, 실제 재생 수 (파일이 없으면 0)
+        private static string SfxSummary()
+        {
+            var called = SfxIds.All.Where(id => SfxPlayer.DevCalls.ContainsKey(id)).Select(id => $"{id} {SfxPlayer.DevCalls[id]}").ToArray();
+            var missing = SfxIds.All.Where(id => !SfxPlayer.DevCalls.ContainsKey(id)).ToArray();
+            return $"효과음: 불린 {called.Length}/{SfxIds.All.Length}종 · 실제 재생 {SfxPlayer.DevAudible}회 · 볼륨 {SfxPlayer.VolumeScale:0.00}\n  불림: {string.Join(", ", called)}\n  안 불림: {(missing.Length == 0 ? "없음" : string.Join(", ", missing))}";
+        }
+
+        // 판 떨어지는 연출 점검 (-autoplay-paneldrop): 보드 위에 우리 캔버스 설정(1280×720 기준)으로 승리·패배·턴 안내 판을 띄움.
+        // 떨어지는 중·닿는 순간·출렁임·멈춤을 촬영하고, 소리·프레임 시간·시점을 기록 (Docs/Art/PanelDrop_1028)
+        private IEnumerator PanelDropRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return SkipIntro();
+            var board = FindFirstObjectByType<BoardTestController>();
+            yield return WaitFor(() => board.DevIsIdle, 10f, "보드 대기");
+            yield return new WaitForSeconds(2f); // 아군 턴 배너가 사라질 때까지
+
+            var canvasGO = new GameObject("PanelDropTest");
+            var canvas = canvasGO.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 60;
+            var scaler = canvasGO.AddComponent<UnityEngine.UI.CanvasScaler>();
+            UGUIKit.ConfigureScaler(scaler);
+            yield return null;
+            Note($"화면 {Screen.width}x{Screen.height} · UI 배율 {canvas.scaleFactor:0.00} (기준 1280×720) · AudioListener {FindFirstObjectByType<AudioListener>() != null}");
+
+            var cases = new (string prefab, float width, string title, string body)[]
+            {
+                ("VictoryPanel", 700f, "승리", "적을 모두 쓰러뜨렸다.\n180 Cent · 생명의 영약 · 경험치 +100"),
+                ("DefeatPanel", 700f, "패배", "파티가 쓰러졌다. 약탈 36 Cent.\n직전 안전 타일에서 다시 일어났다."),
+                ("HangingPanel", 560f, "아군 턴", "명탐정이(가) 파티를 이끈다"),
+            };
+            bool noShot = Environment.GetCommandLineArgs().Contains("-autoplay-noshot"); // 렉 측정용: 촬영 없이
+            float[] shotTimes = { 0.3f, 0.62f, 0.8f, 1.1f, 2.2f };
+            string[] shotNames = { "falling", "landing", "bounce", "swing", "rest" };
+            foreach (var c in cases)
+            {
+                var prefab = Resources.Load<GameObject>("PanelDrop/" + c.prefab);
+                Qa(prefab != null, $"{c.prefab} 불러오기");
+                if (prefab == null) continue;
+                var holder = new GameObject(c.prefab + "_Holder", typeof(RectTransform));
+                holder.transform.SetParent(canvasGO.transform, false);
+                var hrt = (RectTransform)holder.transform;
+                hrt.anchorMin = Vector2.zero; hrt.anchorMax = Vector2.one; hrt.offsetMin = hrt.offsetMax = Vector2.zero;
+                holder.SetActive(false);
+                var go = Instantiate(prefab, holder.transform, false);
+                var rt = (RectTransform)go.transform;
+                rt.sizeDelta = new Vector2(c.width, c.width * 1024f / 1536f);
+                rt.anchoredPosition = new Vector2(0f, 30f);
+                var drop = go.GetComponent<HangingPanelDrop>();
+                Qa(drop != null && drop.artwork != null && drop.chainRattle != null && drop.panelStop != null, $"{c.prefab} 그림·소리 연결");
+                var title = UGUIKit.CreateText(drop.ContentRoot, "Title", new Vector2(0f, 0.5f), new Vector2(1f, 1f), c.title, 34, TextAnchor.MiddleCenter);
+                title.color = new Color(0.95f, 0.85f, 0.55f);
+                title.fontStyle = FontStyle.Bold;
+                var body = UGUIKit.CreateText(drop.ContentRoot, "Body", new Vector2(0f, 0f), new Vector2(1f, 0.5f), c.body, 15, TextAnchor.MiddleCenter);
+                body.color = new Color(0.95f, 0.92f, 0.86f);
+
+                float landedAt = -1f, finishedAt = -1f, start = 0f;
+                bool soundAtLanding = false;
+                drop.onLanded.AddListener(() => { landedAt = Time.unscaledTime - start; var a = go.GetComponent<AudioSource>(); soundAtLanding = a != null && a.isPlaying; });
+                drop.onFinished.AddListener(() => finishedAt = Time.unscaledTime - start);
+                float maxDt = 0f;
+                string firstDt = "";
+                int frames = 0, next = 0;
+                start = Time.unscaledTime;
+                holder.SetActive(true);
+                while (Time.unscaledTime - start < 2.4f)
+                {
+                    yield return null;
+                    frames++;
+                    maxDt = Mathf.Max(maxDt, Time.unscaledDeltaTime);
+                    if (frames <= 3) firstDt += $"{Time.unscaledDeltaTime * 1000f:0}ms ";
+                    if (next < shotTimes.Length && Time.unscaledTime - start >= shotTimes[next])
+                    {
+                        if (!noShot) yield return Shot($"paneldrop_{c.prefab}_{shotNames[next]}");
+                        if (shotNames[next] == "rest") { var corners = new Vector3[4]; var br = drop.ContentRoot.parent as RectTransform; br.GetWorldCorners(corners); var raw = br.GetComponent<UnityEngine.UI.RawImage>(); Note($"  진단: 캔버스 {canvas.isActiveAndEnabled} · 판 활성 {br.gameObject.activeInHierarchy} · 화면 위치 {corners[0]} ~ {corners[2]} · 그림 {raw?.texture?.width}x{raw?.texture?.height} uv {raw?.uvRect} 색 {raw?.color} · 글자 {title.isActiveAndEnabled} \"{title.text}\" 위치 {title.rectTransform.position} · 루트 크기 {rt.rect.size}"); }
+                        next++;
+                    }
+                }
+                Note($"{c.prefab}: 가로 {c.width} (화면 {c.width * canvas.scaleFactor:0}px, 원본 1536px의 {c.width * canvas.scaleFactor / 1536f:0.00}배) · 닿음 {landedAt:0.00}초 · 멈춤 {finishedAt:0.00}초 · 닿을 때 소리 {soundAtLanding} · 프레임 {frames} · 가장 긴 프레임 {maxDt * 1000f:0}ms{(noShot ? "" : " (촬영 포함)")} · 처음 3프레임 {firstDt}");
+                Qa(landedAt > 0f && finishedAt > landedAt, $"{c.prefab} 떨어짐 → 멈춤까지 끝남");
+                Qa(soundAtLanding, $"{c.prefab} 소리 재생");
+                Destroy(holder);
+                yield return new WaitForSeconds(0.3f);
+            }
             Note($"QA 결과: 통과 {_qaPass} · 실패 {_qaFail}");
             Note("자동 플레이 완료");
         }

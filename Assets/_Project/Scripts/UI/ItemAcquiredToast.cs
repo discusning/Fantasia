@@ -55,6 +55,7 @@ namespace Fantasia.UI
         public static void Show(string label, Sprite icon = null, Color? tint = null)
         {
             DevLast = label;
+            Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.ItemGet);
             EnsureExists();
             Instance.Display(label, icon, tint ?? new Color(0.75f, 0.65f, 0.4f));
         }

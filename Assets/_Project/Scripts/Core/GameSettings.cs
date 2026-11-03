@@ -43,11 +43,12 @@ namespace Fantasia.Core
             catch (Exception e) { Debug.LogError("[Settings] 설정 저장 실패: " + e.Message); }
         }
 
-        // 볼륨 반영: 전체 = 모든 소리, 음악 = 배경 음악 (효과음은 효과음이 생기면 같은 값으로)
+        // 볼륨 반영: 전체 = 모든 소리, 음악 = 배경 음악, 효과음 = SfxPlayer
         public void ApplyAudio()
         {
             AudioListener.volume = Mathf.Clamp01(master);
             MusicPlayer.SetVolumeScale(Mathf.Clamp01(music));
+            SfxPlayer.SetVolumeScale(Mathf.Clamp01(sfx));
         }
 
         public void ApplyDisplay()

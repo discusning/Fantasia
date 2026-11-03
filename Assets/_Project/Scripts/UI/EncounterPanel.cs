@@ -70,6 +70,7 @@ namespace Fantasia.UI
         // group: 이 칸에서 싸울 적 전체 (UI 솔루션 Q9) — 비우면 enemy 1마리
         public static void Show(EnemyDefinition enemy, PartyMember hero, Action<EncounterOutcome> onResolved, IReadOnlyList<EnemyDefinition> group = null)
         {
+            Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.Encounter);
             EnsureExists();
             Instance.ShowInternal(enemy, hero, onResolved);
             Instance.ShowComposition(group ?? new[] { enemy });

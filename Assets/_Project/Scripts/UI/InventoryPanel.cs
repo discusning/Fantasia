@@ -78,6 +78,7 @@ namespace Fantasia.UI
             var p = EnsureExists();
             p._party = party;
             p._member = member ?? party.Members[0];
+            if (!p._root.activeSelf) SfxPlayer.Play(SfxIds.UiOpen);
             p._root.SetActive(true);
             p.ClearSelection();
             p.Refresh();
@@ -85,7 +86,9 @@ namespace Fantasia.UI
 
         public static void Close()
         {
-            if (Instance != null) Instance._root.SetActive(false);
+            if (Instance == null) return;
+            if (Instance._root.activeSelf) SfxPlayer.Play(SfxIds.UiClose);
+            Instance._root.SetActive(false);
         }
 
         public static void Toggle(Party party, PartyMember member)
@@ -398,6 +401,7 @@ namespace Fantasia.UI
             var session = BoardSession.Instance;
             int bonus = session.PendingAmbushBonus;
             var result = ConsumableRules.UseInWorld(def, target, session.Party, session.UsedWorldItemThisTurn, ref bonus);
+            if (result.Used && (def.Effect == ConsumableEffect.RestoreHP || def.Effect == ConsumableEffect.Cure)) SfxPlayer.Play(SfxIds.Heal);
             session.PendingAmbushBonus = bonus;
             SaveGame.Checkpoint("아이템 사용");
             if (Instance != null) { Instance.Say(result.Message); Instance.Refresh(); }
@@ -558,7 +562,7 @@ namespace Fantasia.UI
                 int index = r;
                 float y1 = 0.345f - r * 0.037f;
                 var bg = UGUIKit.CreateImage(fill, $"Row{r}", new Vector2(0.02f, y1 - 0.034f), new Vector2(0.98f, y1), RowFill);
-                var b = bg.gameObject.AddComponent<Button>();
+                var b = bg.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = bg;
                 b.onClick.AddListener(() => OnRowClicked(index));
                 var name = Label(bg.transform, "Name", new Vector2(0.02f, 0f), new Vector2(0.7f, 1f), 11, TextAnchor.MiddleLeft, TextLight, false);

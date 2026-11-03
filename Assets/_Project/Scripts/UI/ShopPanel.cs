@@ -78,13 +78,16 @@ namespace Fantasia.UI
             p._page = 0;
             p._selected = -1;
             p._message.text = $"어서 오세요 — {shop.Landmark}";
+            if (!p._root.activeSelf) SfxPlayer.Play(SfxIds.UiOpen);
             p._root.SetActive(true);
             p.Refresh();
         }
 
         public static void Close()
         {
-            if (Instance != null) Instance._root.SetActive(false);
+            if (Instance == null) return;
+            if (Instance._root.activeSelf) SfxPlayer.Play(SfxIds.UiClose);
+            Instance._root.SetActive(false);
         }
 
         // 보드가 매 프레임 알려 줌: 거점 칸·아군 턴·대기 중이면 [상점] 버튼 보이기
@@ -343,6 +346,7 @@ namespace Fantasia.UI
                 _ => new ShopResult(false, ""),
             };
             if (result.Ok && _tab != Tab.Quests) PlaytestLog.Cent(_tab switch { Tab.Sell => "상점 판매", Tab.Services => "상점 서비스", Tab.Workbench => "작업대 제작", _ => "상점 구입" }, _party.Cent - centBefore, _party.Cent, $"{_shop.DisplayName}: {result.Message}");
+            if (result.Ok && _party.Cent != centBefore) SfxPlayer.Play(SfxIds.Coin);
             if (result.Ok) SaveGame.Checkpoint("상점 거래"); // 저장 → 표시
             _message.text = result.Message;
             _message.color = result.Ok ? Gold : Bad;
@@ -439,7 +443,7 @@ namespace Fantasia.UI
                 int index = r;
                 float y1 = 0.75f - r * 0.063f;
                 var bg = UGUIKit.CreateImage(win, $"Row{r}", new Vector2(0.015f, y1 - 0.058f), new Vector2(0.47f, y1), RowFill);
-                var b = bg.gameObject.AddComponent<Button>();
+                var b = bg.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = bg;
                 b.onClick.AddListener(() => { _selected = _page * RowsPerPage + index; Refresh(); });
                 var stock = Label(bg.transform, "Stock", new Vector2(0.01f, 0f), new Vector2(0.21f, 1f), 10, TextAnchor.MiddleCenter, TextDim, false);
@@ -487,7 +491,7 @@ namespace Fantasia.UI
                 int index = i;
                 float y1 = 0.86f - i * 0.28f;
                 var bg = UGUIKit.CreateImage(targets, $"Target{i}", new Vector2(0.05f, y1 - 0.25f), new Vector2(0.95f, y1), RowFill);
-                var b = bg.gameObject.AddComponent<Button>();
+                var b = bg.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = bg;
                 b.onClick.AddListener(() => { if (index < _party.Members.Count) _serviceTarget = _party.Members[index]; Refresh(); });
                 var label = Label(bg.transform, "Label", new Vector2(0.05f, 0f), new Vector2(0.95f, 1f), 11, TextAnchor.MiddleLeft, TextLight, false);

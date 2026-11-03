@@ -73,6 +73,7 @@ namespace Fantasia.Editor
             ShopDataSeed.SeedAll();
             SeedSaveLookups();
             EnsureMusicLibrary();
+            EnsureSfxLibrary();
             UIThemeSetup.EnsureAsset();
             AssetDatabase.SaveAssets();
             Debug.Log("[GameDataSeed] 샘플 자산 생성/갱신 완료 (1차 3직업: 명탐정·역병 의사·저격수 + 시작 무기, 현장 검증, 1막 소형 적 4종, 약한 출혈)");
@@ -540,6 +541,14 @@ namespace Fantasia.Editor
             var lib = LoadOrCreate<Fantasia.Core.MusicLibrary>("Assets/_Project/Resources", "MusicLibrary");
             foreach (var id in new[] { Fantasia.Core.MusicIds.FieldLondon, Fantasia.Core.MusicIds.Battle, Fantasia.Core.MusicIds.BossAbel })
                 if (lib.Find(id) == null) lib.Tracks = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Append(lib.Tracks, new Fantasia.Core.MusicLibrary.Entry { Id = id }));
+            EditorUtility.SetDirty(lib);
+        }
+        // D28 효과음 ID 목록 (소리는 비어 있음 — Clip을 끼우거나 Resources/Sfx/{ID} 파일을 넣으면 됨)
+        public static void EnsureSfxLibrary()
+        {
+            var lib = LoadOrCreate<Fantasia.Core.SfxLibrary>("Assets/_Project/Resources", "SfxLibrary");
+            foreach (var id in Fantasia.Core.SfxIds.All)
+                if (lib.Find(id) == null) lib.Sounds = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Append(lib.Sounds, new Fantasia.Core.SfxLibrary.Entry { Id = id }));
             EditorUtility.SetDirty(lib);
         }
         // D27 저장 파일은 직업·상태를 Id로만 적는다 → 불러올 때 찾을 표를 카탈로그에 둔다

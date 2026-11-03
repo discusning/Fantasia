@@ -143,6 +143,7 @@ namespace Fantasia.UI
         {
             var fill = CreateBorderedPanel(parent, name, anchorMin, anchorMax, DefaultBorderColor, color, 1.5f);
             var btn = fill.parent.gameObject.AddComponent<Button>();
+            btn.onClick.AddListener(Fantasia.Core.SfxPlayer.Click); // 버튼 클릭 소리 (파일 없으면 무음)
             var labelText = CreateText(fill, "Label", Vector2.zero, Vector2.one, label, fontSize, TextAnchor.MiddleCenter);
 
             // Explicit targetGraphic so Unity's built-in Selectable transition

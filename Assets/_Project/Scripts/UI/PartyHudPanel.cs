@@ -233,7 +233,7 @@ namespace Fantasia.UI
             card.Portrait = new PortraitView(fill, "Portrait", new Vector2(0.13f, 0.5f), 96f, BorderNormal);
             // 초상 클릭 → 그 캐릭터의 인벤토리·장비 창
             var portraitHit = UGUIKit.CreateImage(fill, "PortraitHit", new Vector2(0f, 0f), new Vector2(0.255f, 1f), Color.clear);
-            portraitHit.gameObject.AddComponent<Button>().onClick.AddListener(() => { if (card.Member != null) CardClicked?.Invoke(card.Member); });
+            portraitHit.gameObject.AddComponent<Button>().onClick.AddListener(() => { Fantasia.Core.SfxPlayer.Click(); if (card.Member != null) CardClicked?.Invoke(card.Member); });
             var theme = UITheme.Current;
             Transform levelHolder;
             var badge = UGUIKit.CreateIcon(fill, "LevelBadge", new Vector2(0.03f, 0.13f), new Vector2(0.03f, 0.13f), theme.LevelBadge); // Z37
@@ -278,7 +278,7 @@ namespace Fantasia.UI
                 card.QuickNames.Add(MakeText(slot, "Name", new Vector2(0f, 0.3f), new Vector2(1f, 1f), 10, TextAnchor.MiddleCenter, TextLight, bold: true));
                 card.QuickCounts.Add(MakeText(slot, "Count", new Vector2(0f, 0f), new Vector2(0.94f, 0.42f), 9, TextAnchor.LowerRight, TextLight, bold: true));
                 MakeText(slot, "Key", new Vector2(0.06f, 0f), new Vector2(1f, 0.4f), 9, TextAnchor.LowerLeft, TextDim, bold: false).text = (q + 1).ToString();
-                var slotButton = slot.parent.gameObject.AddComponent<Button>();
+                var slotButton = slot.parent.gameObject.AddComponent<Button>(); slotButton.onClick.AddListener(Fantasia.Core.SfxPlayer.Click);
                 slotButton.targetGraphic = slot.parent.GetComponent<Image>();
                 int slotIndex = q;
                 slotButton.onClick.AddListener(() => { if (card.Member != null) QuickSlotClicked?.Invoke(card.Member, slotIndex); });

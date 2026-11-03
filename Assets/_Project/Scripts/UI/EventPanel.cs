@@ -323,7 +323,7 @@ namespace Fantasia.UI
                 var inner = UGUIKit.CreateThemedPanel(_cardsRow.transform, $"Card{i}", new Vector2(x0, 0f), new Vector2(x0 + 0.31f, 1f), frameColor, CardFill, 2f);
                 var frame = inner.parent.GetComponent<Image>();
                 var fill = inner.GetComponent<Image>();
-                var b = inner.parent.gameObject.AddComponent<Button>();
+                var b = inner.parent.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = frame;
                 b.onClick.AddListener(() => PickCard(index));
                 Label(inner, "Symbol", new Vector2(0f, 0.45f), new Vector2(1f, 0.95f), 46, frameColor, true).text = card switch { FortuneCard.Wealth => "₵", FortuneCard.Recovery => "♥", _ => "◆" };
@@ -341,7 +341,7 @@ namespace Fantasia.UI
                 var kind = PrayerRules.Offered[i];
                 float x0 = (i % 3) * 0.34f, y1 = i < 3 ? 1f : 0.48f;
                 var inner = UGUIKit.CreateThemedPanel(_prayerRow.transform, $"Prayer{i}", new Vector2(x0, y1 - 0.46f), new Vector2(x0 + 0.32f, y1), Gold, CardFill, 1.5f);
-                var b = inner.parent.gameObject.AddComponent<Button>();
+                var b = inner.parent.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = inner.parent.GetComponent<Image>();
                 b.onClick.AddListener(() => PickPrayer(index));
                 Label(inner, "Name", new Vector2(0.03f, 0.6f), new Vector2(0.97f, 0.97f), 14, Gold, true).text = PrayerRules.Name(kind);

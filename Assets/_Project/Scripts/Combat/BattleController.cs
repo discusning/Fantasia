@@ -491,6 +491,7 @@ namespace Fantasia.Combat
             Inventory.RemoveConsumable(item);
             _playLog?.Item(item.DisplayName);
             if (_playLog != null && (item.Effect == ConsumableEffect.RestoreHP || item.Effect == ConsumableEffect.Cure)) _playLog.Heals++;
+            if (item.Effect == ConsumableEffect.RestoreHP || item.Effect == ConsumableEffect.Cure) SfxPlayer.Play(SfxIds.Heal);
             switch (item.Effect)
             {
                 case ConsumableEffect.RevealEvasion:
@@ -573,6 +574,7 @@ namespace Fantasia.Combat
         {
             target.Member.TrySpendLP();
             target.Member.Revive(DefeatRules.InBattleReviveHpRatio);
+            SfxPlayer.Play(SfxIds.Revive);
             StandUp(target);
             Log($"{reviver.DisplayName} → {target.DisplayName} 부활 (LP 1 소모, 남은 LP {target.Member.CurrentLP}) · HP {target.CurrentHP}/{target.MaxHP} · 출혈·중독 제거 — 다음 라운드부터 행동");
             _hud.PopText(_camera, ModelTop(target), $"부활 +{target.CurrentHP}", BattleHud.SlotSuccess);
@@ -753,6 +755,7 @@ namespace Fantasia.Combat
             LogHit(attacker, request, outcome);
             string result = ResultText(outcome);
             Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus ? ", 집중 1" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
+            SfxPlayer.Play(outcome.Evaded ? SfxIds.Miss : outcome.IsCritical ? SfxIds.Crit : SfxIds.Hit);
             _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : outcome.Damage.ToString(), ResultColor(outcome));
             if (!target.IsAlive) KnockDown(target);
 
@@ -777,6 +780,7 @@ namespace Fantasia.Combat
             int amount = skill.HealFlat + Mathf.FloorToInt(skill.HealMagicRatio * healer.Member.FinalMagicAttack + 0.0001f);
             int before = target.CurrentHP;
             target.Member.Heal(amount);
+            SfxPlayer.Play(SfxIds.Heal);
             int healed = target.CurrentHP - before;
 
             if (skill.CleanseNeedsFullSuccess && skill.SlotCount > 0)
@@ -856,6 +860,7 @@ namespace Fantasia.Combat
         private void KnockDown(BattleUnit unit)
         {
             if (unit.Boss != null) { unit.Boss.Pending = null; RefreshBossTelegraph(); } // 쓰러진 보스는 예고 해제·실행 안 함
+            SfxPlayer.Play(SfxIds.Down);
             if (unit.IsAlly && _playLog != null) _playLog.Downs++;
             if (!_models.TryGetValue(unit, out var model)) return;
             if (!_standingRotation.ContainsKey(unit)) _standingRotation[unit] = model.transform.rotation;
@@ -909,10 +914,10 @@ namespace Fantasia.Combat
                     {
                         session.StoryFlags.Add(ActOneStory.FlagAfterDialogueDone); // 도중 종료면 이어하기 때 이 대화만 다시 (결정서 T16-35)
                         SaveGame.Checkpoint("처치 후 대화");
-                        _hud.ShowResult("승리", $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard);
+                        SfxPlayer.Play(SfxIds.Victory); _hud.ShowResult("승리", $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard);
                     }));
                 }
-                else { EndPlayLog("승리", LastRewards, 0); SaveGame.Checkpoint("전투 승리·보상"); _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
+                else { EndPlayLog("승리", LastRewards, 0); SaveGame.Checkpoint("전투 승리·보상"); SfxPlayer.Play(SfxIds.Victory); _hud.ShowResult("승리", $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
             }
             else if (!wiped)
             {
@@ -942,14 +947,14 @@ namespace Fantasia.Combat
                     Log("  → 전원 영구 사망 — 플레이 종료");
                     EndPlayLog("전멸 (회차 종료)", null, lost);
                     SaveGame.EndRun(session); // Save.md 1: 회차 종료 기록을 먼저 저장한 뒤 게임 오버 표시
-                    _hud.ShowResult(ActOneStory.GameOverTitle, $"{ActOneStory.GameOverBody}{downed}", "새 게임", NewGameAfterWipe, "메인 메뉴", RestartGame); // 결정서 06
+                    SfxPlayer.Play(SfxIds.Defeat); _hud.ShowResult(ActOneStory.GameOverTitle, $"{ActOneStory.GameOverBody}{downed}", "새 게임", NewGameAfterWipe, "메인 메뉴", RestartGame); // 결정서 06
                 }
                 else
                 {
                     session.PlayerPosition = session.LastSafeCoord;
                     EndPlayLog("패배", null, lost);
                     SaveGame.Checkpoint("전투 패배");
-                    _hud.ShowResult("패배", $"파티가 쓰러졌다. 약탈 {lost} Cent ({percent}%).{downed}\n직전 안전 타일에서 다시 일어났다.", ReturnToBoard);
+                    SfxPlayer.Play(SfxIds.Defeat); _hud.ShowResult("패배", $"파티가 쓰러졌다. 약탈 {lost} Cent ({percent}%).{downed}\n직전 안전 타일에서 다시 일어났다.", ReturnToBoard);
                 }
             }
             return true;

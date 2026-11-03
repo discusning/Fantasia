@@ -384,6 +384,7 @@ namespace Fantasia.Board
         private void TryRoll()
         {
             if (!Clock.TryBeginRoll()) return;
+            SfxPlayer.Play(SfxIds.Dice);
             _lastEventBonus = -1;
             _worldMessage = null;
             _lastRoll = MovementRules.RollMovePoints(pursuedByReaper: Hunt.Active); // 피의 사냥 중 주사위 −2 (☆)
@@ -451,6 +452,7 @@ namespace Fantasia.Board
                     yield return null;
                 }
                 _token.position = end;
+                SfxPlayer.Play(SfxIds.Step);
                 if (!coord.Equals(_currentCoord)) _lastSafeCoord = _currentCoord;
                 _currentCoord = coord;
             }

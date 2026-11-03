@@ -130,6 +130,7 @@ namespace Fantasia.UI
         // 턴 전환 배너 — 화면 가운데 0.25초 페이드 인, 0.8초 유지, 0.35초 페이드 아웃.
         private void ShowSplash(bool ally, PartyMember leader)
         {
+            Fantasia.Core.SfxPlayer.Play(ally ? Fantasia.Core.SfxIds.TurnAlly : Fantasia.Core.SfxIds.TurnEnemy);
             var art = ally ? UITheme.Current.AllyTurnBanner : UITheme.Current.EnemyTurnBanner;
             if (!UITheme.Apply(_splashFill, art)) _splashFill.color = ally ? new Color(0.3f, 0.22f, 0.08f, 0.92f) : new Color(0.15f, 0.08f, 0.25f, 0.92f);
             _splashTitle.text = ally ? "아군 턴" : "적 턴";

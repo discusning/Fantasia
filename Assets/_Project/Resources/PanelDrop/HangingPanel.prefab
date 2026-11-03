@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &100000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 224000}
+  - component: {fileID: 114000}
+  m_Layer: 5
+  m_Name: Fantasia_HangingPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &224000
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 1100, y: 733.3333}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &114000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 672590f95d21575e9b2a53f6cbc1a958, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  artwork: {fileID: 2800000, guid: 14c44879ed1d592086850f2009a0e9f3, type: 3}
+  chainRattle: {fileID: 8300000, guid: 10df1d91c8b8550a9969cc446fa08d95, type: 3}
+  panelStop: {fileID: 8300000, guid: e26cf602720d5b1597a5eab2ca6ba481, type: 3}
+  playOnEnable: 1
+  useUnscaledTime: 1
+  loop: 0
+  loopDelay: 2
+  startDelay: 0.12
+  fallDuration: 0.55
+  settleDuration: 1.05
+  dropDistance: 950
+  fallExponent: 2.2
+  overshoot: 20
+  swingAngle: 2.2
+  chainJitter: 3.5
+  chainVolume: 0.55
+  stopVolume: 0.7
+  boardPixels: {serializedVersion: 2, x: 67, y: 338, width: 1404, height: 550}
+  leftChainPixels: {serializedVersion: 2, x: 196, y: 2, width: 104, height: 336}
+  rightChainPixels: {serializedVersion: 2, x: 1240, y: 2, width: 104, height: 336}
+  onLanded:
+    m_PersistentCalls:
+      m_Calls: []
+  onFinished:
+    m_PersistentCalls:
+      m_Calls: []
+  board: {fileID: 0}
+  content: {fileID: 0}
+  boardImage: {fileID: 0}
+  leftPieces: []
+  rightPieces: []
