@@ -541,7 +541,7 @@ namespace Fantasia.Editor
         private static void EnsureMusicLibrary()
         {
             var lib = LoadOrCreate<Fantasia.Core.MusicLibrary>("Assets/_Project/Resources", "MusicLibrary");
-            foreach (var id in new[] { Fantasia.Core.MusicIds.FieldLondon, Fantasia.Core.MusicIds.Battle, Fantasia.Core.MusicIds.BossAbel })
+            foreach (var id in Fantasia.Core.MusicIds.All)
                 if (lib.Find(id) == null) lib.Tracks = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Append(lib.Tracks, new Fantasia.Core.MusicLibrary.Entry { Id = id }));
             EditorUtility.SetDirty(lib);
         }

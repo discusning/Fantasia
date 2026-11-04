@@ -37,6 +37,7 @@ namespace Fantasia.UI
         private void Start()
         {
             BoardSession.EnsureExists();
+            MusicPlayer.Play(MusicIds.Menu); // 메인 메뉴 음악 (곡 파일 오면 재생)
             if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
                 new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
             var catalog = ItemCatalog.Current;

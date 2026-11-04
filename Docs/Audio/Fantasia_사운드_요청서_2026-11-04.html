@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 사운드 요청서</title>
+<style>
+@page{size:A4;margin:14mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.5px;line-height:1.55;color:#222;background:#fff;margin:0}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:22px 0 8px;color:#6b1e1e}
+h3{font-size:13.5px;margin:14px 0 6px}
+.sub{color:#666;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;margin:6px 0 10px}
+th,td{border:1px solid #bbb;padding:4px 6px;vertical-align:top;text-align:left}
+th{background:#f1e9e4}
+code{font-family:Consolas,monospace;background:#f3f3f3;padding:0 3px;font-size:11.5px}
+.box{border:1px solid #c9a; background:#fbf5f2;padding:8px 10px;margin:8px 0}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.pics figure{margin:0}
+.pics img{width:100%;border:1px solid #999}
+figcaption{font-size:11px;color:#555}
+.p1{color:#a01818;font-weight:bold}
+.brk{page-break-before:always}
+</style></head><body>
+
+<h1>판타지아 사운드 요청서</h1>
+<div class="sub">2026-11-04 · 개발 → 사운드 담당 · 1막 런던 범위</div>
+
+<div class="box">
+<b>한 줄 요약:</b> 음악 4곡 + 효과음 18개가 필요합니다. 파일 이름만 아래 ID로 맞춰 주면 개발이 폴더에 넣기만 하면 바로 소리가 납니다 (코드 수정 없음).<br>
+<b>1차 마감: 11/7(금)</b> · 11/10까지 없는 소리는 개발이 무료 대체 음원으로 채웁니다 · 11/8 이후는 파일 바꾸기만 가능
+</div>
+
+<h2>1. 파일 규칙</h2>
+<table>
+<tr><th>항목</th><th>규칙</th></tr>
+<tr><td>형식</td><td><b>.wav</b> 또는 <b>.ogg</b> (mp3도 되지만 반복 이음새가 튈 수 있음). 44.1kHz 또는 48kHz</td></tr>
+<tr><td>파일 이름</td><td>아래 표의 <b>ID 그대로</b>. 예: <code>Battle_Hit.wav</code>, <code>BGM_Battle.ogg</code></td></tr>
+<tr><td>음악</td><td>스테레오. 반복 재생되므로 <b>끝과 처음이 자연스럽게 이어지게</b> (1~3분이면 충분)</td></tr>
+<tr><td>효과음</td><td>모노 또는 스테레오. <b>앞의 빈 소리(무음)는 잘라 주세요</b> — 누르는 순간 바로 나야 합니다</td></tr>
+<tr><td>음량</td><td>파일끼리 대략 비슷한 크기로. 세밀한 크기는 개발이 게임 안에서 맞춤</td></tr>
+<tr><td>전달</td><td>팀 공유 폴더 <code>판타지아_팀원공유\사운드\</code>에 넣고 알려 주기</td></tr>
+<tr><td class="p1">출처·허락</td><td class="p1">받아 온 소리는 <b>어디서 받았는지(사이트·제작자·주소)와 사용 허락 종류</b>를 같이 적어 주세요. 출처를 모르는 소리는 넣을 수 없습니다. (아래 7장 표에 적으면 됨)</td></tr>
+</table>
+
+<h2>2. 분위기</h2>
+<ul>
+<li>배경: <b>1774년 런던</b>, 역병·교단·검시소 — 어둡고 무거운 고딕 분위기</li>
+<li>악기 느낌(짐작): 현악·오르간·하프시코드·종소리·낮은 북. 전자음·밝은 팝은 피하기</li>
+<li>화면 느낌: 먹색 돌, 낡은 천, 녹슨 황동, 마른 피 (기획 미술 기준)</li>
+<li>판(게시판)이 <b>사슬에 매달려 떨어지는</b> 연출이 있음 — 사슬 소리는 이미 있음 (3장 끝)</li>
+</ul>
+
+<h2>3. 음악 — 4곡 <span style="font-weight:normal;font-size:12px">(반복 재생)</span></h2>
+<table>
+<tr><th style="width:24%">파일 이름 (ID)</th><th style="width:20%">언제 나오나</th><th>어떤 느낌 (짐작)</th><th style="width:9%">순위</th></tr>
+<tr><td><code>BGM_Field_London</code></td><td>런던 지도(보드) 위에 있는 동안</td><td>가장 오래 듣는 곡. 긴장되지만 시끄럽지 않게, 탐색하는 느낌</td><td class="p1">1</td></tr>
+<tr><td><code>BGM_Battle</code></td><td>일반 전투</td><td>빠르고 긴장감. 짧은 전투가 많으니 앞부분부터 바로 분위기가 나게</td><td class="p1">1</td></tr>
+<tr><td><code>BGM_Boss_Abel</code></td><td>보스 "검시관 아벨 모로" 전투</td><td>일반 전투보다 무겁고 불길하게. 검시소·해부·수은 느낌. 보스를 잡으면 0.7초 동안 작아지며 멈춤</td><td class="p1">1</td></tr>
+<tr><td><code>BGM_Menu</code></td><td>메인 메뉴·파티 구성·이름 입력</td><td>조용하고 쓸쓸한 도입부 느낌</td><td>2</td></tr>
+</table>
+<p>승리·패배·게임 오버는 음악이 아니라 <b>짧은 효과음</b>(<code>Result_Victory</code>, <code>Result_Defeat</code>)으로 처리합니다 → 4장.</p>
+<div class="pics">
+<figure><img src="img/menu.png"><figcaption>BGM_Menu — 메인 메뉴</figcaption></figure>
+<figure><img src="img/board_dice.png"><figcaption>BGM_Field_London — 런던 지도</figcaption></figure>
+<figure><img src="img/battle_hit.png"><figcaption>BGM_Battle — 일반 전투</figcaption></figure>
+<figure><img src="img/boss.png"><figcaption>BGM_Boss_Abel — 보스 등장</figcaption></figure>
+</div>
+
+<h2 class="brk">4. 효과음 — 18개</h2>
+<p>길이는 권장값(짐작)입니다. "자주"라고 적힌 소리는 계속 들리므로 <b>짧고 귀에 거슬리지 않게</b> 부탁합니다.</p>
+
+<h3>① 화면·버튼 (UI) — 5개</h3>
+<table>
+<tr><th style="width:22%">파일 이름 (ID)</th><th>언제 나나</th><th style="width:12%">길이</th><th style="width:20%">느낌 (짐작)</th><th style="width:7%">순위</th></tr>
+<tr><td><code>UI_Click</code></td><td>모든 버튼을 누를 때 (가장 자주)</td><td>0.1초 이하</td><td>작은 딸깍, 나무·금속</td><td class="p1">1</td></tr>
+<tr><td><code>UI_Open</code></td><td>상점·인벤토리 창 열 때</td><td>0.3초</td><td>책장 넘김, 가죽 가방 열기</td><td>2</td></tr>
+<tr><td><code>UI_Close</code></td><td>상점·인벤토리 창 닫을 때</td><td>0.3초</td><td>열기 소리보다 가볍게</td><td>2</td></tr>
+<tr><td><code>UI_ItemGet</code></td><td>아이템 획득 알림이 뜰 때 (전리품·보물·보상)</td><td>0.5초</td><td>작은 반짝임</td><td class="p1">1</td></tr>
+<tr><td><code>UI_Coin</code></td><td>상점에서 사고팔 때, 서비스 결제</td><td>0.3초</td><td>동전 짤랑</td><td class="p1">1</td></tr>
+</table>
+
+<h3>② 지도(보드) — 3개</h3>
+<table>
+<tr><th style="width:22%">파일 이름 (ID)</th><th>언제 나나</th><th style="width:12%">길이</th><th style="width:20%">느낌 (짐작)</th><th style="width:7%">순위</th></tr>
+<tr><td><code>Board_Dice</code></td><td>주사위를 굴릴 때 (턴마다)</td><td>0.5~1초</td><td>나무 위 주사위 구르기</td><td class="p1">1</td></tr>
+<tr><td><code>Board_Step</code></td><td>말이 <b>한 칸 움직일 때마다</b> (최대 6번 연속, 매우 자주)</td><td>0.15초 이하</td><td>돌바닥 발소리 한 번</td><td class="p1">1</td></tr>
+<tr><td><code>Board_Encounter</code></td><td>적 칸에 도착해 조우 창이 뜰 때</td><td>0.7~1초</td><td>불길한 한 방 (현·북)</td><td class="p1">1</td></tr>
+</table>
+<div class="pics">
+<figure><img src="img/board_dice.png"><figcaption>Board_Dice · Board_Step — 주사위 뒤 갈 수 있는 칸으로 이동</figcaption></figure>
+<figure><img src="img/encounter.png"><figcaption>Board_Encounter — 조우 창이 뜨는 순간</figcaption></figure>
+</div>
+
+<h3>③ 전투 — 8개</h3>
+<table>
+<tr><th style="width:22%">파일 이름 (ID)</th><th>언제 나나</th><th style="width:12%">길이</th><th style="width:20%">느낌 (짐작)</th><th style="width:7%">순위</th></tr>
+<tr><td><code>Battle_SlotSuccess</code></td><td>공격 판정 마름모가 하나씩 열리며 <b>성공</b>일 때 (한 공격에 2~4번)</td><td>0.2초</td><td>밝은 금속 띵</td><td class="p1">1</td></tr>
+<tr><td><code>Battle_SlotFail</code></td><td>판정 마름모가 <b>실패</b>일 때</td><td>0.2초</td><td>둔탁한 툭</td><td class="p1">1</td></tr>
+<tr><td><code>Battle_Hit</code></td><td>공격이 맞아 피해가 들어갈 때 (아군·적 모두)</td><td>0.3초</td><td>베기·타격</td><td class="p1">1</td></tr>
+<tr><td><code>Battle_Crit</code></td><td>크리티컬 (판정 전부 성공) 맞을 때</td><td>0.5초</td><td>Hit보다 크고 날카롭게</td><td class="p1">1</td></tr>
+<tr><td><code>Battle_Miss</code></td><td>공격을 피했을 때</td><td>0.3초</td><td>바람 가르는 휙</td><td>2</td></tr>
+<tr><td><code>Battle_Heal</code></td><td>회복 (스킬·약·붕대, 지도에서 약 써도)</td><td>0.5초</td><td>부드러운 반짝임</td><td>2</td></tr>
+<tr><td><code>Battle_Down</code></td><td>캐릭터·적이 쓰러질 때</td><td>0.5~0.8초</td><td>무너짐, 낮은 쿵</td><td class="p1">1</td></tr>
+<tr><td><code>Battle_Revive</code></td><td>쓰러진 동료를 부활시킬 때</td><td>0.8초</td><td>올라가는 종소리</td><td>2</td></tr>
+</table>
+<div class="pics">
+<figure><img src="img/battle_slot.png"><figcaption>Battle_SlotSuccess / SlotFail — 왼쪽 위 마름모 (초록=성공, 빨강=실패)</figcaption></figure>
+<figure><img src="img/battle_hit.png"><figcaption>Battle_Hit — 피해 숫자(13)가 뜨는 순간</figcaption></figure>
+<figure><img src="img/battle_revive.png"><figcaption>Battle_Revive — "부활 +22"</figcaption></figure>
+<figure><img src="img/shop_coin.png"><figcaption>UI_Coin — 상점 구입</figcaption></figure>
+</div>
+
+<h3 class="brk">④ 결과 — 2개 (짧은 곡)</h3>
+<table>
+<tr><th style="width:22%">파일 이름 (ID)</th><th>언제 나나</th><th style="width:12%">길이</th><th style="width:20%">느낌 (짐작)</th><th style="width:7%">순위</th></tr>
+<tr><td><code>Result_Victory</code></td><td>전투 승리·보스 처치·1막 클리어 판이 떨어질 때</td><td>2~4초</td><td>짧은 승리 곡, 너무 밝지 않게</td><td class="p1">1</td></tr>
+<tr><td><code>Result_Defeat</code></td><td>전투 패배·"조사대 전멸"(게임 오버) 판이 떨어질 때</td><td>2~4초</td><td>무겁게 가라앉는 곡</td><td class="p1">1</td></tr>
+</table>
+<div class="pics">
+<figure><img src="img/result_victory.png"><figcaption>Result_Victory — 승리 판</figcaption></figure>
+<figure><img src="img/result_wipe.png"><figcaption>Result_Defeat — 조사대 전멸 판</figcaption></figure>
+</div>
+
+<h3>이미 있는 소리 (만들 필요 없음)</h3>
+<table>
+<tr><th style="width:22%">파일</th><th>언제</th></tr>
+<tr><td><code>Chain_Rattle</code></td><td>판이 사슬에 매달려 떨어질 때 (턴 판·승리 판·패배 판)</td></tr>
+<tr><td><code>Panel_Stop</code></td><td>판이 멈출 때</td></tr>
+</table>
+<p>※ 판 떨어지는 소리와 결과 곡이 <b>동시에</b> 납니다. 결과 곡 앞부분이 사슬 소리에 묻히지 않게 부탁합니다.</p>
+<div class="pics"><figure><img src="img/turn_panel.png"><figcaption>턴 판 — 아군 턴·적 턴이 바뀔 때마다 사슬 소리 (이미 있음)</figcaption></figure></div>
+
+<h2>5. 여유 되면 (2순위 이후, 없어도 됨)</h2>
+<p>지금 게임에 소리 자리가 없는 것들입니다. 받으면 개발이 자리를 만들어 넣습니다.</p>
+<table>
+<tr><th>상황</th><th>설명</th></tr>
+<tr><td>장비 장착</td><td>인벤토리에서 무기·방어구를 낄 때 (가죽·금속 철컥)</td></tr>
+<tr><td>보물·우물·분수대</td><td>보물 상자, 우물(집중력 +1), 분수대(부활 횟수 +1) 칸</td></tr>
+<tr><td>방어</td><td>전투에서 "방어"를 고를 때</td></tr>
+<tr><td>상태 걸림</td><td>중독·출혈 등이 걸릴 때</td></tr>
+<tr><td>경고</td><td>피의 흔적 50·80 알림, 피의 사냥 시작, 보스 "금지된 봉합" 예고</td></tr>
+</table>
+
+<h2>6. 일정</h2>
+<table>
+<tr><th style="width:18%">날짜</th><th>할 일</th></tr>
+<tr><td><b>11/7(금)</b></td><td class="p1">1차 마감 — 순위 1(빨간 글씨) 소리 먼저. 일부만 와도 괜찮음</td></tr>
+<tr><td>11/8~</td><td>새 소리 자리 추가 없음. 이미 있는 이름의 파일 바꾸기만 가능</td></tr>
+<tr><td>11/10(월)</td><td>이때까지 없는 소리는 개발이 무료 대체 음원으로 채움 (출처 기록)</td></tr>
+<tr><td>11/18(수)</td><td>게임 완성 마감 — 바꾸고 싶은 소리는 이 전에 주기</td></tr>
+</table>
+
+<h2>7. 받은 소리 기록표 (사운드 담당이 채워 주세요)</h2>
+<table>
+<tr><th style="width:24%">파일 이름 (ID)</th><th>출처 (사이트·제작자·주소)</th><th style="width:22%">사용 허락 종류</th></tr>
+<tr><td>BGM_Field_London</td><td></td><td></td></tr>
+<tr><td>BGM_Battle</td><td></td><td></td></tr>
+<tr><td>BGM_Boss_Abel</td><td></td><td></td></tr>
+<tr><td>BGM_Menu</td><td></td><td></td></tr>
+<tr><td>UI_Click / UI_Open / UI_Close</td><td></td><td></td></tr>
+<tr><td>UI_ItemGet / UI_Coin</td><td></td><td></td></tr>
+<tr><td>Board_Dice / Step / Encounter</td><td></td><td></td></tr>
+<tr><td>Battle_SlotSuccess / SlotFail</td><td></td><td></td></tr>
+<tr><td>Battle_Hit / Crit / Miss</td><td></td><td></td></tr>
+<tr><td>Battle_Heal / Down / Revive</td><td></td><td></td></tr>
+<tr><td>Result_Victory / Defeat</td><td></td><td></td></tr>
+</table>
+<p style="color:#666;font-size:11px">사용 허락 예: "CC0(누구나 자유)", "CC-BY(제작자 이름 표시)", "직접 제작", "유료 구매(구매 기록 있음)". 이름 표시가 필요한 소리는 게임 크레딧에 넣습니다.</p>
+
+</body></html>

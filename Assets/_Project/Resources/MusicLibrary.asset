@@ -22,3 +22,6 @@ MonoBehaviour:
   - Id: BGM_Boss_Abel
     Clip: {fileID: 0}
     Volume: 0.7
+  - Id: BGM_Menu
+    Clip: {fileID: 0}
+    Volume: 0.7

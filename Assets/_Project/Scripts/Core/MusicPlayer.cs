@@ -12,6 +12,8 @@ namespace Fantasia.Core
         public const string FieldLondon = "BGM_Field_London";
         public const string Battle = "BGM_Battle";
         public const string BossAbel = "BGM_Boss_Abel"; // Boss_Abel_v1.0 제안 ID
+        public const string Menu = "BGM_Menu";           // 메인 메뉴 (1막 게임기획 보고서 11/3 음악 6상황)
+        public static readonly string[] All = { Menu, FieldLondon, Battle, BossAbel };
     }
 
     public class MusicPlayer : MonoBehaviour
@@ -68,9 +70,12 @@ namespace Fantasia.Core
         {
             yield return FadeOut(fadeOutSeconds);
             var entry = MusicLibrary.Current != null ? MusicLibrary.Current.Find(id) : null;
+            // 에셋 칸이 비었으면 Resources/Music/{ID} 파일 (효과음과 같은 방식 — 파일 이름만 맞추면 됨)
+            var fileClip = entry != null && entry.Clip != null ? null : Resources.Load<AudioClip>("Music/" + id);
+            if (fileClip != null) entry = new MusicLibrary.Entry { Id = id, Clip = fileClip, Volume = entry != null ? entry.Volume : 0.7f };
             if (entry == null || entry.Clip == null)
             {
-                if (Warned.Add(id)) Debug.LogWarning($"[Music] {id} 곡 없음 — Resources/MusicLibrary에 임시 트랙 연결 필요");
+                if (Warned.Add(id)) Debug.LogWarning($"[Music] {id} 곡 없음 — Resources/Music/{id} 파일 또는 MusicLibrary 칸에 연결 필요");
                 yield break;
             }
             _source.clip = entry.Clip;
