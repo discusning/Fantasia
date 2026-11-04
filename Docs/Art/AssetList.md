@@ -243,7 +243,8 @@
 
 - 턴 전환 소리는 판 떨어지는 연출에 들어 있는 사슬·멈춤 소리 (`Resources/PanelDrop`, 따로 없음)
 - 아직 자리 없음 (P2): 보물·회복 칸, 출구 열림, 상태 걸림, 방어, 장착, 경고 3종
-- 배경음은 `Resources/MusicLibrary` 에셋 칸에 Clip 연결 (런던 보드·일반 전투·보스전 3곡 자리)
+- 배경음은 `Assets/_Project/Resources/Music/` 폴더에 ID 이름 그대로 넣으면 재생 (또는 `Resources/MusicLibrary` 칸에 Clip 연결). 자리 4곡: `BGM_Menu` 메인 메뉴 · `BGM_Field_London` 런던 보드 · `BGM_Battle` 일반 전투 · `BGM_Boss_Abel` 보스전 (2026-11-04 메뉴 자리 추가)
+- 사운드 담당 요청서: `Docs/Audio/Fantasia_사운드_요청서_2026-11-04.pdf`
 
 ## 10. 기획·아트에 확인할 것
 
