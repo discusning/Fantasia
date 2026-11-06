@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Fantasia.Editor
 {
     // 받은 원본 PNG(최대 4096)를 게임에서 실제로 쓰는 크기(인물 2048 · 나머지 1024, ArtSetup 가져오기 설정과 같음)로
-    // 파일 자체를 줄인다 — 화면은 그대로, 저장소(Git LFS) 용량만 줄어듦. 원본은 바탕화면 에셋 폴더에 남아 있음.
+    // 파일 자체를 줄인다 — 화면은 그대로, 저장소(Git LFS) 용량만 줄어듦. 원본은 ArtSource/2026-11-05_디자인_3D원본 (git 제외).
     // 그래픽 장치가 필요해 -nographics 없이 돌린다.
     public static class ArtTextureShrink
     {

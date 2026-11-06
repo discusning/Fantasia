@@ -55,7 +55,8 @@ For the King 시스템 메모, 보드 턴 UI·지형 UI 조사, Unity 최적화�
 
 | 무엇 | 어디 |
 |---|---|
-| 받은 3D 모델 원본 | `Assets/_Project/Art/Models/` (인물·건물·칸·소품) |
+| 받은 원본 묶음 그대로 (unitypackage 등, git 제외·로컬만) | `ArtSource/` (날짜별 폴더, 안내 `ArtSource/README.md`) |
+| 게임에 쓰는 3D 모델 | `Assets/_Project/Art/Models/` (인물·건물·칸·소품) |
 | 게임용으로 맞춘 인물 | `Assets/_Project/Art/Prefabs/` |
 | 게임용 보드 칸·구조물 | `Assets/_Project/Resources/BoardArt/` |
 | UI 그림 | `Assets/_Project/UI/Sprites/` → `Resources/UITheme.asset`에 연결 |
