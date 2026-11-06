@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: "\uC778\uC870 \uADF8\uB9BC\uC790 \uC0AC\uC2E0"
   Size: 1
   TypeTag: "\uB9DD\uB839\uD615"
-  Model: {fileID: 0}
+  Model: {fileID: 5145095942057096185, guid: a2fa3a66ff0fe334ea5f4b2639e1ab40, type: 3}
   Portrait: {fileID: 0}
   MaxHP: 60
   Speed: 60

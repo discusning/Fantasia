@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 움직임 요청서</title>
+<style>
+@page{size:A4;margin:14mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.5px;line-height:1.6;color:#222;background:#fff;margin:0}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:22px 0 8px;color:#6b1e1e}
+.sub{color:#666;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;margin:6px 0 10px}
+th,td{border:1px solid #bbb;padding:5px 7px;vertical-align:top;text-align:left}
+th{background:#f1e9e4}
+code{font-family:Consolas,monospace;background:#f3f3f3;padding:0 3px;font-size:11.5px}
+.box{border:1px solid #c9a;background:#fbf5f2;padding:9px 11px;margin:8px 0}
+.good{border:1px solid #9c9;background:#f3faf2;padding:9px 11px;margin:8px 0}
+img{width:100%;border:1px solid #999}
+figure{margin:6px 0}
+figcaption{font-size:11px;color:#555}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.A{color:#fff;background:#a01818;font-weight:bold;text-align:center}
+.B{color:#fff;background:#c97a1a;font-weight:bold;text-align:center}
+.red{color:#a01818;font-weight:bold}
+.brk{page-break-before:always}
+.small{font-size:11px;color:#555}
+</style></head><body>
+
+<h1>판타지아 움직임(애니메이션) 요청서</h1>
+<div class="sub">2026-11-06 · 개발 → 3D 디자인 담당</div>
+
+<div class="box">
+<b>한 줄 요약:</b> 보내 준 인물 8개는 아주 좋습니다. 뼈대(리깅)도 잘 들어 있습니다.<br>
+다만 <b>움직임이 하나도 들어 있지 않아</b> 게임에 넣으면 <b>팔 벌린 T자 자세</b>로 서 있습니다.<br>
+<b>인물마다 움직임을 붙여서 다시 내보내 주세요.</b> 가장 급한 것은 <b>"가만히 서 있기(대기)" 1개</b>입니다.<br>
+<span class="red">마감: 11/7(토). 대기만 먼저 와도 됩니다.</span>
+</div>
+
+<h2>1. 지금 상태</h2>
+<figure><img src="img/tpose_all.png"><figcaption>보내 준 인물 8개를 게임 엔진에 넣은 모습 — 모두 팔을 벌린 채 서 있음 (오른쪽 막대 한 칸 = 1m)</figcaption></figure>
+<table>
+<tr><th style="width:30%">있는 것</th><th>없는 것</th></tr>
+<tr><td>모델 · 색(텍스처) · <b>뼈대(리깅)</b></td><td><b>움직임</b> — 인물 8개 모두 0개</td></tr>
+</table>
+<p class="small">쉽게 말해: 뼈대는 "움직일 수 있는 관절"이고, 움직임은 "그 관절을 어떻게 움직일지 적은 동작"입니다. 관절만 있고 동작이 없어서 처음 만든 자세(T자) 그대로 서 있습니다.</p>
+
+<h2>2. 해 줄 일 — 딱 이것만</h2>
+<div class="good">
+<b>Meshy에서:</b> 이미 만든 인물을 열기 → 움직임(Animate) 목록에서 아래 동작 고르기 → <b>FBX로 내보내기</b><br>
+<b>새로 모델을 만들거나 다시 리깅하지 마세요.</b> 지금 모델·뼈대 그대로에 동작만 붙이면 됩니다.
+</div>
+
+<h3>필요한 움직임 (인물마다)</h3>
+<table>
+<tr><th style="width:7%">순위</th><th style="width:18%">동작 이름</th><th>게임에서 언제 나오나</th><th style="width:15%">길이</th><th style="width:13%">반복</th></tr>
+<tr><td class="A">1</td><td><b>Idle</b><br>가만히 서 있기</td><td>전투 중 내내, 아래 카드 얼굴, 인벤토리, 보드 위 말. <b>이것만 있어도 T자 문제가 해결됨</b></td><td>2~4초</td><td>계속 반복</td></tr>
+<tr><td class="B">2</td><td><b>Attack</b><br>공격</td><td>공격·스킬을 쓸 때 1번</td><td>약 1초</td><td>1번</td></tr>
+<tr><td class="B">2</td><td><b>Hit</b><br>맞음</td><td>피해를 받을 때 1번 (움찔)</td><td>0.5초 이하</td><td>1번</td></tr>
+<tr><td class="B">2</td><td><b>Death</b><br>쓰러짐</td><td>HP가 0이 될 때. 마지막에 바닥에 누운 채로 멈춤</td><td>1~2초</td><td>1번, 끝에서 멈춤</td></tr>
+</table>
+<p class="small">※ 부활은 따로 안 만들어도 됩니다 (개발이 대기 동작으로 되돌림).</p>
+
+<h3>인물별로 고를 동작 (Meshy 목록에서 비슷한 것)</h3>
+<table>
+<tr><th style="width:22%">인물</th><th style="width:13%">몸 종류</th><th>Attack 느낌 (짐작)</th></tr>
+<tr><td>명탐정</td><td>사람</td><td>단검으로 찌르기</td></tr>
+<tr><td>역병 의사</td><td>사람</td><td>지팡이 휘두르기 또는 손으로 마법 쓰기</td></tr>
+<tr><td>저격수</td><td>사람</td><td>권총 쏘기 (한 손 앞으로)</td></tr>
+<tr><td>검시관 아벨 모로 (보스)</td><td>사람</td><td>메스로 베기</td></tr>
+<tr><td>인조 그림자 사신</td><td>사람</td><td>낫 휘두르기 (낫은 개발이 손에 붙임)</td></tr>
+<tr><td>역병 쥐</td><td>사람(쥐인간)</td><td>할퀴기·물기</td></tr>
+<tr><td>그림자 사냥개</td><td><b>네 발 짐승</b></td><td>달려들어 물기 — <b>네 발 짐승용 동작</b>에서 고르기</td></tr>
+<tr><td>가고일 유체</td><td>날개 달림</td><td>할퀴기. 날개는 안 움직여도 됨. 사람형 동작이 어색하면 대기만이라도</td></tr>
+</table>
+
+<h2 class="brk">3. 지켜 줄 것 (중요)</h2>
+<table>
+<tr><th style="width:26%">규칙</th><th>이유</th></tr>
+<tr><td><b>제자리에서</b> 움직이기<br>(앞으로 걸어 나가지 않게)</td><td>캐릭터 위치는 게임이 정합니다. 동작이 몸을 앞으로 옮기면 자리에서 벗어남. Meshy에 "In Place / 제자리" 선택이 있으면 켜기</td></tr>
+<tr><td>모델·뼈대는 <b>지금 것 그대로</b></td><td>다시 만들면 뼈 이름이 바뀌어 다른 동작과 안 맞을 수 있음</td></tr>
+<tr><td>대기 동작은 <b>끝과 처음이 이어지게</b></td><td>계속 반복되므로 끝에서 툭 튀면 티가 남</td></tr>
+<tr><td>쓰러짐은 <b>누운 자세로 끝나게</b></td><td>쓰러진 동료는 부활할 때까지 그 자세로 바닥에 있음</td></tr>
+<tr><td>정면 방향·크기는 <b>지금과 같게</b></td><td>이미 보내 준 모델은 정면(+Z)이 맞게 와 있음</td></tr>
+</table>
+
+<h2>4. 파일 보내는 방법</h2>
+<p>아래 둘 중 <b>편한 쪽 하나</b>로 보내 주세요.</p>
+<table>
+<tr><th style="width:24%">방법</th><th>파일 이름 예</th></tr>
+<tr><td>① 동작마다 파일 하나</td><td><code>Model_Detective@Idle.fbx</code> · <code>Model_Detective@Attack.fbx</code> · <code>Model_Detective@Hit.fbx</code> · <code>Model_Detective@Death.fbx</code><br><span class="small">(모델 이름 + @ + 동작 이름. Unity가 자동으로 같은 인물의 동작으로 알아봄)</span></td></tr>
+<tr><td>② 인물마다 파일 하나에 동작 여러 개</td><td><code>Model_Detective.fbx</code> 안에 Idle · Attack · Hit · Death 동작이 이름대로 들어 있게</td></tr>
+</table>
+<ul>
+<li>모델 이름은 지난번과 같게: <code>Model_Detective</code> <code>Model_PlagueDoctor</code> <code>Model_Sniper</code> <code>Model_AbelMoreau</code> <code>Model_ShadowReaper</code> <code>Model_PlagueRat</code> <code>Model_ShadowHound</code> <code>Model_GargoyleLarva</code></li>
+<li>텍스처는 다시 안 보내도 됩니다 (이미 받음)</li>
+<li>넣는 곳: 팀 공유 폴더 <code>판타지아_팀원공유\3D\움직임\</code></li>
+</ul>
+
+<h2>5. 일정</h2>
+<table>
+<tr><th style="width:20%">날짜</th><th>할 일</th></tr>
+<tr><td class="red">11/7(토)</td><td class="red">인물 8개 <b>Idle</b> 먼저. 다 못 하면 아군 3명(명탐정·역병 의사·저격수) + 아벨 먼저</td></tr>
+<tr><td>11/7~11/11</td><td>Attack · Hit · Death 오는 대로 넣어 봄</td></tr>
+<tr><td>11/12(목)~</td><td>새 움직임 받지 않음. 안 온 동작은 지금처럼 정지 + 쓰러지면 눕히기로 제출</td></tr>
+</table>
+
+<h2>6. 같이 알려 주면 좋은 것</h2>
+<table>
+<tr><th style="width:6%"></th><th>내용</th></tr>
+<tr><td>□</td><td>어떤 도구로 만들었는지 (Meshy 등), 무료·유료 요금제 중 무엇인지 — 게임 크레딧(출처 표시)에 필요</td></tr>
+<tr><td>□</td><td>아벨 모로 텍스처 중 <b>Normal(표면 굴곡) 텍스처</b>가 빠져 있음 — 있으면 같이 보내 주기 (없어도 됨)</td></tr>
+</table>
+
+<div class="pics" style="margin-top:12px">
+<figure><img src="img/battle.png"><figcaption>움직임이 쓰이는 곳 ① 전투 화면 (지금은 임시 인형)</figcaption></figure>
+<figure><img src="img/board.png"><figcaption>움직임이 쓰이는 곳 ② 보드 위 말 (사신 등)</figcaption></figure>
+</div>
+
+</body></html>

@@ -48,7 +48,10 @@ namespace Fantasia.UI
         // 보스 봉쇄 — 퇴각 버튼 비활성 (BattleController가 행동 메뉴 열 때마다 갱신)
         public bool RetreatBlocked { get; set; }
 
-        public bool UseFocus => _focusToggle != null && _focusToggle.isOn;
+        // 이번 행동에 쓸 집중 개수 (2026-11-06 변경: 켬/끔 1개 → 0~남은 집중력 중 플레이어가 고름).
+        // 실제로 쓰는 개수는 BattleController가 이 공격의 슬롯 수·스킬 집중 비용에 맞춰 자른다.
+        public int FocusCount { get; private set; }
+        public event Action FocusChanged; // 대상 미리보기(크리티컬 확률) 갱신용
 
         // 자동 플레이 점검용 — 결과 창 버튼을 누른 것과 같다.
         public void DevPressResult() => _onResultContinue?.Invoke();
@@ -59,10 +62,25 @@ namespace Fantasia.UI
             if (!_skillPanel.activeSelf) ToggleSkills();
         }
 
-        // 자동 플레이 점검용 — "추가 집중" 토글을 누른 것과 같다.
-        public void DevSetFocus(bool on)
+        // 자동 플레이 점검용·이어하기 — 집중 −/+ 버튼으로 개수를 맞춘 것과 같다.
+        public void DevSetFocus(int count) => SetFocusCount(count);
+
+        private void SetFocusCount(int count)
         {
-            if (_focusToggle != null && _focusToggle.interactable) _focusToggle.isOn = on;
+            int max = _actionActor != null ? _actionActor.Member.CurrentFocus : 0;
+            FocusCount = Mathf.Clamp(count, 0, max);
+            RefreshFocusPicker();
+            FocusChanged?.Invoke();
+        }
+
+        private void RefreshFocusPicker()
+        {
+            if (_focusLabel == null) return;
+            int max = _actionActor != null ? _actionActor.Member.CurrentFocus : 0;
+            _focusLabel.text = $"집중 사용\n{FocusCount} / {max}";
+            _focusLabel.color = FocusCount > 0 ? CritColor : TextLight;
+            _focusMinus.interactable = FocusCount > 0;
+            _focusPlus.interactable = FocusCount < max;
         }
 
         private RectTransform _canvasRect;
@@ -96,7 +114,8 @@ namespace Fantasia.UI
         private Text _actorText;
         private Text _hintText;
         private Button _attackButton, _skillButton, _itemButton, _defendButton, _reviveButton, _retreatButton;
-        private Toggle _focusToggle;
+        private Text _focusLabel;
+        private Button _focusMinus, _focusPlus;
 
         private GameObject _rollPanel;
         private Text _rollTitle;
@@ -282,8 +301,8 @@ namespace Fantasia.UI
             _skillPanel.SetActive(false);
             _itemPanel.SetActive(false);
             _itemButton.interactable = BattleItems().Count > 0;
-            _focusToggle.interactable = actor.Member.CurrentFocus > 0;
-            _focusToggle.isOn = false;
+            FocusCount = 0; // 행동마다 0에서 시작
+            RefreshFocusPicker();
             SetHint(actor.CanBasicAttack
                 ? "행동을 고르세요. 공격은 대상 적을 클릭합니다."
                 : $"MP 부족 — 기본 공격에 MP {actor.BasicAttackMPCost} 필요");
@@ -475,7 +494,7 @@ namespace Fantasia.UI
         }
 
         // ───────────── ④ 슬롯 판정 연출 ─────────────
-        public IEnumerator PlayRoll(string title, SlotCheck.Result slots, bool focusUsed, string resultText, Color resultColor)
+        public IEnumerator PlayRoll(string title, SlotCheck.Result slots, int focusUsed, string resultText, Color resultColor)
         {
             _rollPanel.SetActive(true);
             _rollTitle.text = title;
@@ -483,7 +502,7 @@ namespace Fantasia.UI
             BuildRollSlots(slots.SlotCount);
 
             // 집중력 확정 슬롯은 맨 앞에서 바로 성공으로, 나머지는 결과 개수만큼 섞어서 하나씩 공개.
-            int forced = focusUsed ? 1 : 0;
+            int forced = Mathf.Clamp(focusUsed, 0, slots.SlotCount);
             var outcome = new bool[slots.SlotCount];
             for (int i = 0; i < slots.SuccessCount; i++) outcome[i] = true;
             for (int i = slots.SlotCount - 1; i > forced; i--)
@@ -788,7 +807,7 @@ namespace Fantasia.UI
             _skillButton.onClick.AddListener(ToggleSkills);
             _itemButton.onClick.AddListener(ToggleItems);
 
-            _focusToggle = BuildFocusToggle(panel, new Vector2(0.8f, 0.08f), new Vector2(0.98f, 0.62f));
+            BuildFocusPicker(panel, new Vector2(0.8f, 0.08f), new Vector2(0.98f, 0.62f));
             _actionPanel.SetActive(false);
         }
 
@@ -855,20 +874,18 @@ namespace Fantasia.UI
             if (!_itemPanel.activeSelf) ToggleItems();
         }
 
-        // "추가 집중" — 켜면 이번 공격의 슬롯 1개를 확정 성공 (집중력 1 소모, System.md).
-        private Toggle BuildFocusToggle(Transform parent, Vector2 min, Vector2 max)
+        // 집중 사용 개수 고르기 (2026-11-06 변경) — [−] 개수 [+]. 1개당 이번 판정 슬롯 1개를 확정 성공, 집중력 1 소모.
+        // 슬롯을 전부 확정하면 크리티컬 확정. 슬롯 수보다 많이 골라도 슬롯 수만큼만 쓴다.
+        private void BuildFocusPicker(Transform parent, Vector2 min, Vector2 max)
         {
-            var fill = UGUIKit.CreateThemedPanel(parent, "FocusToggle", min, max, Gold, new Color(0.15f, 0.13f, 0.1f), 1.5f, UITheme.Current.Button);
-            var toggle = fill.parent.gameObject.AddComponent<Toggle>();
-            var check = UGUIKit.CreateImage(fill, "On", new Vector2(0.06f, 0.3f), new Vector2(0.26f, 0.7f), CritColor);
-            var checkSprite = UITheme.Current.FocusToggleIcon != null ? UITheme.Current.FocusToggleIcon : UITheme.Current.FocusPip;
-            if (!UITheme.Apply(check, checkSprite, tint: true))
-                check.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
-            toggle.graphic = check;
-            toggle.targetGraphic = fill.GetComponent<Image>();
-            Label(fill, "Label", new Vector2(0.3f, 0f), new Vector2(1f, 1f), 11, TextAnchor.MiddleLeft, TextLight, bold: true).text = "추가 집중\n(슬롯 1 확정)";
-            toggle.isOn = false;
-            return toggle;
+            var fill = UGUIKit.CreateThemedPanel(parent, "FocusPicker", min, max, Gold, new Color(0.15f, 0.13f, 0.1f), 1.5f, UITheme.Current.Button);
+            _focusMinus = UGUIKit.CreateThemedButton(fill, "FocusMinus", new Vector2(0.03f, 0.15f), new Vector2(0.27f, 0.85f), "−", ButtonFill, 18);
+            _focusPlus = UGUIKit.CreateThemedButton(fill, "FocusPlus", new Vector2(0.73f, 0.15f), new Vector2(0.97f, 0.85f), "+", ButtonFill, 18);
+            foreach (var b in new[] { _focusMinus, _focusPlus }) b.GetComponentInChildren<Text>().color = TextLight;
+            _focusMinus.onClick.AddListener(() => SetFocusCount(FocusCount - 1));
+            _focusPlus.onClick.AddListener(() => SetFocusCount(FocusCount + 1));
+            _focusLabel = Label(fill, "Label", new Vector2(0.27f, 0f), new Vector2(0.73f, 1f), 11, TextAnchor.MiddleCenter, TextLight, bold: true);
+            RefreshFocusPicker();
         }
 
         private void BuildRollPanel(Transform parent)

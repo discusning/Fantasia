@@ -77,6 +77,7 @@ namespace Fantasia.Combat
             _hud.DefendClicked += OnDefendClicked;
             _hud.InterruptClicked += OnInterruptClicked;
             _hud.RetreatClicked += OnRetreatClicked;
+            _hud.FocusChanged += () => { if (_phase == Phase.ChoosingTarget && _hovered != null) _hud.SetHint(PreviewText(_current, _hovered)); };
             _hud.ReviveClicked += OnReviveClicked;
             _hud.EnemyBarClicked += OnUnitPicked;
             _hud.SkillChosen += OnSkillChosen;
@@ -246,7 +247,7 @@ namespace Fantasia.Combat
             // 1막 소형 적: 기본 공격만, 대상은 데이터의 Targeting 규칙 (EnemyAI).
             var target = EnemyAI.ChooseTarget(enemy, _allies);
             if (target == null) { NextTurn(); yield break; }
-            yield return ResolveAttack(enemy, target, enemy.BasicAttack(false), false, enemy.OnCritStatuses, enemy.OnCritTurnShift, null);
+            yield return ResolveAttack(enemy, target, enemy.BasicAttack(0), 0, enemy.OnCritStatuses, enemy.OnCritTurnShift, null);
             NextTurn();
         }
 
@@ -257,7 +258,7 @@ namespace Fantasia.Combat
             if (action == null)
             {
                 var t = EnemyAI.ChooseTarget(boss, _allies);
-                if (t != null) yield return ResolveAttack(boss, t, boss.BasicAttack(false), false, boss.OnCritStatuses, boss.OnCritTurnShift, null);
+                if (t != null) yield return ResolveAttack(boss, t, boss.BasicAttack(0), 0, boss.OnCritStatuses, boss.OnCritTurnShift, null);
                 yield break;
             }
 
@@ -269,7 +270,7 @@ namespace Fantasia.Combat
                     var target = EnemyAI.ChooseTarget(boss, _allies);
                     if (target == null) yield break;
                     Log($"{boss.DisplayName} [{action.Name}] → {target.DisplayName}");
-                    yield return ResolveAttack(boss, target, BossRequest(boss, action), false, action.OnCritStatuses, TurnShift.None, null);
+                    yield return ResolveAttack(boss, target, BossRequest(boss, action), 0, action.OnCritStatuses, TurnShift.None, null);
                     break;
 
                 case EnemyActionKind.AreaAttack:
@@ -318,14 +319,14 @@ namespace Fantasia.Combat
             var request = BossRequest(boss, action);
             var slots = SlotCheck.RollWithChance(request.SlotCount, request.SlotChance, 0);
             string summary = slots.AllSucceeded ? "크리티컬! (전체)" : $"{slots.SuccessCount}/{slots.SlotCount} 성공";
-            yield return _hud.PlayRoll($"{boss.DisplayName} [{action.Name}] → 모든 아군", slots, false, summary,
+            yield return _hud.PlayRoll($"{boss.DisplayName} [{action.Name}] → 모든 아군", slots, 0, summary,
                 slots.AllSucceeded ? BattleHud.CritColor : BattleHud.SlotFailure);
             BeginAreaLog();
             foreach (var ally in _allies.Where(a => a.InBattle).ToList())
             {
                 var defense = ally.Defense();
                 var outcome = AttackResolver.Compute(request, defense, slots, Fantasia.Dice.DiceRoller.RollChance(defense.EvasionChance));
-                ApplyHit(boss, ally, request, outcome, false, action.OnCritStatuses, TurnShift.None, null);
+                ApplyHit(boss, ally, request, outcome, 0, action.OnCritStatuses, TurnShift.None, null);
                 // 봉인된 수은: 명중하면 확정 상태 (크리티컬이어도 추가 없음, 회피하면 없음)
                 if (!outcome.Evaded && ally.IsAlive && action.OnHitStatuses != null && action.OnHitStatuses.Length > 0) ApplyStatuses(ally, action.OnHitStatuses, 1);
             }
@@ -428,7 +429,7 @@ namespace Fantasia.Combat
             {
                 Log($"{ally.DisplayName} 혼란으로 임의 공격");
                 ally.Member.TrySpendMP(ally.BasicAttackMPCost);
-                yield return ResolveAttack(ally, targets[GameRandom.Range(0, targets.Count)], ally.BasicAttack(false), false, ally.OnCritStatuses, ally.OnCritTurnShift, null);
+                yield return ResolveAttack(ally, targets[GameRandom.Range(0, targets.Count)], ally.BasicAttack(0), 0, ally.OnCritStatuses, ally.OnCritTurnShift, null);
             }
             NextTurn();
         }
@@ -614,8 +615,9 @@ namespace Fantasia.Combat
 
             if (skill == null)
             {
-                bool focus = _hud.UseFocus && actor.Member.TrySpendFocus(1);
-                if (_playLog != null) { _playLog.MpSpent += actor.BasicAttackMPCost; _playLog.FocusSpent += focus ? 1 : 0; }
+                int focus = FocusToUse(actor, null, 0);
+                if (focus > 0) actor.Member.TrySpendFocus(focus);
+                if (_playLog != null) { _playLog.MpSpent += actor.BasicAttackMPCost; _playLog.FocusSpent += focus; }
                 actor.Member.TrySpendMP(actor.BasicAttackMPCost);
                 yield return ResolveAttack(actor, target, actor.BasicAttack(focus), focus, actor.OnCritStatuses, actor.OnCritTurnShift, null);
                 NextTurn();
@@ -627,9 +629,10 @@ namespace Fantasia.Combat
             actor.Member.TrySpendMP(skill.MPCost);
             if (skill.HPCost > 0) actor.Member.TakeDamage(skill.HPCost);
             actor.StartCooldown(skill);
-            bool useFocus = skill.RollsSlots && _hud.UseFocus && actor.Member.TrySpendFocus(1);
-            if (_playLog != null) { _playLog.MpSpent += skill.MPCost; _playLog.FocusSpent += skill.FocusCost + (useFocus ? 1 : 0); if (skill.Effect == SkillEffect.Heal || skill.Effect == SkillEffect.Cleanse) _playLog.Heals++; }
-            Log($"{actor.DisplayName} 스킬 [{skill.DisplayName}] ({BattleHud.SkillCostText(skill)}){(useFocus ? " + 추가 집중" : "")}");
+            int useFocus = FocusToUse(actor, skill, 0); // 비용을 낸 뒤 남은 집중력 안에서
+            if (useFocus > 0) actor.Member.TrySpendFocus(useFocus);
+            if (_playLog != null) { _playLog.MpSpent += skill.MPCost; _playLog.FocusSpent += skill.FocusCost + useFocus; if (skill.Effect == SkillEffect.Heal || skill.Effect == SkillEffect.Cleanse) _playLog.Heals++; }
+            Log($"{actor.DisplayName} 스킬 [{skill.DisplayName}] ({BattleHud.SkillCostText(skill)}){(useFocus > 0 ? $" + 집중 {useFocus}" : "")}");
 
             switch (skill.Effect)
             {
@@ -666,7 +669,7 @@ namespace Fantasia.Combat
             NextTurn();
         }
 
-        // 전투 중 퇴각: 2슬롯 속도 판정, 성공하면 그 캐릭터만 전투 이탈 (System.md 확률표).
+        // 전투 중 퇴각: 고른 캐릭터의 속도로 2슬롯 판정, 성공하면 생존 아군 전원 전투 이탈 (2026-11-06 변경, 확률은 System.md 표 그대로).
         private void OnRetreatClicked()
         {
             if (_phase != Phase.ChoosingAction) return;
@@ -682,13 +685,17 @@ namespace Fantasia.Combat
             int speed = _current.Member.FinalStats.Speed;
             var slots = SlotCheck.Roll(EncounterRules.RetreatDuringCombatSlotCount, speed);
             bool ok = slots.AllSucceeded;
-            yield return _hud.PlayRoll($"{_current.DisplayName} 퇴각 (속도 {speed})", slots, false,
-                ok ? "퇴각 성공 — 전투 이탈" : "퇴각 실패 — 행동 소모", ok ? BattleHud.SlotSuccess : BattleHud.SlotFailure);
-            Log($"{_current.DisplayName} 퇴각 판정 {slots.SuccessCount}/{slots.SlotCount} → {(ok ? "성공" : "실패")}");
+            yield return _hud.PlayRoll($"{_current.DisplayName} 퇴각 (속도 {speed})", slots, 0,
+                ok ? "퇴각 성공 — 파티 전원 이탈" : "퇴각 실패 — 행동 소모", ok ? BattleHud.SlotSuccess : BattleHud.SlotFailure);
+            Log($"{_current.DisplayName} 퇴각 판정 {slots.SuccessCount}/{slots.SlotCount} → {(ok ? "성공 — 생존 아군 전원 퇴각" : "실패")}");
             if (ok)
             {
-                _current.HasRetreated = true;
-                _models[_current].SetActive(false);
+                // 2026-11-06 변경: 한 명이 퇴각에 성공하면 파티 전체가 함께 물러난다 (쓰러진 동료 처리는 탈출권과 같음 — DefeatRules).
+                foreach (var ally in _allies.Where(a => a.InBattle))
+                {
+                    ally.HasRetreated = true;
+                    _models[ally].SetActive(false);
+                }
             }
             NextTurn();
         }
@@ -702,8 +709,17 @@ namespace Fantasia.Combat
             return request;
         }
 
+        // 집중 사용 개수 (2026-11-06 변경): 행동 메뉴에서 플레이어가 고른 개수만큼 슬롯을 확정 성공.
+        // 남은 집중력(reserved = 아직 안 낸 스킬 집중 비용)과 이 행동의 슬롯 수를 넘지 않게 자른다. 슬롯 없는 스킬은 0.
+        private int FocusToUse(BattleUnit actor, SkillDefinition skill, int reserved)
+        {
+            if (skill != null && !skill.RollsSlots) return 0;
+            int slots = skill != null ? actor.SkillAttack(skill, 0).SlotCount : actor.BasicAttack(0).SlotCount;
+            return Mathf.Clamp(_hud.FocusCount, 0, Mathf.Max(0, Mathf.Min(actor.Member.CurrentFocus - reserved, slots)));
+        }
+
         // 단일 공격 (기본 공격·공격 스킬·적 공격). skill이 null이면 기본 공격.
-        private IEnumerator ResolveAttack(BattleUnit attacker, BattleUnit target, AttackRequest request, bool useFocus,
+        private IEnumerator ResolveAttack(BattleUnit attacker, BattleUnit target, AttackRequest request, int useFocus,
             StatusEffectDefinition[] onCritStatuses, TurnShift onCritShift, SkillDefinition skill)
         {
             bool weaponBased = skill == null || skill.SlotCount <= 0;
@@ -724,10 +740,10 @@ namespace Fantasia.Combat
         }
 
         // 모든 적 공격 (검은 연무): 공통 슬롯 판정 1회, 각 적의 방어·회피는 따로 (System.md 보스 광역 규칙과 같은 방식).
-        private IEnumerator ResolveAreaAttack(BattleUnit attacker, SkillDefinition skill, bool useFocus)
+        private IEnumerator ResolveAreaAttack(BattleUnit attacker, SkillDefinition skill, int useFocus)
         {
             var request = attacker.SkillAttack(skill, useFocus);
-            var slots = SlotCheck.RollWithChance(request.SlotCount, request.SlotChance, useFocus ? 1 : 0);
+            var slots = SlotCheck.RollWithChance(request.SlotCount, request.SlotChance, useFocus);
             string summary = slots.AllSucceeded ? "크리티컬! (전체)" : $"{slots.SuccessCount}/{slots.SlotCount} 성공";
             yield return _hud.PlayRoll($"{attacker.DisplayName} [{skill.DisplayName}] → 모든 적", slots, useFocus, summary,
                 slots.AllSucceeded ? BattleHud.CritColor : BattleHud.SlotSuccess);
@@ -746,7 +762,7 @@ namespace Fantasia.Combat
         }
 
         // 명중 처리 공통: HP 차감 → 로그·팝업 → 쓰러짐 → (크리티컬) 상태 효과 → 턴 밀기.
-        private void ApplyHit(BattleUnit attacker, BattleUnit target, AttackRequest request, AttackOutcome outcome, bool useFocus,
+        private void ApplyHit(BattleUnit attacker, BattleUnit target, AttackRequest request, AttackOutcome outcome, int useFocus,
             StatusEffectDefinition[] onCritStatuses, TurnShift onCritShift, SkillDefinition skill)
         {
             if (!outcome.Evaded) target.TakeDamage(outcome.AppliedDamage);
@@ -754,7 +770,7 @@ namespace Fantasia.Combat
             _lastDamageDealt = outcome.Evaded ? 0 : outcome.AppliedDamage;
             LogHit(attacker, request, outcome);
             string result = ResultText(outcome);
-            Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus ? ", 집중 1" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
+            Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus > 0 ? $", 집중 {useFocus}" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             SfxPlayer.Play(outcome.Evaded ? SfxIds.Miss : outcome.IsCritical ? SfxIds.Crit : SfxIds.Hit);
             _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : outcome.Damage.ToString(), ResultColor(outcome));
             if (!target.IsAlive) KnockDown(target);
@@ -775,7 +791,7 @@ namespace Fantasia.Combat
         }
 
         // 회복 (응급 봉합): 기본 회복은 확정, 판정 전부 성공 시에만 지정 상태 제거 (System.md).
-        private IEnumerator ResolveHeal(BattleUnit healer, BattleUnit target, SkillDefinition skill, bool useFocus)
+        private IEnumerator ResolveHeal(BattleUnit healer, BattleUnit target, SkillDefinition skill, int useFocus)
         {
             int amount = skill.HealFlat + Mathf.FloorToInt(skill.HealMagicRatio * healer.Member.FinalMagicAttack + 0.0001f);
             int before = target.CurrentHP;
@@ -785,7 +801,7 @@ namespace Fantasia.Combat
 
             if (skill.CleanseNeedsFullSuccess && skill.SlotCount > 0)
             {
-                var slots = SlotCheck.Roll(skill.SlotCount, healer.Member.FinalStats.Get(skill.RollStat), useFocus ? 1 : 0);
+                var slots = SlotCheck.Roll(skill.SlotCount, healer.Member.FinalStats.Get(skill.RollStat), useFocus);
                 yield return _hud.PlayRoll($"{healer.DisplayName} [{skill.DisplayName}] → {target.DisplayName}", slots, useFocus,
                     slots.AllSucceeded ? $"회복 {healed} + 정화" : $"회복 {healed}", BattleHud.SlotSuccess);
                 Log($"{healer.DisplayName} [{skill.DisplayName}] → {target.DisplayName}: 회복 {healed} (고정 {skill.HealFlat} + {skill.HealMagicRatio:0.##}M = {amount}) · 추가 판정 {slots.SuccessCount}/{slots.SlotCount} · HP {target.CurrentHP}/{target.MaxHP}");
@@ -1055,7 +1071,7 @@ namespace Fantasia.Combat
         public IReadOnlyList<BattleUnit> DevEnemies => _enemies;
         public int DevRound => _queue != null ? _queue.Round : 0;
 
-        public void DevAttack(bool focus)
+        public void DevAttack(int focus)
         {
             if (_phase != Phase.ChoosingAction) return;
             _hud.DevSetFocus(focus);
@@ -1064,7 +1080,7 @@ namespace Fantasia.Combat
         }
 
         // 스킬 버튼 → 스킬 선택 → (필요하면) 대상 클릭과 같은 순서.
-        public void DevUseSkill(SkillDefinition skill, BattleUnit target, bool focus)
+        public void DevUseSkill(SkillDefinition skill, BattleUnit target, int focus)
         {
             if (_phase != Phase.ChoosingAction) return;
             _hud.DevSetFocus(focus);
@@ -1073,6 +1089,7 @@ namespace Fantasia.Combat
         }
 
         public void DevDefend() => OnDefendClicked();
+        public void DevRetreat() => OnRetreatClicked();
 
         // 소모품 메뉴 → 아이템 → (대상 클릭)과 같은 순서.
         public void DevUseItem(ConsumableDefinition item, BattleUnit target)
@@ -1166,14 +1183,15 @@ namespace Fantasia.Combat
             if (skill != null && skill.Effect != SkillEffect.Attack)
                 return $"{target.DisplayName} — {skill.DisplayName}: {skill.EffectDescription}";
 
-            bool focus = _hud.UseFocus && actor.Member.CurrentFocus > (skill != null ? skill.FocusCost : 0);
+            int focus = FocusToUse(actor, skill, skill != null ? skill.FocusCost : 0);
             var req = skill != null ? actor.SkillAttack(skill, focus) : actor.BasicAttack(focus);
-            float crit = SlotCheck.AllSuccessProbability(req.SlotCount, req.SlotChance, focus ? 1 : 0);
+            float crit = SlotCheck.AllSuccessProbability(req.SlotCount, req.SlotChance, focus);
             int normal = AttackResolver.NormalDamage(req.Coefficient, req.AttackValue, target.Defense().DefenseAgainst(req.Type), req.PierceRatio);
             int critDmg = AttackResolver.CriticalDamage(req.Coefficient, req.AttackValue);
             string evasion = target.HasEvasionState ? " · 회피 상태: 크리티컬만 명중" : "";
             string name = skill != null ? $"[{skill.DisplayName}] " : "";
-            return $"{name}{target.DisplayName} — 슬롯 {req.SlotCount}개 × {req.SlotChance * 100f:0.0}% · 크리티컬 {crit * 100f:0.0}% · 피해 {normal} / 크리 {critDmg}{evasion}";
+            string focusText = focus > 0 ? $" (집중 {focus}개 확정)" : "";
+            return $"{name}{target.DisplayName} — 슬롯 {req.SlotCount}개 × {req.SlotChance * 100f:0.0}%{focusText} · 크리티컬 {crit * 100f:0.0}% · 피해 {normal} / 크리 {critDmg}{evasion}";
         }
 
         // ───────────── 전장 구성 ─────────────

@@ -92,11 +92,13 @@ namespace Fantasia.Board
             Map = WorldMapData.Parse(MapAsset.text);
             var sharedMesh = HexMeshBuilder.BuildHexPrism(tileSize - tileGap, tileHeight, pointyTop: true);
             var session = BoardSession.Instance;
+            _art = BoardArt.Load();
 
             foreach (var mapTile in Map.Tiles.Values)
             {
                 var coord = mapTile.Coord;
-                var tile = SpawnTileObject(coord, sharedMesh, $"Hex {mapTile.Label}");
+                var tile = SpawnTileObject(coord, sharedMesh, $"Hex {mapTile.Label}",
+                    _art.HasTiles ? ((((mapTile.Row * 7919 + mapTile.Col * 104729) >> 3) & 3) == 0 ? _art.TileA : _art.TileB) : null); // 두 돌길을 고정 무작위로 섞음 (A는 4칸 중 1칸)
                 tile.SetMapKind(mapTile.Kind, MapTileName(mapTile));
                 switch (mapTile.Kind)
                 {
@@ -127,9 +129,14 @@ namespace Fantasia.Board
                         if (session != null && session.UsedMapTiles.Contains(coord)) tile.SetUsed(true);
                         break;
                 }
-                tile.SetMarker(MarkerFor(mapTile, tile), tileHeight);
+                // 받은 구조물이 있으면 칸 위에 세우고 납작한 표식은 쓰지 않는다 (일반 적 칸은 표식 그대로).
+                var propPrefab = _art.PropFor(mapTile);
+                if (propPrefab != null) tile.SetProp(Instantiate(propPrefab), tileHeight);
+                else tile.SetMarker(MarkerFor(mapTile, tile), tileHeight);
             }
         }
+
+        private BoardArt _art;
 
         private static bool OnlyHounds(string label)
         {
@@ -204,16 +211,28 @@ namespace Fantasia.Board
             return kind == null ? t.Label : $"{t.Label} {(regionName != null ? regionName + " · " : "")}{kind}";
         }
 
-        private HexTile SpawnTileObject(HexCoord coord, Mesh sharedMesh, string name)
+        // visualPrefab: 받은 육각 칸 모델 (없으면 도형 칸). 클릭 판정은 어느 쪽이든 같은 도형 콜라이더.
+        private HexTile SpawnTileObject(HexCoord coord, Mesh sharedMesh, string name, GameObject visualPrefab = null)
         {
             var go = new GameObject(name);
             go.transform.SetParent(transform, false);
             go.transform.localPosition = LocalPosition(coord);
-            go.AddComponent<MeshFilter>().sharedMesh = sharedMesh;
-            go.AddComponent<MeshRenderer>().sharedMaterial = _tileMaterial;
+            Renderer visual;
+            if (visualPrefab != null)
+            {
+                var v = Instantiate(visualPrefab, go.transform, false);
+                v.name = "Visual";
+                visual = v.GetComponentInChildren<Renderer>();
+            }
+            else
+            {
+                go.AddComponent<MeshFilter>().sharedMesh = sharedMesh;
+                visual = go.AddComponent<MeshRenderer>();
+                visual.sharedMaterial = _tileMaterial;
+            }
             go.AddComponent<MeshCollider>().sharedMesh = sharedMesh;
             var tile = go.AddComponent<HexTile>();
-            tile.Initialize(coord);
+            tile.Initialize(coord, visual, visualPrefab != null);
             _tiles[coord] = tile;
             return tile;
         }

@@ -17,7 +17,7 @@ namespace Fantasia.Combat
     {
         public int SlotCount;     // 2/3/4
         public float SlotChance;  // 슬롯 1개 최종 확률 (5~95% 클램프 후)
-        public bool UseFocus;     // 추가 집중 — 행동당 슬롯 1개만 확정 (집중력 차감은 호출부)
+        public int FocusSlots;    // 집중 사용 개수 — 슬롯을 그만큼 앞에서부터 확정 성공 (집중력 차감은 호출부, 2026-11-06 변경: 1개 → 플레이어가 고른 개수)
         public float Coefficient; // 기술 계수, 기본 공격 1.0
         public int AttackValue;   // 최종 공격력 A 또는 마력 M
         public DamageType Type;
@@ -90,7 +90,7 @@ namespace Fantasia.Combat
             return Mathf.Clamp(BaseEvasion + speed * EvasionPerSpeed + bonus, 0f, MaxEvasion);
         }
 
-        public static AttackRequest FromPartyMember(PartyMember member, float coefficient = 1f, bool useFocus = false, float slotBonus = 0f)
+        public static AttackRequest FromPartyMember(PartyMember member, float coefficient = 1f, int focusSlots = 0, float slotBonus = 0f)
         {
             if (member == null) throw new ArgumentNullException(nameof(member));
             var weapon = member.EquippedWeapon;
@@ -104,7 +104,7 @@ namespace Fantasia.Combat
                 {
                     SlotCount = UnarmedSlotCount,
                     SlotChance = SlotCheck.FinalSlotChance(UnarmedSlotCount, stats.Strength, slotBonus),
-                    UseFocus = useFocus,
+                    FocusSlots = focusSlots,
                     Coefficient = coefficient,
                     AttackValue = member.FinalPhysicalAttack,
                     Type = DamageType.Physical,
@@ -118,7 +118,7 @@ namespace Fantasia.Combat
             {
                 SlotCount = weapon.SlotCount,
                 SlotChance = SlotCheck.FinalSlotChance(weapon.SlotCount, relevantStat, slotBonus),
-                UseFocus = useFocus,
+                FocusSlots = focusSlots,
                 Coefficient = coefficient,
                 AttackValue = magic ? member.FinalMagicAttack : member.FinalPhysicalAttack,
                 Type = magic ? DamageType.Magic : DamageType.Physical,
@@ -136,7 +136,7 @@ namespace Fantasia.Combat
             {
                 SlotCount = enemy.SlotCount,
                 SlotChance = Mathf.Clamp(enemy.SlotSuccessRate, SlotCheck.MinChance, SlotCheck.MaxChance),
-                UseFocus = false,
+                FocusSlots = 0,
                 Coefficient = coefficient,
                 AttackValue = damageType == DamageType.Magic ? enemy.MagicAttack : enemy.PhysicalAttack,
                 Type = damageType,
@@ -174,7 +174,7 @@ namespace Fantasia.Combat
 
         public static AttackOutcome Resolve(AttackRequest attack, DefenseProfile defense)
         {
-            var slots = SlotCheck.RollWithChance(attack.SlotCount, attack.SlotChance, attack.UseFocus ? 1 : 0);
+            var slots = SlotCheck.RollWithChance(attack.SlotCount, attack.SlotChance, attack.FocusSlots);
             bool generalEvasionRolled = DiceRoller.RollChance(defense.EvasionChance);
             return Compute(attack, defense, slots, generalEvasionRolled);
         }

@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace Fantasia.Board
 {
-    [RequireComponent(typeof(Renderer))]
     public class HexTile : MonoBehaviour
     {
         [SerializeField] private Color baseColor = new Color(0.55f, 0.5f, 0.45f);
@@ -63,10 +62,13 @@ namespace Fantasia.Board
         // Set up directly from Initialize rather than Awake — HexBoard always
         // calls this right after AddComponent, and Awake isn't guaranteed to
         // have run yet when tiles are generated outside Play mode (editor tooling).
-        public void Initialize(HexCoord coordinate)
+        public void Initialize(HexCoord coordinate, Renderer visual = null, bool artTile = false)
         {
             Coordinate = coordinate;
-            _renderer = GetComponent<Renderer>();
+            _renderer = visual != null ? visual : GetComponent<Renderer>();
+            _artTile = artTile;
+            // 받은 돌길 칸은 텍스처에 색을 곱하므로 일반 칸은 흰색 (도형 칸의 회갈색을 곱하면 너무 어두움)
+            if (artTile) { baseColor = new Color(0.92f, 0.9f, 0.86f); usedColor = new Color(0.7f, 0.68f, 0.66f); blockedColor = new Color(0.42f, 0.4f, 0.38f); }
             _props = new MaterialPropertyBlock();
             RefreshColor();
         }
@@ -118,18 +120,51 @@ namespace Fantasia.Board
         private bool FinishedAsNormal => IsCleared || (IsUsed && MapKind == MapTileKind.Treasure);
         private bool UsedButKept => IsUsed && (MapKind == MapTileKind.Recovery || MapKind == MapTileKind.Event);
 
+        // 받은 구조물 (거점 건물·보물 상자·우물·장애물 집 등, BoardArt). 칸 윗면에 세우고 카메라 쪽(-Z)을 보게.
+        private bool _artTile;
+        private GameObject _prop;
+        private Renderer[] _propRenderers;
+        private float _propTopY;
+
+        public void SetProp(GameObject prop, float topY)
+        {
+            _prop = prop;
+            _propTopY = topY;
+            prop.name = "Prop";
+            prop.transform.SetParent(transform, false);
+            prop.transform.localPosition = new Vector3(0f, topY, 0f);
+            prop.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            _propRenderers = prop.GetComponentsInChildren<Renderer>();
+            RefreshMarker();
+        }
+
+        private void RefreshProp()
+        {
+            if (_prop == null) return;
+            _prop.SetActive(!FinishedAsNormal); // 받은 보물 = 상자 없어짐
+            var tint = UsedButKept ? new Color(0.45f, 0.45f, 0.45f) : Color.white; // 쓴 우물·이벤트 = 어둡게
+            foreach (var r in _propRenderers)
+            {
+                r.GetPropertyBlock(_props);
+                _props.SetColor(ColorId, tint);
+                r.SetPropertyBlock(_props);
+            }
+        }
+
         private void RefreshMarker()
         {
+            RefreshProp();
             if (_marker != null)
             {
                 _marker.enabled = !FinishedAsNormal;
                 _marker.color = UsedButKept ? new Color(0.55f, 0.55f, 0.55f, 0.85f) : Color.white;
             }
-            if (UsedButKept && _usedLabel == null && _marker != null)
+            if (UsedButKept && _usedLabel == null && (_marker != null || _prop != null))
             {
                 var go = new GameObject("UsedLabel");
                 go.transform.SetParent(transform, false);
-                go.transform.localPosition = new Vector3(0f, _marker.transform.localPosition.y + 0.01f, -0.55f);
+                float labelY = _marker != null ? _marker.transform.localPosition.y : _propTopY + 0.02f;
+                go.transform.localPosition = new Vector3(0f, labelY + 0.01f, -0.55f);
                 go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                 _usedLabel = go.AddComponent<TextMesh>();
                 _usedLabel.font = Fantasia.UI.UGUIKit.UIFont;

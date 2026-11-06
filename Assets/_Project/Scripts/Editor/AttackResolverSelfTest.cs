@@ -123,7 +123,7 @@ namespace Fantasia.Editor
             int errors = 0;
             var attack = new AttackRequest
             {
-                SlotCount = 2, SlotChance = SlotCheck.FinalSlotChance(2, 71), UseFocus = true,
+                SlotCount = 2, SlotChance = SlotCheck.FinalSlotChance(2, 71), FocusSlots = 1,
                 Coefficient = 1f, AttackValue = 10, Type = DamageType.Physical,
             };
             var defense = new DefenseProfile { EvasionChance = AttackResolver.EvasionChance(70), CurrentHP = 999 };

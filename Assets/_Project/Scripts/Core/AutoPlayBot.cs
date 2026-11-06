@@ -203,6 +203,11 @@ namespace Fantasia.Core
                 if (SceneManager.GetActiveScene().name == "CombatTest")
                 {
                     battles++;
+                    // 받은 3D 모델 확인용 — 적 조합마다 전투 시작 화면 1장 (적 이름으로 구분)
+                    yield return WaitFor(() => FindFirstObjectByType<BattleController>()?.DevEnemies?.Count > 0, 10f, "전투 준비");
+                    var fieldBattle = FindFirstObjectByType<BattleController>();
+                    string fieldKey = fieldBattle != null ? string.Join("_", fieldBattle.DevEnemies.Select(e => e.Enemy.Id.Split('.').Last()).Distinct()) : "unknown";
+                    if (!shotTitles.Contains("field:" + fieldKey)) { shotTitles.Add("field:" + fieldKey); yield return new WaitForSecondsRealtime(1.5f); yield return Shot("full_field_" + fieldKey); }
                     yield return RunBattle(shots: false);
                     var b = _lastBattle;
                     if (b == null || !b.DevFinished) { Note("실패: 전투가 끝나지 않음"); yield return Shot("full_battle_stuck"); ending = "전투 멈춤"; break; }
@@ -1034,7 +1039,7 @@ namespace Fantasia.Core
                         }
                         if (skill.Effect == Fantasia.Data.SkillEffect.Heal || skill.Effect == Fantasia.Data.SkillEffect.Cleanse) healsUsed++;
                         bool bossNow = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null) && !(target != null && target.Boss != null && target.Boss.HasPending);
-                        battle.DevUseSkill(skill, target, focus: actor.Member.CurrentFocus > skill.FocusCost + (bossNow ? 1 : 0));
+                        battle.DevUseSkill(skill, target, focus: actor.Member.CurrentFocus > skill.FocusCost + (bossNow ? 1 : 0) ? 1 : 0);
                         if (!shotSkill)
                         {
                             shotSkill = true;
@@ -1052,7 +1057,7 @@ namespace Fantasia.Core
                         // 보스전에서는 집중력 1을 저지용 기술 몫으로 남긴다
                         bool bossFight = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null);
                         if (!actor.CanBasicAttack) battle.DevDefend(); // MP가 없어 기본 공격도 못 하면 방어
-                        else battle.DevAttack(focus: actor.Member.CurrentFocus > (bossFight ? 1 : 0));
+                        else battle.DevAttack(focus: actor.Member.CurrentFocus > (bossFight ? 1 : 0) ? 1 : 0);
                         if (!shotRoll)
                         {
                             shotRoll = true;
@@ -1206,6 +1211,13 @@ namespace Fantasia.Core
             Note($"[QA {(ok ? "통과" : "실패")}] {what}");
         }
 
+        // 전투에서 아군이 행동을 고를 차례가 될 때까지 (대사는 넘김)
+        private static IEnumerator WaitAllyTurn(BattleController b, float seconds)
+        {
+            float until = Time.time + seconds;
+            while (Time.time < until && !b.DevAwaitingPlayer && !b.DevFinished) { if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance(); yield return null; }
+        }
+
         private IEnumerator QaRun()
         {
             yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
@@ -1340,6 +1352,57 @@ namespace Fantasia.Core
             yield return Shot("qa_blood_50_again");
             Qa(ItemAcquiredToast.DevLast != null && ItemAcquiredToast.DevLast.Contains("50"), $"0으로 돌아간 뒤 50 알림 다시 (실제 {ItemAcquiredToast.DevLast})");
             s.BloodTrail = 0; board.DevRefreshTopBar();
+
+            // 2026-11-06 변경 확인: ① 집중을 여러 개 골라 쓰기 ② 한 명이 퇴각에 성공하면 파티 전원 퇴각
+            board.DevArriveAt("O07");
+            yield return WaitFor(() => EncounterPanel.IsOpen, 5f, "O07 조우 (집중·퇴각)");
+            EncounterPanel.DevChoose(1);
+            yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투 (집중·퇴각)");
+            var fb = FindFirstObjectByType<BattleController>();
+            yield return WaitAllyTurn(fb, 30f);
+            if (fb.DevAwaitingPlayer)
+            {
+                var actor = fb.DevCurrent;
+                actor.Member.RestoreFocus(actor.Member.MaxFocus);
+                int slotsN = actor.BasicAttack(0).SlotCount;
+                int want = Mathf.Min(2, slotsN);
+                fb.DevHud.DevSetFocus(want);
+                yield return new WaitForSeconds(0.3f);
+                yield return Shot("qa_focus_picker");
+                Qa(fb.DevHud.FocusCount == want, $"집중 개수 고르기 {want}개 (실제 {fb.DevHud.FocusCount})");
+                int focusBefore = actor.Member.CurrentFocus;
+                fb.DevAttack(want);
+                yield return new WaitForSeconds(0.1f * want + 0.3f * (slotsN - want) + 0.35f);
+                yield return Shot("qa_focus_roll");
+                Qa(focusBefore - actor.Member.CurrentFocus == want, $"집중 {want}개 소모 (실제 {focusBefore - actor.Member.CurrentFocus}) · 슬롯 {slotsN}개 중 {want}개 확정");
+            }
+            else Qa(false, "집중 확인: 아군 차례가 오지 않음");
+
+            bool retreatChecked = false;
+            for (int tries = 0; tries < 12 && !fb.DevFinished; tries++)
+            {
+                yield return WaitAllyTurn(fb, 30f);
+                if (fb.DevFinished || !fb.DevAwaitingPlayer) break;
+                foreach (var m in party.AliveMembers) m.Heal(m.MaxHP); // 확인 도중 전멸하지 않게
+                int inBattle = fb.DevAllies.Count(a => a.InBattle);
+                string who = fb.DevCurrent.DisplayName;
+                fb.DevRetreat();
+                yield return new WaitForSeconds(2.2f);
+                int retreated = fb.DevAllies.Count(a => a.HasRetreated);
+                if (retreated == 0) continue;
+                retreatChecked = true;
+                Qa(retreated == inBattle, $"{who} 퇴각 성공 1번에 생존 아군 전원 이탈 ({retreated}/{inBattle}, 시도 {tries + 1}번째)");
+                break;
+            }
+            if (!retreatChecked) Qa(false, "퇴각 확인: 12번 안에 성공하지 못함");
+            yield return WaitFor(() => fb.DevFinished, 10f, "퇴각 결과");
+            yield return new WaitForSecondsRealtime(2.2f);
+            yield return Shot("qa_retreat_result");
+            Qa(fb.DevHud.DevResultTitle == "퇴각", $"결과 판 \"퇴각\" (실제 {fb.DevHud.DevResultTitle})");
+            fb.DevContinue();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드 복귀");
+            board = FindFirstObjectByType<BoardTestController>();
+            yield return WaitFor(() => board.DevIsIdle, 15f, "보드 대기");
 
             // 게임 오버: LP를 모두 쓴 상태에서 전멸 → "조사대 전멸" + [새 게임] [메인 메뉴]
             foreach (var m in party.Members) while (m.TrySpendLP()) { }

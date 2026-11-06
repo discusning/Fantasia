@@ -145,14 +145,14 @@ namespace Fantasia.Combat
 
         // 확정된 아군 행동 기록 (행동 확정 직후 저장)
         private BattleSnapshot.Command CommandFor(BattleSnapshot.CommandKind kind, BattleUnit target = null, SkillDefinition skill = null, ConsumableDefinition item = null) =>
-            new() { kind = kind, skillId = skill != null ? skill.Id : null, itemId = item != null ? item.Id : null, hasTarget = target != null, target = Ref(target), focus = _hud.UseFocus };
+            new() { kind = kind, skillId = skill != null ? skill.Id : null, itemId = item != null ? item.Id : null, hasTarget = target != null, target = Ref(target), focus = _hud.FocusCount > 0, focusCount = _hud.FocusCount };
 
         // 이어하기: 기록된 행동을 같은 순서로 다시 실행 (같은 게임 난수 → 같은 결과)
         private void ReplayCommand(BattleSnapshot.Command cmd)
         {
             var target = cmd.hasTarget ? FromRef(cmd.target) : null;
             Log($"[저장] 확정된 행동 다시 실행 — {cmd.kind}");
-            _hud.DevSetFocus(cmd.focus);
+            _hud.DevSetFocus(cmd.focusCount > 0 ? cmd.focusCount : cmd.focus ? 1 : 0);
             switch (cmd.kind)
             {
                 case BattleSnapshot.CommandKind.Attack:

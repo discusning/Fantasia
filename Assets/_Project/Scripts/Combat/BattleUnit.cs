@@ -59,10 +59,10 @@ namespace Fantasia.Combat
         public int BasicAttackMPCost => IsAlly && Member.EquippedWeapon != null ? Member.EquippedWeapon.BaseAttackMPCost : 0;
         public bool CanBasicAttack => !IsAlly || Member.CurrentMP >= BasicAttackMPCost;
 
-        public AttackRequest BasicAttack(bool useFocus)
+        public AttackRequest BasicAttack(int focus)
         {
             // 아군 공격력 감소는 PartyMember에 반영됨. 영점 조정(정확도 +)은 무기 공격에만.
-            if (IsAlly) return AttackResolver.FromPartyMember(Member, 1f, useFocus, Statuses.AccuracyBonus);
+            if (IsAlly) return AttackResolver.FromPartyMember(Member, 1f, focus, Statuses.AccuracyBonus);
             var request = AttackResolver.FromEnemy(Enemy);
             request.AttackValue = Mathf.Max(0, request.AttackValue - _enemyStatuses.AttackPenalty);
             return request;
@@ -78,10 +78,10 @@ namespace Fantasia.Combat
 
         // 스킬 공격 판정 (D11). SlotCount 0이면 현재 무기 슬롯·참조 스탯(+영점 조정), 아니면 스킬 고유 판정.
         // 무기 관통은 장비를 쓰는 공격 스킬에도 적용 — 스킬 관통과 큰 쪽.
-        public AttackRequest SkillAttack(SkillDefinition skill, bool useFocus)
+        public AttackRequest SkillAttack(SkillDefinition skill, int focus)
         {
             bool weaponBased = skill.SlotCount <= 0;
-            var request = AttackResolver.FromPartyMember(Member, skill.Coefficient, useFocus, weaponBased ? Statuses.AccuracyBonus : 0f);
+            var request = AttackResolver.FromPartyMember(Member, skill.Coefficient, focus, weaponBased ? Statuses.AccuracyBonus : 0f);
             if (skill.UsesMagic)
             {
                 request.Type = DamageType.Magic;

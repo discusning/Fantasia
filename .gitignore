@@ -67,3 +67,15 @@ Thumbs.db
 # 글꼴: ZEN SERIF — 라이선스상 파일 재배포 금지 (공개 저장소에 올리지 않음). 팀원은 같은 위치에 직접 넣는다.
 /Assets/_Project/Resources/Fonts/ZEN-SERIF-TTF-Regular.ttf
 /Assets/_Project/Resources/Fonts/ZEN-SERIF-TTF-Regular.ttf.meta
+
+# 받은 3D 소품 중 게임에서 안 쓰는 것 (2026-11-06) — 원본은 바탕화면\에셋. 쓰게 되면 이 줄을 지우고 커밋
+Assets/_Project/Art/Models/Props/Prop_Fence/
+Assets/_Project/Art/Models/Props/Prop_Fence.meta
+Assets/_Project/Art/Models/Props/Prop_House_C/
+Assets/_Project/Art/Models/Props/Prop_House_C.meta
+Assets/_Project/Art/Models/Props/Prop_StoneArch/
+Assets/_Project/Art/Models/Props/Prop_StoneArch.meta
+Assets/_Project/Art/Models/Props/Prop_StoneWall/
+Assets/_Project/Art/Models/Props/Prop_StoneWall.meta
+Assets/_Project/Art/Models/Props/Prop_Trees_B/
+Assets/_Project/Art/Models/Props/Prop_Trees_B.meta

@@ -55,7 +55,8 @@ namespace Fantasia.Combat
             public string skillId, itemId;
             public bool hasTarget;
             public UnitRef target;
-            public bool focus;
+            public bool focus;      // 옛 저장 (집중 1개 켬/끔)
+            public int focusCount;  // 2026-11-06부터: 집중 사용 개수
         }
     }
 }

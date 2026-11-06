@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: "\uAC80\uC2DC\uAD00 \uC544\uBCA8 \uBAA8\uB85C"
   Size: 3
   TypeTag: "\uC778\uAC04\uD615"
-  Model: {fileID: 0}
+  Model: {fileID: 7279083587621027413, guid: 3eae5e7749ecb8a40a7ce984dfe66752, type: 3}
   Portrait: {fileID: 0}
   MaxHP: 300
   Speed: 58

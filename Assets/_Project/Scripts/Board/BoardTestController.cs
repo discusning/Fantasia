@@ -976,7 +976,7 @@ namespace Fantasia.Board
             Debug.Log("[World] " + message);
         }
 
-        // 보드 위 사신 말 (임시 인형 축소)
+        // 보드 위 사신 말 (사신 모델 축소)
         private void RefreshReaperFigures()
         {
             foreach (var go in _reaperFigures) if (go != null) Destroy(go);
@@ -984,7 +984,7 @@ namespace Fantasia.Board
             if (!Hunt.Active || ReaperEnemy == null) return;
             foreach (var coord in Hunt.Reapers)
             {
-                var fig = Fantasia.UI.PlaceholderFigure.Build(ReaperEnemy);
+                var fig = Fantasia.UI.CharacterModels.Create(ReaperEnemy, out _); // 받은 모델이 있으면 그것, 없으면 임시 인형
                 fig.transform.position = _board.CoordToWorld(coord) + Vector3.up * _board.TileHeight;
                 fig.transform.localScale = Vector3.one * 0.6f;
                 fig.transform.rotation = Quaternion.Euler(0f, 180f, 0f);

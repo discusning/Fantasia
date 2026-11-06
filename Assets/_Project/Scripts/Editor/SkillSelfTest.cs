@@ -39,20 +39,20 @@ namespace Fantasia.Editor
 
             // 일점 돌파 1.3A (명탐정 공격력 13): 일반 floor(16.9)=16, 크리 floor(33.8)=33
             var breach = Skill(detective, "skill.detective.pinpoint_breach");
-            var req = detective.SkillAttack(breach, false);
+            var req = detective.SkillAttack(breach, 0);
             failures += Expect("일점 돌파 일반", AttackResolver.NormalDamage(req.Coefficient, req.AttackValue, 0), 16);
             failures += Expect("일점 돌파 크리", AttackResolver.CriticalDamage(req.Coefficient, req.AttackValue), 33);
             failures += Expect("일점 돌파 = 무기 슬롯", req.SlotCount, 2);
 
             // 관통탄 1.2A (저격수 18): floor(21.6)=21 − floor(방어 6 × 0.5)=3 → 18, 크리 floor(43.2)=43
             var piercing = Skill(sniper, "skill.sniper.piercing_round");
-            req = sniper.SkillAttack(piercing, false);
+            req = sniper.SkillAttack(piercing, 0);
             failures += Expect("관통탄 일반 (방어 6, 관통 50%)", AttackResolver.NormalDamage(req.Coefficient, req.AttackValue, 6, req.PierceRatio), 18);
             failures += Expect("관통탄 크리 (관통 재적용 없음)", AttackResolver.CriticalDamage(req.Coefficient, req.AttackValue), 43);
 
             // 검은 연무: 고유 3슬롯 지력 판정 (지력 71+4=75 → 40.83%), 마법 0.9M (M=14 → 12)
             var miasma = Skill(doctor, "skill.plague_doctor.black_miasma");
-            req = doctor.SkillAttack(miasma, false);
+            req = doctor.SkillAttack(miasma, 0);
             failures += Expect("검은 연무 3슬롯", req.SlotCount, 3);
             failures += ExpectFloat("검은 연무 지력 판정", req.SlotChance, 0.40833f);
             failures += ExpectBool("검은 연무 마법", req.Type == DamageType.Magic, true);
@@ -76,8 +76,11 @@ namespace Fantasia.Editor
 
             // 영점 조정: 무기 공격 슬롯 +15%p (권총 인지 95 → 59.5% → 74.5%), 고유 판정 스킬에는 미적용
             sniper.Statuses.Apply(Skill(sniper, "skill.sniper.zero_in").AppliedStatuses[0]);
-            failures += ExpectFloat("영점 조정 기본 공격", sniper.BasicAttack(false).SlotChance, 0.745f);
-            failures += ExpectFloat("영점 조정 관통탄(무기 판정)", sniper.SkillAttack(piercing, false).SlotChance, 0.745f);
+            failures += ExpectFloat("영점 조정 기본 공격", sniper.BasicAttack(0).SlotChance, 0.745f);
+            failures += ExpectFloat("영점 조정 관통탄(무기 판정)", sniper.SkillAttack(piercing, 0).SlotChance, 0.745f);
+            // 2026-11-06: 집중을 여러 개 쓰면 그만큼 슬롯 확정 (전부 쓰면 크리티컬 확정)
+            failures += ExpectFloat("집중 2개 — 3슬롯 중 2개 이상 성공", Fantasia.Combat.SlotCheck.RollWithChance(3, 0.05f, 2).SuccessCount >= 2 ? 1f : 0f, 1f);
+            failures += ExpectFloat("집중 3개 — 3슬롯 크리티컬 확률 100%", Fantasia.Combat.SlotCheck.AllSuccessProbability(3, 0.3f, 3), 1f);
             sniper.Statuses.BeginTurn();
             sniper.Statuses.BeginTurn();
             failures += ExpectBool("영점 조정 다음 2턴 동안 유지", sniper.Statuses.Has(StatusEffectType.AccuracyUp), true);

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 에셋 적용 보고서</title>
+<style>
+@page{size:A4;margin:12mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.5px;line-height:1.6;color:#222;background:#fff;margin:0}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 8px;color:#6b1e1e}
+.sub{color:#666;margin-bottom:10px}
+.box{border:1px solid #c9a;background:#fbf5f2;padding:9px 11px;margin:8px 0}
+img{width:100%;border:1px solid #999;display:block}
+figure{margin:6px 0 10px}
+figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+.ok{color:#1d7a2a;font-weight:bold}
+.no{color:#a01818;font-weight:bold}
+.brk{page-break-before:always}
+.small{font-size:11px;color:#555}
+</style></head><body>
+
+<h1>받은 3D 에셋 게임 적용 보고서</h1>
+<div class="sub">2026-11-06 · 개발 → 팀 전체 · 실제 게임(빌드)을 자동으로 1막 끝까지 돌리며 찍은 화면</div>
+
+<div class="box">
+<b>한 줄 요약:</b> 받은 인물·바닥 칸·구조물이 <b>게임 안에서 잘 나옵니다.</b> 1막을 끝까지 돌려도 오류 0건.<br>
+인물은 아직 <b>움직임 파일이 없어 가만히 서 있기만</b> 합니다 (움직임 요청서 보냄, 11/7 Idle 먼저).
+</div>
+
+<h2>1. 보드 — 전과 후</h2>
+<div class="two">
+<figure><img src="img/before_board.png"><figcaption>전: 색깔 육각 칸 + 납작한 그림 표식</figcaption></figure>
+<figure><img src="img/board.png"><figcaption>후: 돌길 칸 + 건물·나무·우물 등 구조물</figcaption></figure>
+</div>
+<figure><img src="img/board2.png"><figcaption>보드 다른 곳 (저녁, 피의 사냥 중). 초록 칸 = 회복 우물, 칼 표식 칸 = 적</figcaption></figure>
+
+<table>
+<tr><th style="width:28%">칸 종류</th><th>들어간 모델</th></tr>
+<tr><td>일반 길</td><td>돌길 칸 2종을 섞어 깔음</td></tr>
+<tr><td>막힌 칸</td><td>집 2종 + 나무 (위치마다 고정)</td></tr>
+<tr><td>거점 (S05)</td><td>그리니치 건물</td></tr>
+<tr><td>보스 (M11)</td><td>검시소 건물</td></tr>
+<tr><td>보물 · 회복</td><td>보물 상자 (받으면 사라짐) · 우물 (쓰면 어두워짐)</td></tr>
+<tr><td>이벤트</td><td>점술가 천막 (M02) · 분수 (S10)</td></tr>
+<tr><td>출구 (K12)</td><td>출구 문</td></tr>
+<tr><td>일반 적 칸</td><td>지금처럼 칼 표식 그대로</td></tr>
+</table>
+
+<h2 class="brk">2. 전투 — 전과 후</h2>
+<div class="two">
+<figure><img src="img/before_battle.png"><figcaption>전: 임시 인형</figcaption></figure>
+<figure><img src="img/rat.png"><figcaption>후: 받은 인물 모델 (역병 쥐 전투)</figcaption></figure>
+</div>
+<div class="two">
+<figure><img src="img/reaper.png"><figcaption>인조 그림자 사신 (피의 사냥)</figcaption></figure>
+<figure><img src="img/abel.png"><figcaption>1막 보스 검시관 아벨 모로 등장</figcaption></figure>
+</div>
+<p class="small">아래 카드 얼굴·위쪽 순서 막대 그림도 받은 모델로 바뀌었습니다.</p>
+
+<h2>3. 확인 결과</h2>
+<table>
+<tr><th style="width:34%">항목</th><th style="width:12%">결과</th><th>내용</th></tr>
+<tr><td>인물 8개 게임에 넣기</td><td class="ok">됨</td><td>아군 3 · 적 5 모두 연결</td></tr>
+<tr><td>뼈대(리깅)</td><td class="ok">정상</td><td>8개 모두 엔진이 뼈대를 알아봄</td></tr>
+<tr><td>움직임 재생</td><td class="ok">됨</td><td>개발이 만든 "팔 내린 자세"를 넣어 보니 T자가 풀림 → 움직임 파일이 오면 같은 방식으로 재생</td></tr>
+<tr><td>바닥 칸 · 구조물</td><td class="ok">됨</td><td>크기를 칸에 맞춰 줄임</td></tr>
+<tr><td>1막 끝까지 플레이</td><td class="ok">됨</td><td>오류 0건</td></tr>
+</table>
+
+<h2>4. 아직 남은 것</h2>
+<table>
+<tr><th style="width:34%">문제</th><th>할 일 · 담당</th></tr>
+<tr><td>인물이 가만히만 서 있음</td><td>움직임 파일 대기 (디자인, 11/7 Idle 먼저)</td></tr>
+<tr><td>사냥개 · 가고일은 팔 내린 자세를 못 씀</td><td>사람 몸이 아니라서 받은 Idle이 꼭 필요 (디자인)</td></tr>
+<tr><td>독거미 모델 없음</td><td>지금은 임시 인형 (아래 그림). 디자인 확인 필요</td></tr>
+<tr><td>사신 낫이 안 보임</td><td>손에 붙였는데 크기 조정 필요 (개발)</td></tr>
+<tr><td>전투에서 아군이 살짝 떠 보임 (해석: 그림자가 없어 그렇게 보일 수 있음)</td><td>발 맞춤 넣음, 더 확인 (개발)</td></tr>
+</table>
+<figure style="width:60%"><img src="img/spider.png"><figcaption>독거미 전투 — 거미만 아직 임시 인형</figcaption></figure>
+
+</body></html>
