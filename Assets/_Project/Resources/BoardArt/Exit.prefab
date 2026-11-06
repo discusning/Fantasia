@@ -42,27 +42,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 8a66ff787a48efd439160710256b4291, type: 3}
       propertyPath: m_LocalScale.x
-      value: 156.41554
+      value: 156.81471
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8a66ff787a48efd439160710256b4291, type: 3}
       propertyPath: m_LocalScale.y
-      value: 156.41554
+      value: 156.81471
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8a66ff787a48efd439160710256b4291, type: 3}
       propertyPath: m_LocalScale.z
-      value: 156.41554
+      value: 156.81471
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8a66ff787a48efd439160710256b4291, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.00038164854
+      value: -0.0007660985
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8a66ff787a48efd439160710256b4291, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.65338683
+      value: 0.6458649
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8a66ff787a48efd439160710256b4291, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.0011457801
+      value: -0.0053599477
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8a66ff787a48efd439160710256b4291, type: 3}
       propertyPath: m_LocalRotation.w
@@ -96,6 +96,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 27e7f99e2502b4640afcf502a4ed2e6e, type: 2}
+    - target: {fileID: -5754084199372789682, guid: 8a66ff787a48efd439160710256b4291, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: ae2032d18d9bba244986fbe9211bb634, type: 2}
     - target: {fileID: 919132149155446097, guid: 8a66ff787a48efd439160710256b4291, type: 3}
       propertyPath: m_Name
       value: Prop_ExitGate

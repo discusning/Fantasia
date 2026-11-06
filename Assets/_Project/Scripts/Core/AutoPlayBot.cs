@@ -165,6 +165,7 @@ namespace Fantasia.Core
             yield return new WaitForSeconds(1f);
             yield return SkipIntro();
             yield return Shot("full_start");
+            yield return PerfProbe("보드");
             Note((resume ? "통플레이 이어하기 — 파티: " : "통플레이 시작 — 파티: ") + string.Join(", ", BoardSession.Instance.Party.Members.Select(m => m.Job.DisplayName)));
 
             while (Time.realtimeSinceStartup < limit)
@@ -207,7 +208,7 @@ namespace Fantasia.Core
                     yield return WaitFor(() => FindFirstObjectByType<BattleController>()?.DevEnemies?.Count > 0, 10f, "전투 준비");
                     var fieldBattle = FindFirstObjectByType<BattleController>();
                     string fieldKey = fieldBattle != null ? string.Join("_", fieldBattle.DevEnemies.Select(e => e.Enemy.Id.Split('.').Last()).Distinct()) : "unknown";
-                    if (!shotTitles.Contains("field:" + fieldKey)) { shotTitles.Add("field:" + fieldKey); yield return new WaitForSecondsRealtime(1.5f); yield return Shot("full_field_" + fieldKey); }
+                    if (!shotTitles.Contains("field:" + fieldKey)) { shotTitles.Add("field:" + fieldKey); yield return new WaitForSecondsRealtime(1.5f); yield return Shot("full_field_" + fieldKey); if (fieldKey.Contains("abel") || battles == 1) yield return PerfProbe("전투 " + fieldKey); }
                     yield return RunBattle(shots: false);
                     var b = _lastBattle;
                     if (b == null || !b.DevFinished) { Note("실패: 전투가 끝나지 않음"); yield return Shot("full_battle_stuck"); ending = "전투 멈춤"; break; }
@@ -1209,6 +1210,29 @@ namespace Fantasia.Core
         {
             if (ok) _qaPass++; else _qaFail++;
             Note($"[QA {(ok ? "통과" : "실패")}] {what}");
+        }
+
+        // 성능 기록 (2026-11-06 최적화 비교용): 화면 갱신 제한을 잠시 풀고 3초 동안 평균 프레임,
+        // 그리기 호출·삼각형 수(가능한 빌드에서만), 장면의 메시 삼각형 합을 남긴다.
+        private static long TriCount(Mesh m) { long n = 0; for (int i = 0; i < m.subMeshCount; i++) n += m.GetIndexCount(i) / 3; return n; } // 읽기 불가 메시도 됨
+
+        private IEnumerator PerfProbe(string where)
+        {
+            int vsync = QualitySettings.vSyncCount, target = Application.targetFrameRate;
+            QualitySettings.vSyncCount = 0; Application.targetFrameRate = -1;
+            var dc = Unity.Profiling.ProfilerRecorder.StartNew(Unity.Profiling.ProfilerCategory.Render, "Draw Calls Count");
+            var tr = Unity.Profiling.ProfilerRecorder.StartNew(Unity.Profiling.ProfilerCategory.Render, "Triangles Count");
+            yield return new WaitForSecondsRealtime(0.5f);
+            int frames = 0; long dcSum = 0, trSum = 0; float start = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - start < 3f) { yield return null; frames++; dcSum += dc.LastValue; trSum += tr.LastValue; }
+            float sec = Time.realtimeSinceStartup - start;
+            long sceneTris = 0;
+            foreach (var mf in FindObjectsByType<MeshFilter>(FindObjectsSortMode.None)) if (mf.sharedMesh != null && mf.GetComponent<Renderer>() is { enabled: true } r && r.gameObject.activeInHierarchy) sceneTris += TriCount(mf.sharedMesh);
+            foreach (var sm in FindObjectsByType<SkinnedMeshRenderer>(FindObjectsSortMode.None)) if (sm.sharedMesh != null && sm.gameObject.activeInHierarchy) sceneTris += TriCount(sm.sharedMesh);
+            string gpu = dc.Valid && dcSum > 0 ? $" · 그리기 호출 {dcSum / frames} · 화면 삼각형 {trSum / frames / 1000}k" : " · 그리기 호출 기록 없음(배포 빌드)";
+            Note($"[성능] {where}: 평균 {frames / sec:0} FPS ({sec * 1000f / frames:0.0}ms){gpu} · 장면 메시 삼각형 {sceneTris / 1000}k");
+            dc.Dispose(); tr.Dispose();
+            QualitySettings.vSyncCount = vsync; Application.targetFrameRate = target;
         }
 
         // 전투에서 아군이 행동을 고를 차례가 될 때까지 (대사는 넘김)

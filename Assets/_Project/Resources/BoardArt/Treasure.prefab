@@ -42,27 +42,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
       propertyPath: m_LocalScale.x
-      value: 83.54917
+      value: 83.934425
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
       propertyPath: m_LocalScale.y
-      value: 83.54917
+      value: 83.934425
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
       propertyPath: m_LocalScale.z
-      value: 83.54917
+      value: 83.934425
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0
+      value: 0.0018444657
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.3029067
+      value: 0.3043034
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.0006119907
+      value: -0.0026636422
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -96,6 +96,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 9fe6db99ea715034b90500e97a9fc48e, type: 2}
+    - target: {fileID: -5754084199372789682, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: 757359d33bfcb7b40bb2b44faaf44d38, type: 2}
     - target: {fileID: 919132149155446097, guid: cc8d05171046f83408f5245fc62303c9, type: 3}
       propertyPath: m_Name
       value: Prop_Treasure

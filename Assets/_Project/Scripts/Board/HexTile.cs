@@ -68,7 +68,7 @@ namespace Fantasia.Board
             _renderer = visual != null ? visual : GetComponent<Renderer>();
             _artTile = artTile;
             // 받은 돌길 칸은 텍스처에 색을 곱하므로 일반 칸은 흰색 (도형 칸의 회갈색을 곱하면 너무 어두움)
-            if (artTile) { baseColor = new Color(0.92f, 0.9f, 0.86f); usedColor = new Color(0.7f, 0.68f, 0.66f); blockedColor = new Color(0.42f, 0.4f, 0.38f); }
+            if (artTile) { baseColor = ArtBaseColor; usedColor = new Color(0.7f, 0.68f, 0.66f); blockedColor = new Color(0.42f, 0.4f, 0.38f); }
             _props = new MaterialPropertyBlock();
             RefreshColor();
         }
@@ -121,6 +121,7 @@ namespace Fantasia.Board
         private bool UsedButKept => IsUsed && (MapKind == MapTileKind.Recovery || MapKind == MapTileKind.Event);
 
         // 받은 구조물 (거점 건물·보물 상자·우물·장애물 집 등, BoardArt). 칸 윗면에 세우고 카메라 쪽(-Z)을 보게.
+        public static readonly Color ArtBaseColor = new Color(0.92f, 0.9f, 0.86f); // 받은 돌길 칸 기본색 = 칸 재질 색 (Editor/ArtSetup)
         private bool _artTile;
         private GameObject _prop;
         private Renderer[] _propRenderers;
@@ -145,6 +146,7 @@ namespace Fantasia.Board
             var tint = UsedButKept ? new Color(0.45f, 0.45f, 0.45f) : Color.white; // 쓴 우물·이벤트 = 어둡게
             foreach (var r in _propRenderers)
             {
+                if (!UsedButKept) { r.SetPropertyBlock(null); continue; } // 기본 모습은 덮어쓰기 없이 (같은 소품끼리 한 번에 그려지게)
                 r.GetPropertyBlock(_props);
                 _props.SetColor(ColorId, tint);
                 r.SetPropertyBlock(_props);
@@ -227,6 +229,8 @@ namespace Fantasia.Board
 
         private void ApplyColor(Color color)
         {
+            // 최적화 (2026-11-06): 받은 돌길 칸이 기본색이면 색 덮어쓰기를 빼서 같은 재질끼리 한 번에 그려지게 (재질 색 = 기본색, ArtSetup)
+            if (_artTile && color == baseColor) { _renderer.SetPropertyBlock(null); return; }
             _renderer.GetPropertyBlock(_props);
             _props.SetColor(ColorId, color);
             _renderer.SetPropertyBlock(_props);

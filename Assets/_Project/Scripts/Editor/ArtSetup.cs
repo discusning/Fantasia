@@ -86,7 +86,7 @@ namespace Fantasia.Editor
             {
                 if (AssetImporter.GetAtPath(path) is not TextureImporter ti) continue;
                 bool changed = false;
-                int max = path.Contains("/Characters/") ? 2048 : 1024;
+                int max = path.Contains("/Characters/") && path.EndsWith("_Albedo.png") ? 2048 : 1024; // 최적화 (11/6): 인물 색만 2048, 굴곡·금속 지도는 화면 크기상 1024면 충분
                 if (ti.maxTextureSize != max) { ti.maxTextureSize = max; changed = true; }
                 bool normal = Path.GetFileNameWithoutExtension(path).EndsWith("_Normal");
                 if (normal && ti.textureType != TextureImporterType.NormalMap) { ti.textureType = TextureImporterType.NormalMap; changed = true; }
@@ -145,6 +145,7 @@ namespace Fantasia.Editor
                 b = Bounds(model);
                 model.transform.localPosition -= new Vector3(b.center.x, b.min.y, b.center.z);
 
+                UseNormalMap(model, name);
                 if (name == "Model_ShadowReaper") AttachScythe(model, report);
 
                 string prefabPath = $"{PrefabDir}/{name}.prefab";
@@ -187,6 +188,8 @@ namespace Fantasia.Editor
             if (hand == null || src == null) { report.Add($"  낫: 붙이지 못함 (손 뼈 {(hand == null ? "없음" : "있음")})"); return; }
             var scythe = (GameObject)PrefabUtility.InstantiatePrefab(src);
             ApplyPropMaterial(scythe, "Prop_Scythe");
+            foreach (var mf in scythe.GetComponentsInChildren<MeshFilter>())
+                mf.sharedMesh = Lighter(mf.sharedMesh, BoardSingleTris, $"{Root}/Props/Prop_Scythe/Prop_Scythe_Board.asset");
             scythe.name = "Scythe";
             scythe.transform.SetParent(hand, false);
             // 원본은 0.95m로 누워 있음 → 세우고 사신 키에 맞게 (월드 기준 약 2.2m)
@@ -195,6 +198,21 @@ namespace Fantasia.Editor
             scythe.transform.localScale = Vector3.one * (2.3f / world);
             scythe.transform.localPosition = Vector3.zero;
             report.Add($"  낫: {hand.name}에 붙임");
+        }
+
+        // 아군 3명은 Normal(표면 굴곡) 텍스처가 같이 왔는데 재질에 연결이 안 되어 와서 연결한다 (안 쓰면 파일만 차지).
+        private static void UseNormalMap(GameObject model, string name)
+        {
+            var nrm = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Root}/Characters/Textures/{name}_Normal.png");
+            if (nrm == null) return;
+            foreach (var r in model.GetComponentsInChildren<Renderer>())
+            {
+                var mat = r.sharedMaterial;
+                if (mat == null || !mat.HasProperty("_BumpMap") || mat.GetTexture("_BumpMap") != null) continue;
+                mat.SetTexture("_BumpMap", nrm);
+                mat.EnableKeyword("_NORMALMAP");
+                EditorUtility.SetDirty(mat);
+            }
         }
 
         private static void Assign(string name, GameObject prefab)
@@ -213,8 +231,23 @@ namespace Fantasia.Editor
                 var root = new GameObject(role);
                 var model = (GameObject)PrefabUtility.InstantiatePrefab(src);
                 model.transform.SetParent(root.transform, false);
-                if (lying) { model.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f) * model.transform.localRotation; ApplyPropMaterial(model, Path.GetFileNameWithoutExtension(srcPath)); }
+                if (lying)
+                {
+                    string propName = Path.GetFileNameWithoutExtension(srcPath);
+                    model.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f) * model.transform.localRotation;
+                    ApplyPropMaterial(model, propName);
+                    // Meshy 소품은 3만 면 → 보드에서는 멀리서 작게 보이므로 가벼운 메시로 (나무는 여러 칸에 반복돼 더 줄임)
+                    int budget = role == "Block_Trees" ? BoardRepeatedTris : BoardSingleTris;
+                    foreach (var mf in model.GetComponentsInChildren<MeshFilter>())
+                        mf.sharedMesh = Lighter(mf.sharedMesh, budget, $"{Root}/Props/{propName}/{propName}_Board.asset");
+                }
                 foreach (var col in model.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(col);
+                foreach (var mat in model.GetComponentsInChildren<Renderer>().SelectMany(r => r.sharedMaterials).Where(m => m != null).Distinct())
+                {
+                    mat.enableInstancing = true; // 같은 칸·건물이 여러 개 → 한 번에 그리기
+                    if (role.StartsWith("Tile")) mat.color = Fantasia.Board.HexTile.ArtBaseColor; // 기본 칸은 색 덮어쓰기 없이 이 색
+                    EditorUtility.SetDirty(mat);
+                }
                 foreach (var r in model.GetComponentsInChildren<Renderer>()) { r.shadowCastingMode = role.StartsWith("Tile") ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On; }
                 var b = Bounds(model);
                 float scale = fit == "w" ? size / Mathf.Max(b.size.x, b.size.z, 0.01f) : fit == "h" ? size / Mathf.Max(b.size.y, 0.01f) : 1f;
@@ -227,6 +260,58 @@ namespace Fantasia.Editor
                 Object.DestroyImmediate(root);
                 report.Add($"보드 {role}: {b.size.x:F2}×{b.size.y:F2}×{b.size.z:F2}m, 면 {tris}");
             }
+        }
+
+        // ── 가벼운 메시 (2026-11-06 최적화) ──
+        // 보드 소품 면 수 상한: 한 번씩 놓이는 것(거점 소품·우물·출구 등) / 여러 칸에 반복되는 것(나무)
+        private const int BoardSingleTris = 8000;
+        private const int BoardRepeatedTris = 4000;
+
+        // Unity 메시 단순화(Mesh LOD)로 단계를 만든 뒤 maxTris 이하인 첫 단계만 떼어 새 메시로 저장한다.
+        // 원본 FBX는 그대로 (다시 돌리면 같은 결과). 하위 메시 1개(Meshy 소품)만 다룬다.
+        private static Mesh Lighter(Mesh src, int maxTris, string path)
+        {
+            if (src == null || src.subMeshCount != 1 || src.triangles.Length / 3 <= maxTris) return src;
+            var work = Object.Instantiate(src);
+            MeshLodUtility.GenerateMeshLods(work, 12);
+            int level = 0;
+            for (int i = 0; i < work.lodCount; i++) { level = i; if (work.GetLod(0, i).indexCount / 3 <= maxTris) break; }
+            var range = work.GetLod(0, level);
+            int[] all;
+            using (var data = Mesh.AcquireReadOnlyMeshData(work))
+            {
+                var md = data[0];
+                all = md.indexFormat == UnityEngine.Rendering.IndexFormat.UInt16
+                    ? md.GetIndexData<ushort>().Select(x => (int)x).ToArray()
+                    : md.GetIndexData<uint>().Select(x => (int)x).ToArray();
+            }
+            // 쓰는 꼭짓점만 남기고 번호를 다시 매김
+            var map = new Dictionary<int, int>();
+            var tri = new int[range.indexCount];
+            for (int k = 0; k < range.indexCount; k++)
+            {
+                int v = all[range.indexStart + k];
+                if (!map.TryGetValue(v, out int n)) { n = map.Count; map[v] = n; }
+                tri[k] = n;
+            }
+            var order = new int[map.Count];
+            foreach (var kv in map) order[kv.Value] = kv.Key;
+            T[] Pick<T>(T[] a) => a.Length == 0 ? a : order.Select(i => a[i]).ToArray();
+            var uv = new List<Vector2>();
+            work.GetUVs(0, uv);
+            var m = new Mesh { name = src.name + "_Board" };
+            if (order.Length > 65535) m.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            m.vertices = Pick(work.vertices);
+            m.normals = Pick(work.normals);
+            m.tangents = Pick(work.tangents);
+            if (uv.Count > 0) m.SetUVs(0, order.Select(i => uv[i]).ToList());
+            m.colors = Pick(work.colors);
+            m.triangles = tri;
+            m.RecalculateBounds();
+            Object.DestroyImmediate(work);
+            AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(m, path);
+            return m;
         }
 
         // Meshy 소품은 텍스처가 FBX에 연결되어 오지 않아 같은 폴더 PNG로 재질을 만든다.
