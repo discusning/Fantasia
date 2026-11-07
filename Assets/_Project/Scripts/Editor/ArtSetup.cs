@@ -202,12 +202,15 @@ namespace Fantasia.Editor
                 mf.sharedMesh = Lighter(mf.sharedMesh, BoardSingleTris, $"{Root}/Props/Prop_Scythe/Prop_Scythe_Board.asset");
             scythe.name = "Scythe";
             scythe.transform.SetParent(hand, false);
-            // 원본은 0.95m로 누워 있음 → 세우고 사신 키에 맞게 (월드 기준 약 2.2m)
+            // 원본은 누워 있고 cm 단위(FBX 루트 배율 100)라, 그 배율을 덮어쓰면 낫이 2cm가 됨 (11/8 수정).
+            // 메시 실제 길이로 배율을 계산해 월드 기준 약 2.2m로 세운다.
             float world = hand.lossyScale.y;
-            scythe.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
-            scythe.transform.localScale = Vector3.one * (2.3f / world);
+            var size = scythe.GetComponentInChildren<MeshFilter>().sharedMesh.bounds.size;
+            float meshLen = Mathf.Max(size.x, Mathf.Max(size.y, size.z));
+            scythe.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // 날이 위로 (-90이면 서 있을 때 날이 발밑)
+            scythe.transform.localScale = Vector3.one * (2.2f / (meshLen * world));
             scythe.transform.localPosition = Vector3.zero;
-            report.Add($"  낫: {hand.name}에 붙임");
+            report.Add($"  낫: {hand.name}에 붙임 (길이 2.2m)");
         }
 
         // 아군 3명은 Normal(표면 굴곡) 텍스처가 같이 왔는데 재질에 연결이 안 되어 와서 연결한다 (안 쓰면 파일만 차지).

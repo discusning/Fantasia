@@ -11,6 +11,7 @@ namespace Fantasia.Editor
     // 받은 움직임(Art/Models/Characters/Animations) 확인용 사진 (2026-11-06).
     // 모델마다 한 줄: Idle 중간 · Attack 0.4초 · Hit 0.2초 · Death 끝. 모델은 받은 FBX 그대로, 키를 같게 맞춰 비교.
     // 결과: Logs/anim_check.png + 콘솔에 모델별 클립 길이·움직인 뼈 수.
+    // -prefab: FBX 대신 게임용 프리팹(Art/Prefabs, 낫 등 붙인 것 포함)을 찍음 (2026-11-08).
     public static class AnimationCheckShot
     {
         private const string Root = "Assets/_Project/Art/Models/Characters";
@@ -39,11 +40,13 @@ namespace Fantasia.Editor
                 cam.orthographic = true;
                 cam.targetTexture = rt;
 
-                var fbx = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/FBX/{name}.fbx");
+                bool usePrefab = System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-prefab") >= 0;
+                var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(usePrefab ? $"Assets/_Project/Art/Prefabs/{name}.prefab" : $"{Root}/FBX/{name}.fbx");
                 var ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{Root}/Animations/{name}/{name}.controller");
                 if (fbx == null) { report.Add($"{name}: FBX 없음"); continue; }
                 var go = (GameObject)Object.Instantiate(fbx);
-                var animator = go.GetComponent<Animator>() ?? go.AddComponent<Animator>();
+                var animator = go.GetComponentInChildren<Animator>() ?? go.AddComponent<Animator>();
+                foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>()) mb.enabled = false; // 프리팹의 발 맞춤 등이 끼어들지 않게
                 animator.runtimeAnimatorController = null; // 클립을 직접 재생 (컨트롤러 기본 상태 Idle이 덮어쓰지 않게). 컨트롤러는 있는지만 확인
                 bool hasCtrl = ctrl != null;
                 var avatar = animator.avatar;
@@ -69,7 +72,7 @@ namespace Fantasia.Editor
                     // 게임 재생과 같은 경로(Playable)로 그 시점 자세를 계산 — 사람형 근육 커브까지 적용
                     AnimationMode.StartAnimationMode();
                     AnimationMode.BeginSampling();
-                    AnimationMode.SampleAnimationClip(go, clip, t);
+                    AnimationMode.SampleAnimationClip(animator.gameObject, clip, t);
                     AnimationMode.EndSampling();
                     // 배치 모드에서는 뼈가 움직여도 피부(스킨) 갱신이 늦어서, 지금 뼈 자세를 메시로 구워 그 메시를 찍는다
                     var smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>();
