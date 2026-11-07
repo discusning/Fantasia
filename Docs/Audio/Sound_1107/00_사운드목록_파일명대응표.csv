@@ -1,0 +1,23 @@
+﻿번호,분류,한글파일명,개발용ID,개발용파일명,길이_초,우선순위,반복재생,사용상황,형식,샘플레이트_Hz,비트레이트_kbps,채널,출처_제작방법,사용허락,출처URL,최대피크_dBFS,시작무음_ms
+1,01_BGM,01_런던지도_안개속의조사대__BGM_Field_London.mp3,BGM_Field_London,BGM_Field_London.mp3,112.941333,1,예,런던지도_안개속의조사대,MP3,48000,192,스테레오,직접 작곡·사운드 디자인; GeneralUser GS 악기 렌더링,직접 제작 / GeneralUser GS License v2.0,https://github.com/mrbumpy409/GeneralUser-GS,-8.02,0.0
+2,01_BGM,02_일반전투_피묻은돌길__BGM_Battle.mp3,BGM_Battle,BGM_Battle.mp3,96.000000,1,예,일반전투_피묻은돌길,MP3,48000,192,스테레오,직접 작곡·사운드 디자인; GeneralUser GS 악기 렌더링,직접 제작 / GeneralUser GS License v2.0,https://github.com/mrbumpy409/GeneralUser-GS,-6.54,0.0
+3,01_BGM,03_보스전_아벨모로의검시소__BGM_Boss_Abel.mp3,BGM_Boss_Abel,BGM_Boss_Abel.mp3,102.858000,1,예,보스전_아벨모로의검시소,MP3,48000,192,스테레오,직접 작곡·사운드 디자인; GeneralUser GS 악기 렌더링,직접 제작 / GeneralUser GS License v2.0,https://github.com/mrbumpy409/GeneralUser-GS,-5.93,0.0
+4,01_BGM,04_메인메뉴_쓸쓸한서막__BGM_Menu.mp3,BGM_Menu,BGM_Menu.mp3,90.000000,2,예,메인메뉴_쓸쓸한서막,MP3,48000,192,스테레오,직접 작곡·사운드 디자인; GeneralUser GS 악기 렌더링,직접 제작 / GeneralUser GS License v2.0,https://github.com/mrbumpy409/GeneralUser-GS,-9.27,0.0
+5,02_UI,05_버튼클릭_작은딸깍__UI_Click.mp3,UI_Click,UI_Click.mp3,0.085000,1,아니오,모든 버튼 클릭,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-6.78,0.0
+6,02_UI,06_창열기_가죽과책장__UI_Open.mp3,UI_Open,UI_Open.mp3,0.300000,2,아니오,상점·인벤토리 열기,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-4.07,0.021
+7,02_UI,07_창닫기_가벼운잠금__UI_Close.mp3,UI_Close,UI_Close.mp3,0.285000,2,아니오,상점·인벤토리 닫기,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-4.62,0.0
+8,02_UI,08_아이템획득_작은반짝임__UI_ItemGet.mp3,UI_ItemGet,UI_ItemGet.mp3,0.500000,1,아니오,전리품·보물·보상 획득,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-4.81,0.021
+9,02_UI,09_상점결제_동전짤랑__UI_Coin.mp3,UI_Coin,UI_Coin.mp3,0.300000,1,아니오,구매·판매·서비스 결제,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-3.89,0.0
+10,03_지도,10_주사위_나무판위구르기__Board_Dice.mp3,Board_Dice,Board_Dice.mp3,0.920000,1,아니오,턴 시작 주사위 굴리기,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-3.62,0.021
+11,03_지도,11_한칸이동_돌바닥발소리__Board_Step.mp3,Board_Step,Board_Step.mp3,0.140000,1,아니오,말 한 칸 이동마다 재생,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-9.82,0.0
+12,03_지도,12_적조우_불길한충격__Board_Encounter.mp3,Board_Encounter,Board_Encounter.mp3,0.960000,1,아니오,적 조우 창 등장,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-3.93,0.0
+13,04_전투,13_공격판정성공_금속띵__Battle_SlotSuccess.mp3,Battle_SlotSuccess,Battle_SlotSuccess.mp3,0.190000,1,아니오,공격 판정 마름모 성공,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-5.01,0.0
+14,04_전투,14_공격판정실패_둔탁한툭__Battle_SlotFail.mp3,Battle_SlotFail,Battle_SlotFail.mp3,0.180000,1,아니오,공격 판정 마름모 실패,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-4.77,0.021
+15,04_전투,15_일반피격_베기와타격__Battle_Hit.mp3,Battle_Hit,Battle_Hit.mp3,0.300000,1,아니오,아군·적 일반 피해,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-3.73,0.021
+16,04_전투,16_치명타_강한베기__Battle_Crit.mp3,Battle_Crit,Battle_Crit.mp3,0.490000,1,아니오,모든 공격 판정 성공 시 치명타,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-4.73,0.021
+17,04_전투,17_공격회피_바람가르기__Battle_Miss.mp3,Battle_Miss,Battle_Miss.mp3,0.290000,2,아니오,공격 회피,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-2.68,0.0
+18,04_전투,18_체력회복_부드러운반짝임__Battle_Heal.mp3,Battle_Heal,Battle_Heal.mp3,0.500000,2,아니오,전투·지도 회복 스킬과 약·붕대,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-6.04,0.021
+19,04_전투,19_쓰러짐_무너지는충격__Battle_Down.mp3,Battle_Down,Battle_Down.mp3,0.750000,1,아니오,아군·적 쓰러짐,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-4.37,0.042
+20,04_전투,20_동료부활_상승하는종__Battle_Revive.mp3,Battle_Revive,Battle_Revive.mp3,0.800000,2,아니오,쓰러진 동료 부활,MP3,48000,192,스테레오,직접 파형·노이즈 합성,직접 제작,외부 완성 음원 없음,-6.55,0.0
+21,05_결과,21_전투승리_절제된승전곡__Result_Victory.mp3,Result_Victory,Result_Victory.mp3,3.500000,1,아니오,승리·보스 처치·1막 클리어,MP3,48000,192,스테레오,직접 작곡·사운드 디자인; GeneralUser GS 악기 렌더링,직접 제작 / GeneralUser GS License v2.0,https://github.com/mrbumpy409/GeneralUser-GS,-6.47,0.0
+22,05_결과,22_전투패배_조사대의침묵__Result_Defeat.mp3,Result_Defeat,Result_Defeat.mp3,3.900000,1,아니오,전투 패배·조사대 전멸,MP3,48000,192,스테레오,직접 작곡·사운드 디자인; GeneralUser GS 악기 렌더링,직접 제작 / GeneralUser GS License v2.0,https://github.com/mrbumpy409/GeneralUser-GS,-4.69,0.104
