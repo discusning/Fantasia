@@ -334,8 +334,15 @@ namespace Fantasia.Board
         // (the fallback sphere is lifted by its own radius inside RefreshLeaderFigure).
         private Vector3 TokenSurfacePosition(HexCoord coord)
         {
-            return _board.CoordToWorld(coord) + Vector3.up * _board.TileHeight;
+            var pos = _board.CoordToWorld(coord) + Vector3.up * _board.TileHeight;
+            // 거점 칸은 큰 건물이 칸을 덮어 말이 건물 속에 묻힘 → 칸 앞쪽(카메라 쪽) 가장자리에 세움 (2026-11-08).
+            // 보이는 위치만 바뀜, 서 있는 칸·이동 규칙은 그대로.
+            if (_board.TryGetTile(coord, out var tile) && tile.MapKind == MapTileKind.Hub)
+                pos += Vector3.back * HubFrontOffset;
+            return pos;
         }
+
+        private const float HubFrontOffset = 1.0f; // 칸 앞 꼭짓점 쪽 (0.7은 건물 앞면에 아직 묻힘)
 
         private static int ZoneWearLevel(int region) => region switch { 1 => 4, 2 => 7, _ => 1 };
 
