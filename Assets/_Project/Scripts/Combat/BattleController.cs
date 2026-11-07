@@ -321,6 +321,7 @@ namespace Fantasia.Combat
             string summary = slots.AllSucceeded ? "크리티컬! (전체)" : $"{slots.SuccessCount}/{slots.SlotCount} 성공";
             yield return _hud.PlayRoll($"{boss.DisplayName} [{action.Name}] → 모든 아군", slots, 0, summary,
                 slots.AllSucceeded ? BattleHud.CritColor : BattleHud.SlotFailure);
+            yield return PlayAttackMotion(boss);
             BeginAreaLog();
             foreach (var ally in _allies.Where(a => a.InBattle).ToList())
             {
@@ -508,6 +509,7 @@ namespace Fantasia.Combat
                         _hud.PopText(_camera, ModelTop(enemy), dmg.ToString(), BattleHud.SlotSuccess);
                         Log($"{user.DisplayName} [{item.DisplayName}] → {enemy.DisplayName}: {dmg} · HP {enemy.CurrentHP}/{enemy.MaxHP}");
                         if (!enemy.IsAlive) KnockDown(enemy);
+                        else PlayHitMotion(enemy);
                     }
                     _hud.RefreshEnemies(null);
                     break;
@@ -733,6 +735,7 @@ namespace Fantasia.Combat
             Color color = ResultColor(outcome);
             string title = skill != null ? $"{attacker.DisplayName} [{skill.DisplayName}] → {target.DisplayName}" : $"{attacker.DisplayName} → {target.DisplayName}";
             yield return _hud.PlayRoll(title, outcome.Slots, useFocus, result, color);
+            yield return PlayAttackMotion(attacker);
 
             ApplyHit(attacker, target, request, outcome, useFocus, onCritStatuses, onCritShift, skill);
             _hud.RefreshEnemies(null);
@@ -747,6 +750,7 @@ namespace Fantasia.Combat
             string summary = slots.AllSucceeded ? "크리티컬! (전체)" : $"{slots.SuccessCount}/{slots.SlotCount} 성공";
             yield return _hud.PlayRoll($"{attacker.DisplayName} [{skill.DisplayName}] → 모든 적", slots, useFocus, summary,
                 slots.AllSucceeded ? BattleHud.CritColor : BattleHud.SlotSuccess);
+            yield return PlayAttackMotion(attacker);
 
             BeginAreaLog();
             foreach (var enemy in _enemies.Where(e => e.InBattle).ToList())
@@ -774,6 +778,7 @@ namespace Fantasia.Combat
             SfxPlayer.Play(outcome.Evaded ? SfxIds.Miss : outcome.IsCritical ? SfxIds.Crit : SfxIds.Hit);
             _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : outcome.Damage.ToString(), ResultColor(outcome));
             if (!target.IsAlive) KnockDown(target);
+            else if (!outcome.Evaded) PlayHitMotion(target);
 
             // 공격에 붙은 상태 효과는 크리티컬이 실제 명중한 뒤 적용 (System.md).
             if (!outcome.IsCritical || outcome.Evaded || !target.IsAlive) return;
@@ -873,21 +878,44 @@ namespace Fantasia.Combat
             outcome.Evaded ? BattleHud.SlotFailure : outcome.IsCritical ? BattleHud.CritColor : BattleHud.SlotSuccess;
 
         // 쓰러짐 연출. 적은 대상 선택에서 빠지게 콜라이더를 끄고, 아군은 부활 대상으로 클릭할 수 있게 둔다.
-        private void KnockDown(BattleUnit unit)
+        // instant: 전투 시작·이어하기에서 이미 쓰러져 있던 경우 (쓰러지는 움직임 없이 누운 자세로)
+        private void KnockDown(BattleUnit unit, bool instant = false)
         {
             if (unit.Boss != null) { unit.Boss.Pending = null; RefreshBossTelegraph(); } // 쓰러진 보스는 예고 해제·실행 안 함
             SfxPlayer.Play(SfxIds.Down);
             if (unit.IsAlly && _playLog != null) _playLog.Downs++;
             if (!_models.TryGetValue(unit, out var model)) return;
-            if (!_standingRotation.ContainsKey(unit)) _standingRotation[unit] = model.transform.rotation;
-            model.transform.rotation = _standingRotation[unit] * Quaternion.Euler(0f, 0f, 90f);
+            var motion = CharacterMotion.Of(model);
+            if (motion != null) motion.Die(instant); // 받은 Death 움직임 (끝에서 누운 채 멈춤)
+            else
+            {
+                if (!_standingRotation.ContainsKey(unit)) _standingRotation[unit] = model.transform.rotation;
+                model.transform.rotation = _standingRotation[unit] * Quaternion.Euler(0f, 0f, 90f); // 움직임 없는 모델: 옆으로 눕히기
+            }
             if (!unit.IsAlly) foreach (var col in model.GetComponents<Collider>()) col.enabled = false;
         }
 
         private void StandUp(BattleUnit unit)
         {
-            if (_models.TryGetValue(unit, out var model) && _standingRotation.TryGetValue(unit, out var rotation))
-                model.transform.rotation = rotation;
+            if (!_models.TryGetValue(unit, out var model)) return;
+            var motion = CharacterMotion.Of(model);
+            if (motion != null) motion.Revive();
+            else if (_standingRotation.TryGetValue(unit, out var rotation)) model.transform.rotation = rotation;
+        }
+
+        // 공격·스킬 움직임 (11/6 받은 Attack) — 주사위 판정이 끝난 뒤 휘두르고, 팔이 나오는 때에 맞음 처리
+        private IEnumerator PlayAttackMotion(BattleUnit attacker)
+        {
+            if (attacker == null || !_models.TryGetValue(attacker, out var model)) yield break;
+            var motion = CharacterMotion.Of(model);
+            if (motion == null || motion.IsDown) yield break;
+            motion.Attack();
+            yield return new WaitForSeconds(CharacterMotion.AttackLead);
+        }
+
+        private void PlayHitMotion(BattleUnit target)
+        {
+            if (target != null && _models.TryGetValue(target, out var model)) CharacterMotion.Of(model)?.Hit();
         }
 
         // ── 전투 종료 (D21, System.md "패배 시 약탈") ──
@@ -1206,7 +1234,7 @@ namespace Fantasia.Combat
                 _allies.Add(unit);
                 // 쓰러진 채로 들어온 아군(HP 0)은 행동 큐에서 빠지고, 다른 아군이 부활시킬 수 있다.
                 SpawnModel(unit, new Vector3(-LineX, 0f, allyPositions[i].z), Vector3.right);
-                if (!unit.IsAlive) KnockDown(unit);
+                if (!unit.IsAlive) KnockDown(unit, instant: true);
             }
 
             var enemyPositions = BattleFormation.Line(_setup.Enemies.Count, LineSpacing);

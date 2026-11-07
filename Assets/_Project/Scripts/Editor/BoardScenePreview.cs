@@ -28,8 +28,8 @@ namespace Fantasia.Editor
 
             var board = controller.GetComponent<HexBoard>();
             board.Generate();
+            controller.BuildTestParty(); // 파티 먼저 — 판 위 말이 파티장 모델로 나오게
             controller.SpawnToken();
-            controller.BuildTestParty();
 
             // 월드맵: 전체 지도 한 장 (위에서 내려다봄) → 그다음 평소처럼 파티 토큰 따라가는 카메라
             if (board.UsesWorldMap)

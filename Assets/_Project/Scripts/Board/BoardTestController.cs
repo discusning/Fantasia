@@ -13,7 +13,7 @@ namespace Fantasia.Board
     // 보드 테스트 진행. 월드 턴 = [아군 턴] → [적 턴] (2026-10-24 기획 결정, Docs/Planning/Decisions.md):
     // 아군 턴에 파티장(1번) 1명이 주사위 1회 → 이동 → 칸 처리(인카운터·이벤트)를 하면 턴이 끝나고,
     // 적 턴에 월드 처리(피의 흔적·영혼 수확 등 — 해당 업무에서 연결)를 한 뒤 다음 아군 턴. 아트 없이
-    // 토큰(빨간 공)과 OnGUI 안내만으로 동작한다.
+    // 판 위 말(파티장 모델, 파티가 없으면 빨간 공)과 OnGUI 안내만으로 동작한다.
     [RequireComponent(typeof(HexBoard))]
     public class BoardTestController : MonoBehaviour
     {
@@ -83,6 +83,7 @@ namespace Fantasia.Board
             _lastSafeCoord = Clock.HasRolledThisTurn ? BoardSession.Instance.LastSafeCoord : _currentCoord; // 이동 뒤 저장에서 이어하면 직전 칸 유지
             BuildTestParty();
             SpawnToken();
+            _dice = BoardDice.Create(transform);
             if (Camera.main != null && _board.UsesWorldMap) BoardCameraRig.Attach(Camera.main, _token);
             PlaceLandmarks();
             HookInventory();
@@ -260,23 +261,80 @@ namespace Fantasia.Board
                 _currentCoord = BoardSession.Instance.PlayerPosition;
             }
 
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.name = "Token";
-            Destroy(go.GetComponent<Collider>());
-
-            var renderer = go.GetComponent<Renderer>();
-            renderer.sharedMaterial = new Material(Shader.Find("Standard")) { color = Color.red };
-
+            // 판 위 말 = 파티장(1번) 인물 모델 축소 (2026-11-07, AssetList "파티장 캐릭터 미니어처").
+            // 루트 "Token"은 칸 윗면에 서고, 모델은 그 자식. 파티가 없으면(에디터 미리보기 등) 예전 빨간 공.
+            var go = new GameObject("Token");
             _token = go.transform;
+            _token.rotation = Quaternion.Euler(0f, 180f, 0f); // 사신 말과 같은 방향 (카메라 쪽)
+            RefreshLeaderFigure();
             _token.position = TokenSurfacePosition(_currentCoord);
         }
 
-        // Tiles are positioned base-first (see HexBoard.TileHeight), so a
-        // token resting on top needs the tile's height plus its own radius —
-        // not a flat guessed offset that ends up burying it in the mesh.
+        private const float LeaderFigureScale = 0.6f; // 사신 말(RefreshReaperFigures)과 같은 크기
+        private const float TurnSeconds = 0.12f;      // 이동 방향으로 몸 돌리는 시간
+        private GameObject _tokenFigure;
+        private JobDefinition _tokenFigureJob;
+        private bool _tokenIsSphere;
+
+        // 파티장이 바뀌면(쓰러짐·영구 사망 → 다음 순번 승계) 말 모델도 바꾼다.
+        private void RefreshLeaderFigure()
+        {
+            if (_token == null) return;
+            var job = Leader?.Job;
+            if (_tokenFigure != null && job == _tokenFigureJob && (job != null || _tokenIsSphere)) return;
+            if (_tokenFigure != null) DestroySafe(_tokenFigure);
+
+            _tokenFigureJob = job;
+            _tokenIsSphere = job == null;
+            if (_tokenIsSphere)
+            {
+                _tokenFigure = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                _tokenFigure.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Standard")) { color = Color.red };
+                _tokenFigure.transform.SetParent(_token, false);
+                _tokenFigure.transform.localPosition = Vector3.up * tokenRadius;
+            }
+            else
+            {
+                _tokenFigure = Fantasia.UI.CharacterModels.Create(job, out _); // 받은 모델이 있으면 그것, 없으면 임시 인형
+                _tokenFigure.transform.SetParent(_token, false);
+                _tokenFigure.transform.localPosition = Vector3.zero;
+                _tokenFigure.transform.localRotation = Quaternion.identity;
+                _tokenFigure.transform.localScale = Vector3.one * LeaderFigureScale;
+            }
+            _tokenFigure.name = "LeaderFigure";
+            // 칸 클릭(레이캐스트)을 말이 가로막지 않게 충돌체 제거
+            foreach (var col in _tokenFigure.GetComponentsInChildren<Collider>(true)) DestroySafe(col);
+        }
+
+        private static void DestroySafe(Object o)
+        {
+            if (Application.isPlaying) Destroy(o);
+            else DestroyImmediate(o);
+        }
+
+        // 다음 칸 쪽으로 몸을 돌린다 (수평만).
+        private IEnumerator FaceToward(Vector3 target)
+        {
+            var dir = target - _token.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 0.0001f) yield break;
+            var from = _token.rotation;
+            var to = Quaternion.LookRotation(dir, Vector3.up);
+            if (Quaternion.Angle(from, to) < 1f) yield break;
+            for (float t = 0f; t < TurnSeconds; t += Time.deltaTime)
+            {
+                _token.rotation = Quaternion.Slerp(from, to, t / TurnSeconds);
+                yield return null;
+            }
+            _token.rotation = to;
+        }
+
+        // Tiles are positioned base-first (see HexBoard.TileHeight), so the
+        // token root sits on the tile's top surface; the figure stands on it
+        // (the fallback sphere is lifted by its own radius inside RefreshLeaderFigure).
         private Vector3 TokenSurfacePosition(HexCoord coord)
         {
-            return _board.CoordToWorld(coord) + Vector3.up * (_board.TileHeight + tokenRadius);
+            return _board.CoordToWorld(coord) + Vector3.up * _board.TileHeight;
         }
 
         private static int ZoneWearLevel(int region) => region switch { 1 => 4, 2 => 7, _ => 1 };
@@ -294,6 +352,7 @@ namespace Fantasia.Board
         {
             if (BoardTopBar.Instance != null) RefreshTopBar(announce: false);
             RefreshHint();
+            RefreshLeaderFigure();
         }
 
         // ── D17 인벤토리: 초상 클릭·I 키로 창, 퀵 슬롯 클릭으로 월드 사용 ──
@@ -387,10 +446,22 @@ namespace Fantasia.Board
             SfxPlayer.Play(SfxIds.Dice);
             _lastEventBonus = -1;
             _worldMessage = null;
-            _lastRoll = MovementRules.RollMovePoints(pursuedByReaper: Hunt.Active); // 피의 사냥 중 주사위 −2 (☆)
+            _lastRoll = MovementRules.RollMovePoints(pursuedByReaper: Hunt.Active, out int face); // 피의 사냥 중 주사위 −2 (☆)
             // 결과 확정 → 저장 → 표시 (Save.md: 주사위 2가 나오면 껐다 켜도 2인 상태로 칸 선택부터)
             BoardSession.Instance.PendingMovePoints = _lastRoll;
             SaveGame.Checkpoint($"주사위 확정 — {_lastRoll}");
+            // 3D 주사위가 굴러 나온 눈(face)이 위로 멈춘 뒤 갈 수 있는 칸 표시 (2026-11-06). 모델이 없으면 바로 표시.
+            _diceRolling = true;
+            _lastFace = face;
+            _dice.Roll(face, () => { _diceRolling = false; ShowRollResult(); });
+        }
+
+        private bool _diceRolling;
+        private int _lastFace;
+        private BoardDice _dice;
+
+        private void ShowRollResult()
+        {
             HighlightReachable(_lastRoll);
             // 이동력 0(피의 사냥 −2로 1·2) 또는 갈 칸이 없으면 제자리 — 멈추지 않게 아군 턴을 바로 끝낸다
             if (!_reachability.ReachableTiles.Any())
@@ -440,11 +511,13 @@ namespace Fantasia.Board
         private IEnumerator WalkPath(List<HexCoord> path)
         {
             _isMoving = true;
+            _dice.Hide(); // 칸을 고르면 주사위는 치움
 
             foreach (var coord in path)
             {
                 var start = _token.position;
                 var end = TokenSurfacePosition(coord);
+                yield return FaceToward(end);
 
                 for (float t = 0f; t < secondsPerTile; t += Time.deltaTime)
                 {
@@ -895,6 +968,7 @@ namespace Fantasia.Board
         {
             _turnEnding = true; // 기다리는 동안 다른 입력 막기 (EndAllyTurn이 다시 켬)
             yield return new WaitForSeconds(seconds);
+            _dice.Hide(); // 못 움직이고 턴이 끝난 경우 (이동력 0 등)
             _turnEnding = false;
             yield return EndAllyTurn();
         }
@@ -1016,6 +1090,8 @@ namespace Fantasia.Board
         }
 
         public void DevRoll() => TryRoll();
+        public bool DevDiceRolling => _diceRolling; // 3D 주사위가 구르는 중 (멈춘 뒤 칸 선택)
+        public int DevLastFace => _lastFace; // 주사위에 나온 눈 (피의 사냥 −2 전)
         public void DevOpenShop() => OpenShopHere();
         public void DevRefreshTopBar() => RefreshTopBar(announce: false);
         public void DevLoadLastSave() => LoadLastSave();
@@ -1079,6 +1155,18 @@ namespace Fantasia.Board
         }
 
         public HexBoard DevBoard => _board;
+
+        // 영상 촬영용: 적 칸에서 가장 먼 빈 길 칸으로 (조우·이벤트 창이 안 뜨게)
+        public void DevMoveToQuietTile()
+        {
+            if (!_awaitingSelection) return;
+            var encounters = _board.Tiles.Where(t => t.IsEncounter && !t.IsCleared).Select(t => t.Coordinate).ToList();
+            var field = _board.DistanceField(encounters);
+            var quiet = _reachability.ReachableTiles
+                .Where(c => _board.TryGetTile(c, out var t) && !t.IsEncounter && t.MapKind == MapTileKind.Walkable)
+                .OrderByDescending(c => field.TryGetValue(c, out int v) ? v : 999).ToList();
+            MoveTo(quiet.Count > 0 ? quiet[0] : _reachability.ReachableTiles.First());
+        }
 
         // bossOnly: 보스 칸만 목표 (자동 플레이 -autoplay-boss)
         public void DevMoveTowardEncounter(bool bossOnly)

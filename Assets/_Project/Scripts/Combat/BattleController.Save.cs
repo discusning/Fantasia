@@ -115,7 +115,7 @@ namespace Fantasia.Combat
             _introDone = snap.introDone;
             foreach (var u in _allies.Concat(_enemies))
             {
-                if (!u.IsAlive) KnockDown(u);
+                if (!u.IsAlive) KnockDown(u, instant: true);
                 if (u.HasRetreated && _models.TryGetValue(u, out var model)) model.SetActive(false);
             }
             _hud.RefreshEnemies(null);

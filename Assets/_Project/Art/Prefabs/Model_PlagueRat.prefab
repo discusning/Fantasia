@@ -99,7 +99,7 @@ PrefabInstance:
     - target: {fileID: 5866666021909216657, guid: df6176d92a43250469539d719344a9fe, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: 76326e16d35fc234f8f0db775241adb0, type: 2}
+      objectReference: {fileID: 9100000, guid: d7876ca3a49c52d45917e333124004b9, type: 2}
     - target: {fileID: 5866666021909216657, guid: df6176d92a43250469539d719344a9fe, type: 3}
       propertyPath: m_CullingMode
       value: 0
@@ -115,6 +115,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: df6176d92a43250469539d719344a9fe, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9184453336333013988}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: df6176d92a43250469539d719344a9fe, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4682375171317589513}
   m_SourcePrefab: {fileID: 100100000, guid: df6176d92a43250469539d719344a9fe, type: 3}
 --- !u!1 &3909040267493730789 stripped
 GameObject:
@@ -133,6 +136,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8b2725aec8f1824680db5d931da6ba4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.UI.ModelGrounding
+--- !u!114 &4682375171317589513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3909040267493730789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5abeed14b5dea1f4896c66b9a873f5ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.UI.CharacterMotion
 --- !u!4 &4428274031742497631 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: df6176d92a43250469539d719344a9fe, type: 3}

@@ -123,6 +123,9 @@ namespace Fantasia.Core
             else if (args.Contains("-autoplay-resume")) yield return ResumeRun();
             else if (args.Contains("-autoplay-menu")) yield return MenuRun();
             else if (args.Contains("-autoplay-full")) yield return FullRun(resume: false);
+            else if (args.Contains("-autoplay-dicevideo")) yield return DiceVideoRun();
+            else if (args.Contains("-autoplay-battlevideo")) yield return BattleVideoRun();
+            else if (args.Contains("-autoplay-soundvideo")) yield return SoundVideoRun();
             else yield return Play();
 
             if (perf != null) Note("성능 요약:\n" + perf.Finish());
@@ -240,7 +243,8 @@ namespace Fantasia.Core
                 if (board.DevIsIdle)
                 {
                     board.DevRoll();
-                    yield return null;
+                    yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
+                    if (shotTitles.Add("dice:" + board.DevLastFace)) { Note($"주사위 눈 {board.DevLastFace} → 이동력 {board.DevLastRoll}"); yield return Shot("full_dice_" + board.DevLastFace); } // 6면 모두 맞게 멈추는지
                     if (board.DevAwaitingSelection)
                     {
                         turns++;
@@ -724,6 +728,7 @@ namespace Fantasia.Core
                 yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 10f, "이동 대기");
                 if (EncounterPanel.IsOpen) break;
                 board.DevRoll();
+                yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
                 Note($"보드 {turn}턴: 월드 라운드 {board.DevWorldRound} 아군 턴 — 주사위 굴림");
                 if (turn == 1) yield return Shot("board_roll_highlight");
                 if (huntRun)
@@ -1615,6 +1620,233 @@ namespace Fantasia.Core
         }
 
         // 새 게임 시작 대화 (1막 기획 결정서 05) — 첫 줄을 찍고 끝까지 넘김
+        // ── 주사위 굴림 영상 (-autoplay-dicevideo, 2026-11-06 팀 공유용) ──
+        // 새 게임 → 보드에서 Space 굴림 → 칸 이동을 10초 동안 30fps로 한 장씩 저장 (<out>/frames/0000.jpg ...).
+        // 게임 시간을 장마다 1/30초로 고정해서 저장이 느려도 영상 속도는 실제와 같다. MP4로 묶기: Editor/FramesToVideo.
+        private IEnumerator DiceVideoRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return new WaitForSeconds(1f);
+            yield return SkipIntro();
+            var board = FindFirstObjectByType<BoardTestController>();
+            yield return WaitFor(() => board.DevIsIdle && !BoardTopBar.DevTurnDropVisible, 20f, "굴림 대기");
+            yield return new WaitForSeconds(0.5f);
+
+            string dir = Path.Combine(_outDir, "frames");
+            Directory.CreateDirectory(dir);
+            const int Fps = 30, Seconds = 10;
+            bool recording = true;
+            int frame = 0;
+            Time.captureFramerate = Fps;
+            StartCoroutine(RecordFrames(dir, Fps * Seconds, () => frame++, () => recording = false));
+
+            yield return new WaitForSeconds(0.8f);
+            for (int roll = 1; recording; roll++)
+            {
+                board.DevRoll();
+                Note($"영상: {roll}번째 굴림 ({frame}장째)");
+                yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
+                Note($"영상: 주사위 눈 {board.DevLastFace}");
+                yield return new WaitForSeconds(1.5f); // 나온 눈 + 갈 칸 보여 주기
+                if (!recording) break;
+                board.DevMoveToQuietTile();
+                // 다음 굴림이 가능해질 때까지 (이동·적 턴·턴 안내 판). 대화가 뜨면 넘김
+                while (recording && !(board.DevIsIdle && !BoardTopBar.DevTurnDropVisible))
+                {
+                    if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance();
+                    if (EncounterPanel.IsOpen) Note("영상: 조우 창 뜸 (적 턴에 적이 다가옴)");
+                    yield return null;
+                }
+                yield return new WaitForSeconds(0.4f);
+            }
+            Time.captureFramerate = 0;
+            Note($"영상 프레임 {frame}장 저장 → {dir}");
+        }
+
+        // ── 소리 영상 (-autoplay-soundvideo, 2026-11-07 사운드 22종 팀 공유용) ──
+        // 조우가 나는 턴(주사위·발소리·조우)만 남기고 → 전투(음악·판정·명중) 몇 초. 화면 30fps + 게임 소리를 같이 저장.
+        // AudioRenderer: 게임 시간(captureFramerate)에 맞춰 소리를 뽑아 화면과 어긋나지 않음. <out>/frames + <out>/audio.wav → Editor/FramesToVideo -wav.
+        private IEnumerator SoundVideoRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return new WaitForSeconds(1f);
+            yield return SkipIntro();
+            var board = FindFirstObjectByType<BoardTestController>();
+
+            const int Fps = 30;
+            string dir = Path.Combine(_outDir, "frames"), seg = Path.Combine(_outDir, "seg");
+            Directory.CreateDirectory(dir);
+            int channels = AudioSettings.speakerMode switch
+            {
+                AudioSpeakerMode.Mono => 1, AudioSpeakerMode.Quad => 4, AudioSpeakerMode.Surround => 5,
+                AudioSpeakerMode.Mode5point1 => 6, AudioSpeakerMode.Mode7point1 => 8, _ => 2,
+            };
+            int rate = AudioSettings.outputSampleRate;
+            var kept = new System.Collections.Generic.List<float>();
+            var segAudio = new System.Collections.Generic.List<float>();
+            int keptFrames = 0, segFrames = 0;
+            bool recording = false, running = true;
+
+            IEnumerator Capture()
+            {
+                while (running)
+                {
+                    yield return new WaitForEndOfFrame();
+                    int n = AudioRenderer.GetSampleCountForCaptureFrame();
+                    var buf = new Unity.Collections.NativeArray<float>(n * channels, Unity.Collections.Allocator.Temp);
+                    AudioRenderer.Render(buf); // 녹화 안 할 때도 매 장 비워 줘야 밀리지 않음
+                    if (recording)
+                    {
+                        segAudio.AddRange(buf);
+                        var tex = ScreenCapture.CaptureScreenshotAsTexture();
+                        File.WriteAllBytes(Path.Combine(seg, $"{segFrames++:0000}.jpg"), tex.EncodeToJPG(92));
+                        Destroy(tex);
+                    }
+                    buf.Dispose();
+                }
+            }
+            void BeginSegment()
+            {
+                if (Directory.Exists(seg)) Directory.Delete(seg, true);
+                Directory.CreateDirectory(seg);
+                segAudio.Clear(); segFrames = 0; recording = true;
+            }
+            void KeepSegment()
+            {
+                recording = false;
+                for (int i = 0; i < segFrames; i++)
+                    File.Move(Path.Combine(seg, $"{i:0000}.jpg"), Path.Combine(dir, $"{keptFrames++:0000}.jpg"));
+                kept.AddRange(segAudio);
+            }
+
+            Time.captureFramerate = Fps;
+            AudioRenderer.Start();
+            StartCoroutine(Capture());
+
+            // 1) 조우가 나는 턴 찾기 — 턴마다 녹화하고, 조우가 안 나면 버림
+            for (int turn = 0; turn < 20 && !EncounterPanel.IsOpen; turn++)
+            {
+                yield return WaitFor(() => (board.DevIsIdle && !BoardTopBar.DevTurnDropVisible) || EncounterPanel.IsOpen, 20f, "굴림 대기");
+                if (EncounterPanel.IsOpen) break;
+                BeginSegment();
+                yield return new WaitForSeconds(0.3f);
+                board.DevRoll();
+                yield return WaitFor(() => board.DevAwaitingSelection || EncounterPanel.IsOpen, 5f, "칸 선택");
+                yield return new WaitForSeconds(0.4f);
+                board.DevMoveTowardEncounter();
+                yield return WaitFor(() => EncounterPanel.IsOpen || (board.DevIsIdle && !BoardTopBar.DevTurnDropVisible), 15f, "이동");
+                if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance();
+                if (EncounterPanel.IsOpen) { Note($"소리 영상: {turn + 1}번째 턴에 조우"); break; }
+                recording = false;
+            }
+            if (!recording) BeginSegment(); // 굴림 전에 이미 조우 창이 뜬 경우
+            yield return new WaitForSeconds(1.2f); // 조우 창 소리
+            EncounterPanel.DevChoose(1);
+            yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투");
+            KeepSegment();
+            float boardSeconds = keptFrames / (float)Fps;
+
+            // 2) 전투 — 화면이 자리 잡을 때까지는 버리고, 그 뒤 몇 초
+            BeginSegment();
+            yield return new WaitForSeconds(1f);
+            recording = false;
+            BeginSegment();
+            var fight = StartCoroutine(RunBattle(false));
+            float battleSeconds = Mathf.Max(6f, 13f - boardSeconds);
+            yield return new WaitForSeconds(battleSeconds);
+            KeepSegment();
+            StopCoroutine(fight);
+            running = false;
+            yield return null;
+            AudioRenderer.Stop();
+            Time.captureFramerate = 0;
+            if (Directory.Exists(seg)) Directory.Delete(seg, true);
+
+            WriteWav(Path.Combine(_outDir, "audio.wav"), kept, channels, rate);
+            float peak = kept.Count > 0 ? kept.Max(Mathf.Abs) : 0f;
+            Note($"소리 영상: 판 {boardSeconds:0.0}초 + 전투 {battleSeconds:0.0}초 = 프레임 {keptFrames}장, 소리 {kept.Count / channels / (float)rate:0.0}초 ({rate}Hz {channels}ch, 최대 {peak:0.00})");
+            Note("효과음 불림: " + string.Join(", ", SfxPlayer.DevCalls.Select(p => $"{p.Key} {p.Value}")));
+        }
+
+        private static void WriteWav(string path, System.Collections.Generic.List<float> samples, int channels, int rate)
+        {
+            using var w = new BinaryWriter(File.Create(path));
+            int bytes = samples.Count * 2;
+            w.Write(Encoding.ASCII.GetBytes("RIFF")); w.Write(36 + bytes); w.Write(Encoding.ASCII.GetBytes("WAVEfmt "));
+            w.Write(16); w.Write((short)1); w.Write((short)channels); w.Write(rate); w.Write(rate * channels * 2);
+            w.Write((short)(channels * 2)); w.Write((short)16);
+            w.Write(Encoding.ASCII.GetBytes("data")); w.Write(bytes);
+            foreach (float s in samples) w.Write((short)Mathf.RoundToInt(Mathf.Clamp(s, -1f, 1f) * 32767f));
+        }
+
+        // ── 전투 움직임 영상 (-autoplay-battlevideo, 2026-11-07): 새 게임 → 가까운 적 칸 → 전투 20초 녹화 ──
+        // (받은 Idle·Attack·Hit·Death가 실제 전투에서 나오는지 팀 공유용)
+        private IEnumerator BattleVideoRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return new WaitForSeconds(1f);
+            yield return SkipIntro();
+            var board = FindFirstObjectByType<BoardTestController>();
+            for (int turn = 0; turn < 20 && !EncounterPanel.IsOpen; turn++)
+            {
+                yield return WaitFor(() => (board.DevIsIdle && !BoardTopBar.DevTurnDropVisible) || EncounterPanel.IsOpen, 20f, "굴림 대기");
+                if (EncounterPanel.IsOpen) break;
+                board.DevRoll();
+                yield return WaitFor(() => board.DevAwaitingSelection || EncounterPanel.IsOpen, 5f, "칸 선택");
+                board.DevMoveTowardEncounter();
+                yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 15f, "이동");
+                if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance();
+            }
+            yield return new WaitForSeconds(0.4f);
+            EncounterPanel.DevChoose(1);
+            yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투");
+            yield return new WaitForSeconds(1.5f); // 전투 화면이 자리 잡을 때까지
+
+            string dir = Path.Combine(_outDir, "frames");
+            Directory.CreateDirectory(dir);
+            const int Fps = 30, Seconds = 20;
+            bool recording = true;
+            int frame = 0;
+            Time.captureFramerate = Fps;
+            StartCoroutine(RecordFrames(dir, Fps * Seconds, () => frame++, () => recording = false));
+            var fight = StartCoroutine(RunBattle(false));
+            while (recording) yield return null;
+            StopCoroutine(fight);
+            Time.captureFramerate = 0;
+            Note($"영상 프레임 {frame}장 저장 → {dir}");
+        }
+
+        private IEnumerator RecordFrames(string dir, int count, Action counted, Action done)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                yield return new WaitForEndOfFrame();
+                var tex = ScreenCapture.CaptureScreenshotAsTexture();
+                File.WriteAllBytes(Path.Combine(dir, $"{i:0000}.jpg"), tex.EncodeToJPG(92));
+                Destroy(tex);
+                counted();
+            }
+            done();
+        }
+
         private IEnumerator SkipIntro()
         {
             yield return WaitFor(() => DialoguePanel.IsOpen, 3f, "시작 대화");

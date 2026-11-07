@@ -27,7 +27,8 @@ namespace Fantasia.Editor
             ["Model_ShadowReaper"] = (2.6f, true),
             ["Model_PlagueRat"] = (1.1f, true),   // 받은 모델이 두 발로 선 쥐인간 → 0.8m는 너무 작아 1.1m
             ["Model_ShadowHound"] = (1.3f, false),
-            ["Model_GargoyleLarva"] = (2.0f, false),
+            ["Model_GargoyleLarva"] = (2.0f, true),   // 11/6 받은 움직임이 사람형 근육 커브 + 디자인 원본 설정도 사람형
+            ["Model_SpiderLarva"] = (0.9f, false),   // 11/6 받음 (옆으로 넓은 몸, 키 0.9m = 임시 인형과 같음)
         };
 
         private static readonly Dictionary<string, string> JobAssets = new()
@@ -43,6 +44,7 @@ namespace Fantasia.Editor
             ["Model_PlagueRat"] = "Assets/_Project/Data/Enemies/Enemy_역병쥐.asset",
             ["Model_ShadowHound"] = "Assets/_Project/Data/Enemies/Enemy_그림자사냥개.asset",
             ["Model_GargoyleLarva"] = "Assets/_Project/Data/Enemies/Enemy_가고일유체.asset",
+            ["Model_SpiderLarva"] = "Assets/_Project/Data/Enemies/Enemy_연성독거미유체.asset",
         };
 
         // 보드 배치물: 역할 이름 → (원본 경로, Meshy처럼 누워 있으면 true, 맞출 크기 종류, 값 m)
@@ -74,6 +76,7 @@ namespace Fantasia.Editor
             var report = new List<string>();
             BuildCharacterPrefabs(report);
             BuildBoardPrefabs(report);
+            BuildDicePrefab(report);
             AssetDatabase.SaveAssets();
             File.WriteAllLines(Path.Combine(Application.dataPath, "../Logs/art_setup_report.txt"), report);
             Debug.Log("[ArtSetup] 완료\n" + string.Join("\n", report));
@@ -136,7 +139,14 @@ namespace Fantasia.Editor
                 animator.avatar = avatar;
                 animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; // 화면 밖 초상 촬영장에서도 자세 유지
                 animator.applyRootMotion = false;
-                if (avatar != null && avatar.isHuman && avatar.isValid) { animator.runtimeAnimatorController = pose; model.AddComponent<Fantasia.UI.ModelGrounding>(); } // 자세 적용 뒤 발을 바닥에 맞춤
+                // 받은 움직임 컨트롤러(Idle·Attack·Hit·Death, 11/6)가 있으면 그것, 없으면 사람형만 "팔 내린 서 있기" 자세
+                var motion = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{Root}/Characters/Animations/{name}/{name}.controller");
+                bool human = avatar != null && avatar.isHuman && avatar.isValid;
+                if (motion != null) animator.runtimeAnimatorController = motion;
+                else if (human) animator.runtimeAnimatorController = pose;
+                if (human) model.AddComponent<Fantasia.UI.ModelGrounding>(); // 자세 적용 뒤 발을 바닥에 맞춤
+                if (motion != null) model.AddComponent<Fantasia.UI.CharacterMotion>();
+                rig += motion != null ? " · 움직임 4종" : " · 움직임 없음";
 
                 // 크기·발 위치는 서 있는 자세 기준으로 맞춘다 (T자 자세 팔 폭은 무시)
                 var b = Bounds(model);
@@ -260,6 +270,24 @@ namespace Fantasia.Editor
                 Object.DestroyImmediate(root);
                 report.Add($"보드 {role}: {b.size.x:F2}×{b.size.y:F2}×{b.size.z:F2}m, 면 {tris}");
             }
+        }
+
+        // ── 보드 주사위 (2026-11-06) ── 가운데 기준·한 변 1m로 맞춤 → Board/BoardDice가 원하는 크기로 키움
+        private static void BuildDicePrefab(List<string> report)
+        {
+            var src = AssetDatabase.LoadAssetAtPath<GameObject>(Root + "/Dice/Dice_01.prefab");
+            if (src == null) { report.Add("주사위: 원본 없음"); return; }
+            var root = new GameObject("Dice");
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(src);
+            model.transform.SetParent(root.transform, false);
+            foreach (var col in model.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(col);
+            var b = Bounds(model);
+            model.transform.localScale *= 1f / Mathf.Max(b.size.x, b.size.y, b.size.z, 0.01f);
+            b = Bounds(model);
+            model.transform.localPosition -= b.center;
+            PrefabUtility.SaveAsPrefabAsset(root, $"{BoardArtDir}/Dice.prefab");
+            Object.DestroyImmediate(root);
+            report.Add("주사위: 한 변 1m, 가운데 기준");
         }
 
         // ── 가벼운 메시 (2026-11-06 최적화) ──

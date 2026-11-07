@@ -21,6 +21,7 @@ namespace Fantasia.UI
             if (parent == null || Vector3.Dot(parent.up, Vector3.up) < 0.95f) return;
             var animator = GetComponent<Animator>();
             if (animator == null || !animator.isHuman) { _done = true; return; }
+            if (animator.GetCurrentAnimatorStateInfo(0).IsName("Death")) return; // 쓰러진 채 시작하면 일어설 때까지 기다림
 
             float lowest = float.PositiveInfinity;
             bool toes = false;

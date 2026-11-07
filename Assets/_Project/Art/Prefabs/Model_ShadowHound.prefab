@@ -97,14 +97,38 @@ PrefabInstance:
       value: Model_ShadowHound
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 753932be075a00649a0cb51bdb747c2e, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: ceaf13c7c9de15d4a97dcb1917527d17, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 753932be075a00649a0cb51bdb747c2e, type: 3}
       propertyPath: m_CullingMode
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 753932be075a00649a0cb51bdb747c2e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4345217919127012041}
   m_SourcePrefab: {fileID: 100100000, guid: 753932be075a00649a0cb51bdb747c2e, type: 3}
+--- !u!1 &3636714492577490199 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 753932be075a00649a0cb51bdb747c2e, type: 3}
+  m_PrefabInstance: {fileID: 4519746238883928134}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4345217919127012041
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3636714492577490199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5abeed14b5dea1f4896c66b9a873f5ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.UI.CharacterMotion
 --- !u!4 &4121889032691580845 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 753932be075a00649a0cb51bdb747c2e, type: 3}
