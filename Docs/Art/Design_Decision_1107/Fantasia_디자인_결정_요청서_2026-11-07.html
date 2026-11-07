@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 디자인 결정 요청서</title>
+<style>
+@page{size:A4;margin:12mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.5px;line-height:1.6;color:#222;background:#fff;margin:0}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 8px;color:#6b1e1e}
+h3{font-size:13.5px;margin:12px 0 4px}
+.sub{color:#666;margin-bottom:10px}
+.box{border:1px solid #c9a;background:#fbf5f2;padding:9px 11px;margin:8px 0}
+.ask{border:2px solid #6b1e1e;background:#fff;padding:8px 11px;margin:8px 0}
+img{width:100%;border:1px solid #999;display:block}
+figure{margin:6px 0 10px}
+figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+.rec{color:#1d7a2a;font-weight:bold}
+.brk{page-break-before:always}
+.small{font-size:11px;color:#555}
+.chk{font-family:"Segoe UI Symbol","Malgun Gothic";}
+</style></head><body>
+
+<h1>디자인 결정 요청서</h1>
+<div class="sub">2026-11-07 · 개발(최동환) → 기획 · 실제 게임(빌드)에서 찍은 화면 기준</div>
+
+<div class="box">
+<b>한 줄 요약:</b> 판·전투 화면을 더 잘 보이게 하는 <b>5가지</b>와 <b>기타 2가지</b>를 정해 주세요.<br>
+기획서에 없는 연출이라 <b>OK를 받은 것만</b> 넣습니다. 각 항목에서 A/B/C 중 하나를 골라 주시면 됩니다. (<span class="rec">추천</span> 표시는 개발 의견)<br>
+<b>11/8부터 새 기능을 넣지 않기로 했으므로, 1~4번은 11/7 안에 답을 주셔야 1막에 들어갑니다.</b>
+</div>
+
+<h2>한눈에 보기</h2>
+<table>
+<tr><th style="width:5%">#</th><th style="width:30%">항목</th><th>지금 상태</th><th style="width:16%">작업 크기</th></tr>
+<tr><td>1</td><td>발 밑 그림자</td><td>그림자가 없어 인물이 떠 보임 (전투·판 모두)</td><td>작음</td></tr>
+<tr><td>2</td><td>판 앞줄 건물</td><td>카메라 쪽 건물이 칸·적 표시를 가림</td><td>작음</td></tr>
+<tr><td>3</td><td>판 위 말 (파티장)</td><td><b>11/7 적용함</b> — 빨간 공 → 파티장 모델. 크기·걷는 동작·거점 칸 가려짐 결정 필요</td><td>작음</td></tr>
+<tr><td>4</td><td>공격할 때 반 걸음</td><td>공격 동작은 제자리에서만 나옴</td><td>작음</td></tr>
+<tr><td>5</td><td>디오라마 흐림 · 안 가 본 곳 흐리게</td><td>없음 — 1막 뒤로 미루는 것 제안</td><td>중간</td></tr>
+<tr><td>기타</td><td>사신 낫 크기 · 회복 스킬 동작</td><td>낫이 잘 안 보임 · 회복 스킬은 동작 없음</td><td>작음</td></tr>
+</table>
+
+<h2>1. 발 밑 그림자</h2>
+<div class="two">
+<figure><img src="img/battle.jpg"><figcaption>지금 전투 화면 (11/7 빌드)</figcaption></figure>
+<figure><img src="img/battle_feet.png"><figcaption>확대 — 발 밑에 그림자가 없어 바닥에서 떠 있는 것처럼 보임</figcaption></figure>
+</div>
+<p>11/6 보고서의 "아군이 조금 떠 보임"의 원인으로 보입니다. 옛 게임(마리오 64 등)은 발 밑에 <b>동그란 어두운 그림 한 장</b>만 깔아서 해결했습니다.</p>
+<div class="ask">
+<b>골라 주세요</b><br>
+<span class="chk">☐</span> <b>A. 동그란 그림자 (블롭)</b> — 발 밑에 흐린 원 1장. 가볍고 바로 가능 <span class="rec">← 추천</span><br>
+<span class="chk">☐</span> B. 실시간 그림자 — 모양이 정확하지만 프레임이 떨어짐 (보드 105 FPS → 하락 예상)<br>
+<span class="chk">☐</span> C. 지금대로 (그림자 없음)<br>
+<span class="small">적용 범위도 골라 주세요: ☐ 전투만 ☐ 판 위 말·사신 말도 같이</span>
+</div>
+
+<h2>2. 판 앞줄 건물</h2>
+<figure><img src="img/front_row.png"><figcaption>판 왼쪽 아래 (확대). 카메라 쪽 막힌 칸의 집이 뒤쪽 칸과 적 칸(칼 표시)을 가림</figcaption></figure>
+<p>카메라가 비스듬히 내려다보기 때문에, <b>화면 아래쪽(카메라 쪽)에 있는 높은 집</b>이 그 뒤의 칸을 가립니다. 갈 수 있는 칸·적 칸이 잘 안 보이면 이동을 고르기 어렵습니다.</p>
+<div class="ask">
+<b>골라 주세요</b><br>
+<span class="chk">☐</span> <b>A. 카메라 쪽 막힌 칸만 낮은 소품(나무·바위)으로 바꿈</b> — 막힌 칸이라는 뜻은 그대로 <span class="rec">← 추천</span><br>
+<span class="chk">☐</span> B. 말 근처 집을 반투명하게 — 계속 바뀌어 산만할 수 있음, 작업 더 큼<br>
+<span class="chk">☐</span> C. 지금대로
+</div>
+
+<h2 class="brk">3. 판 위 말 = 파티장 모델 (11/7 적용)</h2>
+<div class="two">
+<figure><img src="img/board_leader.jpg"><figcaption>지금 판 화면 — 가운데 거점 옆 작은 인물이 파티장(명탐정)</figcaption></figure>
+<figure><img src="img/leader_zoom.png"><figcaption>확대 — 칸 위에 서서 가는 방향을 바라봄</figcaption></figure>
+</div>
+<p>요청 목록(AssetList 3-3 "파티장 캐릭터 미니어처")대로 <b>빨간 공 → 파티장(1번) 모델</b>로 바꿨습니다. 파티장이 쓰러져 다음 순번이 이어받으면 말도 그 인물로 바뀝니다. 아래 3가지를 정해 주세요.</p>
+
+<h3>3-1. 크기</h3>
+<div class="ask">
+<span class="chk">☐</span> A. 지금 0.6배 (사신 말과 같은 크기) — 화면에서 작게 보임<br>
+<span class="chk">☐</span> <b>B. 0.8배</b> — 칸 안에서 눈에 잘 띔, 사신 말보다 조금 큼 <span class="rec">← 추천</span><br>
+<span class="chk">☐</span> C. 1.0배 — 집과 비슷한 크기, 옆 칸을 가릴 수 있음
+</div>
+
+<h3>3-2. 걷는 동작</h3>
+<p>받은 움직임에 <b>걷기(Walk)가 없어서</b> 서 있는 자세로 미끄러지듯 이동합니다.</p>
+<div class="ask">
+<span class="chk">☐</span> <b>A. 지금대로 (서서 이동)</b> — 보드게임 말 느낌. 1막은 이대로 <span class="rec">← 추천</span><br>
+<span class="chk">☐</span> B. 칸마다 살짝 통통 뛰기 — 개발만으로 가능, 그림 필요 없음<br>
+<span class="chk">☐</span> C. 디자인에 걷기 움직임 추가 요청 → 받으면 연결
+</div>
+
+<h3>3-3. 시작 거점 칸에서 말이 가려짐</h3>
+<figure style="width:62%"><img src="img/hub_hidden.png"><figcaption>게임 시작 직후 — 말이 런던 거점 건물 안에 있어 보이지 않음 (빨간 공일 때도 같았음)</figcaption></figure>
+<div class="ask">
+<span class="chk">☐</span> <b>A. 거점 칸에서는 말을 건물 앞쪽(카메라 쪽) 가장자리에 세움</b> <span class="rec">← 추천</span><br>
+<span class="chk">☐</span> B. 거점 건물을 조금 작게<br>
+<span class="chk">☐</span> C. 지금대로 (한 칸 움직이면 보임)
+</div>
+
+<h2>4. 공격할 때 반 걸음</h2>
+<p>지금은 공격 동작이 제자리에서 나옵니다. 인물이 3명씩 줄 서 있어서 <b>누가 공격 중인지</b> 한눈에 안 보일 때가 있습니다.</p>
+<div class="ask">
+<span class="chk">☐</span> <b>A. 공격할 때 앞으로 반 걸음 나갔다가 돌아옴</b> (근접·원거리 모두) <span class="rec">← 추천</span><br>
+<span class="chk">☐</span> B. 공격하는 인물 발 밑만 밝게 표시<br>
+<span class="chk">☐</span> C. 지금대로
+</div>
+
+<h2>5. 디오라마 흐림 · 안 가 본 곳 흐리게</h2>
+<ul>
+<li><b>디오라마 흐림</b>: 화면 위·아래 끝을 살짝 흐리게 해서 "작은 모형" 느낌 (For The King · 옥토패스 트래블러 방식).</li>
+<li><b>안 가 본 곳 흐리게</b>: 가 본 칸만 또렷하게 (문명 6 방식).</li>
+</ul>
+<div class="ask">
+<span class="chk">☐</span> <b>A. 1막 뒤로 미룸</b> — 11/8 이후 새 기능 금지, 성능 비용도 있음 <span class="rec">← 추천</span><br>
+<span class="chk">☐</span> B. 1막에 넣음 (11/7 안에 확정 필요)<br>
+<span class="chk">☐</span> C. 하지 않음
+</div>
+
+<h2>기타 확인 2가지</h2>
+<table>
+<tr><th style="width:22%">항목</th><th>지금</th><th style="width:42%">골라 주세요</th></tr>
+<tr><td>사신 낫 크기</td><td>사신 모델의 낫이 작아 판·전투에서 잘 안 보임</td><td>☐ A. 낫만 키워 달라고 디자인에 요청<br>☐ B. 지금대로</td></tr>
+<tr><td>회복 스킬 동작</td><td>동작 없음 (공격 동작을 쓰면 아군을 때리는 것처럼 보여서 뺌)</td><td>☐ <b>A. 지금대로 (동작 없음)</b> <span class="rec">← 추천</span><br>☐ B. 디자인에 회복 동작 추가 요청</td></tr>
+</table>
+
+<h2>답변 방법</h2>
+<ul>
+<li>항목 번호 + 고른 글자만 보내 주시면 됩니다. 예: <b>"1A(전투·판 둘 다), 2A, 3-1 B, 3-2 A, 3-3 A, 4A, 5A, 낫 A, 회복 A"</b></li>
+<li>고른 것은 <code>Docs/Planning/Decisions.md</code>에 기록하고 바로 넣겠습니다.</li>
+<li>참고 자료: <code>Docs/References/3D모델_배치_조사_2026-11-06.md</code> (다른 3D 게임 조사, 출처 17개)</li>
+</ul>
+
+</body></html>

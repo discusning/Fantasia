@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 기획 확인 요청서 (보강 제안)</title>
+<style>
+@page{size:A4;margin:12mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.5px;line-height:1.6;color:#222;background:#fff;margin:0}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 8px;color:#6b1e1e}
+h3{font-size:13.5px;margin:10px 0 4px}
+.sub{color:#666;margin-bottom:10px}
+.box{border:1px solid #c9a;background:#fbf5f2;padding:9px 11px;margin:8px 0}
+.ask{border:2px solid #6b1e1e;background:#fff;padding:8px 11px;margin:8px 0}
+.cmp{border-left:4px solid #8a6d3b;background:#faf7ef;padding:6px 10px;margin:6px 0}
+img{width:100%;border:1px solid #999;display:block}
+figure{margin:6px 0 8px}
+figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+.rec{color:#1d7a2a;font-weight:bold}
+.red{color:#a01818;font-weight:bold}
+.brk{page-break-before:always}
+.small{font-size:11px;color:#555}
+code{font-family:Consolas,monospace;background:#f3f3f3;padding:0 3px;font-size:11.5px}
+</style></head><body>
+
+<h1>기획 확인 요청서 — 있으면 좋을 것들</h1>
+<div class="sub">2026-11-07 · 개발·팀장(최동환) → 기획 · 실제 게임(빌드) 화면 + 다른 게임 비교</div>
+
+<div class="box">
+<b>한 줄 요약:</b> 지금 1막은 처음부터 끝까지 돌아갑니다(자동 플레이로 보스까지 클리어 확인). 다만 다른 게임과 비교하면 <b>아쉬운 곳 8가지</b>가 보입니다. 넣을지, 언제 넣을지 정해 주세요.<br>
+기획서에 없는 내용이라 <b>OK를 받은 것만</b> 넣습니다. 항목마다 A/B/C 중 하나를 골라 주세요. (<span class="rec">추천</span> = 개발 의견)<br>
+<b>이 문서의 목적:</b> 지금 부족한 점과 있으면 좋을 점을 기획과 같이 확인해서 <b>11/18 마감까지 할 작업량(견적)을 맞추는 것</b>입니다. 기획에서 "필요한지·어떤 방향인지"를 골라 주시면, 개발이 일정에 맞춰 넣을 범위를 정해 확정본을 다시 공유합니다.<br><b>일정:</b> 11/8부터는 새 규칙·새 화면 없이 확인·수정만 하기로 했습니다(결정서 14). 그래서 항목마다 <b>"1막에 넣기"</b>와 <b>"1막 뒤"</b>를 나누고, 예상 작업 시간을 적었습니다.
+</div>
+
+<div class="box" style="background:#fff">
+<b>11/7 디자인 결정 요청서와의 관계:</b> 발 밑 그림자 · 앞줄 건물 · 판 위 말 크기 · 공격 반 걸음 · 흐림 효과는 그 요청서에 있습니다. 여기서는 <b>겹치지 않는 것만</b> 다룹니다.
+</div>
+
+<h2>한눈에 보기</h2>
+<table>
+<tr><th style="width:4%">#</th><th style="width:22%">항목</th><th>지금</th><th style="width:22%">비교한 게임</th><th style="width:15%">예상 작업 (누가)</th><th style="width:12%">추천 시기</th></tr>
+<tr><td>1</td><td>크레딧(만든 사람들)</td><td>없음. <span class="red">받은 사운드는 출처 표기가 필요</span></td><td>거의 모든 게임</td><td>개발 0.5일 + 기획 이름 목록</td><td><b>1막에 꼭</b></td></tr>
+<tr><td>2</td><td>전투 배경</td><td>빈 바닥 한 장</td><td>For The King · Darkest Dungeon</td><td>개발 1일</td><td>1막에</td></tr>
+<tr><td>3</td><td>판 바깥 배경</td><td>회갈색 평면</td><td>For The King · 보드게임 디오라마</td><td>개발 0.5일</td><td>1막에</td></tr>
+<tr><td>4</td><td>추가 움직임</td><td>대기·공격·맞음·쓰러짐 4개뿐</td><td>RPG 메이커 기본 세트 등</td><td>디자인 (Meshy) + 개발 0.5일</td><td>1순위만 1막</td></tr>
+<tr><td>5</td><td>타격감 (화면 흔들림 등)</td><td>피해 숫자만 뜸</td><td>옥토패스 · Slay the Spire</td><td>개발 0.5일</td><td>1막에</td></tr>
+<tr><td>6</td><td>전투 속도 설정</td><td>없음 (움직임이 늘수록 전투가 길어짐)</td><td>Wildermyth</td><td>개발 0.5일</td><td>1막에</td></tr>
+<tr><td>7</td><td>처음 하는 사람 안내</td><td>판 왼쪽 조작 글만 있음. 판정 칸 설명 없음</td><td>For The King · Slay the Spire</td><td>개발 1일 + 기획 안내 글</td><td>1막에</td></tr>
+<tr><td>8</td><td>1막 뒤 후보 묶음</td><td>적 행동 예고 · 전체 지도 등</td><td>Slay the Spire · For The King</td><td>항목당 개발 2~5일</td><td>1막 뒤</td></tr>
+<tr><td colspan="4" style="text-align:right"><b>1~7번을 모두 1막에 넣을 때 개발 합계</b></td><td colspan="2"><b>약 4.5일</b> (+ 디자인 움직임, 기획 글)</td></tr>
+</table>
+
+<h2>1. 크레딧 (만든 사람들) — 꼭 필요</h2>
+<p>11/7에 받은 사운드 22종은 직접 만든 곡이지만, 악기 소리에 <b>GeneralUser GS</b>를 썼습니다. 함께 온 사용 안내에 <b>"Instrument sounds: GeneralUser GS by S. Christian Collins"</b>를 표기하라고 적혀 있습니다. 지금 게임에는 이 글을 넣을 곳이 없습니다.</p>
+<div class="cmp"><b>다른 게임:</b> 거의 모든 게임이 메인 메뉴나 엔딩 뒤에 크레딧을 둡니다. 쓴 외부 소리·글꼴의 출처도 그곳에 적습니다.</div>
+<div class="ask">
+☐ <b>A. 메인 메뉴에 [만든 사람들] 버튼 → 글 목록 창</b> (팀원 이름·역할 + 출처) <span class="rec">← 추천</span><br>
+☐ B. 1막 클리어 화면 뒤에 흘러가는 크레딧<br>
+☐ C. A + B 둘 다<br>
+<span class="small">기획에서 줄 것: 팀원 이름·역할 표기 방식 (예: "기획 ○○○"). 글꼴(ZEN SERIF)도 출처를 적을지 확인 부탁.</span>
+</div>
+
+<h2 class="brk">2. 전투 배경</h2>
+<figure><img src="img/battle_now.jpg"><figcaption>지금 전투 화면 — 인물 뒤가 빈 바닥과 어두운 하늘뿐</figcaption></figure>
+<p>요청 목록(AssetList 4번)에 "전투 배경 — 런던 거리 / 폐검시소 내부"가 <b>P1</b>로 있지만 아직 받지 못했습니다. 지금은 어디서 싸워도 같은 빈 바닥입니다.</p>
+<div class="cmp"><b>For The King:</b> 싸우는 칸의 지형(숲·마을·늪)이 그대로 전투 배경이 됨 → 판과 전투가 이어져 보임.<br><b>Darkest Dungeon:</b> 던전마다 다른 복도 그림을 뒤에 깔아서 "어디서 싸우는지" 바로 알 수 있음.</div>
+<div class="ask">
+☐ <b>A. 받은 3D 소품(집·나무·우물·울타리 등)을 전투장 둘레에 배치</b> — 일반 전투 = 런던 거리, 보스 = 어둡게. 개발만으로 가능 <span class="rec">← 추천 (1막)</span><br>
+☐ B. 디자인에 전투 배경 따로 요청 (그림 또는 3D) — 받는 날짜에 따라 1막 뒤<br>
+☐ C. 지금대로
+</div>
+
+<h2>3. 판 바깥 배경</h2>
+<figure style="width:75%"><img src="img/board_now.jpg"><figcaption>지금 판 화면 — 왼쪽·아래의 판 밖이 회갈색 평면</figcaption></figure>
+<p>요청 목록(AssetList 3번)에 "바닥 밖 배경 → 안개·바다 등"으로 적혀 있지만 아직 정하지 않았습니다.</p>
+<div class="cmp"><b>For The King:</b> 지도 바깥은 바다·안개로 덮여 "탁자 위 모형" 느낌.<br><b>보드게임 디오라마 방식:</b> 판 아래에 나무 탁자나 천을 깔아 판이 물건처럼 보이게 함.</div>
+<div class="ask">
+☐ <b>A. 템스 강을 떠올리게 하는 어두운 물 + 옅은 안개</b> <span class="rec">← 추천</span><br>
+☐ B. 나무 탁자 (보드게임 느낌)<br>
+☐ C. 단색 어둠 (가장 간단)<br>
+☐ D. 지금대로
+</div>
+
+<h2 class="brk">4. 추가 움직임 (모션)</h2>
+<p>받은 움직임은 <b>대기 · 공격 · 맞음 · 쓰러짐</b> 4개입니다. 게임에는 있는데 맞는 움직임이 없는 행동이 6개 있습니다.</p>
+<div class="cmp"><b>다른 턴제 RPG의 기본 세트</b>(RPG 메이커 기본 동작, 3D 턴제용 동작 묶음): 대기 · 공격 · 스킬(주문) · 맞음 · 방어 · 회피 · 아이템 · 승리 · 쓰러짐. 이동하는 게임은 걷기도 넣음.</div>
+<table>
+<tr><th style="width:6%">순위</th><th style="width:16%">움직임</th><th>게임에서 나오는 때</th><th>지금</th><th style="width:22%">Meshy 목록에 있는 것</th></tr>
+<tr><td>1</td><td>걷기</td><td>판 위 말 이동 (매 턴)</td><td>서서 미끄러짐</td><td>Walking (무료)</td></tr>
+<tr><td>1</td><td>일어서기</td><td>쓰러진 동료 부활</td><td>누운 채 → 순간 서 있음</td><td>Arise (무료), Stand Up</td></tr>
+<tr><td>1</td><td>스킬(주문)</td><td>스킬 · 회복 스킬</td><td>회복 스킬은 동작 없음</td><td>Spell Cast 12개</td></tr>
+<tr><td>2</td><td>방어</td><td>방어 버튼</td><td>동작 없음</td><td>Block 18개</td></tr>
+<tr><td>2</td><td>회피</td><td>공격이 빗나감 (MISS)</td><td>동작 없음</td><td>Stand Dodge</td></tr>
+<tr><td>2</td><td>승리</td><td>전투 승리 창</td><td>대기 자세</td><td>Victory Cheer</td></tr>
+<tr><td>3</td><td>마시기 · 달리기 · 위협</td><td>회복약 · 퇴각 · 보스 등장</td><td>동작 없음</td><td>Stand and Drink · Running · Taunt</td></tr>
+</table>
+<p class="small">아군 3명(명탐정·역병 의사·저격수)만 요청. Meshy는 사람형 움직임만 있어 사냥개·거미·가고일은 지금 4개로 둡니다. 무료 표시가 없는 것은 Meshy 유료(Pro) — 디자인 쪽 확인 필요.</p>
+<div class="ask">
+☐ <b>A. 1순위 3개(걷기·일어서기·스킬)만 디자인에 요청 → 받는 대로 연결</b> <span class="rec">← 추천</span><br>
+☐ B. 1·2순위 6개 요청<br>
+☐ C. 1막 뒤로 미룸<br>
+<span class="small">고르면 개발이 디자인용 "움직임 2차 요청서"(Meshy 동작 이름 포함)를 만들어 드립니다. 연결 작업은 작습니다(전투 움직임 연결 구조가 이미 있음).</span>
+</div>
+
+<h2>5. 타격감 (화면 흔들림 · 멈칫)</h2>
+<p>지금은 맞으면 <b>피해 숫자</b>와 맞는 움직임만 나옵니다. 크리티컬(판정 칸 모두 성공)도 숫자 색만 다릅니다.</p>
+<div class="cmp"><b>옥토패스 트래블러:</b> 큰 공격에 화면이 짧게 흔들리고 번쩍임.<br><b>Slay the Spire:</b> 큰 피해일 때만 화면이 흔들려서, "세게 맞았다"가 숫자를 안 봐도 느껴짐.<br>공통점: <b>큰 순간에만</b> 써서 자주 보여도 피곤하지 않게 함.</div>
+<div class="ask">
+☐ <b>A. 크리티컬·쓰러뜨림에만 화면 짧게 흔들림 + 0.05초 멈칫</b> <span class="rec">← 추천</span><br>
+☐ B. 모든 명중에 약하게<br>
+☐ C. 지금대로<br>
+<span class="small">어지러운 사람을 위해 설정에 "화면 흔들림 끄기"를 같이 넣을지도 골라 주세요: ☐ 넣음 ☐ 안 넣음</span>
+</div>
+
+<h2>6. 전투 속도 설정</h2>
+<p>전투 한 판이 판정 칸 연출 → 공격 움직임 → 맞음으로 이어집니다. 4번 움직임이 늘수록 한 판이 길어집니다. 1막은 전투가 많습니다(일반 적 10칸 23마리 + 보스).</p>
+<div class="cmp"><b>Wildermyth:</b> 설정에서 움직임 속도를 최대로 올리면 거의 바로 움직임 — 오래 한 사람들이 많이 씀.</div>
+<div class="ask">
+☐ <b>A. 설정 창에 "전투 속도 보통 / 빠르게(1.5배) / 아주 빠르게(2배)"</b> <span class="rec">← 추천</span><br>
+☐ B. 전투 중 키(예: Shift)를 누르는 동안만 빠르게<br>
+☐ C. 지금대로
+</div>
+
+<h2 class="brk">7. 처음 하는 사람 안내</h2>
+<p>판 왼쪽에 조작 글(주사위·칸 색·단축키)은 있습니다. 하지만 이 게임만의 규칙인 <b>판정 칸(슬롯)</b>, <b>피의 흔적 / 피의 사냥</b>, <b>집중</b>은 게임 안에서 설명하지 않습니다. 처음 하는 사람은 "왜 피해가 덜 들어갔지?"를 모를 수 있습니다.</p>
+<div class="cmp"><b>For The King:</b> 첫 판 전용 짧은 안내 판(튜토리얼)이 있음.<br><b>Slay the Spire:</b> 처음 보는 것에만 짧은 설명 창이 1번 뜸. 단어에 마우스를 올리면 뜻이 나옴.</div>
+<div class="ask">
+☐ <b>A. 처음 1번만 뜨는 짧은 안내 창 4개</b> — 첫 주사위 · 첫 전투(판정 칸) · 피의 흔적이 처음 오를 때 · 첫 집중 사용 <span class="rec">← 추천</span><br>
+☐ B. 메뉴에 "도움말" 한 장만<br>
+☐ C. 지금대로<br>
+<span class="small">A·B를 고르면 안내 글은 기획에서 써 주세요(개발이 넣을 칸만 만듦). 글 확정이 11/12이므로 그 안에 같이 주시면 됩니다.</span>
+</div>
+
+<h2>8. 1막 뒤 후보 (지금은 기록만)</h2>
+<p>규칙이 바뀌거나 작업이 커서 <b>1막 마감 뒤</b>에 보는 것이 맞다고 봅니다. 넣고 싶은 것에만 표시해 주세요.</p>
+<table>
+<tr><th style="width:4%">☐</th><th style="width:22%">무엇</th><th>다른 게임</th><th style="width:30%">우리 게임에서</th></tr>
+<tr><td>☐</td><td>일반 적 행동 예고</td><td>Slay the Spire: 적 머리 위에 다음 행동(공격 몇·방어)이 보임</td><td>보스는 예고가 이미 있음. 일반 적까지 넓히면 전략이 깊어짐 (규칙 변경)</td></tr>
+<tr><td>☐</td><td>전체 지도 보기</td><td>For The King: 지도를 넓게 보며 길을 계획</td><td>판이 넓어 지금은 카메라를 직접 움직여야 함</td></tr>
+<tr><td>☐</td><td>HP 낮을 때 대기 자세</td><td>RPG 메이커 기본 동작: HP 25% 이하면 지친 자세</td><td>위험한 동료가 한눈에 보임 (움직임 추가 필요)</td></tr>
+<tr><td>☐</td><td>디오라마 흐림 · 안 가 본 곳 흐리게</td><td>For The King · 문명 6</td><td>11/7 디자인 결정 요청서 5번과 같음</td></tr>
+</table>
+
+<h2>답변 방법</h2>
+<ul>
+<li>번호 + 글자만 보내 주세요. 예: <b>"1A, 2A, 3A, 4A, 5A(흔들림 끄기 넣음), 6A, 7A, 8: 적 예고"</b></li>
+<li>고른 것을 받으면 개발이 <b>11/18 마감 안에 들어가는 양</b>을 맞춰 "넣는 것 / 1막 뒤로 미루는 것"을 정리한 확정본을 다시 보내겠습니다.</li>
+<li>고른 것은 <code>Docs/Planning/Decisions.md</code>에 기록하고 넣겠습니다.</li>
+</ul>
+
+<h2>참고 자료</h2>
+<ul class="small">
+<li>Meshy 동작 목록: docs.meshy.ai/api/animation-library · api.meshy.ai/web/public/animations/resources (680개, 11/7 확인)</li>
+<li>RPG 메이커 전투 동작 목록: github-wiki-see.page/m/theoallen/RMMZ/wiki/TBSE-Motion-List</li>
+<li>Unity 턴제 전투 동작 연결: orkframework.com/guide/ui/3d-rpg-playground/09-combatant-animations</li>
+<li>For The King 전투: fortheking.wiki.gg/wiki/Combat</li>
+<li>Wildermyth 움직임 속도 설정: forum.quartertothree.com/t/wildermyth/152485?page=2</li>
+<li>Darkest Dungeon II 움직임: tvtropes.org/pmwiki/pmwiki.php/Videogame/DarkestDungeon2</li>
+<li>판 위 배치 조사 (출처 17개): <code>Docs/References/3D모델_배치_조사_2026-11-06.md</code></li>
+<li>사운드 출처 안내: <code>Docs/Audio/Sound_1107/00_사용안내.txt</code></li>
+</ul>
+
+</body></html>

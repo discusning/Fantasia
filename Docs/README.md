@@ -21,7 +21,7 @@
 | 원문 | `System.md` (시스템) · `Story.md` (스토리) · `GDD/GDD.md` (개요) |
 | 주제별 | `Boss_Abel_v1.0.md` 보스 · `City.md`·`City_Shop.md` 거점·상점 · `EventTiles.md` 이벤트 칸 · `MapTiles.md` 지도 칸 · `WorldMap.md` 지도 · `Save.md` 저장 · `Speed.md` 속도 · `MainMenu_Proposal.md` 메뉴 |
 | 기획 → 개발 (받은 것) | `UI_Solutions_Q1-Q9_2026-10-27.pdf` · `Fantasia_1막_기획_결정서_2026-11-01.pdf` · `판타지아_1막_게임기획_보고서_2026-11-03.pdf` · `Boss/…수정요청서.pdf` |
-| 개발 → 기획 (보낸 것) | `PlannerRequests_2026-10-24.md` · `Fantasia_기획_리소스_대기목록_2026-10-25` · `Request_1030/` · `Request_1103/` · `Report_1103/` |
+| 개발 → 기획 (보낸 것) | `PlannerRequests_2026-10-24.md` · `Fantasia_기획_리소스_대기목록_2026-10-25` · `Request_1030/` · `Request_1103/` · `Report_1103/` · `Request_1107/` (보강 제안 8항목, 답 대기) |
 
 ## 3. 아트·사운드 요청 (`Art/`, `Audio/`)
 
@@ -31,10 +31,11 @@
 | 10/27 | `Art/Fantasia_UI_요청서_2026-10-27` | 지난 요청 |
 | 10/28 | `Art/Design_Request_1028/` UI 그림 요청 | 일부 대기 (창·버튼 N08·N14~N17) |
 | 11/3 | `Art/PanelDrop_1028/` 턴·승패 판 애니메이션 | 적용 완료 |
-| 11/4 | `Audio/Fantasia_사운드_요청서_2026-11-04` | 대기 (11/7 목표) |
+| 11/4 | `Audio/Fantasia_사운드_요청서_2026-11-04` | 받음 (11/7, 22종) · 적용 — 출처·라이선스 `Audio/Sound_1107/` |
 | 11/5 | `Art/Model_Request_1105/` 3D 에셋 요청 | 받음 · 적용 완료 (거미 대기) |
-| 11/6 | `Art/Animation_Request_1106/` 움직임 요청 | 대기 (11/7 Idle) |
+| 11/6 | `Art/Animation_Request_1106/` 움직임 요청 | 받음 (Idle·Attack·Hit·Death) · 전투 연결 |
 | 11/6 | `Art/InGame_Report_1106/` 에셋 적용 화면 보고서 | 공유함 |
+| 11/7 | `Art/Design_Decision_1107/` 디자인 결정 요청 (그림자·앞줄 건물·판 위 말·반 걸음·흐림) | 기획 답변 대기 |
 
 - `Art/AssetList.md` — 필요한 에셋 전체 목록
 - `Art/UI_Reference/` — 받은 UI 참고 그림 · `Art/Fantasia_Icon_Usage_Guide.pdf` — 아이콘 사용법
@@ -50,6 +51,7 @@
 ## 5. 참고 조사 (`References/`)
 
 For the King 시스템 메모, 보드 턴 UI·지형 UI 조사, Unity 최적화·에셋 메모.
+`3D모델_배치_조사_2026-11-06.md` — 다른 3D 게임의 모델 넣기·인물/구조물 배치 조사 (출처 25개, 우리 판·전투 적용 제안).
 
 ## 6. 게임 쪽 파일 위치 (참고)
 
