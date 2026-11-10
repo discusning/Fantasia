@@ -137,6 +137,7 @@ namespace Fantasia.UI
             if (_turnDrop != null)
             {
                 if (_splashRoutine != null) StopCoroutine(_splashRoutine);
+                _dropPending = false; // 앞 판이 기다리던 중 멈춰도 표시가 남지 않게
                 _splashRoutine = StartCoroutine(TurnDrop(ally ? "아군 턴" : "적 턴", sub, ally));
                 return;
             }
@@ -150,13 +151,30 @@ namespace Fantasia.UI
         }
 
         // 판이 아직 떠 있으면(적 턴 0.9초 → 바로 아군 턴) 다시 떨어뜨리지 않고 글자만 바꿔 머문다 (보고서 B3 "제목만 바꿈")
+        private void EnsureDropLayer()
+        {
+            var c = _turnDrop.Root.GetComponent<Canvas>();
+            if (c == null) return;
+            c.overrideSorting = true;
+            c.sortingOrder = 7;
+        }
+
         private IEnumerator TurnDrop(string title, string sub, bool ally)
         {
+            // 11/11 규칙 2: 대화창·창이 떠 있으면 닫힐 때까지 기다렸다가 떨어짐 (이미 떠 있는 판의 글자 바꿈은 바로)
+            if (!(_turnDrop.Root.activeSelf && _turnDropGroup.alpha > 0.5f))
+            {
+                _dropPending = true;
+                while (UIFlow.WindowOpen) yield return null;
+                _dropPending = false;
+            }
             _turnDrop.Title.color = ally ? AllyColor : EnemyColor;
             bool showing = _turnDrop.Root.activeSelf && _turnDropGroup.alpha > 0.5f;
+            EnsureDropLayer(); // 꺼진 채 단 Canvas는 켜질 때 정렬 설정이 풀림 → 보일 때마다 다시
             _turnDropGroup.alpha = 1f;
             if (showing) { _turnDrop.Title.text = title; _turnDrop.Summary.text = sub; _turnDrop.Drop.ShowImmediate(); }
             else _turnDrop.Play(title, sub);
+            EnsureDropLayer(); // 켜진 뒤 한 번 더
             yield return new WaitForSeconds(TurnDropSeconds + 0.35f);
             for (float t = 0f; t < 0.3f; t += Time.deltaTime) { _turnDropGroup.alpha = 1f - t / 0.3f; yield return null; }
             _turnDrop.Hide();
@@ -166,7 +184,9 @@ namespace Fantasia.UI
         public const float TurnDropSeconds = 0.95f;
         // 판이 내려오는 동안 보드 입력(주사위·칸 클릭)을 받지 않음 — 턴 시작이 두 번 눌리지 않게 (B3)
         public static bool TurnDropBusy => DevTurnDropVisible;
-        public static bool DevTurnDropVisible => _devLast != null && _devLast._turnDrop != null && _devLast._turnDrop.Root.activeSelf;
+        // 창이 닫히길 기다리는 판도 "떠 있음"으로 침 (그 사이 굴림·알림이 끼어들지 않게, 11/11 규칙 2)
+        public static bool DevTurnDropVisible => _devLast != null && _devLast._turnDrop != null && (_devLast._turnDrop.Root.activeSelf || _devLast._dropPending);
+        private bool _dropPending;
         public static string DevTurnDropTitle => _devLast != null && _devLast._turnDrop != null ? _devLast._turnDrop.Title.text : "";
         private static BoardTopBar _devLast;
 
@@ -202,7 +222,7 @@ namespace Fantasia.UI
             canvasGO.transform.SetParent(transform, false);
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 4;
+            canvas.sortingOrder = 12; // 11/11 UI 점검: 상점·인벤토리(8)·이벤트(9)·사건 기록(11) 창 위 — 큰 창 위 장식이 바 글자를 가리지 않고 바 뒤로. 조우(13)·대화(20)·결과(40)는 바 위
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -210,23 +230,32 @@ namespace Fantasia.UI
             var root = canvasGO.transform;
             var theme = UITheme.Current;
 
+            // 위쪽 막대 자리 = 720 기준 위 108단위 고정 (16:9 화면 위 15%와 같음). 예전엔 화면 높이 비율이라
+            // 4:3·5:4에서 막대가 두꺼워져 조작 안내·의뢰 상자·사건 기록 버튼을 덮었음 (2026-11-10 화면 크기 점검).
+            var strip = UGUIKit.CreateRect(root, "TopStrip", new Vector2(0f, 1f), new Vector2(1f, 1f));
+            strip.pivot = new Vector2(0.5f, 1f);
+            strip.sizeDelta = new Vector2(0f, 108f);
+            strip.anchoredPosition = Vector2.zero;
+            static float S(float y) => (y - 0.85f) / 0.15f; // 예전 화면 높이 비율 → 막대 자리 안 비율
+
             // 나무판 그림(N07에서 잘라 씀)이 있으면 그 그림, 없으면 단색 틀. 바 높이 = 720 기준 72 단위.
             _art = theme.TopBarFrame != null;
             Transform bar;
             if (_art)
             {
-                var plank = UGUIKit.CreateImage(root, "Bar", new Vector2(0.005f, 0.895f), new Vector2(0.995f, 0.995f), Color.white);
+                var plank = UGUIKit.CreateImage(strip, "Bar", new Vector2(0.005f, S(0.895f)), new Vector2(0.995f, S(0.995f)), Color.white);
                 UITheme.Apply(plank, theme.TopBarFrame, sliceHeight: 72f);
                 bar = plank.transform;
             }
-            else bar = UGUIKit.CreateThemedPanel(root, "Bar", new Vector2(0.005f, 0.895f), new Vector2(0.995f, 0.995f), Gold, BarFill, 1.5f, theme.TopBarFrame);
+            else bar = UGUIKit.CreateThemedPanel(strip, "Bar", new Vector2(0.005f, S(0.895f)), new Vector2(0.995f, S(0.995f)), Gold, BarFill, 1.5f, theme.TopBarFrame);
 
             // 왼쪽: 파티장 초상 + 플레이어 이름 / 직업 · 파티장 — 그림이 있으면 나무판 왼쪽 네모 칸 안에 맞춤
-            _leaderPortrait = _art ? new PortraitView(bar, "Leader", new Vector2(0.035f, 0.537f), 42f, Gold) : new PortraitView(bar, "Leader", new Vector2(0.03f, 0.5f), 58f, Gold);
-            _leaderName = Label(bar, "PlayerName", new Vector2(0.06f, 0.45f), new Vector2(0.19f, 0.95f), 15, TextAnchor.MiddleLeft, TextLight, true);
+            _leaderPortrait = _art ? new PortraitView(bar, "Leader", new Vector2(0f, 0.49f), 40f, Gold) : new PortraitView(bar, "Leader", new Vector2(0.03f, 0.5f), 58f, Gold);
+            if (_art) _leaderPortrait.Root.anchoredPosition = new Vector2(50f, 0f); // 11/10 새 나무판의 왼쪽 초상 칸 (원본 112px ÷ 2.24)
+            _leaderName = Label(bar, "PlayerName", new Vector2(_art ? 0.072f : 0.06f, 0.45f), new Vector2(0.19f, 0.95f), 15, TextAnchor.MiddleLeft, TextLight, true);
             _leaderName.horizontalOverflow = HorizontalWrapMode.Wrap; // 긴 이름이 옆 칸을 넘지 않게 (10글자 제한)
             _leaderName.supportRichText = false; // 이름을 서식 태그로 해석하지 않음 (Q4)
-            _leaderRole = Label(bar, "LeaderRole", new Vector2(0.06f, 0.05f), new Vector2(0.19f, 0.45f), 10, TextAnchor.MiddleLeft, TextDim, false);
+            _leaderRole = Label(bar, "LeaderRole", new Vector2(_art ? 0.072f : 0.06f, 0.05f), new Vector2(0.19f, 0.45f), 10, TextAnchor.MiddleLeft, TextDim, false);
 
             // 피의 흔적 G — 아이콘 + 이름 + 숫자·상태 (10칸 없음)
             bool bloodIcon = UGUIKit.CreateIcon(bar, "BloodIcon", new Vector2(0.198f, 0.5f), new Vector2(0.214f, 1f), theme.BloodTrailIcon) != null; // Z01
@@ -237,8 +266,8 @@ namespace Fantasia.UI
             var circle = CircleSprite();
             var dialGO = new GameObject("Sky", typeof(RectTransform));
             var dial = (RectTransform)dialGO.transform;
-            dial.SetParent(root, false);
-            dial.anchorMin = dial.anchorMax = new Vector2(0.5f, 0.945f);
+            dial.SetParent(strip, false);
+            dial.anchorMin = dial.anchorMax = new Vector2(0.5f, S(0.945f));
             if (_art && theme.TopBarCircle != null)
             {
                 // 디자인처럼 큰 원이 바 아래로 조금 내려와 지역명 칸 위에 걸침 (위쪽은 화면 밖으로 안 나가게)
@@ -256,15 +285,15 @@ namespace Fantasia.UI
             _skyArt = UGUIKit.CreateImage(dial, "SkyArt", _art ? new Vector2(0.16f, 0.16f) : new Vector2(0.04f, 0.04f), _art ? new Vector2(0.84f, 0.84f) : new Vector2(0.96f, 0.96f), Color.white);
             _skyArt.preserveAspect = true;
             _skyArt.enabled = false;
-            _phaseLabel = Label(root, "TimeOfDay", new Vector2(0.5f, 0.945f), new Vector2(0.5f, 0.945f), 15, TextAnchor.MiddleCenter, TextLight, true);
+            _phaseLabel = Label(strip, "TimeOfDay", new Vector2(0.5f, S(0.945f)), new Vector2(0.5f, S(0.945f)), 15, TextAnchor.MiddleCenter, TextLight, true);
             ((RectTransform)_phaseLabel.transform).sizeDelta = new Vector2(60f, 24f);
-            _roundLabel = Label(root, "TimeOfDaySmall", new Vector2(0.5f, 0.945f), new Vector2(0.5f, 0.945f), 10, TextAnchor.MiddleCenter, TextLight, false);
+            _roundLabel = Label(strip, "TimeOfDaySmall", new Vector2(0.5f, S(0.945f)), new Vector2(0.5f, S(0.945f)), 10, TextAnchor.MiddleCenter, TextLight, false);
             ((RectTransform)_roundLabel.transform).sizeDelta = new Vector2(60f, 14f);
             ((RectTransform)_roundLabel.transform).anchoredPosition = new Vector2(0f, -28f);
             // 원 양옆 — 지금 차례 쪽이 밝게 "현재: 아군 턴" / "현재: 적 턴"
             float tagX = _art ? 0.042f : 0.036f; // 원이 커지면 글자를 조금 더 바깥으로
-            _allyTag = Label(root, "AllyTag", new Vector2(0.5f - tagX, 0.945f), new Vector2(0.5f - tagX, 0.945f), 13, TextAnchor.MiddleRight, AllyColor, true);
-            _enemyTag = Label(root, "EnemyTag", new Vector2(0.5f + tagX, 0.945f), new Vector2(0.5f + tagX, 0.945f), 13, TextAnchor.MiddleLeft, EnemyColor, true);
+            _allyTag = Label(strip, "AllyTag", new Vector2(0.5f - tagX, S(0.945f)), new Vector2(0.5f - tagX, S(0.945f)), 13, TextAnchor.MiddleRight, AllyColor, true);
+            _enemyTag = Label(strip, "EnemyTag", new Vector2(0.5f + tagX, S(0.945f)), new Vector2(0.5f + tagX, S(0.945f)), 13, TextAnchor.MiddleLeft, EnemyColor, true);
             _allyTag.rectTransform.pivot = new Vector2(1f, 0.5f);
             _enemyTag.rectTransform.pivot = new Vector2(0f, 0.5f);
             _allyTag.rectTransform.sizeDelta = new Vector2(110f, 20f);
@@ -313,14 +342,15 @@ namespace Fantasia.UI
             if (_art && theme.RegionBanner != null)
             {
                 // 지역명 칸(N07 아래 칸) — 큰 원 아래에 붙여 디자인처럼 원이 위에 걸치게
-                var tab = UGUIKit.CreateImage(root, "Region", new Vector2(0.43f, 0.845f), new Vector2(0.57f, 0.89f), Color.white);
+                // 11/11 팀장 지적: 원이 글자 윗부분을 가림 → 칸을 0.02(약 22px) 내려 원은 칸 테두리에만 걸치게
+                var tab = UGUIKit.CreateImage(strip, "Region", new Vector2(0.43f, S(0.825f)), new Vector2(0.57f, S(0.87f)), Color.white);
                 UITheme.Apply(tab, theme.RegionBanner, sliceHeight: 32f);
                 tab.transform.SetSiblingIndex(dial.GetSiblingIndex()); // 원보다 뒤에 그림
                 regionFill = tab.transform;
             }
-            else regionFill = UGUIKit.CreateThemedPanel(root, "Region", new Vector2(0.42f, 0.855f), new Vector2(0.58f, 0.895f), Gold, new Color(0.2f, 0.08f, 0.1f, 0.95f), 1.5f, theme.RegionBanner);
+            else regionFill = UGUIKit.CreateThemedPanel(strip, "Region", new Vector2(0.42f, S(0.855f)), new Vector2(0.58f, S(0.895f)), Gold, new Color(0.2f, 0.08f, 0.1f, 0.95f), 1.5f, theme.RegionBanner);
             _region = Label(regionFill, "Name", Vector2.zero, Vector2.one, 12, TextAnchor.MiddleCenter, TextLight, true);
-            if (_art) _region.rectTransform.offsetMin = new Vector2(0f, -6f); // 원이 위를 조금 가리니 글자는 아래쪽으로
+            if (_art) _region.rectTransform.offsetMax = new Vector2(0f, -4f); // 칸 테두리 안쪽 가운데로 (원은 위 테두리에만 걸침)
 
             if (_art)
             {
@@ -343,6 +373,10 @@ namespace Fantasia.UI
             _turnDrop.Drop.fallDuration = 0.35f;
             _turnDrop.Drop.settleDuration = 0.6f;
             _turnDrop.Root.transform.SetAsFirstSibling(); // 상단 바 뒤 — 사슬이 바에 매달려 보이게
+            // 11/11: 상단 바를 창 위(12)로 올려서, 턴 판은 따로 7에 둠 — 바 뒤(사슬이 매달려 보임) · 창(8~) 아래
+            var dropCanvas = _turnDrop.Root.AddComponent<Canvas>();
+            dropCanvas.overrideSorting = true;
+            dropCanvas.sortingOrder = 7;
             _turnDropGroup = _turnDrop.Root.AddComponent<CanvasGroup>();
             _turnDropGroup.blocksRaycasts = false;
             _turnDropGroup.interactable = false;

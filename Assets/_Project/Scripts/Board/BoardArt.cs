@@ -7,6 +7,14 @@ namespace Fantasia.Board
     public sealed class BoardArt
     {
         public GameObject TileA, TileB, Hub, Boss, BlockA, BlockB, BlockTrees, Treasure, Recovery, FortuneTeller, Fountain, Exit;
+        public GameObject LowTrees, LowStone; // 11/10 기획 2A: 카메라 쪽 앞줄 막힌 칸용 낮은 소품
+
+        // 앞줄 막힌 칸 — 좌표로 고정 추첨 (나무 2 : 돌담 1). 없으면 null → 예전 높은 건물
+        public GameObject LowBlockFor(MapTile t)
+        {
+            int h = ((t.Row * 31 + t.Col * 17) % 3 + 3) % 3;
+            return (h == 0 ? LowStone : LowTrees) ?? LowTrees ?? LowStone;
+        }
         public bool HasTiles => TileA != null;
 
         public static BoardArt Load()
@@ -17,6 +25,7 @@ namespace Fantasia.Board
                 TileA = L("Tile_Road_A"), TileB = L("Tile_Road_B") ?? L("Tile_Road_A"),
                 Hub = L("Hub"), Boss = L("Boss"),
                 BlockA = L("Block_A"), BlockB = L("Block_B"), BlockTrees = L("Block_Trees"),
+                LowTrees = L("Block_LowTrees"), LowStone = L("Block_LowStone"),
                 Treasure = L("Treasure"), Recovery = L("Recovery"),
                 FortuneTeller = L("Event_FortuneTeller"), Fountain = L("Event_Fountain"), Exit = L("Exit"),
             };

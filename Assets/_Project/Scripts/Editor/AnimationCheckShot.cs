@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -15,13 +16,22 @@ namespace Fantasia.Editor
     public static class AnimationCheckShot
     {
         private const string Root = "Assets/_Project/Art/Models/Characters";
-        private static readonly string[] Models =
+        private static float _yaw = 30f, _pad = 1f;
+        private static readonly string[] AllModels =
             { "Detective", "PlagueDoctor", "Sniper", "PlagueRat", "SpiderLarva", "GargoyleLarva", "ShadowHound", "ShadowReaper", "AbelMoreau" };
-        private static readonly (string clip, float t)[] Poses = { ("Idle", 1f), ("Attack", 0.25f), ("Attack", 0.5f), ("Attack", 0.75f), ("Hit", 0.2f), ("Death", -1f) }; // 음수: 길이 비율
+        private static readonly (string clip, float t)[] DefaultPoses = { ("Idle", 1f), ("Attack", 0.25f), ("Attack", 0.5f), ("Attack", 0.75f), ("Hit", 0.2f), ("Death", -1f) }; // 음수: 길이 비율
 
         public static void Capture()
         {
-            const int Cell = 300;
+            // 옵션 (11/10, 디자인 요청 자료용): -only ShadowReaper · -cell 500 · -poses "Idle:1,Attack:0.2,..." · -yaw 30 · -out <png>
+            var args = System.Environment.GetCommandLineArgs();
+            string Arg(string k) { int i = System.Array.IndexOf(args, k); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
+            var Models = Arg("-only") is { } only ? only.Split(",") : AllModels;
+            var Poses = Arg("-poses") is { } ps ? ps.Split(",").Select(p => { var kv = p.Split(":"); return (clip: kv[0], t: float.Parse(kv[1], System.Globalization.CultureInfo.InvariantCulture)); }).ToArray() : DefaultPoses;
+            int Cell = int.TryParse(Arg("-cell"), out int c) ? c : 300;
+            _yaw = float.TryParse(Arg("-yaw"), out float y) ? y : 30f;
+            _pad = float.TryParse(Arg("-pad"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float pd) ? pd : 1f; // 1보다 크면 여백 넓게
+            string outPath = Arg("-out") ?? Path.Combine(Application.dataPath, "../Logs/anim_check.png");
             var sheet = new Texture2D(Cell * (Poses.Length + 1), Cell * Models.Length, TextureFormat.RGB24, false) { hideFlags = HideFlags.HideAndDontSave };
             var rt = new RenderTexture(Cell, Cell, 24) { antiAliasing = 4, hideFlags = HideFlags.HideAndDontSave };
             var report = new List<string>();
@@ -54,7 +64,7 @@ namespace Fantasia.Editor
 
                 // 기준 자세(T자세)에서 크기·중심
                 var b = Bounds(go);
-                float size = Mathf.Max(b.size.y, b.size.x * 0.8f, b.size.z * 0.8f) * 0.62f;
+                float size = Mathf.Max(b.size.y, b.size.x * 0.8f, b.size.z * 0.8f) * 0.62f * _pad;
                 var line = new List<string>();
 
                 // 맨 왼쪽: 움직임 없는 기본 자세
@@ -103,14 +113,14 @@ namespace Fantasia.Editor
             }
             sheet.Apply();
             RenderTexture.active = null;
-            File.WriteAllBytes(Path.Combine(Application.dataPath, "../Logs/anim_check.png"), sheet.EncodeToPNG());
+            File.WriteAllBytes(outPath, sheet.EncodeToPNG());
             foreach (var r in report) Debug.Log("[AnimationCheck] " + r);
         }
 
         // 모델 정면(+Z)에서 오른쪽으로 30도 · 위에서 10도 비스듬히
         private static void Aim(Camera cam, Bounds b)
         {
-            cam.transform.position = b.center + Quaternion.Euler(-10f, 30f, 0f) * Vector3.forward * 20f;
+            cam.transform.position = b.center + Quaternion.Euler(-10f, _yaw, 0f) * Vector3.forward * 20f;
             cam.transform.LookAt(b.center);
         }
 

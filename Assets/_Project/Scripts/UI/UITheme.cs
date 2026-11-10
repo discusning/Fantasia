@@ -15,6 +15,7 @@ namespace Fantasia.UI
 
         [Header("패널·배너·버튼")]
         public Sprite PanelFrame;   // 패널 바깥 테두리
+        public Sprite WindowHeader; // 큰 창 위 장식 + 이름 칸 (11/10 받은 "판타지 프레임 상단", 가운데 뾰족 장식은 개발이 이름 칸에서 지움)
         public Sprite PanelFill;    // 패널 안쪽 바탕
         public Sprite Banner;       // 이름 배너
         public Sprite Button;
@@ -29,7 +30,8 @@ namespace Fantasia.UI
 
         [Header("초상·타임라인")]
         public Sprite PortraitFrame;
-        public Sprite TimelineFrame;
+        public Sprite TimelineFrame;   // 전투 위 행동 순서 띠 바탕 (11/10 턴 순서 패키지의 Backing)
+        public Sprite TimelineSlot, TimelineCurrent; // 순서 칸 청동 틀 · 지금 차례 금 틀(아래 뾰족) — 가운데 뚫림, 초상 위에 덮음
         [Header("보드 상단 바 (아군·적 턴 시계·위협 트랙)")]
         public Sprite TopBarFrame;
         public Sprite PhaseDialAllyActive, PhaseDialAllyIdle;   // 시계 왼쪽(아군) 반원 — 활성/비활성

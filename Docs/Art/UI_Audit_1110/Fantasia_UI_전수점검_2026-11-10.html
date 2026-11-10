@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 UI 전수 점검</title>
+<style>
+@page{size:A4;margin:12mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.5px;line-height:1.6;color:#222;background:#fff;margin:0}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 8px;color:#6b1e1e}
+h3{font-size:13.5px;margin:12px 0 4px}
+.sub{color:#666;margin-bottom:10px}
+.box{border:1px solid #c9a;background:#fbf5f2;padding:9px 11px;margin:8px 0}
+img{width:100%;border:1px solid #999;display:block}
+figure{margin:6px 0 10px}
+figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+.brk{page-break-before:always}
+.ok{color:#1d7a2a;font-weight:bold}.dev{color:#1d4f9a;font-weight:bold}.des{color:#b5651d;font-weight:bold}
+.small{font-size:11px;color:#555}
+</style></head><body>
+
+<h1>UI 전수 점검 — 디자인과 비교</h1>
+<div class="sub">2026-11-10 · 개발(최동환) · 실제 게임(빌드, 1920×1080)에서 자동 플레이로 찍은 154장 기준 (메뉴·판·조우·전투·보스·피의 사냥·상점·인벤토리·이벤트·우물·보물·사건 기록·저장 오류·표지판)</div>
+
+<div class="box">
+<b>한 줄 요약:</b> 창 틀·버튼·상단 바·순서 띠·표지판은 새 디자인이 들어감.
+<b>하지만 창 “안쪽”과 붙박이 판 12곳은 아직 옛 모양</b>(검은 보라·남색 바탕 + 납작한 금색 선)이라 새 갈색 나무·청동 틀과 섞여 보임.<br>
+12곳 중 <span class="dev">11곳은 개발이 받은 그림(사각 판 = N10 안쪽 판 모양)으로 바꿀 수 있음</span>. 겹침 4곳도 개발 처리.
+<span class="des">그림이 아예 없는 4곳은 디자인 요청</span>.
+</div>
+
+<h2>기준: 디자인 방향</h2>
+<div class="two">
+<figure><img src="img/ref_N10.jpg"><figcaption>N10 패널 배치 예시 — 바깥 장식 틀 + <b>안쪽 판은 짙은 갈색 + 얇은 청동 테두리</b></figcaption></figure>
+<figure><img src="img/ref_N03.jpg"><figcaption>N03 순서 띠 예시 — 청동·금 틀, 짙은 갈색</figcaption></figure>
+</div>
+<p>→ 색 기준: <b>짙은 갈색 나무 + 청동/구리 테두리</b>. 지금 게임 곳곳의 <b>검은 보라·남색 바탕, 보라 띠, 납작한 노란 금색 선</b>은 디자인 전에 개발이 임시로 넣은 색.</p>
+
+<h2>A. 새 디자인이 잘 들어간 곳 <span class="ok">(문제 없음)</span></h2>
+<div class="three">
+<figure><img src="img/a01_statue.jpg"><figcaption>창 틀 + 이름 칸 + 버튼 (석상)</figcaption></figure>
+<figure><img src="img/a02_battle.jpg"><figcaption>전투 순서 띠 · 굴림 결과 창</figcaption></figure>
+<figure><img src="img/a03_turn_sign.jpg"><figcaption>상단 바 · 턴 안내판 · 확인 창</figcaption></figure>
+</div>
+<p class="small">그 밖에: 설정·메뉴·사건 기록·점술·우물·상점·인벤토리 바깥 틀, 모든 버튼, 승리·패배·1막 클리어 표지판, 아이콘 Z01~Z44, 점술마녀·제임스 초상.</p>
+
+<h2 class="brk">B. 아직 옛 모양인 곳 (12곳)</h2>
+<table>
+<tr><th style="width:4%">#</th><th style="width:22%">어디</th><th>지금 모양</th><th style="width:28%">처리</th></tr>
+<tr><td>1</td><td>파티 카드 (판·전투 아래 3장)</td><td>남색 바탕 · <b>보라 이름 띠</b> · 납작한 금색 선. 화면에 늘 떠 있어 가장 눈에 띔</td><td class="dev">개발 — 사각 판 그림 + 이름 띠 갈색</td></tr>
+<tr><td>2</td><td>대화 창 + 말하는 사람 칸</td><td>회색 상자, 회색 선</td><td class="dev">개발 — 사각 판(또는 창 틀)</td></tr>
+<tr><td>3</td><td>조우 창 (적 정보·기습 확률)</td><td><b>보라 마름모 “소형”</b> · 보라 제목 띠 · 남색 판 3개</td><td class="dev">개발 — 판 3개 사각 판, 마름모·띠 갈색/청동</td></tr>
+<tr><td>4</td><td>전투 적 HP 카드</td><td>검은 판 + 금색 선</td><td class="dev">개발 — 사각 판</td></tr>
+<tr><td>5</td><td>전투 행동 막대 · 스킬 · 소모품 창</td><td>검은 판 + 금색 선 (소모품 창은 큰 빈 검은 상자)</td><td class="dev">개발 — 사각 판</td></tr>
+<tr><td>6</td><td>보스 예고 설명 상자 · 예고 띠</td><td>적갈색 판 + 금색 선 / 검은 띠</td><td class="dev">개발 — 사각 판</td></tr>
+<tr><td>7</td><td>창 안쪽 칸·목록 (상점·인벤토리·사건 기록·점술 카드·소지금 칸·이름 입력칸)</td><td>남색 칸 + 금색 선, 목록 줄 회색</td><td class="dev">개발 — 안쪽 판 사각 판, 줄 색 갈색</td></tr>
+<tr><td>8</td><td>오른쪽 의뢰 상자 · 왼쪽 도움말 상자</td><td>회색 반투명 상자</td><td class="dev">개발 — 사각 판(반투명)</td></tr>
+<tr><td>9</td><td>메인 메뉴 · 파티 구성 화면</td><td>바탕이 그냥 검은 남색, 제목 글자만, 카드 남색</td><td class="dev">개발: 카드·색</td></tr>
+<tr><td>10</td><td>상태 표시 칩 (출혈 등)</td><td>보라 칩</td><td class="dev">개발 — 갈색/청동</td></tr>
+<tr><td>11</td><td>보스 등장 띠 (“1막 보스 검시관 아벨 모로”)</td><td>검은 반투명 띠</td><td class="dev">개발 — 턴 안내판처럼 표지판 그림 재사용 가능</td></tr>
+<tr><td>12</td><td>점술 창 “참가비” 띠</td><td>밝은 노란 직사각형 (튐)</td><td class="dev">개발 — 이름 칸 색 맞춤</td></tr>
+</table>
+
+<div class="two">
+<figure><img src="img/b01_party_cards.jpg"><figcaption>1. 파티 카드 — 보라 이름 띠 · 남색 바탕</figcaption></figure>
+<figure><img src="img/b02_dialogue.jpg"><figcaption>2. 대화 창 — 회색 상자</figcaption></figure>
+</div>
+<div class="two">
+<figure><img src="img/b03_encounter.jpg"><figcaption>3. 조우 창 — 보라 마름모 · 보라 띠 · 남색 판</figcaption></figure>
+<div>
+<figure><img src="img/b04_enemy_bars.jpg"><figcaption>4. 적 HP 카드</figcaption></figure>
+<figure><img src="img/b05_action_skill.jpg"><figcaption>5. 행동 막대 · 스킬 창</figcaption></figure>
+</div>
+</div>
+<div class="two">
+<figure><img src="img/b05b_item_menu.jpg"><figcaption>5. 소모품 창 — 큰 빈 검은 상자</figcaption></figure>
+<figure><img src="img/b06_telegraph.jpg"><figcaption>6. 보스 예고 상자 · 예고 띠</figcaption></figure>
+</div>
+<div class="two">
+<figure><img src="img/b07_inventory.jpg"><figcaption>7. 인벤토리 안쪽 — 바깥 틀은 새것, 안쪽 칸은 남색</figcaption></figure>
+<figure><img src="img/b07b_shop.jpg"><figcaption>7. 상점 안쪽 — 같은 문제</figcaption></figure>
+</div>
+<div class="three">
+<figure><img src="img/b08_hint.jpg"><figcaption>8. 도움말 상자</figcaption></figure>
+<figure><img src="img/b08b_quest.jpg"><figcaption>8. 의뢰 상자</figcaption></figure>
+<figure><img src="img/b10_status_chip.jpg"><figcaption>10. 상태 칩 (보라)</figcaption></figure>
+</div>
+<div class="two">
+<figure><img src="img/b09_main_menu.jpg"><figcaption>9. 메인 메뉴 — 검은 바탕 + 제목 글자</figcaption></figure>
+<figure><img src="img/b09b_party_select.jpg"><figcaption>9. 파티 구성 — 남색 카드</figcaption></figure>
+</div>
+<div class="two">
+<figure><img src="img/b11_boss_banner.jpg"><figcaption>11. 보스 등장 띠 — 검은 반투명</figcaption></figure>
+<figure><img src="img/b12_witch_fee.jpg"><figcaption>12. 점술 창 노란 띠 · 소지금 칸(남색) · 카드(남색)</figcaption></figure>
+</div>
+
+<h2 class="brk">C. 겹침·어긋남 (4곳) <span class="dev">— 모두 개발 처리</span></h2>
+<table>
+<tr><th style="width:4%">#</th><th>무엇</th><th style="width:34%">처리</th></tr>
+<tr><td>C1</td><td>전투 시작 전(보스 대화 중) 순서 띠 바탕만 빈 채로 보임 — 새 그림이라 빈 띠가 눈에 띔</td><td>순서가 정해지기 전에는 띠도 숨김</td></tr>
+<tr><td>C2</td><td>판에서 주사위(3D)가 “아군 턴” 안내판 위로 겹쳐 굴러감 (피의 사냥 중)</td><td>안내판이 내려가 있는 동안 굴림 대기</td></tr>
+<tr><td>C3</td><td>보스 저지 성공 “저지!” 글자가 순서 띠 위에 겹침</td><td>글자 위치를 띠 아래로</td></tr>
+<tr><td>C4</td><td>상점·인벤토리 창 위 장식이 상단 바를 덮음 (창이 화면 위 끝까지 큼)</td><td>창 위 끝을 조금 내림</td></tr>
+</table>
+<div class="two">
+<figure><img src="img/c01_empty_timeline.jpg"><figcaption>C1 빈 순서 띠</figcaption></figure>
+<figure><img src="img/c03_jeoji_overlap.jpg"><figcaption>C3 “저지!” 겹침</figcaption></figure>
+</div>
+<div class="two">
+<figure><img src="img/c02_dice_over_sign.jpg"><figcaption>C2 주사위가 안내판 위로</figcaption></figure>
+<figure><img src="img/c04_shop_over_topbar.jpg"><figcaption>C4 상점 창이 상단 바를 덮음</figcaption></figure>
+</div>
+
+<h2>D. 그림이 없어서 개발이 못 하는 것 <span class="des">— 디자인 요청서 8번에 추가</span></h2>
+<table>
+<tr><th style="width:4%">#</th><th style="width:28%">무엇</th><th>지금</th><th style="width:22%">필요한 그림</th></tr>
+<tr><td>D1</td><td>메인 메뉴 배경 · 제목(로고)</td><td>검은 바탕 + 글꼴 글자 “판타지아”</td><td>배경 그림 1장(16:9) + 로고 PNG (선택)</td></tr>
+<tr><td>D2</td><td>분수대 · 석상 이벤트 그림</td><td>점술마녀만 왼쪽에 그림, 분수대·석상은 빈자리</td><td>3:4 그림 2장 (배경 투명)</td></tr>
+<tr><td>D3</td><td>아벨 모로 3:4 초상</td><td>예전 어두운 배경 2:3</td><td>요청서 7-1과 같음</td></tr>
+<tr><td>D4</td><td>파티 카드 전용 틀 (선택)</td><td>개발이 사각 판으로 대신할 예정</td><td>있으면 교체 (없어도 됨)</td></tr>
+</table>
+<figure style="width:50%"><img src="img/b12b_fountain.jpg"><figcaption>D2 분수대 창 — 그림 자리가 비어 있음</figcaption></figure>
+
+<h2>개발이 할 순서 (제안)</h2>
+<ol>
+<li>C1~C4 겹침 (작음)</li>
+<li>B 공통: 붙박이 판·안쪽 판에 사각 판 그림 + 보라·남색 → 갈색 (UGUIKit 한 곳에서 대부분 바뀜) → 1·2·4·5·6·7·8·10</li>
+<li>B 개별: 조우 창 마름모(3) · 보스 등장 띠(11) · 노란 띠(12) · 메인 메뉴 카드(9)</li>
+</ol>
+<p class="small">기획서에 없는 새 연출은 없음 — 받은 그림·색을 맞추는 일. 11/12 그림 마감과 상관없이 받은 그림 안에서 처리. 사진 원본: 자동 플레이 결과 (allui).</p>
+</body></html>

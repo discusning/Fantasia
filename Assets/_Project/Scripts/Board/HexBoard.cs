@@ -131,12 +131,27 @@ namespace Fantasia.Board
                 }
                 // 받은 구조물이 있으면 칸 위에 세우고 납작한 표식은 쓰지 않는다 (일반 적 칸은 표식 그대로).
                 var propPrefab = _art.PropFor(mapTile);
+                if (mapTile.Kind == MapTileKind.Blocked && HidesTileBehind(coord)) propPrefab = _art.LowBlockFor(mapTile) ?? propPrefab;
                 if (propPrefab != null) tile.SetProp(Instantiate(propPrefab), tileHeight);
                 else tile.SetMarker(MarkerFor(mapTile, tile), tileHeight);
             }
         }
 
         private BoardArt _art;
+
+        // 11/10 기획 2A: 카메라 쪽(앞줄) 막힌 칸 = 바로 뒤(카메라 반대쪽, +Z) 이웃에 막히지 않은 칸이 있는 막힌 칸.
+        // 카메라가 +Z 쪽을 비스듬히 내려다보므로, 이런 칸에 높은 집이 서면 뒤 칸·적 표시를 가림 → 낮은 나무·돌담으로.
+        private bool HidesTileBehind(HexCoord coord)
+        {
+            float z = LocalPosition(coord).z;
+            for (int d = 0; d < HexCoord.Directions.Length; d++)
+            {
+                var n = coord.Neighbor(d);
+                if (LocalPosition(n).z <= z + 0.01f) continue;
+                if (Map.Tiles.TryGetValue(n, out var t) && t.Kind != MapTileKind.Blocked) return true;
+            }
+            return false;
+        }
 
         private static bool OnlyHounds(string label)
         {

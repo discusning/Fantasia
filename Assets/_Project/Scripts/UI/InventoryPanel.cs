@@ -439,7 +439,7 @@ namespace Fantasia.UI
             _root = dim.gameObject;
             dim.gameObject.AddComponent<Button>().onClick.AddListener(Close);
 
-            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.1f, 0.24f), new Vector2(0.9f, 0.93f), Gold, Fill, 2f, UITheme.Current.PanelFrame);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.1f, 0.17f), new Vector2(0.9f, 0.84f), Gold, Fill, 2f, UITheme.Current.PanelFrame);
             win.parent.gameObject.AddComponent<Button>(); // 창 안 클릭은 닫기로 안 넘어가게
             var close = UGUIKit.CreateThemedButton(win, "Close", new Vector2(0.955f, 0.92f), new Vector2(0.995f, 0.995f), "×", RowFill, 14);
             close.onClick.AddListener(Close);

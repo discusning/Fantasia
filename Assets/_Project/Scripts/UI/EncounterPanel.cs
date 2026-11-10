@@ -333,7 +333,7 @@ namespace Fantasia.UI
             canvasGO.transform.SetParent(transform, false);
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 10; // 퀘스트 창 등 상시 UI 위에 뜬다
+            canvas.sortingOrder = 13; // 퀘스트 창 등 상시 UI 위에 뜬다
             canvasGO.AddComponent<GraphicRaycaster>();
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();

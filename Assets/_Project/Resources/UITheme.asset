@@ -12,28 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f27e00a3da478a4785ecfefacc45a32, type: 3}
   m_Name: UITheme
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.UI.UITheme
-  PanelFrame: {fileID: 0}
+  PanelFrame: {fileID: 21300000, guid: 03248d4d05e044146a4794a44959827a, type: 3}
+  WindowHeader: {fileID: 21300000, guid: 1e48cae1c3e9703459efe7942e37c720, type: 3}
   PanelFill: {fileID: 0}
   Banner: {fileID: 0}
-  Button: {fileID: 0}
+  Button: {fileID: 21300000, guid: d869dd4996c89dc4186111ffe93d13af, type: 3}
   BarBack: {fileID: 21300000, guid: 6e43da1b57a97b0459c32b2fcac9d97b, type: 3}
   BarFill: {fileID: 21300000, guid: b7a8fd2b8398be043adac943f8bf3755, type: 3}
   SlotIcon: {fileID: 0}
   FocusPip: {fileID: 21300000, guid: 541174e905c849345a001dc5a835c765, type: 3}
   PortraitFrame: {fileID: 0}
-  TimelineFrame: {fileID: 0}
-  TopBarFrame: {fileID: 21300000, guid: 2445102b21edb1e4d8bd545c438ac0a1, type: 3}
+  TimelineFrame: {fileID: 21300000, guid: 0363c82d346aa194b9f7ad02ef080889, type: 3}
+  TimelineSlot: {fileID: 21300000, guid: 9d0a0f34bdc28734bbf4fcf9886e2338, type: 3}
+  TimelineCurrent: {fileID: 21300000, guid: 16c556ff36fe8f3499ce3c8ae9585e99, type: 3}
+  TopBarFrame: {fileID: 21300000, guid: 2842bf5547cacab4e836b590b9247eb6, type: 3}
   PhaseDialAllyActive: {fileID: 0}
   PhaseDialAllyIdle: {fileID: 0}
   PhaseDialEnemyActive: {fileID: 0}
   PhaseDialEnemyIdle: {fileID: 0}
   ThreatNotch: {fileID: 0}
-  TopBarCircle: {fileID: 21300000, guid: c2bd6cf5f082dec4b8035723e8bceb8c, type: 3}
+  TopBarCircle: {fileID: 21300000, guid: 0ba730c0533e13041849daca909ea6c8, type: 3}
   SoulFrame: {fileID: 21300000, guid: 7d27c70635bca7d47937c3cb5df14f3c, type: 3}
   SoulFill: {fileID: 21300000, guid: 827c56bd3bdc8c04793b5bfe20fadcf8, type: 3}
   DaySun: {fileID: 21300000, guid: b87d3e6b3884e22409872774524874c2, type: 3}
   NightMoon: {fileID: 21300000, guid: 1e037f983cc323644b0fa09add0461e4, type: 3}
-  RegionBanner: {fileID: 21300000, guid: f113e41fad198ca49bb9d97466491eb8, type: 3}
+  RegionBanner: {fileID: 21300000, guid: ca8bed12addeee24b847a5fc3be2819c, type: 3}
   AllyTurnBanner: {fileID: 0}
   EnemyTurnBanner: {fileID: 0}
   AttackIcon: {fileID: 0}
@@ -67,9 +70,9 @@ MonoBehaviour:
   EnemyMarker: {fileID: 21300000, guid: 0d77769ec89cdce4184afa191292e253, type: 3}
   SpeakerPortraits:
   - Speaker: "\uC810\uC220\uB9C8\uB140"
-    Sprite: {fileID: 21300000, guid: 82ef886083e3a8f499cf51425f2ed420, type: 3}
+    Sprite: {fileID: 21300000, guid: 9be5c1c9025650a48b7b3f25a59d9156, type: 3}
   - Speaker: "\uC81C\uC784\uC2A4"
-    Sprite: {fileID: 21300000, guid: 6bc66b47e77876b438f773b5e7b537c4, type: 3}
+    Sprite: {fileID: 21300000, guid: 95856f80e9a3d6947b72eec097225503, type: 3}
   - Speaker: "\uC544\uBCA8 \uBAA8\uB85C"
     Sprite: {fileID: 21300000, guid: 73c7c5bfafb6fd04f9a907d93ec2366c, type: 3}
   BossMarker: {fileID: 21300000, guid: 3786438c44958d7429c614d1d928f422, type: 3}

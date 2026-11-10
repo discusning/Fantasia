@@ -51,6 +51,7 @@ namespace Fantasia.Core
             int seedIndex = Array.IndexOf(args, "-autoplay-seed");
             if (seedIndex >= 0 && seedIndex + 1 < args.Length && int.TryParse(args[seedIndex + 1], out int seed)) { Seed = seed; GameRandom.Seed(seed); }
             if (args.Contains("-autoplay-temp-boss")) BoardTestController.DevAllowTempBosses = true;
+            Application.runInBackground = true; // 자동 점검 중 다른 창을 써도 멈추지 않게 (플레이어 설정은 그대로: 창이 뒤로 가면 멈춤)
             Note($"자동 플레이 시작 {DateTime.Now:yyyy-MM-dd HH:mm:ss} · 해상도 {Screen.width}x{Screen.height}{(Seed >= 0 ? $" · 시드 {Seed}" : "")}");
 
             // 저장 점검: 이 이름의 저장 지점이 처음 오면 그 순간의 저장 파일을 복사 (= 그때 게임이 꺼진 상태)
@@ -118,6 +119,7 @@ namespace Fantasia.Core
             if (args.Contains("-autoplay-qa-resume")) yield return QaResumeRun();
             else if (args.Contains("-autoplay-qa-report")) yield return QaReportRun();
             else if (args.Contains("-autoplay-paneldrop")) yield return PanelDropRun();
+            else if (args.Contains("-autoplay-uiextra")) yield return UiExtraRun();
             else if (args.Contains("-autoplay-qa")) yield return QaRun();
             else if (args.Contains("-autoplay-full-resume")) yield return FullRun(resume: true);
             else if (args.Contains("-autoplay-resume")) yield return ResumeRun();
@@ -125,7 +127,9 @@ namespace Fantasia.Core
             else if (args.Contains("-autoplay-full")) yield return FullRun(resume: false);
             else if (args.Contains("-autoplay-dicevideo")) yield return DiceVideoRun();
             else if (args.Contains("-autoplay-battlevideo")) yield return BattleVideoRun();
+            else if (args.Contains("-autoplay-motions")) yield return MotionShotsRun();
             else if (args.Contains("-autoplay-soundvideo")) yield return SoundVideoRun();
+            else if (args.Contains("-autoplay-musicloop")) yield return MusicLoopRun();
             else yield return Play();
 
             if (perf != null) Note("성능 요약:\n" + perf.Finish());
@@ -725,7 +729,7 @@ namespace Fantasia.Core
 
             for (int turn = 1; turn <= 20 && !EncounterPanel.IsOpen; turn++)
             {
-                yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 10f, "이동 대기");
+                yield return WaitFor(() => (board.DevIsIdle && !BoardTopBar.DevTurnDropVisible) || EncounterPanel.IsOpen, 10f, "이동 대기");
                 if (EncounterPanel.IsOpen) break;
                 board.DevRoll();
                 yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
@@ -1382,6 +1386,17 @@ namespace Fantasia.Core
             Qa(ItemAcquiredToast.DevLast != null && ItemAcquiredToast.DevLast.Contains("50"), $"0으로 돌아간 뒤 50 알림 다시 (실제 {ItemAcquiredToast.DevLast})");
             s.BloodTrail = 0; board.DevRefreshTopBar();
 
+            // 11/11 UI 순서 규칙 1: 알림 두 개를 연달아 띄워도 둘 다 차례로 보임 (덮어쓰기 없음)
+            yield return WaitFor(() => ItemAcquiredToast.DevShowing == null && ItemAcquiredToast.DevQueued == 0, 15f, "앞 알림 끝");
+            ItemAcquiredToast.Show("QA 알림 첫째");
+            ItemAcquiredToast.Show("QA 알림 둘째");
+            yield return WaitFor(() => ItemAcquiredToast.DevShowing == "QA 알림 첫째", 3f, "첫째 알림");
+            Qa(ItemAcquiredToast.DevShowing == "QA 알림 첫째" && ItemAcquiredToast.DevQueued == 1, $"알림 줄: 첫째 먼저 (보임 {ItemAcquiredToast.DevShowing} · 대기 {ItemAcquiredToast.DevQueued})");
+            yield return Shot("qa_toast_queue_1");
+            yield return WaitFor(() => ItemAcquiredToast.DevShowing == "QA 알림 둘째", 4f, "둘째 알림");
+            Qa(ItemAcquiredToast.DevShowing == "QA 알림 둘째", $"알림 줄: 둘째가 이어서 (보임 {ItemAcquiredToast.DevShowing})");
+            yield return Shot("qa_toast_queue_2");
+
             // 2026-11-06 변경 확인: ① 집중을 여러 개 골라 쓰기 ② 한 명이 퇴각에 성공하면 파티 전원 퇴각
             board.DevArriveAt("O07");
             yield return WaitFor(() => EncounterPanel.IsOpen, 5f, "O07 조우 (집중·퇴각)");
@@ -1507,6 +1522,42 @@ namespace Fantasia.Core
             var called = SfxIds.All.Where(id => SfxPlayer.DevCalls.ContainsKey(id)).Select(id => $"{id} {SfxPlayer.DevCalls[id]}").ToArray();
             var missing = SfxIds.All.Where(id => !SfxPlayer.DevCalls.ContainsKey(id)).ToArray();
             return $"효과음: 불린 {called.Length}/{SfxIds.All.Length}종 · 실제 재생 {SfxPlayer.DevAudible}회 · 볼륨 {SfxPlayer.VolumeScale:0.00}\n  불림: {string.Join(", ", called)}\n  안 불림: {(missing.Length == 0 ? "없음" : string.Join(", ", missing))}";
+        }
+
+        // UI 전수 점검 보충 (-autoplay-uiextra): 다른 모드에서 안 찍히는 작은 UI — 획득 알림 · 칸 툴팁 · 랜드마크 정보 창
+        private IEnumerator UiExtraRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return SkipIntro();
+            var board = FindFirstObjectByType<BoardTestController>();
+            yield return WaitFor(() => board.DevIsIdle, 10f, "보드 대기");
+            yield return new WaitForSeconds(2f);
+
+            ItemAcquiredToast.Show("생명의 영약 획득", UITheme.Current != null ? UITheme.Current.CentIcon : null);
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("toast_item");
+            yield return new WaitForSeconds(3f);
+
+            board.enabled = false; // 마우스가 칸 위에 없으면 판이 매 프레임 툴팁을 숨김
+            TileTooltip.Show("<b>J06 · 골목</b>\n역병 쥐 ×2 · 연성 독거미(유체) ×1", new Vector2(Screen.width * 0.45f, Screen.height * 0.6f));
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("tile_tooltip");
+            TileTooltip.Hide();
+            board.enabled = true;
+
+            if (board.PlaceholderLandmarks.Length > 0)
+            {
+                LandmarkInfoPanel.Show(board.PlaceholderLandmarks[0]);
+                yield return new WaitForSeconds(0.4f);
+                yield return Shot("landmark_info");
+            }
+            Note("uiextra 끝");
         }
 
         // 판 떨어지는 연출 점검 (-autoplay-paneldrop): 보드 위에 우리 캔버스 설정(1280×720 기준)으로 승리·패배·턴 안내 판을 띄움.
@@ -1789,6 +1840,208 @@ namespace Fantasia.Core
             w.Write((short)(channels * 2)); w.Write((short)16);
             w.Write(Encoding.ASCII.GetBytes("data")); w.Write(bytes);
             foreach (float s in samples) w.Write((short)Mathf.RoundToInt(Mathf.Clamp(s, -1f, 1f) * 32767f));
+        }
+
+        // ── 음악 반복 이음새 (-autoplay-musicloop [-musicloop-id BGM_Menu], 2026-11-10) ──
+        // 곡을 처음부터 틀고 게임 시간으로 (곡 길이 + 3초) 소리를 뽑아, 반복 지점 앞뒤에 무음이 끼는지 잰다.
+        // <out>/musicloop_seam.wav = 반복 지점 앞뒤 4초씩 (귀로 들어 보기용).
+        private IEnumerator MusicLoopRun()
+        {
+            var args = Environment.GetCommandLineArgs();
+            int ai = Array.IndexOf(args, "-musicloop-id");
+            string id = ai >= 0 && ai + 1 < args.Length ? args[ai + 1] : MusicIds.Menu;
+            float loopSec = id == MusicIds.Battle ? 96f : id == MusicIds.BossAbel ? 102.858f : id == MusicIds.FieldLondon ? 112.941f : 90f;
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+
+            const int Fps = 50;
+            int channels = AudioSettings.speakerMode == AudioSpeakerMode.Mono ? 1 : 2;
+            int rate = AudioSettings.outputSampleRate;
+            var all = new System.Collections.Generic.List<float>((int)((loopSec + 4f) * rate * channels));
+            Time.captureFramerate = Fps;
+            AudioRenderer.Start();
+            MusicPlayer.Stop(0f);
+            yield return null;
+            int startIndex = -1; // 곡 소리가 처음 나는 지점
+            MusicPlayer.Play(id, 0f);
+            float until = Time.time + loopSec + 3f;
+            while (Time.time < until)
+            {
+                yield return new WaitForEndOfFrame();
+                int n = AudioRenderer.GetSampleCountForCaptureFrame();
+                var buf = new Unity.Collections.NativeArray<float>(n * channels, Unity.Collections.Allocator.Temp);
+                AudioRenderer.Render(buf);
+                all.AddRange(buf);
+                buf.Dispose();
+            }
+            AudioRenderer.Stop();
+            Time.captureFramerate = 0;
+
+            const float Silence = 0.001f;
+            int frames = all.Count / channels;
+            bool Quiet(int f) { for (int c = 0; c < channels; c++) if (Mathf.Abs(all[f * channels + c]) >= Silence) return false; return true; }
+            for (int f = 0; f < frames; f++) if (!Quiet(f)) { startIndex = f; break; }
+            if (startIndex < 0) { Note($"음악 반복: {id} 소리 없음 (실패)"); yield break; }
+            int seam = startIndex + Mathf.RoundToInt(loopSec * rate);
+            // 반복 지점 ±1초 안에서 가장 긴 무음
+            int longest = 0, run = 0, at = 0;
+            for (int f = Mathf.Max(startIndex, seam - rate); f < Mathf.Min(frames, seam + rate); f++)
+            {
+                if (Quiet(f)) { run++; if (run > longest) { longest = run; at = f; } }
+                else run = 0;
+            }
+            float ms = longest * 1000f / rate;
+            Note($"음악 반복: {id} 곡 시작 {startIndex / (float)rate:0.000}초 · 반복 지점 {seam / (float)rate:0.000}초 · 지점 ±1초 안 가장 긴 무음 {ms:0.0}ms (위치 {at / (float)rate:0.000}초) → {(ms < 5f ? "통과" : "실패")}");
+            var seg = all.Skip(Mathf.Max(0, seam - 4 * rate) * channels).Take(8 * rate * channels).ToList();
+            WriteWav(Path.Combine(_outDir, "musicloop_seam.wav"), seg, channels, rate);
+        }
+
+        // ── 모션 점검 촬영 (-autoplay-motions, 2026-11-11): 전투에서 행동마다 진행 중 화면을 여러 장 (디자인 모션 요청서 자료) ──
+        // 명탐정 공격 → 강화 스킬 / 역병 의사 회복 스킬 → 아이템 / 저격수 공격 → 방어 / 쓰러짐·부활 / 적 공격 1번.
+        // 끝: 기본은 퇴각, -motions-win 이면 적 HP를 1로 만들어 승리 순간.
+        private IEnumerator MotionShotsRun()
+        {
+            yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
+            yield return new WaitForSeconds(1f);
+            var menu = FindFirstObjectByType<MainMenuController>();
+            menu.DevOpenPartySelect();
+            yield return new WaitForSeconds(0.3f);
+            menu.OnDepart();
+            yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
+            yield return new WaitForSeconds(1f);
+            yield return SkipIntro();
+            var board = FindFirstObjectByType<BoardTestController>();
+            for (int turn = 0; turn < 20 && !EncounterPanel.IsOpen; turn++)
+            {
+                yield return WaitFor(() => (board.DevIsIdle && !BoardTopBar.DevTurnDropVisible) || EncounterPanel.IsOpen, 20f, "굴림 대기");
+                if (EncounterPanel.IsOpen) break;
+                board.DevRoll();
+                yield return WaitFor(() => board.DevAwaitingSelection || EncounterPanel.IsOpen, 5f, "칸 선택");
+                board.DevMoveTowardEncounter();
+                yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 15f, "이동");
+                if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance();
+            }
+            yield return new WaitForSeconds(0.4f);
+            EncounterPanel.DevChoose(1);
+            yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투");
+            var battle = FindFirstObjectByType<BattleController>();
+            yield return new WaitForSeconds(1.5f);
+
+            bool win = Environment.GetCommandLineArgs().Contains("-motions-win");
+            StartCoroutine(WatchFirstEnemyAttack(battle));
+            var done = new System.Collections.Generic.HashSet<string>();
+            for (int guard = 0; guard < 40 && !battle.DevFinished; guard++)
+            {
+                yield return WaitFor(() => battle.DevAwaitingPlayer || battle.DevFinished, 40f, "아군 차례");
+                if (battle.DevFinished) break;
+                yield return new WaitForSeconds(0.5f);
+                var actor = battle.DevCurrent;
+                var job = actor.Member.Job.Id;
+                var skills = actor.Member.Job.Skills ?? new Fantasia.Data.SkillDefinition[0];
+                var enemy = battle.DevEnemies.FirstOrDefault(e => e.InBattle);
+                string step = null;
+
+                if (job == Fantasia.Data.JobId.Detective && done.Add("atk_detective")) { step = "attack"; battle.DevAttack(0); yield return BurstOnStep(battle, actor, "m_attack_detective"); }
+                else if (job == Fantasia.Data.JobId.Sniper && done.Add("atk_sniper")) { step = "attack"; battle.DevAttack(0); yield return BurstOnStep(battle, actor, "m_attack_sniper"); }
+                else if (job == Fantasia.Data.JobId.PlagueDoctor && done.Add("heal")
+                         && skills.FirstOrDefault(s => s.Effect == Fantasia.Data.SkillEffect.Heal) is { } heal)
+                {
+                    step = "heal";
+                    actor.TakeDamage(20); // 회복할 거리를 만듦
+                    yield return Shot("m_heal_before");
+                    battle.DevUseSkill(heal, actor, 0);
+                    yield return BurstTimed("m_heal", 0.8f, 1.6f, 2.4f);
+                }
+                else if (job == Fantasia.Data.JobId.Detective && done.Add("buff")
+                         && skills.FirstOrDefault(s => s.Effect == Fantasia.Data.SkillEffect.ApplyStatus) is { } buff)
+                {
+                    step = "buff";
+                    var target = buff.Target == Fantasia.Data.SkillTarget.SingleEnemy || buff.Target == Fantasia.Data.SkillTarget.AllEnemies ? enemy : actor;
+                    Note($"강화 스킬 촬영: {buff.DisplayName} → {target?.DisplayName}");
+                    battle.DevUseSkill(buff, target, 0);
+                    yield return BurstTimed("m_buff", 0.8f, 1.6f, 2.4f);
+                }
+                else if (job == Fantasia.Data.JobId.PlagueDoctor && done.Add("item")
+                         && BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition).FirstOrDefault(d => d.Effect == Fantasia.Data.ConsumableEffect.RestoreHP) is { } potion)
+                {
+                    step = "item";
+                    actor.TakeDamage(20);
+                    Note($"아이템 촬영: {potion.DisplayName} → {actor.DisplayName}");
+                    battle.DevUseItem(potion, actor);
+                    yield return BurstTimed("m_item", 0.2f, 0.6f, 1.2f);
+                }
+                else if (job == Fantasia.Data.JobId.Sniper && done.Add("defend")) { step = "defend"; battle.DevDefend(); yield return BurstTimed("m_defend", 0.1f, 0.5f); }
+                else if (done.Add("revive"))
+                {
+                    step = "revive";
+                    var victim = battle.DevAllies.FirstOrDefault(a => a.InBattle && a != actor);
+                    battle.DevKnockDownAlly(victim);
+                    yield return new WaitForSeconds(2.3f);
+                    yield return Shot("m_revive_down");
+                    battle.DevRevive(victim);
+                    yield return BurstTimed("m_revive", 0.05f, 0.3f, 0.7f);
+                }
+                else if (!win)
+                {
+                    step = "retreat";
+                    battle.DevRetreat();
+                    yield return WaitFor(() => battle.DevAllies.Any(a => a.HasRetreated) || battle.DevAwaitingPlayer, 12f, "퇴각 판정");
+                    if (battle.DevAllies.Any(a => a.HasRetreated)) { yield return BurstTimed("m_retreat", 0.05f, 0.3f, 0.55f); break; }
+                    continue;
+                }
+                else
+                {
+                    step = "win";
+                    foreach (var e in battle.DevEnemies.Where(e => e.InBattle)) battle.DevSetEnemyHP1(e);
+                    bool last = battle.DevEnemies.Count(e => e.InBattle) == 1;
+                    battle.DevAttack(0);
+                    if (last)
+                    {
+                        yield return WaitFor(() => !battle.DevEnemies.Any(e => e.IsAlive), 10f, "마지막 적 처치");
+                        yield return BurstTimed("m_win", 0.3f, 1.0f, 1.7f);
+                        break;
+                    }
+                }
+                yield return new WaitForSeconds(0.6f);
+                // 쓸 수 없는 행동이었으면(비용·쿨다운) 기본 공격으로 넘김
+                if (battle.DevAwaitingPlayer && battle.DevCurrent == actor) { Note($"  {step} 못 씀 → 기본 공격"); battle.DevAttack(0); }
+            }
+            Note("모션 점검 촬영 끝");
+        }
+
+        // 반 걸음이 시작되는 순간(모델이 움직이기 시작)부터 0.05·0.3·0.55초에 찍음 — 굴림 창 길이와 상관없이 공격 동작에 맞춤
+        private IEnumerator BurstOnStep(BattleController battle, BattleUnit unit, string name)
+        {
+            var model = battle.DevModelOf(unit);
+            if (model == null) yield break;
+            var home = model.transform.position;
+            yield return WaitFor(() => (model.transform.position - home).sqrMagnitude > 0.0025f, 8f, "공격 시작");
+            yield return BurstTimed(name, 0.05f, 0.3f, 0.55f);
+        }
+
+        private IEnumerator BurstTimed(string name, params float[] times)
+        {
+            float t0 = Time.time;
+            for (int i = 0; i < times.Length; i++)
+            {
+                while (Time.time - t0 < times[i]) yield return null;
+                yield return Shot($"{name}_{i + 1}");
+            }
+        }
+
+        private IEnumerator WatchFirstEnemyAttack(BattleController battle)
+        {
+            var models = battle.DevEnemies.Select(e => battle.DevModelOf(e)).Where(m => m != null).ToList();
+            var homes = models.Select(m => m.transform.position).ToList();
+            for (float t = 0f; t < 120f && !battle.DevFinished; t += Time.deltaTime)
+            {
+                for (int i = 0; i < models.Count; i++)
+                    if (models[i] != null && (models[i].transform.position - homes[i]).sqrMagnitude > 0.0025f)
+                    {
+                        yield return BurstTimed("m_enemy_attack", 0.05f, 0.3f, 0.55f);
+                        yield break;
+                    }
+                yield return null;
+            }
         }
 
         // ── 전투 움직임 영상 (-autoplay-battlevideo, 2026-11-07): 새 게임 → 가까운 적 칸 → 전투 20초 녹화 ──

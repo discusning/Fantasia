@@ -50,9 +50,11 @@ namespace Fantasia.UI
             UGUIKit.ConfigureScaler(canvasGO.AddComponent<CanvasScaler>());
             _canvasRect = (RectTransform)canvasGO.transform;
 
-            var fill = UGUIKit.CreateThemedPanel(canvasGO.transform, "Box", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Color(0.72f, 0.6f, 0.38f), new Color(0.08f, 0.07f, 0.09f, 0.95f), 1.5f, UITheme.Current.PanelFrame);
+            // 11/11 UI 점검: 큰 창 틀은 작은 상자엔 장식이 너무 무거움 → 받은 얇은 사각 판(버튼 그림)을 어둡게 깔아 씀
+            var fill = UGUIKit.CreateThemedPanel(canvasGO.transform, "TipBox", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                new Color(0.72f, 0.6f, 0.38f), new Color(0.08f, 0.07f, 0.09f, 0.95f), 1.5f);
             _box = (RectTransform)fill.parent;
+            UGUIKit.ApplyThinPlate(fill);
             _box.pivot = new Vector2(0f, 1f);
             foreach (var g in _box.GetComponentsInChildren<Graphic>()) g.raycastTarget = false;
             _text = UGUIKit.CreateText(fill, "Text", Vector2.zero, Vector2.one, "", 13, TextAnchor.MiddleLeft);

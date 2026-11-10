@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 모션 요청서</title>
+<style>
+@page{size:A4;margin:11mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.8px;line-height:1.6;color:#222;background:#fff;margin:0}
+.head{background:#2f2420;color:#fff;padding:14px 18px;border-top:4px solid #b8925a}
+.head .t{font-size:24px;font-weight:bold}.head .s{color:#d8c7a8;font-size:12px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 8px;color:#6b1e1e}
+h3{font-size:14px;margin:14px 0 4px}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+img{width:100%;border:1px solid #999;display:block}
+figure{margin:6px 0 10px}figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.p1{color:#b42318;font-weight:bold}.p2{color:#b5651d;font-weight:bold}.p3{color:#777;font-weight:bold}.ok{color:#14803a;font-weight:bold}
+.box{border-left:5px solid #b8925a;background:#f7f1ea;padding:9px 12px;margin:10px 0}
+.small{font-size:11.5px;color:#555}
+.cols{display:grid;grid-template-columns:repeat(7,1fr);font-size:10.5px;color:#555;text-align:center;margin-top:2px}
+code{font-family:Consolas,monospace;background:#f3f3f3;padding:0 3px;font-size:11.5px}
+.brk{page-break-before:always}
+</style></head><body>
+<div class="head"><div class="s">FANTASIA / LONDON ACT 1 · 2026.11.11 · 개발 → 3D 디자인 (신지성)</div>
+<div class="t">모션 요청서 — 없는 동작 · 어색한 동작</div>
+<div class="s">사진은 모두 실제 게임(빌드)과 Unity에서 받은 모델을 찍은 것</div></div>
+
+<p>전투를 실제로 돌리면서 행동마다 화면을 찍었습니다. 받은 모델 9개의 동작도 한 장씩 찍어 비교했습니다.<br>
+그 결과 <b>동작이 아예 없는 순간 9곳</b>과 <b>있지만 어색한 동작 4가지</b>를 찾았습니다. 어려운 말은 빼고 썼습니다. "짐작"이라고 쓴 곳은 개발의 추측입니다.</p>
+
+<h2>1. 한눈에 보기</h2>
+<table>
+<tr><th style="width:6%">번호</th><th style="width:22%">무엇</th><th style="width:22%">누구</th><th style="width:11%">순위</th><th>한 줄 설명</th></tr>
+<tr><td colspan="5" style="background:#faf6f2"><b>있는데 어색한 동작</b></td></tr>
+<tr><td>W1</td><td>무기 4개</td><td>명탐정·역병 의사·저격수·아벨</td><td class="p1">1순위</td><td>모두 맨손. 공격이 손짓처럼 보임</td></tr>
+<tr><td>W2</td><td>공격 동작 다시</td><td>명탐정·저격수·아벨</td><td class="p2">2순위</td><td>손을 살짝 내미는 정도. 아벨은 팔을 옆으로 쭉 폄</td></tr>
+<tr><td>W3</td><td>공격 동작 키우기</td><td>독거미·사냥개</td><td class="p3">3순위</td><td>움직임이 작아 공격했는지 알기 어려움</td></tr>
+<tr><td>W4</td><td>낫 휘두르기</td><td>그림자 사신</td><td class="p3">3순위</td><td>공격할 때 낫이 몸 뒤로 끌려감</td></tr>
+<tr><td colspan="5" style="background:#faf6f2"><b>동작이 아예 없는 순간</b></td></tr>
+<tr><td>N1</td><td>회복</td><td>역병 의사</td><td class="p1">1순위</td><td>기획 결정(11/10). 이미 요청함</td></tr>
+<tr><td>N2</td><td>부활해서 일어서기</td><td>아군 3명</td><td class="p1">1순위</td><td>누운 자세에서 한순간에 선 자세로 바뀜</td></tr>
+<tr><td>N3</td><td>강화 스킬 쓰기</td><td>아군 3명</td><td class="p2">2순위</td><td>약점 간파·장막 걷기·영점 조정 — 서 있기만 함</td></tr>
+<tr><td>N4</td><td>아이템 쓰기</td><td>아군 3명</td><td class="p2">2순위</td><td>물약·붕대·화염병 — 서 있기만 함</td></tr>
+<tr><td>N5</td><td>방어</td><td>아군 3명</td><td class="p2">2순위</td><td>막는 자세 없음, 글자만</td></tr>
+<tr><td>N6</td><td>보스 예고·금지된 봉합</td><td>아벨 모로</td><td class="p3">3순위</td><td>예고·자가 회복 때 서 있기만 함</td></tr>
+<tr><td>N7</td><td>피하기</td><td>아군 3명</td><td class="p3">3순위</td><td>회피해도 동작 없이 글자만</td></tr>
+<tr><td>N8</td><td>승리</td><td>아군 3명</td><td class="p3">3순위</td><td>마지막 적을 쓰러뜨려도 그냥 서 있음</td></tr>
+<tr><td>N9</td><td>걷기</td><td>아군 3명 (보드 말)</td><td class="p3">1막 뒤</td><td>보드에서 선 채로 미끄러져 이동. 1막은 이대로 (기획 결정 3-2 A)</td></tr>
+</table>
+<div class="box"><b>중요 — 아군 3명은 동작 1개를 같이 쓸 수 있습니다.</b><br>
+아군 3명·아벨·사신·역병 쥐·가고일은 모두 <b>사람형(Humanoid) 뼈대</b>로 들어와 있습니다. Unity는 사람형 동작 하나를 여러 인물에 그대로 씌울 수 있습니다.
+그래서 N2~N5·N7·N8은 <b>동작마다 1개씩만</b> 만들면 3명 모두에 씁니다 (예: 부활 1개 → 명탐정·역병 의사·저격수 모두).</div>
+<p class="small">순위는 개발 추천입니다. 새 모델·동작 마감은 11/12이고, 그 뒤에 오는 것은 1막 뒤에 넣습니다. 1순위부터 부탁드립니다.</p>
+
+<h2 class="brk">2. 있는데 어색한 동작</h2>
+
+<h3>W1. 무기가 없음 <span class="p1">— 1순위</span></h3>
+<div class="two">
+<figure><img src="img/w_det_attack.jpg"><figcaption>명탐정 공격 순간 (게임). 손에 단검이 없음. 적은 약 4m 앞</figcaption></figure>
+<figure><img src="img/w_sniper_attack.jpg"><figcaption>저격수 공격 순간 (게임). 권총이 없어 쏘는 모습으로 안 보임</figcaption></figure>
+</div>
+<p>받은 모델 파일을 열어 보니 인물마다 <b>몸 한 덩어리(메시 1개)</b>로만 되어 있고 무기 부품이 없습니다 (파일 안 이름: <code>Meshy_AI_…</code>). 기획서의 무기는 아래와 같습니다.</p>
+<table>
+<tr><th style="width:20%">인물</th><th style="width:22%">무기</th><th style="width:24%">파일 이름</th><th>크기·모양</th></tr>
+<tr><td>명탐정</td><td>접이식 단검</td><td><code>Prop_Weapon_Dagger</code></td><td>길이 약 0.3m. 1774년 런던 느낌의 짧은 칼</td></tr>
+<tr><td>역병 의사</td><td>검역소 지팡이</td><td><code>Prop_Weapon_Staff</code></td><td>길이 약 1.4m. 끝에 장식이 있는 의사 지팡이</td></tr>
+<tr><td>저격수</td><td>부싯돌 권총</td><td><code>Prop_Weapon_Pistol</code></td><td>길이 약 0.4m. 긴 총신의 옛날 권총</td></tr>
+<tr><td>아벨 모로 (보스)</td><td>메스</td><td><code>Prop_Weapon_Scalpel</code></td><td>실제보다 크게 약 0.4m (멀리서 보이게, 짐작)</td></tr>
+</table>
+<ul style="margin:4px 0">
+<li><b>따로 된 파일</b>로 주세요. 개발이 사신 낫처럼 오른손 뼈에 붙입니다 (모델을 다시 만들 필요 없음).</li>
+<li>기준점(0,0,0)은 <b>손잡이 쥐는 자리</b>. 칼끝·총구가 +Z 쪽.</li>
+<li>무게: 삼각형 3,000개 이하 · 텍스처 512.</li>
+</ul>
+
+<h3>W2. 공격 동작이 약함 — 명탐정 · 저격수 · 아벨 <span class="p2">— 2순위</span></h3>
+<p class="small">아래 줄 사진은 받은 동작을 시간대별로 찍은 것. 칸 순서는 모두 같음:</p>
+<div class="cols"><span>기본 자세</span><span>대기</span><span>공격 0.15초</span><span>0.3초</span><span>0.45초</span><span>0.6초</span><span>0.8초</span></div>
+<figure><img src="img/s_Detective.png"><figcaption>명탐정 — 0.45~0.6초에 손을 가볍게 앞으로 내미는 정도. 찌르는 느낌이 없음</figcaption></figure>
+<figure><img src="img/s_Sniper.png"><figcaption>저격수 — 가슴 앞에서 작게 손짓. 팔을 뻗어 쏘는 자세가 아님</figcaption></figure>
+<figure><img src="img/s_AbelMoreau.png"><figcaption>아벨 모로 — 0.3초에 왼팔을 옆으로 쭉 폄 (기본 T자 자세처럼 보임) → 오른쪽으로 휘두름. 메스 없이 팔만 지나감</figcaption></figure>
+<table>
+<tr><th style="width:18%">인물</th><th>바라는 공격</th></tr>
+<tr><td>명탐정</td><td>단검으로 앞을 빠르게 찌르기 (한 발 내딛는 느낌)</td></tr>
+<tr><td>저격수</td><td>권총을 든 팔을 앞으로 쭉 뻗고 쏘기 → 반동으로 팔이 살짝 튐</td></tr>
+<tr><td>아벨 모로</td><td>메스로 크게 사선 베기 (보스답게 크게)</td></tr>
+</table>
+<p class="small">공통: 길이 약 1초 · 제자리 · <b>0.35초쯤 무기가 가장 앞</b> (게임이 이때 맞음 처리) · 이름 <code>Model_이름@Attack</code>로 교체. 역병 의사 공격(두 팔 들기)은 마법 느낌이라 그대로 둬도 됩니다.</p>
+
+<h3>W3. 공격 동작이 작음 — 독거미 · 사냥개 <span class="p3">— 3순위</span></h3>
+<figure><img src="img/s_SpiderLarva.png"><figcaption>연성 독거미 — 0.45초에 머리를 조금 숙이는 정도</figcaption></figure>
+<figure><img src="img/s_ShadowHound.png"><figcaption>그림자 사냥개 — 머리만 살짝 움직임. 달려들어 무는 느낌이 없음</figcaption></figure>
+<p class="small">바라는 것: 거미는 앞다리를 들었다 내려찍기, 사냥개는 앞으로 덤벼 물기. 제자리·약 1초·0.35초에 가장 앞.</p>
+<div class="two">
+<figure><img src="img/w_enemy_attack.jpg"><figcaption>참고: 역병 쥐 공격 (게임). 쥐 동작은 괜찮음. 거리가 먼 것은 개발 쪽 일 (4번)</figcaption></figure>
+<figure><img src="img/s_PlagueRat.png"><figcaption>역병 쥐 동작 — 할퀴기가 보임 (괜찮음)</figcaption></figure>
+</div>
+
+<h3>W4. 사신 낫이 몸 뒤로 끌림 <span class="p3">— 3순위</span></h3>
+<div class="two">
+<figure><img src="img/w_reaper_battle.png"><figcaption>전투 속 사신. 낫은 개발이 코드로 붙임</figcaption></figure>
+<figure><img src="img/s_ShadowReaper.png"><figcaption>공격 순서대로. 휘두를 때 낫이 몸 뒤쪽으로 감</figcaption></figure>
+</div>
+<p>받은 공격 동작은 낫 없이 만든 것이라, 손 위치와 낫이 안 맞습니다. 아래 중 골라 주세요 (11/10 디자인 작업 요청서에서 물었고 아직 답 없음).</p>
+<table>
+<tr><th style="width:12%">안</th><th style="width:12%">누가</th><th>내용</th><th style="width:16%">1막 안에</th></tr>
+<tr><td><b>가 (추천)</b></td><td>개발</td><td>Unity에서 낫 쥐는 위치·각도만 조정. 3D 일 없음. 완벽하진 않음</td><td class="ok">가능</td></tr>
+<tr><td>나</td><td>3D</td><td>낫을 두 손으로 쥐고 크게 휘두르는 사신 전용 공격 새로 만들기 (<code>Model_ShadowReaper@Attack.fbx</code> 교체). 약 1초, 0.3~0.4초쯤 낫이 앞을 지나가게</td><td class="p3">어려움 (짐작) → 1막 뒤</td></tr>
+</table>
+<p class="small">낫 크기는 디자인 답(11/10)대로 개발이 Unity에서 조절함 (지금 2.2m). 3D가 할 일 아님.</p>
+
+<h2 class="brk">3. 동작이 아예 없는 순간</h2>
+<p class="small">모두 실제 전투에서 행동을 누른 직후 찍은 화면입니다. 빨간 네모 = 행동한 인물.</p>
+
+<h3>N1. 회복 (역병 의사) <span class="p1">— 1순위 · 기획 결정</span></h3>
+<div class="two">
+<figure><img src="img/n_heal_0.jpg"><figcaption>회복 스킬 쓰기 전</figcaption></figure>
+<figure><img src="img/n_heal.jpg"><figcaption>응급 봉합 중 — 서 있기만 함</figcaption></figure>
+</div>
+<p class="small">기획 결정(11/10 "회복 B"): 회복 스킬 전용 동작을 디자인에 요청. 받을 때까지는 동작 없음 — 공격 동작을 쓰면 아군을 때리는 것처럼 보여서 뺐습니다.</p>
+<table>
+<tr><th style="width:20%">쓰는 곳</th><td>역병 의사 스킬 2개 — <b>응급 봉합</b>(HP 회복) · <b>역병 정화</b>(나쁜 상태 지우기)</td></tr>
+<tr><th>모양</th><td>제자리에서 아군 쪽으로 약·붕대를 내밀거나 뿌리는 느낌. 때리는 모양만 아니면 됨 (세부는 디자인 판단)</td></tr>
+<tr><th>길이</th><td>1~1.5초 · 반복 없음. 시작·끝은 대기 자세와 이어지게</td></tr>
+<tr><th>제자리</th><td>몸이 앞으로 나가지 않게 (In Place). 앞으로 반 걸음은 게임이 따로 움직임</td></tr>
+<tr><th>뼈대</th><td>지금 게임의 <code>Model_PlagueDoctor.fbx</code>와 같은 사람형 뼈대</td></tr>
+<tr><th>파일 이름</th><td><code>Model_PlagueDoctor@Heal.fbx</code> (동작만 있어도 됨)</td></tr>
+<tr><th>마감</th><td><b>11/12</b>. 오면 개발이 11/14에 연결·확인. 못 오면 1막 뒤로</td></tr>
+</table>
+
+<h3>N2. 부활해서 일어서기 (아군 3명) <span class="p1">— 1순위</span></h3>
+<div class="two">
+<figure><img src="img/n_revive_0.jpg"><figcaption>쓰러진 역병 의사 (받은 쓰러짐 동작의 끝 자세)</figcaption></figure>
+<figure><img src="img/n_revive_1.jpg"><figcaption>부활을 누르고 0.05초 뒤 — 이미 서 있음. 중간 과정이 없음</figcaption></figure>
+</div>
+<table>
+<tr><th style="width:20%">파일 이름</th><td><code>Model_Detective@Revive</code> 1개 (3명이 같이 씀 — 1번 상자 참고)</td></tr>
+<tr><th>시작 자세</th><td><b>받은 쓰러짐(Death) 동작의 마지막 자세</b>와 같게 (등을 대고 누움, 팔 벌림). 다르면 시작할 때 몸이 튐</td></tr>
+<tr><th>끝 자세</th><td>대기(Idle) 자세</td></tr>
+<tr><th>길이</th><td>1~1.5초 · 제자리 · 반복 없음</td></tr>
+<tr><th>느낌</th><td>한 손을 짚고 비틀거리며 일어남 (짐작 — 디자인 판단)</td></tr>
+</table>
+
+<h3>N3. 강화 스킬 쓰기 (아군 3명) <span class="p2">— 2순위</span></h3>
+<div class="two">
+<figure><img src="img/n_buff.jpg"><figcaption>명탐정 약점 간파 — 서 있기만 함</figcaption></figure>
+<div><p>쓰는 곳: 명탐정 <b>약점 간파·장막 걷기</b>, 저격수 <b>영점 조정</b> (적을 약하게 하거나 자기를 강하게 하는 스킬).</p>
+<p><code>Model_Detective@Skill</code> 1개 · 약 1초 · 손을 들어 집중하거나 가리키는 느낌. 3명 같이 씀.</p></div>
+</div>
+
+<h3>N4. 아이템 쓰기 (아군 3명) <span class="p2">— 2순위</span></h3>
+<div class="two">
+<figure><img src="img/n_item.jpg"><figcaption>역병 의사 압박 붕대 — 서 있기만 함, 글자만 뜸</figcaption></figure>
+<div><p>쓰는 곳: 물약·붕대·해독제(자기·동료), 화염병(적 전체).</p>
+<p><code>Model_Detective@Item</code> 1개 · 약 0.8초 · 허리에서 병을 꺼내 마시거나 건네는 느낌. 3명 같이 씀.<br>
+<span class="small">화염병 던지기는 따로 만들면 좋지만 3순위 (없으면 위 동작으로 씀).</span></p></div>
+</div>
+
+<h3>N5. 방어 (아군 3명) <span class="p2">— 2순위</span></h3>
+<div class="two">
+<figure><img src="img/n_defend.jpg"><figcaption>저격수 방어 — "방어 +8" 글자만, 자세 없음</figcaption></figure>
+<div><p>방어는 다음 자기 차례까지 이어집니다.</p>
+<p><code>Model_Detective@Defend</code> 1개 · 약 0.5초 · 팔을 들어 몸을 가리는 자세. 끝 자세로 잠깐 멈췄다가 대기로 돌아와도 됨. 3명 같이 씀.</p></div>
+</div>
+
+<h3>N6. 보스 예고 · 금지된 봉합 (아벨 모로) <span class="p3">— 3순위</span></h3>
+<div class="two">
+<figure><img src="img/n_boss_telegraph.jpg"><figcaption>"예고! 금지된 봉합" — 아벨이 서 있기만 함</figcaption></figure>
+<div><p><code>Model_AbelMoreau@Announce</code> · 약 1초 · 메스를 들어 보이며 위협.<br>
+<code>Model_AbelMoreau@SelfHeal</code> · 약 1.5초 · 자기 상처를 꿰매는 동작 (HP 60 회복).</p></div>
+</div>
+
+<h3>N7. 피하기 · N8. 승리 (아군 3명) <span class="p3">— 3순위</span></h3>
+<div class="two">
+<figure><img src="img/n_win.jpg"><figcaption>마지막 적 처치 직후 — 그대로 서 있다가 결과 창이 뜸</figcaption></figure>
+<div><p><b>N7</b> <code>Model_Detective@Dodge</code> · 약 0.5초 · 옆으로 몸을 비킴. 지금은 "MISS"·"회피!" 글자만 뜸 (사진 없음 — 회피는 확률이라 찍지 못함).</p>
+<p><b>N8</b> <code>Model_Detective@Victory</code> · 1~2초 · 무기를 거두거나 숨을 고르는 짧은 동작. 끝에서 멈춤.</p></div>
+</div>
+
+<h3>N9. 걷기 (아군 3명 · 보드 말) <span class="p3">— 1막 뒤</span></h3>
+<div class="two">
+<figure><img src="img/n_board_walk.jpg"><figcaption>보드: 파티장 모델을 0.8배로 줄여 말로 씀. 칸을 옮길 때 선 채로 미끄러짐</figcaption></figure>
+<div><p>기획 결정 3-2 A: <b>1막은 걷기 없이 선 자세로 이동</b>. 그래서 1막 마감에는 필요 없습니다.</p>
+<p>1막 뒤 요청: <code>Model_Detective@Walk</code> 1개 · 약 1초 반복 · 제자리 걸음 (In Place). 3명 같이 씀. 사신 말(그림자 사신)도 쓰면 좋음 (짐작).</p></div>
+</div>
+
+<h2 class="brk">4. 3D 일이 아닌 것 (참고)</h2>
+<table>
+<tr><th style="width:22%">내용</th><th>처리</th></tr>
+<tr><td>퇴각 · 탈출권</td><td class="ok">개발 처리함 (11/11) — 순간 사라지던 것을 "돌아서서 뒤로 물러난 뒤 사라짐"으로 바꿈 (아래 사진)</td></tr>
+<tr><td>멀리서 맞음</td><td>적과 약 4m 떨어져 서 있고, 공격 때 반 걸음(0.6m)만 나감. 서는 간격·나가는 거리는 개발이 조정할 일</td></tr>
+<tr><td>총알·불꽃·베임 효과</td><td>효과(이펙트)는 1막 뒤 목록</td></tr>
+<tr><td>보드 위 걷기</td><td>1막은 선 채로 이동 (기획 결정 3-2 A). 걷기 동작은 1막 뒤 3D 요청 → N9</td></tr>
+</table>
+<div class="three">
+<figure><img src="img/d_retreat_1.jpg"><figcaption>퇴각 0.05초 — 돌기 시작</figcaption></figure>
+<figure><img src="img/d_retreat_2.jpg"><figcaption>0.3초 — 돌아서 물러남</figcaption></figure>
+<figure><img src="img/d_retreat_3.jpg"><figcaption>0.55초 — 뒤로 빠짐 → 사라짐</figcaption></figure>
+</div>
+
+<h2>5. 만들 때 지킬 것</h2>
+<table>
+<tr><th style="width:22%">파일</th><td>동작마다 FBX 1개: <code>Model_이름@동작.fbx</code> (예: <code>Model_Detective@Revive.fbx</code>). 무기는 <code>Prop_Weapon_이름.fbx</code> + 텍스처 PNG</td></tr>
+<tr><th>뼈대</th><td>지금 받은 모델과 같은 뼈대 그대로 (다시 리깅하지 않기). 같은 도구(Meshy)에서 동작만 붙여 내보내도 됨</td></tr>
+<tr><th>Blender로 내보낼 때</th><td>Apply Transform · Scale 1.0 · Forward −Z · Up Y. 단위가 섞이면 크기가 100배 차이 남 (낫이 2cm로 줄었던 원인). 원본 .blend도 같이</td></tr>
+<tr><th>무게 (무기)</th><td>삼각형 3,000개 이하 · 텍스처 512 (색·Normal)</td></tr>
+<tr><th>제자리</th><td>몸이 앞으로 걸어 나가지 않게 (In Place). 위치는 게임이 움직임</td></tr>
+<tr><th>이어짐</th><td>시작·끝은 대기 자세와 이어지게. 부활만 시작이 쓰러짐 끝 자세</td></tr>
+<tr><th>보내는 곳</th><td>원드라이브 <code>판타지아_팀원공유\3D\움직임\</code> → 개발이 넣고 화면을 찍어 다시 공유</td></tr>
+<tr><th>마감</th><td>11/12까지 오면 1막에 넣음. 그 뒤는 1막 뒤</td></tr>
+</table>
+
+<div class="box"><b>디자인에게 받아야 할 답</b>
+<ol style="margin:4px 0">
+<li>1순위(무기 4개 · 회복 · 부활) 중 11/12까지 되는 것.</li>
+<li>2·3순위는 1막 뒤로 미뤄도 되는지.</li>
+<li>W4 사신 낫: "가"(개발 조정)로 가도 괜찮은지.</li>
+<li>받은 모델·동작의 요금제 (무료·유료) — 크레딧용. 도구는 파일 이름으로 Meshy AI임을 확인함.</li>
+</ol></div>
+</body></html>

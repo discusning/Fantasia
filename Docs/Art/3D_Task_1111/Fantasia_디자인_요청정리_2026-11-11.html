@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 디자인 요청 정리</title>
+<style>
+@page{size:A4;margin:12mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:13px;line-height:1.65;color:#222;background:#fff;margin:0}
+.head{background:#2f2420;color:#fff;padding:14px 18px;border-top:4px solid #b8925a}
+.head .t{font-size:24px;font-weight:bold}.head .s{color:#d8c7a8;font-size:12px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 8px;color:#6b1e1e}
+h3{font-size:14px;margin:12px 0 4px}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:5px 8px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+img{width:100%;border:1px solid #999;display:block}
+figure{margin:6px 0 10px}figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.must{color:#b42318;font-weight:bold}.opt{color:#b5651d;font-weight:bold}.later{color:#777;font-weight:bold}.ok{color:#14803a;font-weight:bold}
+.box{border-left:5px solid #b8925a;background:#f7f1ea;padding:9px 12px;margin:10px 0}
+.small{font-size:11.5px;color:#555}
+.brk{page-break-before:always}
+</style></head><body>
+<div class="head"><div class="s">FANTASIA / LONDON ACT 1 · 2026.11.11 · 개발 → 디자인 (3D 신지성 · UI 담당)</div>
+<div class="t">디자인 요청 전체 정리 — 3D · UI</div>
+<div class="s">마감: 새 그림·모델 11/12 · 게임 완성 11/18</div></div>
+
+<p>디자인에 부탁할 일을 한 장에 모았습니다. 3D가 중심이고, UI는 별도 요청서를 가리킵니다. 어려운 말은 빼고 썼습니다. "짐작"이라고 쓴 곳은 개발의 추측입니다.</p>
+
+<h2>1. 한눈에 보기 — 디자인에 요청할 것 전부</h2>
+<p class="small">11/5 모델 요청서 · 11/6 움직임 요청서 · 11/10 디자인 작업 요청서 · 11/10 UI 디자인 요청서를 다시 맞춰 보고, 아직 답이나 파일이 안 온 것을 모두 모았습니다.</p>
+<table>
+<tr><th style="width:6%">번호</th><th style="width:25%">일</th><th style="width:10%">담당</th><th style="width:13%">구분</th><th style="width:10%">언제까지</th><th>한 줄 설명</th></tr>
+<tr><td>A</td><td>역병 의사 회복 동작</td><td>3D</td><td class="must">꼭 (기획 결정)</td><td>11/12</td><td>회복 스킬을 쓸 때 지금은 가만히 서 있음. 회복 동작 1개 → <b>모션 요청서 N1</b></td></tr>
+<tr><td>B</td><td>만든 도구·요금제 알려 주기</td><td>3D</td><td class="must">꼭 (답)</td><td>11/14</td><td>도구는 파일 이름으로 <b>Meshy AI</b> 확인 (11/11). 남은 것은 무료·유료 요금제. <b>크레딧 출처 표시에 필요</b> — 11/6에 물었는데 답 없음</td></tr>
+<tr><td>C</td><td>사신 공격 모양</td><td>3D</td><td class="opt">답 필요</td><td>11/12</td><td>공격할 때 낫이 몸 뒤로 빠짐. 새 동작 / 개발 각도 조정 중 고르기. 개발 추천은 "개발 조정" → <b>모션 요청서 W4</b></td></tr>
+<tr><td>D</td><td>낮은 바위 1개</td><td>3D</td><td class="opt">답 필요 (선택)</td><td>11/12</td><td>판 앞줄 막힌 칸에 지금은 돌담을 씀. 괜찮으면 할 일 없음, 바위가 필요하면 1개 (3번)</td></tr>
+<tr><td>E</td><td>11/5에 부탁했지만 안 온 모델</td><td>3D</td><td class="opt">답 필요</td><td>11/12</td><td>거리 소품 4종 · 적 칸 깃발 · 전투 바닥 2종. 올지, 1막에서 뺄지만 알려 주기 (3번)</td></tr>
+<tr><td>F</td><td>Normal 텍스처 2개</td><td>3D</td><td class="opt">있으면</td><td>11/12</td><td>아벨 모로 · 연성 독거미(유체)만 굴곡(Normal) 텍스처가 없음. 없으면 그대로 씀</td></tr>
+<tr><td>G</td><td>전투 배경 같이 보기</td><td>3D</td><td class="opt">선택</td><td>11/15</td><td>개발이 받은 집·담·나무로 배경을 만듦. 11/15 검수 때 어색한 곳만 말해 주기 (2번)</td></tr>
+<tr><td>H</td><td>그림이 없는 UI 15개</td><td>UI</td><td class="must">U5 꼭 · 나머지 있으면</td><td>11/12</td><td>파티 카드·대화 창·안쪽 판 등. <b>U5 아벨 모로 3:4 초상은 필수</b>. 별도 "UI 디자인 요청서" (5번)</td></tr>
+<tr><td>J</td><td>없는 동작 · 어색한 동작</td><td>3D</td><td class="must">무기·부활 꼭</td><td>11/12</td><td>무기 4개 · 부활 일어서기 · 공격 보강 · 강화·아이템·방어 등. 별도 <b>"모션 요청서 (2026-11-11)"</b>에 사진과 같이 정리</td></tr>
+<tr><td>I</td><td>1막 뒤 목록</td><td>3D</td><td class="later">1막 뒤</td><td>11/18 뒤</td><td>남은 직업·적, 장소, 효과 등 (4번). 동작은 모션 요청서로 옮김</td></tr>
+</table>
+<p class="small">이미 받은 모델·동작은 모두 게임에 들어가 있습니다 (6번 목록). 11/12 이후 새 그림·모델은 1막에 못 넣습니다.</p>
+
+<h2>2. 지금 할 일 (1막, 11/18 전)</h2>
+<p><b>A. 역병 의사 회복 동작</b> — 자세한 내용은 <b>"모션 요청서 (2026-11-11)" N1</b>로 옮겼습니다.</p>
+<h3>G. 전투 배경 같이 보기 <span class="opt">— 선택</span></h3>
+<figure><img src="img/t1_battle_floor.jpg"><figcaption>지금 일반 전투: 빈 평면 바닥만 있음</figcaption></figure>
+<ul style="margin:4px 0">
+<li>기획 결정(11/10): 일반 전투는 런던 거리 느낌.</li>
+<li>개발이 <b>이미 받은 모델</b>(집·돌담·울타리·돌 아치·나무)을 바닥 뒤에 놓아 11/14에 만듦.</li>
+<li>3D가 새로 만들 것은 없음. 11/15 검수 때 크기·색이 어색한 곳만 말해 주면 됨.</li>
+<li>아벨 모로 전(보스)은 조명만 낮춤 — 개발이 함.</li>
+</ul>
+
+<h2 class="brk">3. 답이 필요한 것</h2>
+<p><b>C. 사신 공격 모양</b> — 사진·선택지는 <b>"모션 요청서" W4</b>로 옮겼습니다.</p>
+<h3>B. 만든 도구·요금제 <span class="must">— 꼭 답</span></h3>
+<p>메인 메뉴 아래 크레딧에 출처를 적습니다 (기획 회신 01). 받은 인물 모델은 파일 이름(<code>Meshy_AI_…</code>)으로 <b>Meshy AI</b>로 만든 것을 확인했습니다. 남은 것: <b>무료·유료 요금제</b>, 그리고 소품·건물도 Meshy인지. 무료 요금제는 출처 표시가 필요한 경우가 있어 꼭 확인이 필요합니다 (짐작). 11/6 움직임 요청서에서 물었는데 아직 답이 없습니다. 팀원 이름과 같이 <b>11/14</b>까지.</p>
+
+<h3>D. 낮은 바위 1개 <span class="opt">— 답 필요 (선택)</span></h3>
+<p>기획 결정 2A로 판 앞줄(카메라 쪽) 막힌 칸은 높은 집 대신 낮은 나무·바위를 놓습니다. 받은 모델에 바위가 없어 <b>돌담(Prop_StoneWall)</b>으로 대신했습니다. 지금으로 괜찮으면 할 일 없음. 바위가 필요하면: 높이 0.3~0.5m, 칸 지름 약 1.3m 안, 이름 <code>Prop_Rock_Low</code>.</p>
+
+<h3>E. 11/5에 부탁했지만 안 온 모델 <span class="opt">— 올지 뺄지 답</span></h3>
+<table>
+<tr><th style="width:30%">모델</th><th>쓰려던 곳</th><th style="width:28%">안 오면</th></tr>
+<tr><td>거리 소품 4종 — 등불 기둥 · 나무통 · 관 · 부서진 손수레 (<code>Prop_Lamp · Prop_Barrel · Prop_Coffin · Prop_Cart</code>)</td><td>판 빈 칸 가장자리 분위기, 전투 배경 장식</td><td>지금처럼 없이 감</td></tr>
+<tr><td>적 칸 깃발 (<code>Prop_EnemyBanner</code>)</td><td>일반 적 칸 10곳 위 교단 깃발</td><td>지금 칼 표시 칸 그대로</td></tr>
+<tr><td>전투 바닥 2종 (<code>Arena_LondonStreet · Arena_Morgue</code>)</td><td>일반 전투 · 아벨 모로 전 바닥</td><td>개발이 받은 집·담·나무로 꾸밈 (G) · 보스전은 조명만</td></tr>
+</table>
+<p class="small">셋 다 11/5 요청서의 C등급(여유 있을 때)이었습니다. 11/12까지 어렵다면 "1막에서 뺌"이라고만 답해 주세요.</p>
+
+<h3>F. Normal 텍스처 2개 <span class="opt">— 있으면</span></h3>
+<p>다른 인물은 색·금속·굴곡(Normal) 텍스처 3장이 왔는데, <b>아벨 모로</b>와 <b>연성 독거미(유체)</b>는 굴곡 텍스처가 없습니다. 있으면 <code>Model_AbelMoreau_Normal.png</code> · <code>Model_SpiderLarva_Normal.png</code>로 보내 주세요. 없으면 지금대로 씁니다.</p>
+
+<h2>4. 1막 뒤에 할 일 (11/18 뒤)</h2>
+<table>
+<tr><th style="width:26%">종류</th><th>할 일</th></tr>
+<tr><td>동작</td><td>모두 "모션 요청서"로 옮김 (걷기 N9 · 부활 N2 · 강화 스킬 N3 · 아이템 N4 · 사신 낫 W4 등)</td></tr>
+<tr><td>캐릭터</td><td>남은 직업 5개 (이단심문관·연금술사·지휘자·암살자·도박가) — 2차</td></tr>
+<tr><td>적</td><td>중·대형 적 7종 · 2막·3막 보스 — 2차</td></tr>
+<tr><td>장소</td><td>베르사유·로마 건물과 칸 · 템스 강 · 안개</td></tr>
+<tr><td>효과</td><td>맞음·크리티컬·빗나감 · 회복·정화·부활 · 상태 걸림(출혈·중독·혼란·속박) · 쓰러진 적 칸 흔적</td></tr>
+</table>
+<p class="small">순서는 1막 끝난 뒤 기획과 다시 정함.</p>
+
+<h2>5. UI 담당에게 — 별도 요청서 (H)</h2>
+<p>UI 그림은 <b>"UI 디자인 요청서 (2026-11-10)"</b> 한 장에 화면별 사진과 같이 모았습니다. 여기는 목록만 적습니다. 마감 11/12.</p>
+<table>
+<tr><th style="width:8%">번호</th><th style="width:34%">그림</th><th style="width:14%">구분</th><th>어디</th></tr>
+<tr><td>U5</td><td>아벨 모로 3:4 초상 (배경 투명)</td><td class="must">꼭</td><td>보스 대화 · 보스 등장. 제임스·점술마녀와 같은 모양</td></tr>
+<tr><td>U1</td><td>파티 카드 판</td><td class="opt">있으면</td><td>화면 아래 아군 3장</td></tr>
+<tr><td>U2</td><td>대화 창</td><td class="opt">있으면</td><td>인물 대화 아래 상자</td></tr>
+<tr><td>U3 · U4</td><td>안쪽 판 · 초상 틀 (공용)</td><td class="opt">있으면</td><td>창 안 목록·설명 칸, 얼굴 네모 칸</td></tr>
+<tr><td>U6 · U7</td><td>제목 띠·적 크기 표식 · 보스 등장 띠</td><td class="opt">있으면</td><td>전투 전 창 · 보스 등장</td></tr>
+<tr><td>U8 · U9 · U10</td><td>작은 상자 · 목록 한 줄 · 주사위 칸 표식</td><td class="opt">있으면</td><td>알림·칸 정보 · 상점 목록 · 굴림 결과</td></tr>
+<tr><td>U11 · U12 · U13</td><td>분수대·석상 그림 · 적 HP 카드 · 행동 아이콘</td><td class="opt">있으면</td><td>이벤트 창 · 전투 위 적 카드 · 전투 행동 버튼</td></tr>
+<tr><td>U14 · U15</td><td>메뉴 배경·로고 · 머리 탭</td><td class="opt">있으면 · 선택</td><td>메인 메뉴 · 창 위</td></tr>
+</table>
+<p class="small">개발 임시 처리(11/11): 칸 정보 상자·소지금 상자·점술마녀 띠는 받은 사각 버튼 판을 어둡게 깔아 씀. U3·U8이 오면 바꿈.</p>
+
+<h2 class="brk">6. 지금 게임에 들어간 3D (넘겨받는 자료)</h2>
+<figure><img src="img/t4_board.jpg"><figcaption>보드: 받은 집·나무·돌담·건물이 칸 위에 놓임. 파티 말과 사신 말은 캐릭터 모델을 작게 줄여 씀</figcaption></figure>
+<p>원본은 깃허브 저장소 <code>Assets/_Project/Art/Models/</code> 아래에 있습니다.</p>
+<table>
+<tr><th style="width:18%">종류</th><th>파일</th><th style="width:26%">상태</th></tr>
+<tr><td>아군 3명</td><td>Model_Detective(명탐정) · Model_PlagueDoctor(역병 의사) · Model_Sniper(저격수)</td><td class="ok">사용 중 · 대기·공격·맞음·쓰러짐 4동작</td></tr>
+<tr><td>적 6종</td><td>Model_PlagueRat · Model_SpiderLarva · Model_ShadowHound · Model_GargoyleLarva · Model_ShadowReaper · Model_AbelMoreau(보스)</td><td class="ok">사용 중 · 4동작씩</td></tr>
+<tr><td>건물</td><td>Prop_Hub_Greenwich(거점) · Prop_Boss_Morgue(폐검시소) · Prop_House_A · Prop_House_B</td><td class="ok">보드에 사용 중</td></tr>
+<tr><td>소품 (사용 중)</td><td>Prop_Trees_A · Prop_StoneWall · Prop_Treasure · Prop_Well · Prop_FortuneTent · Prop_Fountain · Prop_ExitGate · Prop_Scythe</td><td class="ok">보드·전투에 사용 중</td></tr>
+<tr><td>소품 (아직 안 씀)</td><td>Prop_House_C · Prop_Trees_B · Prop_Fence · Prop_StoneArch</td><td>전투 배경(G)에 쓸 예정</td></tr>
+<tr><td>칸·주사위</td><td>Tile_Road_A · Tile_Road_B · 주사위 1개</td><td class="ok">사용 중</td></tr>
+</table>
+
+<h2>7. 보낼 때 형식</h2>
+<table>
+<tr><th style="width:22%">파일</th><td>FBX + 텍스처 PNG(색·Normal) + 원본 .blend도 같이</td></tr>
+<tr><th>크기·방향</th><td>내보낼 때 Apply Transform, Scale 1.0. Forward −Z · Up Y. (단위가 섞이면 크기가 100배 차이 남 — 낫이 2cm로 줄었던 원인)</td></tr>
+<tr><th>뼈대</th><td>사람 모양 인물은 지금 모델과 같은 뼈대 (동작을 같이 씀)</td></tr>
+<tr><th>무게</th><td>소품 삼각형 8,000개 이하 · 텍스처 인물 2048 · 나머지 1024</td></tr>
+<tr><th>보내는 곳</th><td>팀장(최동환)에게 전달 → 개발이 게임에 넣고 화면을 찍어 다시 보여 줌</td></tr>
+</table>
+
+<div class="box"><b>디자인에게 받아야 할 답 (한 번에)</b>
+<ol style="margin:4px 0">
+<li>A·C·J 동작 — 답은 "모션 요청서" 끝 상자에 모음.</li>
+<li>B 만든 도구·요금제 — 크레딧용 (<b>11/14</b>).</li>
+
+<li>D 낮은 바위 — 돌담으로 괜찮은지.</li>
+<li>E 안 온 모델 7개 — 올지, 1막에서 뺄지.</li>
+<li>H UI — U5 아벨 초상이 11/12까지 오는지.</li>
+<li>작업 방식 — Unity를 직접 열어 작업할지, Blender 파일만 보낼지.</li>
+</ol></div>
+</body></html>

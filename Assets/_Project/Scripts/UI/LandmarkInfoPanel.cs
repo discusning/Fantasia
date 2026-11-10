@@ -70,7 +70,7 @@ namespace Fantasia.UI
         {
             if (landmark == null) return;
 
-            _accentBorder.color = landmark.AccentColor;
+            if (_accentBorder != null) _accentBorder.color = landmark.AccentColor;
             _badgeText.text = landmark.Badge;
             _nameText.text = landmark.LandmarkName;
             _nameText.color = landmark.AccentColor;
@@ -99,9 +99,14 @@ namespace Fantasia.UI
             var backdrop = UGUIKit.CreateImage(canvasGO.transform, "Root", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.35f));
             _root = backdrop.gameObject;
 
-            var inner = UGUIKit.CreateBorderedPanel(backdrop.transform, "Card", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                Color.white, new Color(0.08f, 0.08f, 0.1f, 0.96f), 2.5f);
-            _accentBorder = inner.transform.parent.GetComponent<Image>();
+            // 11/11 UI 점검: 남색 + 파란 테두리(옛 모양) → 받은 창 틀 ("Box" = UGUIKit 창 틀 대상). 틀이 없으면 예전처럼 장소 색 테두리.
+            bool framed = UITheme.Current != null && UITheme.Current.PanelFrame != null;
+            var inner = framed
+                ? UGUIKit.CreateThemedPanel(backdrop.transform, "Box", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                    new Color(0.72f, 0.6f, 0.38f), new Color(0.08f, 0.07f, 0.09f, 0.97f), 2f, UITheme.Current.PanelFrame)
+                : UGUIKit.CreateBorderedPanel(backdrop.transform, "Card", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                    Color.white, new Color(0.08f, 0.08f, 0.1f, 0.96f), 2.5f);
+            _accentBorder = framed ? null : inner.transform.parent.GetComponent<Image>();
             var outerRect = (RectTransform)inner.transform.parent;
             outerRect.sizeDelta = new Vector2(360f, 220f);
             outerRect.anchoredPosition = Vector2.zero;
@@ -110,6 +115,7 @@ namespace Fantasia.UI
             // accessible enough — see research doc) until real art exists.
             _badgeText = UGUIKit.CreateText(inner, "Badge", new Vector2(0.04f, 0.7f), new Vector2(0.22f, 0.94f), "", 26, TextAnchor.MiddleCenter);
             _badgeText.fontStyle = FontStyle.Bold;
+            _badgeText.color = new Color(0.98f, 0.86f, 0.55f); // 11/11: 갈색 창 틀 위에서 어두운 기본색이 안 보임
 
             _nameText = UGUIKit.CreateText(inner, "Name", new Vector2(0.24f, 0.78f), new Vector2(0.96f, 0.94f), "", 16, TextAnchor.MiddleLeft);
             _nameText.fontStyle = FontStyle.Bold;

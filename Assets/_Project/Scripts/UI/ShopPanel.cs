@@ -418,7 +418,7 @@ namespace Fantasia.UI
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.55f));
             _root = dim.gameObject;
-            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.12f, 0.24f), new Vector2(0.88f, 0.93f), Gold, Fill, 2f, UITheme.Current.PanelFrame);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.12f, 0.17f), new Vector2(0.88f, 0.84f), Gold, Fill, 2f, UITheme.Current.PanelFrame);
             win.parent.gameObject.AddComponent<Button>(); // 창 안 클릭이 뒤로 새지 않게
 
             _title = Label(win, "Title", new Vector2(0.02f, 0.935f), new Vector2(0.4f, 0.995f), 18, TextAnchor.MiddleLeft, Gold, true);

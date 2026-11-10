@@ -103,7 +103,7 @@ namespace Fantasia.UI
             canvasGO.transform.SetParent(transform, false);
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 15;
+            canvas.sortingOrder = 11; // 11/11: 상단 바(12) 아래 — 창 위 장식이 바 글자를 가리지 않게
             canvasGO.AddComponent<GraphicRaycaster>();
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -118,7 +118,7 @@ namespace Fantasia.UI
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.5f));
             _root = dim.gameObject;
-            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.2f, 0.15f), new Vector2(0.8f, 0.88f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.2f, 0.1f), new Vector2(0.8f, 0.83f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
             win.parent.gameObject.AddComponent<Button>(); // 창 안 클릭이 뒤로 새지 않게
             var title = UGUIKit.CreateText(win, "Title", new Vector2(0.03f, 0.9f), new Vector2(0.6f, 0.98f), "사건 기록", 18, TextAnchor.MiddleLeft);
             title.color = Gold;

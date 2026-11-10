@@ -85,7 +85,7 @@ namespace Fantasia.UI
 
         private RectTransform _canvasRect;
 
-        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public Text Speed; public Text Arrow; public Image Dashed; public GameObject Divider; public RectTransform Rect; }
+        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public Text Speed; public Text Arrow; public Image Dashed; public Image Team; public Image FrameArt; public GameObject Divider; public RectTransform Rect; }
         private IReadOnlyList<BattleQueue.Entry> _timelineEntries;
         private int _timelineRound, _timelineOffset;
         private Button _timelinePrev, _timelineNext;
@@ -197,6 +197,12 @@ namespace Fantasia.UI
                 var border = unit.IsAlly ? AllyBorder : EnemyBorder;
                 slot.Border.color = predicted ? new Color(border.r, border.g, border.b, 0.15f) : border;
                 slot.Dashed.enabled = predicted;
+                if (slot.FrameArt != null) // 11/10 그림 틀: 바깥 단색 테두리 대신 아래 색 줄, 다음 라운드 칸은 틀을 어둡게
+                {
+                    slot.Border.color = new Color(0f, 0f, 0f, 0f);
+                    slot.Team.color = predicted ? new Color(border.r, border.g, border.b, 0.45f) : border;
+                    slot.FrameArt.color = predicted ? new Color(0.55f, 0.55f, 0.55f, 1f) : Color.white;
+                }
                 slot.Dashed.color = border;
                 slot.Portrait.color = predicted ? new Color(0.6f, 0.6f, 0.6f, 1f) : Color.white;
                 // 다음 라운드가 시작되는 칸에 "전투 R3 예상" + 구분선 (속도 변화는 이 칸부터 반영된다).
@@ -539,7 +545,10 @@ namespace Fantasia.UI
 
             Vector2 screen = cam.WorldToScreenPoint(worldPos);
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRect, screen, null, out var local);
-            rect.anchoredPosition = local + _canvasRect.rect.size * 0.5f;
+            var pos = local + _canvasRect.rect.size * 0.5f;
+            // 11/11 UI 점검: 키 큰 보스 머리 위 글자("저지!" 등)가 위쪽 순서 띠와 겹침 → 떠오른 끝(+50)까지 띠(화면 높이 0.915) 아래에 머물게
+            pos.y = Mathf.Min(pos.y, _canvasRect.rect.height * 0.9f - 22f - 50f);
+            rect.anchoredPosition = pos;
             StartCoroutine(FloatAndFade(label, rect));
         }
 
@@ -646,6 +655,11 @@ namespace Fantasia.UI
             _defeatDrop = PanelDropView.Create(_resultPanel.transform, PanelDropView.Defeat, 640f, 0f, 34, 15);
         }
 
+        // 11/11 UI 순서 규칙: 결과 판이 떠 있는 동안 알림은 기다림 (UIFlow)
+        private static BattleHud _active;
+        private void OnEnable() => _active = this;
+        public static bool ResultOpen => _active != null && _active._resultPanel != null && _active._resultPanel.activeInHierarchy;
+
         public bool DevResultDropPlaying => _shownDrop != null && _shownDrop.Root.activeSelf;
         public string DevResultSummary => _shownDrop != null ? _shownDrop.Summary.text : "";
         public bool DevResultButtonsVisible => _resultCard != null && _resultCard.gameObject.activeInHierarchy && _resultButtonRect.gameObject.activeSelf;
@@ -681,23 +695,43 @@ namespace Fantasia.UI
 
         private void BuildTimeline(Transform parent)
         {
-            var strip = UGUIKit.CreateThemedPanel(parent, "Timeline", new Vector2(0.27f, 0.915f), new Vector2(0.73f, 0.995f), Gold, PanelFill, 1.5f, UITheme.Current.TimelineFrame);
+            var strip = UGUIKit.CreateThemedPanel(parent, "Timeline", new Vector2(0.285f, 0.915f), new Vector2(0.715f, 0.995f), Gold, PanelFill, 1.5f, UITheme.Current.TimelineFrame);
+            if (UITheme.Current.TimelineFrame != null) // 11/10 받은 순서 띠 바탕: 단색 테두리 숨기고 그림 높이에 맞춰 양 끝 징 크기 유지
+            {
+                strip.parent.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+                var stripImage = strip.GetComponent<Image>();
+                ((RectTransform)strip).offsetMin = ((RectTransform)strip).offsetMax = Vector2.zero;
+                stripImage.pixelsPerUnitMultiplier = 3f;
+            }
             _roundText = Label(strip, "Round", new Vector2(0f, 0f), new Vector2(0.11f, 1f), 11, TextAnchor.MiddleCenter, TextDim, bold: true);
 
             // 첫 칸(지금 차례)은 크게, 나머지는 작게.
             float x = 0.12f;
             for (int i = 0; i < TimelineLength; i++)
             {
-                float w = i == 0 ? 0.105f : 0.078f;
+                // 11/11 팀장 요청: 칸 틀이 띠 위아래·옆 칸과 겹쳐 보여서 칸을 줄이고 간격을 넓힘 (틀 그림은 칸보다 10%씩 큼)
+                float w = i == 0 ? 0.08f : 0.065f;
                 var entry = new TimelineEntry();
-                var fill = UGUIKit.CreateThemedPanel(strip, $"Turn{i}", new Vector2(x, i == 0 ? 0.02f : 0.12f), new Vector2(x + w, i == 0 ? 0.98f : 0.88f),
+                var fill = UGUIKit.CreateThemedPanel(strip, $"Turn{i}", new Vector2(x, i == 0 ? 0.14f : 0.22f), new Vector2(x + w, i == 0 ? 0.86f : 0.78f),
                     AllyBorder, new Color(0.13f, 0.12f, 0.15f), i == 0 ? 3f : 2f, UITheme.Current.PortraitFrame);
                 entry.Rect = (RectTransform)fill.parent;
                 entry.Root = entry.Rect.gameObject;
                 entry.Border = entry.Root.GetComponent<Image>();
                 entry.Portrait = UGUIKit.CreateRect(fill, "Portrait", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
+                // 11/10 턴 순서 그림: 초상 위에 청동(첫 칸은 금) 틀을 덮고, 아군/적 색은 칸 아래 짧은 줄로 남김
+                var slotArt = i == 0 ? UITheme.Current.TimelineCurrent : UITheme.Current.TimelineSlot;
+                if (slotArt != null)
+                {
+                    float tail = i == 0 ? 0.345f : 0f; // 금 틀 아래 뾰족 부분 (118×158 중 34px)
+                    entry.FrameArt = UGUIKit.CreateImage(entry.Rect, "FrameArt", new Vector2(-0.1f, -0.1f - tail), new Vector2(1.1f, 1.1f), Color.white);
+                    entry.FrameArt.sprite = slotArt;
+                    entry.FrameArt.raycastTarget = false;
+                    entry.Team = UGUIKit.CreateImage(entry.Rect, "Team", new Vector2(0.15f, i == 0 ? -0.5f : -0.2f), new Vector2(0.85f, i == 0 ? -0.44f : -0.12f), AllyBorder);
+                    entry.Team.raycastTarget = false;
+                }
                 // 초상 아래: 이번 라운드 정렬에 쓴 속도 (다음 라운드 칸은 지금 속도 = 예상)
                 entry.Speed = Label(entry.Rect, "Speed", new Vector2(-0.2f, -0.42f), new Vector2(1.2f, 0f), 11, TextAnchor.MiddleCenter, new Color(0.9f, 0.87f, 0.8f), bold: true);
+                entry.Speed.gameObject.SetActive(false); // 11/10 팀장 요청: 순서 칸 아래 속도 글자 숨김 (속도는 로그·캐릭터 정보에 그대로)
                 // 다음 라운드 시작 때 순서가 앞당겨지면 ↑, 늦춰지면 ↓ (잠깐)
                 entry.Arrow = Label(entry.Rect, "Arrow", new Vector2(-0.2f, 0.5f), new Vector2(0.45f, 1.15f), 16, TextAnchor.MiddleCenter, SlotSuccess, bold: true);
                 entry.Arrow.gameObject.SetActive(false);
@@ -717,7 +751,7 @@ namespace Fantasia.UI
                 entry.Mark.gameObject.SetActive(false);
                 entry.Root.SetActive(false); // 행동 순서가 정해지기 전(전투 전 대화 등)에는 빈칸을 보이지 않음
                 _timeline.Add(entry);
-                x += w + 0.008f;
+                x += w + 0.02f;
             }
             // 10칸이 넘으면 좌우로 넘겨 보기 (Q6) — 넘치지 않으면 숨김
             _timelinePrev = UGUIKit.CreateThemedButton(strip, "TimelinePrev", new Vector2(-0.05f, 0.15f), new Vector2(-0.008f, 0.85f), "◀", PanelFill, 12);

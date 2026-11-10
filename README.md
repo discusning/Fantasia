@@ -71,6 +71,12 @@
 
 비어 있으면 단색 도형과 임시 인형으로 보인다.
 
+## 크레딧 (외부 출처)
+
+- 음악·효과음 22종: 팀 사운드 담당 직접 작곡·합성 (2026-11-07)
+- **Instrument sounds: GeneralUser GS by S. Christian Collins** — 악기 음색 (GeneralUser GS License v2.0). 받은 안내문 기준 표기 필수, CC0 아님. 라이선스 사본 `Docs/Audio/Sound_1107/GeneralUser_GS_LICENSE.txt`
+- 게임 안 크레딧 화면 위치·형식은 기획 확인 중 (`Docs/Planning/Request_1107` 1번)
+
 ## 협업 규칙
 
 - **문서는 누구나 이해할 수 있는 쉬운 말로 쓴다.** 어떤 기능인지 말로 헷갈리면 게임 스크린샷을 붙인다. 커밋 메시지·이슈·PR도 같다.

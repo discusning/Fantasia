@@ -47,7 +47,8 @@ namespace Fantasia.Editor
             ["Model_SpiderLarva"] = "Assets/_Project/Data/Enemies/Enemy_연성독거미유체.asset",
         };
 
-        // 보드 배치물: 역할 이름 → (원본 경로, Meshy처럼 누워 있으면 true, 맞출 크기 종류, 값 m)
+        // 보드 배치물: 역할 이름 → (원본 경로, Meshy 소품이면 true(전용 재질·가벼운 메시), 맞출 크기 종류, 값 m)
+        // 11/11: Meshy FBX는 Unity가 이미 Y-up으로 세워서 가져옴 → 예전 −90도 눕히기를 빼니 나무·우물 등이 바로 섬
         // fit: "w" = 가로·세로 중 큰 쪽을 값에 맞춤 (칸 안에 들어가게) / "h" = 높이를 값에 맞춤
         private static readonly (string role, string src, bool lying, string fit, float size)[] BoardProps =
         {
@@ -58,6 +59,9 @@ namespace Fantasia.Editor
             ("Block_A", Root + "/Buildings/Prop_House_A.prefab", false, "w", 1.45f),
             ("Block_B", Root + "/Buildings/Prop_House_B.prefab", false, "w", 1.45f),
             ("Block_Trees", Root + "/Props/Prop_Trees_A/Prop_Trees_A.fbx", true, "w", 1.55f),
+            // 11/10 기획 2A: 카메라 쪽 앞줄 막힌 칸은 높은 집 대신 낮은 나무·돌담 (뒤 칸·적 표시를 가리지 않게)
+            ("Block_LowTrees", Root + "/Props/Prop_Trees_A/Prop_Trees_A.fbx", true, "h", 0.75f),
+            ("Block_LowStone", Root + "/Props/Prop_StoneWall/Prop_StoneWall.fbx", true, "w", 1.3f),
             ("Treasure", Root + "/Props/Prop_Treasure/Prop_Treasure.fbx", true, "w", 0.8f),
             ("Recovery", Root + "/Props/Prop_Well/Prop_Well.fbx", true, "w", 1.35f),
             ("Event_FortuneTeller", Root + "/Props/Prop_FortuneTent/Prop_FortuneTent.fbx", true, "w", 1.45f),
@@ -247,10 +251,9 @@ namespace Fantasia.Editor
                 if (lying)
                 {
                     string propName = Path.GetFileNameWithoutExtension(srcPath);
-                    model.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f) * model.transform.localRotation;
                     ApplyPropMaterial(model, propName);
                     // Meshy 소품은 3만 면 → 보드에서는 멀리서 작게 보이므로 가벼운 메시로 (나무는 여러 칸에 반복돼 더 줄임)
-                    int budget = role == "Block_Trees" ? BoardRepeatedTris : BoardSingleTris;
+                    int budget = role == "Block_Trees" || role.StartsWith("Block_Low") ? BoardRepeatedTris : BoardSingleTris;
                     foreach (var mf in model.GetComponentsInChildren<MeshFilter>())
                         mf.sharedMesh = Lighter(mf.sharedMesh, budget, $"{Root}/Props/{propName}/{propName}_Board.asset");
                 }

@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 UI 그림 요청</title>
+<style>
+@page{size:A4;margin:11mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.8px;line-height:1.6;color:#222;background:#fff;margin:0}
+h1{font-size:23px;margin:0 0 4px}
+h2{font-size:17px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 9px;color:#6b1e1e}
+h3{font-size:15px;margin:0 0 6px}
+.sub{color:#666;margin-bottom:12px}
+.box{border:2px solid #6b1e1e;background:#fbf5f2;padding:10px 13px;margin:10px 0}
+img{width:100%;border:1px solid #999;display:block}
+figure{margin:6px 0 8px}
+figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+.brk{page-break-before:always}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;color:#fff;font-size:12px;font-weight:bold;margin-left:5px;vertical-align:middle}
+.must{background:#b01e1e}.rec{background:#c27a1e}.opt{background:#888}
+.item{border:1px solid #ccc;border-left:6px solid #6b1e1e;padding:9px 12px;margin:11px 0;page-break-inside:avoid}
+.scr{border:1px solid #ccc;padding:9px 12px;margin:11px 0;page-break-inside:avoid}
+.now{color:#b01e1e;font-weight:bold}
+.want{color:#1d6a2a;font-weight:bold}
+ul.chk{list-style:none;padding-left:4px;margin:4px 0}
+ul.chk li:before{content:"☐ ";font-size:14px}
+.small{font-size:11.5px;color:#555}
+.num{display:inline-block;background:#e33;color:#fff;font-weight:bold;border-radius:4px;padding:0 6px;margin-right:3px}
+.r{color:#d11;font-weight:bold}.g{color:#14a03c;font-weight:bold}.b{color:#1e6ee6;font-weight:bold}
+.legend span{display:inline-block;border:3px solid;padding:0 8px;margin-right:8px;font-weight:bold}
+</style></head><body>
+
+<h1>UI 그림 요청 — 게임 화면 전체 점검 결과</h1>
+<div class="sub">2026-11-10 · 개발 최동환 → 디자인 · <b>11/12(목)까지</b> 부탁드려요</div>
+
+<div class="box">
+<b>한 줄로:</b> 11/10에 보내 주신 창 틀·버튼·상단 바·순서 띠는 게임에 다 넣었어요. 잘 어울려요.<br>
+그런데 게임 화면을 <b>처음부터 끝까지 전부(사진 157장)</b> 다시 보니, <b>창 바깥 틀만 새 그림이고 안쪽과 화면 아래쪽은 예전 임시 모양</b>(검은 보라·남색 상자 + 노란 선)인 곳이 많았어요. 그 부분 그림을 부탁드려요.<br><br>
+<b>중요한 점:</b> 그림 종류는 많지 않아요. <b>“안쪽 판” 1장, “얼굴 액자” 1장</b>만 있어도 화면 대부분이 바뀌어요 (같은 그림을 여러 곳에 늘려 써요).<br>
+시간이 모자라면 <span class="tag must">꼭 필요</span> 5개만 해 주셔도 돼요. 나머지는 개발이 임시로 색만 맞춰 둘게요.
+</div>
+
+<div class="legend" style="margin:8px 0">사진 속 네모 색: <span style="border-color:#d11;color:#d11">빨강 = 예전 모양, 새 그림 필요</span><span style="border-color:#14a03c;color:#14a03c">초록 = 새 그림 들어감 (OK)</span><span style="border-color:#1e6ee6;color:#1e6ee6">파랑 = 개발이 고칠 것</span><br>
+빨간 네모 위 글자(U1, U3…)는 아래 <b>요청 번호</b>예요.</div>
+
+<h2>1. 요청 목록 한눈에</h2>
+<table>
+<tr><th style="width:6%">번호</th><th style="width:25%">그림</th><th style="width:12%">중요도</th><th>어디에 쓰나요</th></tr>
+<tr><td>U1</td><td>파티 카드 판 + 이름 줄</td><td><span class="tag must">꼭 필요</span></td><td>화면 아래 캐릭터 카드 3장 — <b>거의 모든 화면에 항상 보임</b></td></tr>
+<tr><td>U2</td><td>대화 창 판 + 인물 칸</td><td><span class="tag must">꼭 필요</span></td><td>모든 대화·내레이션</td></tr>
+<tr><td>U3</td><td><b>안쪽 판 (공용)</b></td><td><span class="tag must">꼭 필요</span></td><td>전투 전 창·행동 막대·소모품 목록·상점·인벤토리·점술 카드·기도 칸·파티 구성 카드 — <b>가장 많이 쓰임 (10곳 넘음)</b></td></tr>
+<tr><td>U4</td><td><b>얼굴 액자 (공용)</b></td><td><span class="tag must">꼭 필요</span></td><td>파티 카드·파티 구성·인벤토리·적 카드·전투 전 창의 얼굴 칸</td></tr>
+<tr><td>U5</td><td>아벨 모로 인물 그림 3:4</td><td><span class="tag must">꼭 필요</span></td><td>보스 대화</td></tr>
+<tr><td>U6</td><td>제목 띠 + 적 크기 표식</td><td><span class="tag rec">있으면 좋음</span></td><td>전투 전 창 (보라 마름모·보라 띠)</td></tr>
+<tr><td>U7</td><td>보스 등장 띠</td><td><span class="tag rec">있으면 좋음</span></td><td>보스 전투 시작</td></tr>
+<tr><td>U8</td><td>작은 상자 판</td><td><span class="tag rec">있으면 좋음</span></td><td>알림·마우스 설명·보스 예고·의뢰·도움말·소지금 칸·입력 칸·저장 실패·상태 표시 등</td></tr>
+<tr><td>U9</td><td>목록 한 줄 (보통 / 고른 것)</td><td><span class="tag rec">있으면 좋음</span></td><td>상점 물건 목록·인벤토리 장비 칸</td></tr>
+<tr><td>U10</td><td>주사위 칸 표식</td><td><span class="tag rec">있으면 좋음</span></td><td>전투 전 창 “?” 칸·굴림 결과(성공·실패)</td></tr>
+<tr><td>U11</td><td>분수대 · 석상 그림</td><td><span class="tag rec">있으면 좋음</span></td><td>이벤트 창 왼쪽 빈자리</td></tr>
+<tr><td>U12</td><td>적 HP 카드 판</td><td><span class="tag rec">있으면 좋음</span></td><td>전투 왼쪽 위 (없으면 U3+U4로 개발이 조립)</td></tr>
+<tr><td>U13</td><td>행동 아이콘 7개</td><td><span class="tag opt">시간 남으면</span></td><td>공격·스킬·소모품·방어·부활·퇴각·집중 버튼 (지금은 글자만)</td></tr>
+<tr><td>U14</td><td>첫 화면 배경 + 로고</td><td><span class="tag opt">시간 남으면</span></td><td>메인 메뉴·파티 구성 화면 (지금 검은 바탕)</td></tr>
+<tr><td>U15</td><td>창 이름 칸 (뾰족 장식 수정)</td><td><span class="tag opt">시간 남으면</span></td><td>창 제목</td></tr>
+</table>
+
+<h2>2. 그릴 때 지켜 주세요 (모든 그림 공통)</h2>
+<table>
+<tr><th style="width:4%">①</th><td><b>색은 11/10에 주신 창 틀·버튼과 같게</b> — 짙은 갈색 나무 + 구리색(청동) 테두리.</td></tr>
+<tr><th>②</th><td><b>글자·숫자·아이콘은 넣지 말아 주세요.</b> 빈 판만 주시면 개발이 위에 얹어요.</td></tr>
+<tr><th>③</th><td><b>배경 투명 PNG.</b></td></tr>
+<tr><th>④</th><td><b>장식은 네 모서리에만, 변 가운데는 무늬 없이.</b> (이유는 아래 그림)</td></tr>
+<tr><th>⑤</th><td>크기는 아래 적은 “화면 크기”의 <b>1~2배</b>. 딱 맞출 필요 없어요.</td></tr>
+</table>
+<p style="margin-top:8px"><b>④번 이유 — 그림 1장을 늘려서 여러 크기로 써요.</b> 주신 창 틀 그림 1장으로 아래 작은 창과 큰 창을 둘 다 만들었어요. 게임이 <b>모서리는 그대로, 변만 늘려요.</b> 변 가운데 장식은 늘어나며 찌그러져 보여요.</p>
+<div class="two">
+<figure><img src="img/k_small_window.jpg"><figcaption>작은 창</figcaption></figure>
+<figure><img src="img/k_big_window.jpg"><figcaption>큰 창 — 같은 그림, 모서리 장식 크기 그대로</figcaption></figure>
+</div>
+
+<h2 class="brk">3. 화면별 점검 결과 (게임 순서대로)</h2>
+
+<div class="scr"><h3>화면 1 · 첫 화면 (메인 메뉴)</h3>
+<div class="two"><figure><img src="img/s01_menu.jpg"></figure>
+<table><tr><th>부분</th><th>상태</th></tr>
+<tr><td>버튼 4개</td><td class="g">새 그림</td></tr>
+<tr><td>배경 (검은 바탕)</td><td class="r">U14</td></tr>
+<tr><td>제목 “판타지아” (글꼴 글자)</td><td class="r">U14 로고</td></tr></table></div></div>
+
+<div class="scr"><h3>화면 2 · 파티 구성</h3>
+<div class="two"><figure><img src="img/s02_party.jpg"></figure>
+<table><tr><th>부분</th><th>상태</th></tr>
+<tr><td>캐릭터 카드 3장 (남색 + 노란 선)</td><td class="r">U3</td></tr>
+<tr><td>캐릭터 얼굴 칸 (노란 선)</td><td class="r">U4</td></tr>
+<tr><td>◀ ▶ · 뒤로 · 출발 버튼</td><td class="g">새 그림</td></tr>
+<tr><td>배경 (검은 바탕)</td><td class="r">U14</td></tr></table></div></div>
+
+<div class="scr"><h3>화면 3 · 이름 입력</h3>
+<div class="two"><figure><img src="img/s03_name.jpg"></figure>
+<table><tr><th>부분</th><th>상태</th></tr>
+<tr><td>창 틀 · 버튼</td><td class="g">새 그림</td></tr>
+<tr><td>이름 입력 칸 (남색 상자)</td><td class="r">U8</td></tr></table></div></div>
+
+<div class="scr"><h3>화면 4 · 보드 (판 위 이동)</h3>
+<figure><img src="img/s04_board.jpg"></figure>
+<table><tr><th style="width:45%">부분</th><th style="width:30%">지금</th><th>상태</th></tr>
+<tr><td>상단 바 · 해/달 · 지역 이름 · 턴 안내판 · 사건 기록 버튼</td><td>11/10 새 그림</td><td class="g">OK</td></tr>
+<tr><td><b>파티 카드 3장</b></td><td>남색 판 + 보라 이름 줄</td><td class="r">U1 · U4</td></tr>
+<tr><td>왼쪽 도움말 상자 · 오른쪽 의뢰 상자</td><td>회색 반투명 상자</td><td class="r">U8</td></tr>
+<tr><td>대화 창 (아래 사진)</td><td>회색 상자</td><td class="r">U2</td></tr>
+<tr><td>아이템 얻음 알림 · 칸에 마우스 올리면 뜨는 설명</td><td>흰 상자 / 장식이 너무 무거움</td><td class="r">U8</td></tr>
+<tr><td>저장 실패 알림 띠</td><td>빨간 상자</td><td class="r">U8</td></tr>
+<tr><td>장소 정보 창 (Ctrl+우클릭)</td><td>남색 + 파란 테두리</td><td class="b">개발 (새 창 틀로)</td></tr>
+</table>
+<p><b>파티 카드 자세히</b> — 안에 든 작은 그림(막대·아이콘·칸)은 받은 그림이라 OK. <b>판·이름 줄·얼굴 칸만</b> 바꾸면 돼요.</p>
+<div class="two"><figure><img src="img/s05_card.jpg"><figcaption>빨강: 카드 판 · 이름 줄(U1) · 얼굴 칸(U4) / 초록: 받은 아이콘·막대</figcaption></figure>
+<figure><img src="img/s04_dialogue.jpg"><figcaption>대화 창 (U2)</figcaption></figure></div>
+<div class="two"><figure><img src="img/o8_toast.jpg"><figcaption>아이템 얻음 알림 (흰 상자)</figcaption></figure>
+<figure><img src="img/o8_tooltip.jpg"><figcaption>마우스 설명 (장식이 상자보다 무거움)</figcaption></figure></div>
+<div class="two"><figure><img src="img/s15_savefail.jpg"><figcaption>저장 실패 띠</figcaption></figure>
+<figure><img src="img/s04_landmark.jpg"><figcaption>장소 정보 창 (개발이 고침)</figcaption></figure></div>
+</div>
+
+<div class="scr brk"><h3>화면 5 · 전투 들어가기 전 (적을 만났을 때)</h3>
+<p><b>위쪽 상단 바만 새 그림이고, 나머지는 거의 다 예전 모양이에요.</b></p>
+<figure><img src="img/s05_encounter.jpg"></figure>
+<table><tr><th style="width:45%">부분</th><th style="width:30%">지금</th><th>상태</th></tr>
+<tr><td>상단 바</td><td>새 그림</td><td class="g">OK</td></tr>
+<tr><td>적 크기 표식 (“소형” 마름모) + 아래 숫자 칸</td><td>보라 마름모</td><td class="r">U6</td></tr>
+<tr><td>적 이름 띠 · “적 구성” 제목 띠 · “기습 확률” 제목 띠</td><td>검붉은 띠 + 노란 선</td><td class="r">U6</td></tr>
+<tr><td>왼쪽 큰 정보 판 · 오른쪽 판 2개</td><td>검은 판 + 노란 선</td><td class="r">U3</td></tr>
+<tr><td>적 작은 얼굴 칸</td><td>회색 선</td><td class="r">U4</td></tr>
+<tr><td>“?” 기습 칸 2개</td><td>보라 마름모</td><td class="r">U10</td></tr>
+<tr><td>싸우기 · 기습 · 몰래 지나가기 · 후퇴 버튼</td><td>새 버튼</td><td class="g">OK</td></tr>
+<tr><td><b>아래 파티 카드 3장</b></td><td>남색 판 + 보라 이름 줄</td><td class="r">U1 · U4</td></tr>
+<tr><td>오른쪽 의뢰 상자</td><td>회색 상자</td><td class="r">U8</td></tr>
+</table></div>
+
+<div class="scr brk"><h3>화면 6 · 전투</h3>
+<figure><img src="img/s06_battle.jpg"></figure>
+<table><tr><th style="width:45%">부분</th><th style="width:30%">지금</th><th>상태</th></tr>
+<tr><td>위쪽 순서 띠</td><td>11/10 새 그림</td><td class="g">OK</td></tr>
+<tr><td>적 HP 카드 (왼쪽 위)</td><td>검은 판 + 노란 선</td><td class="r">U12 (또는 U3+U4)</td></tr>
+<tr><td>보스 예고 상자 · 예고 띠</td><td>검붉은·검은 상자</td><td class="r">U8</td></tr>
+<tr><td>행동 막대 받침 (버튼 담는 판)</td><td>검은 판 + 노란 선</td><td class="r">U3</td></tr>
+<tr><td>행동 버튼 (공격·스킬…)</td><td>새 버튼, 아이콘 없이 글자만</td><td class="g">OK</td> </tr>
+<tr><td>행동 버튼 아이콘</td><td>없음 (게임에 자리는 있음)</td><td class="r">U13 (선택)</td></tr>
+<tr><td>소모품 목록 창</td><td>큰 빈 검은 상자</td><td class="r">U3</td></tr>
+<tr><td>굴림 결과 창의 성공·실패 표식</td><td>초록·빨강·회색 마름모</td><td class="r">U10</td></tr>
+<tr><td>상태 표시 (출혈 등 작은 칩)</td><td>보라 칩</td><td class="r">U8</td></tr>
+<tr><td>파티 카드 · 의뢰 상자</td><td>예전 모양</td><td class="r">U1 · U8</td></tr>
+</table>
+<div class="two"><figure><img src="img/s06_skill.jpg"><figcaption>스킬 고를 때 — 스킬 버튼은 OK, 아래 받침 판(U3)</figcaption></figure>
+<figure><img src="img/s06_item.jpg"><figcaption>소모품 고를 때 — 큰 검은 상자(U3)</figcaption></figure></div>
+<div class="two"><figure><img src="img/s06_roll.jpg"><figcaption>굴림 결과 — 창은 OK, 표식(U10)</figcaption></figure>
+<figure><img src="img/s07_bossbanner.jpg"><figcaption>보스 등장 띠 (U7)</figcaption></figure></div>
+</div>
+
+<div class="scr brk"><h3>화면 7 · 상점</h3>
+<figure><img src="img/s09_shop.jpg"></figure>
+<table><tr><th style="width:45%">부분</th><th style="width:30%">지금</th><th>상태</th></tr>
+<tr><td>창 틀 · 위쪽 탭 버튼 · 구입 버튼</td><td>새 그림</td><td class="g">OK</td></tr>
+<tr><td>물건 목록 줄 (보통 · 고른 줄)</td><td>회색 줄 / 노란 줄</td><td class="r">U9</td></tr>
+<tr><td>오른쪽 설명 판 · 동료 고르는 판</td><td>남색 판 + 노란 선</td><td class="r">U3</td></tr>
+<tr><td>창 위 장식이 상단 바를 덮음</td><td>위치 문제</td><td class="b">개발</td></tr>
+</table></div>
+
+<div class="scr"><h3>화면 8 · 인벤토리</h3>
+<figure><img src="img/s10_inv.jpg"></figure>
+<table><tr><th style="width:45%">부분</th><th style="width:30%">지금</th><th>상태</th></tr>
+<tr><td>창 틀 · 탭 · 버튼</td><td>새 그림</td><td class="g">OK</td></tr>
+<tr><td>안쪽 판 3개</td><td>남색 판 + 노란 선</td><td class="r">U3</td></tr>
+<tr><td>장비 칸 줄 · 아래 목록 줄</td><td>검은 줄 / 노란 줄</td><td class="r">U9</td></tr>
+<tr><td>캐릭터 그림 액자</td><td>노란 선</td><td class="r">U4</td></tr>
+</table></div>
+
+<div class="scr brk"><h3>화면 9 · 이벤트 (점술마녀 · 분수대 · 석상 · 우물)</h3>
+<div class="two"><figure><img src="img/s12_witch.jpg"><figcaption>점술마녀</figcaption></figure>
+<figure><img src="img/s12_statue.jpg"><figcaption>십자가 석상</figcaption></figure></div>
+<table><tr><th style="width:45%">부분</th><th style="width:30%">지금</th><th>상태</th></tr>
+<tr><td>창 틀 · 이름 칸 · 버튼 · 점술마녀 그림</td><td>새 그림</td><td class="g">OK</td></tr>
+<tr><td>점술 카드 3장 · 기도 칸 6개</td><td>남색 판 + 노란 선</td><td class="r">U3</td></tr>
+<tr><td>소지금 칸 · 결과 줄</td><td>남색 상자</td><td class="r">U8</td></tr>
+<tr><td>노란 안내 띠 (“참가비…”)</td><td>밝은 노랑이 튐</td><td class="b">개발 (색 맞춤)</td></tr>
+<tr><td>분수대 · 석상 이벤트 왼쪽</td><td>그림 없이 빈자리</td><td class="r">U11</td></tr>
+</table></div>
+
+<div class="scr"><h3>화면 10 · 전투 결과 · 게임 오버 · 1막 클리어</h3>
+<div class="two"><figure><img src="img/s08_result.jpg"><figcaption>전투 승리 — 표지판·아래 창 OK</figcaption></figure>
+<figure><img src="img/s14_act1.jpg"><figcaption>1막 클리어 — 아래 글이 판 없이 떠 있음 (개발)</figcaption></figure></div>
+<p>승리·패배·전멸·퇴각 표지판은 <span class="g">모두 OK</span>. 1막 클리어 아래 글은 개발이 받은 창 틀을 깔게요.</p></div>
+
+<div class="scr"><h3>화면 11 · 설정 · 일시정지 메뉴 · 사건 기록 <span class="g">— 모두 OK</span></h3>
+<figure style="width:75%"><img src="img/s11_ok.jpg"></figure></div>
+
+<h2 class="brk">4. 요청 자세히 — 꼭 필요 <span class="tag must">5개</span></h2>
+
+<div class="item"><h3><span class="num">U1</span>파티 카드 <span class="tag must">꼭 필요</span></h3>
+<b>어디:</b> 화면 아래 캐릭터 카드 3장. 보드·전투 전·전투·상점·이벤트 <b>거의 모든 화면에 항상</b> 보여요.<br>
+<span class="now">지금:</span> 남색 판 + 보라 이름 줄. <span class="want">원하는 것:</span> 새 창 틀과 같은 느낌의 카드 판.
+<figure><img src="img/s05_card.jpg"></figure>
+<ul class="chk">
+<li>카드 판 1장 — 가로로 긴 판 · 화면 크기 약 600×200 (얼굴 칸 자리는 U4 액자를 얹어요)</li>
+<li>이름 줄 1장 — 카드 위쪽 가로 줄 (지금 보라색 부분) · 약 320×38</li>
+<li>(있으면 좋음) “지금 이 캐릭터 차례” 밝은 테두리 1장</li>
+</ul></div>
+
+<div class="item"><h3><span class="num">U2</span>대화 창 <span class="tag must">꼭 필요</span></h3>
+<b>어디:</b> 화면 아래, 인물이 말할 때. <span class="now">지금:</span> 회색 상자.
+<figure><img src="img/s04_dialogue.jpg"></figure>
+<ul class="chk">
+<li>대사 창 판 1장 — 가로로 긴 판 · 약 1340×240</li>
+<li>인물 그림 칸 1장 — 세로 3:4 액자 · 약 190×240</li>
+<li>(있으면 좋음) 이름 자리 띠</li>
+</ul></div>
+
+<div class="item"><h3><span class="num">U3</span>안쪽 판 (공용) <span class="tag must">꼭 필요 · 가장 많이 쓰임</span></h3>
+<b>어디:</b> 창 <b>안</b>에 들어가는 판, 그리고 혼자 떠 있는 판. 지금 모두 검은·남색 판 + 노란 선이에요.<br>
+전투 전 창 판 3개 · 행동 막대 받침 · 소모품 목록 · 상점 설명 판 · 인벤토리 판 3개 · 점술 카드 · 기도 칸 · 파티 구성 카드.<br>
+<span class="want">원하는 것:</span> 아래 N10 예시처럼 <b>짙은 갈색 바탕 + 얇은 구리색 테두리</b>. 장식은 거의 없이 (큰 창 틀 안에 들어가도 무겁지 않게).
+<div class="two"><figure><img src="img/ref_N10.jpg"><figcaption>N10 예시 — 큰 틀 안의 안쪽 판</figcaption></figure>
+<figure><img src="img/s10_inv.jpg"><figcaption>지금 인벤토리 — 빨간 U3 자리</figcaption></figure></div>
+<ul class="chk"><li>안쪽 판 1장 — 가로·세로 어느 쪽으로 늘려도 되게 (모서리만 장식). 기준 크기 약 500×300</li>
+<li>(있으면 좋음) 고른 상태용 1장 — 테두리가 더 밝은 것 (점술 카드·기도 칸 고를 때)</li></ul></div>
+
+<div class="item"><h3><span class="num">U4</span>얼굴 액자 (공용) <span class="tag must">꼭 필요</span></h3>
+<b>어디:</b> 캐릭터·적 얼굴이 들어가는 네모 칸. 파티 카드 · 파티 구성 · 인벤토리 · 적 HP 카드 · 전투 전 창.<br>
+<span class="now">지금:</span> 노란·회색 얇은 선만. <span class="want">원하는 것:</span> 가운데가 <b>뚫린</b> 액자 (얼굴은 개발이 뒤에 깔아요). 받은 순서 띠 칸 틀과 비슷한 느낌이면 좋아요.
+<div class="two"><figure><img src="img/s02_party.jpg"><figcaption>파티 구성 — U4 자리</figcaption></figure>
+<figure><img src="img/a02_battle.jpg"><figcaption>참고: 받은 순서 띠 칸 틀 (위쪽)</figcaption></figure></div>
+<ul class="chk"><li>얼굴 액자 1장 — 정사각에 가까움, 가운데 투명 · 약 150×150</li></ul></div>
+
+<div class="item"><h3><span class="num">U5</span>아벨 모로 인물 그림 <span class="tag must">꼭 필요</span></h3>
+<span class="now">지금:</span> 예전 그림(어두운 배경, 비율 다름). <span class="want">원하는 것:</span> 제임스·점술마녀처럼 <b>상반신 · 세로 3:4 · 배경 투명</b>. 상처는 “상처 완화 대체본” 정도로.
+<div style="width:120px"><img src="img/n20_current.png"></div>
+파일 이름: <code>N20_대화인물_아벨모로_3x4.png</code></div>
+
+<h2 class="brk">5. 요청 자세히 — 있으면 좋음 <span class="tag rec">못 하면 개발이 색만 맞춤</span></h2>
+
+<div class="item"><h3><span class="num">U6</span>제목 띠 + 적 크기 표식</h3>
+<span class="now">지금:</span> 전투 전 창의 보라 마름모(“소형·중형·대형”) · 아래 숫자 칸 · 검붉은 제목 띠 3개.
+<figure><img src="img/b03_encounter.jpg"></figure>
+<ul class="chk"><li>적 크기 표식 판 1장 — 모양 자유 (마름모·방패 등) · 약 320×290</li>
+<li>작은 숫자 칸 1장 · 약 70×70</li>
+<li>제목 띠 1장 — 가로 띠 · 약 360×55 (받은 창 이름 칸과 비슷해도 OK)</li></ul></div>
+
+<div class="item"><h3><span class="num">U7</span>보스 등장 띠</h3>
+<span class="now">지금:</span> 화면을 가로지르는 검은 띠. <ul class="chk"><li>가로로 긴 띠 1장 — 양 끝 장식, 가운데 글자 자리 · 화면 가로 전체 × 약 170</li></ul>
+<p class="small">못 하시면 “아군 턴” 나무 안내판을 다시 써요.</p></div>
+
+<div class="item"><h3><span class="num">U8</span>작은 상자 판</h3>
+<b>어디:</b> 아이템 얻음 알림 · 마우스 설명 · 보스 예고 상자/띠 · 의뢰 상자 · 도움말 상자 · 소지금 칸 · 결과 줄 · 이름 입력 칸 · 저장 실패 띠 · 상태 칩(출혈 등). 지금 흰·회색·보라·빨강 제각각.
+<ul class="chk"><li><b>얇은 테두리 작은 판 1장</b> — 장식 거의 없이, U3보다 더 단순하게 · 약 300×60. 이 1장으로 위를 모두 바꿔요.</li></ul></div>
+
+<div class="item"><h3><span class="num">U9</span>목록 한 줄</h3>
+<b>어디:</b> 상점 물건 목록, 인벤토리 장비 칸·목록. <span class="now">지금:</span> 회색 줄 / 고른 줄은 노란 줄.
+<ul class="chk"><li>보통 줄 1장 · 고른 줄 1장 — 가로로 아주 긴 얇은 판 · 약 660×44</li></ul></div>
+
+<div class="item"><h3><span class="num">U10</span>주사위 칸 표식</h3>
+<b>어디:</b> 전투 전 창 “?” 칸, 굴림 결과의 성공·실패 칸. <span class="now">지금:</span> 보라·초록·빨강 마름모.
+<ul class="chk"><li>칸 모양 1장 (흰색이나 밝은 회색으로 — 개발이 성공=초록, 실패=빨강, 아직=회색으로 칠해요) · 약 90×90<br>
+<span class="small">또는 3장 따로 (아직·성공·실패)</span></li></ul></div>
+
+<div class="item"><h3><span class="num">U11</span>분수대 · 석상 그림</h3>
+점술마녀처럼 창 왼쪽에 서는 그림. <ul class="chk"><li>분수대 1장 · 십자가 석상 1장 — 세로 3:4, 배경 투명</li></ul>
+<div class="two"><figure><img src="img/s12_fountain.jpg"></figure><figure><img src="img/s12_statue.jpg"></figure></div></div>
+
+<div class="item"><h3><span class="num">U12</span>적 HP 카드 판</h3>
+전투 왼쪽 위. 없으면 개발이 U3 판 + U4 액자로 만들어요. <ul class="chk"><li>왼쪽 얼굴 칸이 붙은 가로 판 1장 · 약 550×110</li></ul>
+<figure style="width:60%"><img src="img/b04_enemy_bars.jpg"></figure></div>
+
+<h2>6. 요청 자세히 — 시간 남으면 <span class="tag opt">회색</span></h2>
+<div class="item"><h3><span class="num">U13</span>행동 아이콘 7개</h3>
+공격 · 스킬 · 소모품 · 방어 · 부활 · 퇴각 · 집중. 게임에 넣을 자리는 이미 있어요. 받은 Z 아이콘과 같은 모양·크기(정사각, 배경 투명).</div>
+<div class="item"><h3><span class="num">U14</span>첫 화면 배경 + 로고</h3>
+메인 메뉴·파티 구성 화면 뒤. 가로 16:9 배경 1장, (있으면) 제목 로고 PNG.</div>
+<div class="item"><h3><span class="num">U15</span>창 이름 칸</h3>
+받은 창 위 장식의 가운데 뾰족 끝이 이름 칸 안까지 내려와서 개발이 나무색으로 덮었어요. 뾰족 끝이 테두리에서 멈추는 판이면 바꿀게요. 지금 그대로도 괜찮아요.</div>
+
+<h2 class="brk">7. 보내 주실 파일 정리</h2>
+<table>
+<tr><th style="width:8%">번호</th><th>파일 이름 (예)</th><th style="width:14%">중요도</th></tr>
+<tr><td>U1</td><td>U1_파티카드_판.png · U1_파티카드_이름줄.png · (U1_파티카드_차례테두리.png)</td><td>꼭 필요</td></tr>
+<tr><td>U2</td><td>U2_대화창_판.png · U2_대화창_인물칸.png · (U2_대화창_이름.png)</td><td>꼭 필요</td></tr>
+<tr><td>U3</td><td>U3_안쪽판.png · (U3_안쪽판_고름.png)</td><td>꼭 필요</td></tr>
+<tr><td>U4</td><td>U4_얼굴액자.png</td><td>꼭 필요</td></tr>
+<tr><td>U5</td><td>N20_대화인물_아벨모로_3x4.png</td><td>꼭 필요</td></tr>
+<tr><td>U6</td><td>U6_적크기_표식.png · U6_숫자칸.png · U6_제목띠.png</td><td>있으면 좋음</td></tr>
+<tr><td>U7</td><td>U7_보스등장_띠.png</td><td>있으면 좋음</td></tr>
+<tr><td>U8</td><td>U8_작은상자.png</td><td>있으면 좋음</td></tr>
+<tr><td>U9</td><td>U9_목록줄.png · U9_목록줄_고름.png</td><td>있으면 좋음</td></tr>
+<tr><td>U10</td><td>U10_주사위칸.png</td><td>있으면 좋음</td></tr>
+<tr><td>U11</td><td>U11_분수대.png · U11_석상.png</td><td>있으면 좋음</td></tr>
+<tr><td>U12</td><td>U12_적카드_판.png</td><td>있으면 좋음</td></tr>
+<tr><td>U13</td><td>U13_공격.png · U13_스킬.png … (7개)</td><td>시간 남으면</td></tr>
+<tr><td>U14</td><td>U14_메뉴배경.png · (U14_로고.png)</td><td>시간 남으면</td></tr>
+<tr><td>U15</td><td>U15_창이름칸.png</td><td>시간 남으면</td></tr>
+</table>
+<p>보내는 곳: 공유 폴더 <code>판타지아_팀원공유</code> 또는 개발에게 바로. 궁금한 점은 언제든 물어봐 주세요.</p>
+
+<h2>8. 참고 — 개발이 고칠 것 (디자인은 안 해도 돼요)</h2>
+<table>
+<tr><th>무엇</th><th style="width:38%">어떻게</th></tr>
+<tr><td>큰 창(상점·인벤토리·석상 등) 위 장식이 상단 바 글자를 가림</td><td>창을 조금 아래로</td></tr>
+<tr><td>전투 순서 띠가 칸보다 길어 오른쪽이 빔 · 전투 시작 전엔 빈 띠만 보임</td><td>길이 맞춤 · 시작 전엔 숨김</td></tr>
+<tr><td>주사위가 “아군 턴” 안내판 위로 굴러감 · “저지!” 글자가 순서 띠와 겹침</td><td>위치·순서 조정</td></tr>
+<tr><td>점술 창 밝은 노란 안내 띠</td><td>색 맞춤</td></tr>
+<tr><td>장소 정보 창 · 1막 클리어 아래 글</td><td>받은 창 틀로 바꿈</td></tr>
+<tr><td>아이템 얻음 알림이 상단 바 뒤에 가려 안 보였음</td><td><b>고침 (11/10)</b></td></tr>
+</table>
+<div class="two">
+<figure><img src="img/d_header_over_topbar.jpg"><figcaption>창 위 장식이 상단 바 글자를 가림</figcaption></figure>
+<figure><img src="img/d_timeline_empty_right.jpg"><figcaption>순서 띠 오른쪽 빈 공간</figcaption></figure>
+</div>
+<p class="small">점검 방법: 게임을 자동으로 돌려 메뉴·보드·전투 전·전투·보스·상점·인벤토리·이벤트·사건 기록·결과 화면 157장을 찍고, 화면마다 모든 부분을 하나씩 확인함.</p>
+</body></html>

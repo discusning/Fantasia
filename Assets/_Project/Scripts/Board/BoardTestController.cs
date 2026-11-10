@@ -270,11 +270,12 @@ namespace Fantasia.Board
             _token.position = TokenSurfacePosition(_currentCoord);
         }
 
-        private const float LeaderFigureScale = 0.6f; // 사신 말(RefreshReaperFigures)과 같은 크기
+        private const float LeaderFigureScale = 0.8f; // 11/10 기획 3-1 B: 파티장 말 0.8배 (사신 말은 0.6배 그대로)
         private const float TurnSeconds = 0.12f;      // 이동 방향으로 몸 돌리는 시간
         private GameObject _tokenFigure;
         private JobDefinition _tokenFigureJob;
         private bool _tokenIsSphere;
+        private float _tokenFigureHeight;
 
         // 파티장이 바뀌면(쓰러짐·영구 사망 → 다음 순번 승계) 말 모델도 바꾼다.
         private void RefreshLeaderFigure()
@@ -295,7 +296,7 @@ namespace Fantasia.Board
             }
             else
             {
-                _tokenFigure = Fantasia.UI.CharacterModels.Create(job, out _); // 받은 모델이 있으면 그것, 없으면 임시 인형
+                _tokenFigure = Fantasia.UI.CharacterModels.Create(job, out _tokenFigureHeight); // 받은 모델이 있으면 그것, 없으면 임시 인형
                 _tokenFigure.transform.SetParent(_token, false);
                 _tokenFigure.transform.localPosition = Vector3.zero;
                 _tokenFigure.transform.localRotation = Quaternion.identity;
@@ -304,6 +305,7 @@ namespace Fantasia.Board
             _tokenFigure.name = "LeaderFigure";
             // 칸 클릭(레이캐스트)을 말이 가로막지 않게 충돌체 제거
             foreach (var col in _tokenFigure.GetComponentsInChildren<Collider>(true)) DestroySafe(col);
+            if (!_tokenIsSphere) Fantasia.UI.BlobShadow.Attach(_tokenFigure, _tokenFigureHeight); // 발밑 흐린 그림자 (11/10 기획 1A)
         }
 
         private static void DestroySafe(Object o)
@@ -1065,7 +1067,8 @@ namespace Fantasia.Board
             if (!Hunt.Active || ReaperEnemy == null) return;
             foreach (var coord in Hunt.Reapers)
             {
-                var fig = Fantasia.UI.CharacterModels.Create(ReaperEnemy, out _); // 받은 모델이 있으면 그것, 없으면 임시 인형
+                var fig = Fantasia.UI.CharacterModels.Create(ReaperEnemy, out float reaperHeight); // 받은 모델이 있으면 그것, 없으면 임시 인형
+                Fantasia.UI.BlobShadow.Attach(fig, reaperHeight); // 발밑 흐린 그림자 (11/10 기획 1A)
                 fig.transform.position = _board.CoordToWorld(coord) + Vector3.up * _board.TileHeight;
                 fig.transform.localScale = Vector3.one * 0.6f;
                 fig.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
@@ -1205,6 +1208,11 @@ namespace Fantasia.Board
                 _awaitingSelection ? "밝은 칸 클릭: 이동" : _isMoving ? "이동 중..." : null,
                 _lastEventBonus >= 0 ? $"이벤트 칸 추가 이동 +{_lastEventBonus}칸 (이번 턴 1회)" : null,
                 "<color=#A39C92>주황 적 · 자주 보스 · 파랑 거점 · 보라 이벤트 · 초록 회복 · 노랑 보물</color>",
+                // 11/10 기획 회신 07: 첫 플레이 안내 문구 (기획 문구 그대로)
+                "<color=#D9B26A>판정 칸</color> 기본 공격은 판정 칸이 모두 성공하면 치명타가 됩니다.",
+                "<color=#D9B26A>피의 흔적</color> 100이 되면 피의 사냥이 시작됩니다.",
+                "      3월드 라운드 안에 사신 3마리를 모두 쓰러뜨리세요.",
+                "<color=#D9B26A>집중력</color> 집중력 1을 사용하면 판정 칸 1개를 확정 성공시킬 수 있습니다.",
                 "<color=#A39C92>I·초상 클릭: 인벤토리 · Q: 사건 기록 · Esc: 메뉴" + (OnHubTile ? " · B: 상점" : "") + (_hasSave && DevLoadAllowed ? " · F9: 불러오기(개발)" : "") + "</color>",
                 _board != null && _board.UsesWorldMap ? "<color=#A39C92>카메라: WASD·방향키, 휠 줌, F 파티로</color>" : null,
                 SaveGame.LastError != null ? "<color=#E0675A>저장 실패</color>" : null,

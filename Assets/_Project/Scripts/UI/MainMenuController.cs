@@ -26,6 +26,11 @@ namespace Fantasia.UI
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
         private static readonly Color TextDim = new Color(0.55f, 0.53f, 0.5f);
 
+        // 11/10 기획 회신 01 (A 조정): 메인 메뉴 아래 크레딧 글. 별도 크레딧 창은 1막 이후.
+        // 팀원 이름·역할, ZEN SERIF 출처 문구는 기획이 확인 후 전달 → 받으면 아래 배열에 한 줄씩 추가.
+        private static readonly string[] TeamCredits = { };
+        private static readonly string[] SourceCredits = { "Instrument sounds: GeneralUser GS by S. Christian Collins" };
+
         private GameObject _menu, _partySelect, _confirm, _namePanel;
         private InputField _nameInput;
         private Button _continueButton;
@@ -37,6 +42,9 @@ namespace Fantasia.UI
         private void Start()
         {
             BoardSession.EnsureExists();
+            // 메인 메뉴 장면 카메라에 소리 받는 장치(AudioListener)가 없어 메뉴 음악·클릭 소리가 안 났음 (11/10 발견) → 없으면 붙임
+            if (FindFirstObjectByType<AudioListener>() == null)
+                (Camera.main != null ? Camera.main.gameObject : gameObject).AddComponent<AudioListener>();
             MusicPlayer.Play(MusicIds.Menu); // 메인 메뉴 음악 (곡 파일 오면 재생)
             if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
                 new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
@@ -188,6 +196,8 @@ namespace Fantasia.UI
             _continueInfo = Label(_menu.transform, "ContinueInfo", new Vector2(0.2f, 0.285f), new Vector2(0.8f, 0.36f), 11, TextAnchor.MiddleCenter, TextDim, false);
             UGUIKit.CreateThemedButton(_menu.transform, "Settings", new Vector2(0.4f, 0.2f), new Vector2(0.6f, 0.27f), "설정", ButtonFill, 16).onClick.AddListener(() => SettingsPanel.Open());
             UGUIKit.CreateThemedButton(_menu.transform, "Quit", new Vector2(0.4f, 0.11f), new Vector2(0.6f, 0.18f), "종료", ButtonFill, 16).onClick.AddListener(Application.Quit);
+            var credits = Label(_menu.transform, "Credits", new Vector2(0.1f, 0.01f), new Vector2(0.9f, 0.095f), 11, TextAnchor.LowerCenter, TextDim, false);
+            credits.text = string.Join("\n", System.Linq.Enumerable.Concat(TeamCredits, SourceCredits));
 
             // 새 게임 덮어쓰기 확인
             var dim = UGUIKit.CreateImage(bg.transform, "Confirm", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.6f));

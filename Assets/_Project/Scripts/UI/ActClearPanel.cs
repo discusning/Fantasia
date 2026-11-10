@@ -100,6 +100,13 @@ namespace Fantasia.UI
             title.fontStyle = FontStyle.Bold;
             var sub = UGUIKit.CreateText(dim.transform, "Sub", new Vector2(0.2f, 0.74f), new Vector2(0.8f, 0.8f), "런던 — 검시소의 장부", 16, TextAnchor.MiddleCenter);
             sub.color = TextLight;
+            // 11/11 UI 점검: 표지판 아래 글이 판 없이 떠 있었음 → 받은 창 틀을 글 뒤에 깔음 (표지판이 있을 때만)
+            Transform bodyBox = null;
+            if (UITheme.Current != null && UITheme.Current.PanelFrame != null)
+            {
+                bodyBox = UGUIKit.CreateThemedPanel(dim.transform, "Box", new Vector2(0.25f, 0.16f), new Vector2(0.75f, 0.6f), Gold, new Color(0.08f, 0.07f, 0.09f, 0.97f), 2f, UITheme.Current.PanelFrame).parent;
+                bodyBox.gameObject.SetActive(false);
+            }
             _body = UGUIKit.CreateText(dim.transform, "Body", new Vector2(0.28f, 0.2f), new Vector2(0.72f, 0.72f), "", 14, TextAnchor.UpperLeft);
             _body.color = TextLight;
             _body.supportRichText = true;
@@ -109,7 +116,11 @@ namespace Fantasia.UI
             _titleGO = title.gameObject;
             _subGO = sub.gameObject;
             _drop = PanelDropView.Create(dim.transform, PanelDropView.Victory, 440f, 0f, 30, 14);
-            if (_drop != null) { _body.rectTransform.anchorMin = new Vector2(0.28f, 0.17f); _body.rectTransform.anchorMax = new Vector2(0.72f, 0.58f); }
+            if (_drop != null)
+            {
+                _body.rectTransform.anchorMin = new Vector2(0.29f, 0.2f); _body.rectTransform.anchorMax = new Vector2(0.71f, 0.56f);
+                if (bodyBox != null) bodyBox.gameObject.SetActive(true);
+            }
             _buttonLabel = button.GetComponentInChildren<Text>();
             _root.SetActive(false);
             return this;

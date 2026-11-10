@@ -23,6 +23,12 @@ namespace Fantasia.Editor
             const string Cut = "Assets/_Project/UI/Sprites/HUD/Cut/";
             SetBorderAt(Cut + "TopBar_Plank.png", new Vector4(190, 0, 40, 0));
             SetBorderAt(Cut + "TopBar_RegionTab.png", new Vector4(40, 0, 40, 0));
+            // 11/10 받은 UI 수정본 (Docs/Art/UI_Revision_1110) — 투명 여백을 잘라 낸 것. 테두리: 왼·아래·오른·위
+            SetBorderAt(Cut + "TopBar2_Plank.png", new Vector4(200, 0, 50, 0));     // 왼쪽 초상 칸까지 고정
+            SetBorderAt(Cut + "TopBar2_RegionTab.png", new Vector4(40, 0, 40, 0));
+            SetBorderAt("Assets/_Project/UI/Sprites/Panels/Panel2_Window.png", new Vector4(180, 285, 180, 300)); // 모서리 장식 포함
+            SetBorderAt("Assets/_Project/UI/Sprites/Buttons/Button2_Plain.png", new Vector4(24, 24, 24, 24));
+            SetBorderAt(Cut + "Timeline2_Backing.png", new Vector4(50, 0, 50, 0));
 
             var theme = AssetDatabase.LoadAssetAtPath<UITheme>("Assets/_Project/Resources/UITheme.asset");
             if (theme == null) { Debug.LogError("[UIIconSetup] UITheme.asset 없음"); return; }
@@ -39,9 +45,16 @@ namespace Fantasia.Editor
             theme.LevelBadge = S("Z37");
             theme.BarBack = S("Z38"); theme.BarFill = S("Z39");
             // 상단 바 그림 (UI 적용 ①)
-            theme.TopBarFrame = A(Cut + "TopBar_Plank.png");
-            theme.TopBarCircle = A(Cut + "TopBar_Circle.png");
-            theme.RegionBanner = A(Cut + "TopBar_RegionTab.png");
+            theme.TopBarFrame = A(Cut + "TopBar2_Plank.png");     // 11/10 새 그림 (예전 N07 조각: TopBar_*.png)
+            theme.TopBarCircle = A(Cut + "TopBar2_Circle.png");
+            theme.RegionBanner = A(Cut + "TopBar2_RegionTab.png");
+            theme.PanelFrame = A("Assets/_Project/UI/Sprites/Panels/Panel2_Window.png"); // 큰 창 틀 (UGUIKit.AddWindowFrame)
+            theme.Button = A("Assets/_Project/UI/Sprites/Buttons/Button2_Plain.png");   // 모든 버튼 (UGUIKit.ApplyButtonArt)
+            theme.WindowHeader = A("Assets/_Project/UI/Sprites/Panels/Panel2_Header.png"); // 창 제목 이름 칸 (UGUIKit.WindowHeader)
+            // 턴 순서 패키지(Fantasia_TurnOrder)의 그림만 잘라 씀 — 칸 수·점선(다음 라운드)·아군/적 색은 기존 순서 띠 그대로
+            theme.TimelineFrame = A(Cut + "Timeline2_Backing.png");
+            theme.TimelineSlot = A(Cut + "Timeline2_Slot.png");
+            theme.TimelineCurrent = A(Cut + "Timeline2_Current.png");
             theme.DaySun = A(Cut + "Sun.png");
             theme.NightMoon = A(Cut + "Moon.png");
             theme.SoulFrame = A(Cut + "Soul_Frame.png");
@@ -49,8 +62,8 @@ namespace Fantasia.Editor
             // 대화 인물 (UI 솔루션 Q8) — 받은 JPG(N18~N20)는 액자 안이라 그대로 씀
             theme.SpeakerPortraits = new[]
             {
-                new SpeakerPortrait { Speaker = "점술마녀", Sprite = P("N18") },
-                new SpeakerPortrait { Speaker = "제임스", Sprite = P("N19") },
+                new SpeakerPortrait { Speaker = "점술마녀", Sprite = A("Assets/_Project/UI/Sprites/Portraits/N18_대화인물_점술마녀_3x4.png") ?? P("N18") }, // 11/10 3:4 새 그림
+                new SpeakerPortrait { Speaker = "제임스", Sprite = A("Assets/_Project/UI/Sprites/Portraits/N19_대화인물_제임스_3x4.png") ?? P("N19") },
                 new SpeakerPortrait { Speaker = "아벨 모로", Sprite = P("N20") },
             };
             EditorUtility.SetDirty(theme);

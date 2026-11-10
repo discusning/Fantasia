@@ -133,8 +133,18 @@ namespace Fantasia.UI
 
         // Shimmer only touches color, not text/layout, so it's cheap enough
         // to run every frame — no need to gate it behind a coroutine/timer.
+        // 11/11 팀장 결정 규칙 4: 대화창·창이 떠 있으면 오른쪽 의뢰 칸을 흐리게 (시선이 창에 모이게). 0.2초에 걸쳐 바뀜
+        private CanvasGroup _group;
+        private const float DimAlpha = 0.3f;
+
         private void Update()
         {
+            if (_group != null)
+            {
+                bool dim = UIFlow.WindowOpen;
+                _group.alpha = Mathf.MoveTowards(_group.alpha, dim ? DimAlpha : 1f, Time.unscaledDeltaTime / 0.2f);
+                _group.interactable = _group.blocksRaycasts = !dim;
+            }
             float glow = (Mathf.Sin(Time.unscaledTime * ShimmerSpeed) + 1f) * 0.5f;
             for (int i = 0; i < _rows.Length; i++)
             {
@@ -151,6 +161,7 @@ namespace Fantasia.UI
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvasGO.AddComponent<GraphicRaycaster>(); // needed for the "달성!" button clicks
+            _group = canvasGO.AddComponent<CanvasGroup>(); // 11/11 규칙 4: 창이 뜨면 흐리게
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

@@ -104,16 +104,50 @@ namespace Fantasia.UI
         {
             var fill = CreateBorderedPanel(parent, name, anchorMin, anchorMax, borderColor, fillColor, insetPx);
             var theme = UITheme.Current;
-            UITheme.Apply(fill.parent.GetComponent<Image>(), theme.PanelFrame, tint: true);
+            // 11/10 받은 창 틀(Panel2_Window): 떠 있는 창(아래 이름)만 장식 틀을 창 바깥으로 둘러 씌움 — 안쪽 글 자리는 그대로.
+            // 파티 카드·순서 칸·행동 막대 등 붙박이 판은 장식이 겹쳐서 예전 단색 테두리 유지. PanelFrame을 바탕 그림으로 넘긴 호출도 무시.
+            if (fillSprite == theme.PanelFrame) fillSprite = null;
+            if (theme.PanelFrame != null && WindowFrameNames.Contains(name)) AddWindowFrame(fill, theme.PanelFrame);
             UITheme.Apply(fill.GetComponent<Image>(), fillSprite != null ? fillSprite : theme.PanelFill);
             return fill;
+        }
+
+        // 창 틀 그림의 안쪽 나무 띠 두께(원본 px: 왼 140 · 아래 194 · 오른 136 · 위 220) ÷ WindowFrameScale 만큼 창 밖으로 넓혀 그림.
+        private const float WindowFrameScale = 5f;
+        private static readonly System.Collections.Generic.HashSet<string> WindowFrameNames = new() { "Window", "Box", "NameBox", "ResultCard", "RollPanel" };
+        private static void AddWindowFrame(Transform fill, Sprite frame)
+        {
+            var outer = fill.parent.GetComponent<Image>();
+            outer.color = new Color(0f, 0f, 0f, 0f); // 클릭 막기는 그대로, 단색 테두리만 숨김
+            var img = CreateImage(outer.transform, "Frame", Vector2.zero, Vector2.one, Color.white);
+            img.transform.SetAsFirstSibling();
+            img.raycastTarget = false;
+            img.sprite = frame;
+            img.type = Image.Type.Sliced;
+            img.pixelsPerUnitMultiplier = WindowFrameScale;
+            img.rectTransform.offsetMin = new Vector2(-140f, -194f) / WindowFrameScale;
+            img.rectTransform.offsetMax = new Vector2(136f, 220f) / WindowFrameScale;
+            fill.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.25f); // 틀 안쪽 갈색 바탕이 보이게 살짝만 어둡게
+            var header = UITheme.Current.WindowHeader;
+            var rt = (RectTransform)outer.transform;
+            // 위 장식 + 이름 칸: 큰 창(Window)만, 위에 공간이 있을 때만 (상점·인벤토리는 화면 위 끝에 붙어 장식이 잘림)
+            if (header != null && outer.name == "Window" && rt.anchorMax.y <= 0.9f)
+            {
+                var h = CreateImage(outer.transform, "Header", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Color.white);
+                h.sprite = header;
+                h.raycastTarget = false;
+                h.rectTransform.pivot = new Vector2(0.5f, 0f);
+                h.rectTransform.sizeDelta = new Vector2(275f, 109f);       // 그림 860×341 × 0.32
+                h.rectTransform.anchoredPosition = new Vector2(0f, -30f);  // 이름 칸이 창 안쪽 위 끝에 걸침
+                var plate = CreateRect(h.transform, "Plate", new Vector2(0.09f, 0.07f), new Vector2(0.91f, 0.27f));
+                outer.gameObject.AddComponent<WindowTitleToHeader>().Init(fill, plate);
+            }
         }
 
         // 테마 버튼 그림 + (있으면) 아이콘. 아이콘이 있으면 글자는 아래쪽 작은 캡션이 된다.
         public static Button CreateThemedButton(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, string label, Color color, int fontSize, Sprite icon = null)
         {
             var button = CreateButton(parent, name, anchorMin, anchorMax, label, color, fontSize);
-            UITheme.Apply((Image)button.targetGraphic, UITheme.Current.Button);
             if (icon != null)
             {
                 var fill = button.targetGraphic.transform;
@@ -150,8 +184,70 @@ namespace Fantasia.UI
             // actually tints something on hover/press — without this a Button
             // added purely from script gives no pressed-state feedback at all.
             btn.targetGraphic = fill.GetComponent<Image>();
-            _ = labelText; // label is purely visual, no reference needed after creation
+            ApplyButtonArt(btn, labelText);
             return btn;
+        }
+
+        // 11/10 받은 사각 버튼 판(Button2_Plain): 9칸 나누기로 늘림. 버튼 색은 반쯤 섞어 남기고(구분용), 글자는 밝게.
+        public static readonly Color ButtonLabelLight = new Color(0.96f, 0.9f, 0.76f);
+        private static void ApplyButtonArt(Button btn, Text label)
+        {
+            var sprite = UITheme.Current.Button;
+            if (sprite == null) return;
+            var fillImage = (Image)btn.targetGraphic;
+            fillImage.transform.parent.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            var fillRect = (RectTransform)fillImage.transform; // 테두리 1.5px 안쪽 → 꽉 채움
+            fillRect.offsetMin = fillRect.offsetMax = Vector2.zero;
+            fillImage.sprite = sprite;
+            fillImage.type = Image.Type.Sliced;
+            fillImage.pixelsPerUnitMultiplier = 3f; // 그림 테두리 24px → 8px
+            fillImage.color = Color.Lerp(fillImage.color, Color.white, 0.5f);
+            label.color = ButtonLabelLight;
+        }
+
+        // 작은 상자·안쪽 판용 얇은 판 (11/11 UI 점검 — 디자인 U3·U8 그림이 오기 전 임시).
+        // 받은 사각 버튼 그림(얇은 구리 테두리)을 어둡게 깔아 씀. fill = CreateThemedPanel/CreateBorderedPanel이 돌려준 안쪽.
+        public static void ApplyThinPlate(Transform fill, float brightness = 0.55f)
+        {
+            var sprite = UITheme.Current != null ? UITheme.Current.Button : null;
+            if (sprite == null) return;
+            var outer = fill.parent != null ? fill.parent.GetComponent<Image>() : null;
+            if (outer != null) outer.color = new Color(0f, 0f, 0f, 0f);
+            var rect = (RectTransform)fill;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            var image = fill.GetComponent<Image>();
+            image.sprite = sprite;
+            image.type = Image.Type.Sliced;
+            image.pixelsPerUnitMultiplier = 3f;
+            image.color = new Color(brightness, brightness, brightness, 0.96f);
+        }
+    }
+}
+
+namespace Fantasia.UI
+{
+    // 창을 만든 코드가 "Title" 글자를 만든 뒤(같은 프레임) 첫 Start에서 그 글자를 위 장식의 이름 칸으로 옮긴다.
+    // 각 창 코드는 그대로 두고, 제목 글(상점 이름 등 바뀌는 글 포함)은 같은 Text를 계속 쓴다.
+    public class WindowTitleToHeader : MonoBehaviour
+    {
+        private Transform _fill;
+        private RectTransform _plate;
+        public void Init(Transform fill, RectTransform plate) { _fill = fill; _plate = plate; }
+
+        private void Start()
+        {
+            if (_fill == null || _plate == null) return;
+            var title = _fill.Find("Title")?.GetComponent<Text>();
+            if (title == null) { _plate.parent.gameObject.SetActive(false); return; } // 제목 없는 창은 장식도 숨김
+            var r = title.rectTransform;
+            r.SetParent(_plate, false);
+            r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one;
+            r.offsetMin = r.offsetMax = Vector2.zero;
+            title.alignment = TextAnchor.MiddleCenter;
+            title.resizeTextForBestFit = true;
+            title.resizeTextMinSize = 10;
+            title.resizeTextMaxSize = Mathf.Min(title.fontSize, 17);
+            title.color = new Color(0.98f, 0.86f, 0.55f);
         }
     }
 }

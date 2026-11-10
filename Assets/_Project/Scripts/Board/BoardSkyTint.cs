@@ -11,6 +11,8 @@ namespace Fantasia.Board
         private const float FadeSeconds = 3f;
         private static readonly Color RedSky = new Color(0.62f, 0.12f, 0.1f);
         private static readonly Color RedLight = new Color(1f, 0.55f, 0.48f);
+        private static readonly Color OutsideColor = new Color(0.075f, 0.065f, 0.07f); // 판 바깥 단색 (짙은 먹색)
+        private static readonly Color OutsideRed = new Color(0.3f, 0.06f, 0.05f);       // 붉은 하늘 때 판 바깥
 
         private Light _sun;
         private Color _sunBase, _ambientBase, _bgBase;
@@ -25,7 +27,13 @@ namespace Fantasia.Board
                 if (l.type == LightType.Directional) { _sun = l; break; }
             if (_sun != null) _sunBase = _sun.color;
             _ambientBase = RenderSettings.ambientLight;
-            if (Camera.main != null) _bgBase = Camera.main.backgroundColor;
+            if (Camera.main != null)
+            {
+                // 11/10 기획 회신 03 (1막 C안): 판 바깥은 타일·말이 잘 보이는 어두운 단색 (템스 강·안개는 1막 이후)
+                Camera.main.clearFlags = CameraClearFlags.SolidColor;
+                Camera.main.backgroundColor = OutsideColor;
+                _bgBase = OutsideColor;
+            }
             if (RenderSettings.skybox != null)
             {
                 _sky = new Material(RenderSettings.skybox); // 원본 자산은 건드리지 않음
@@ -51,7 +59,7 @@ namespace Fantasia.Board
         {
             if (_sun != null) _sun.color = Color.Lerp(_sunBase, RedLight, _t);
             RenderSettings.ambientLight = Color.Lerp(_ambientBase, RedSky * 0.8f, _t * 0.6f);
-            if (Camera.main != null) Camera.main.backgroundColor = Color.Lerp(_bgBase, RedSky, _t);
+            if (Camera.main != null) Camera.main.backgroundColor = Color.Lerp(_bgBase, OutsideRed, _t);
             if (_hasSkyTint) _sky.SetColor("_SkyTint", Color.Lerp(_skyTintBase, RedSky, _t));
         }
     }

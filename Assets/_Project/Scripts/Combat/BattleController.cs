@@ -516,11 +516,9 @@ namespace Fantasia.Combat
                 case ConsumableEffect.Escape:
                     // 생존 아군 전원 퇴각 — 경험치·전리품 없음 (퇴각 결과로 처리)
                     Log($"{user.DisplayName} [{item.DisplayName}] — 생존 아군 전원 퇴각");
-                    foreach (var ally in _allies.Where(a => a.InBattle))
-                    {
-                        ally.HasRetreated = true;
-                        _models[ally].SetActive(false);
-                    }
+                    var escaping = _allies.Where(a => a.InBattle).ToList();
+                    foreach (var ally in escaping) ally.HasRetreated = true;
+                    yield return Withdraw(escaping);
                     break;
                 default:
                     int speedBefore = target.Speed;
@@ -693,13 +691,35 @@ namespace Fantasia.Combat
             if (ok)
             {
                 // 2026-11-06 변경: 한 명이 퇴각에 성공하면 파티 전체가 함께 물러난다 (쓰러진 동료 처리는 탈출권과 같음 — DefeatRules).
-                foreach (var ally in _allies.Where(a => a.InBattle))
-                {
-                    ally.HasRetreated = true;
-                    _models[ally].SetActive(false);
-                }
+                var leaving = _allies.Where(a => a.InBattle).ToList();
+                foreach (var ally in leaving) ally.HasRetreated = true;
+                yield return Withdraw(leaving);
             }
             NextTurn();
+        }
+
+        // 11/11 팀장 결정: 퇴각·탈출권 — 순간 사라지던 것을 "돌아서서 뒤로 물러난 뒤 사라짐"으로 (0.2초 돌기 + 0.5초 2.5m 물러남).
+        // 새 3D 없이 개발만으로 처리. 물러나는 동안은 서 있는 자세(대기 움직임) 그대로.
+        private const float WithdrawTurn = 0.2f, WithdrawMove = 0.5f, WithdrawDistance = 2.5f;
+        private IEnumerator Withdraw(List<BattleUnit> units)
+        {
+            var models = units.Where(u => _models.ContainsKey(u)).Select(u => _models[u]).Where(m => m != null && m.activeSelf).ToList();
+            var from = models.Select(m => m.transform.position).ToList();
+            var faceFrom = models.Select(m => m.transform.rotation).ToList();
+            var back = models.Select(m => { var f = -m.transform.forward; f.y = 0f; return f.normalized; }).ToList();
+            for (float t = 0f; t < WithdrawTurn + WithdrawMove; t += Time.deltaTime)
+            {
+                for (int i = 0; i < models.Count; i++)
+                {
+                    if (models[i] == null) continue;
+                    float turn = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / WithdrawTurn));
+                    models[i].transform.rotation = faceFrom[i] * Quaternion.Euler(0f, 180f * turn, 0f);
+                    float move = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - WithdrawTurn) / WithdrawMove));
+                    models[i].transform.position = from[i] + back[i] * (WithdrawDistance * move);
+                }
+                yield return null;
+            }
+            foreach (var m in models) if (m != null) m.SetActive(false);
         }
 
         // ───────────── 판정 공통 ─────────────
@@ -908,9 +928,36 @@ namespace Fantasia.Combat
         {
             if (attacker == null || !_models.TryGetValue(attacker, out var model)) yield break;
             var motion = CharacterMotion.Of(model);
-            if (motion == null || motion.IsDown) yield break;
+            if (motion != null && motion.IsDown) yield break;
+            StartCoroutine(HalfStep(model)); // 11/10 기획 4A: 근접·원거리 모두 반 걸음 나갔다가 원위치 (맞음 처리와 동시에 진행)
+            if (motion == null) yield break;
             motion.Attack();
             yield return new WaitForSeconds(CharacterMotion.AttackLead);
+        }
+
+        // 공격 반 걸음: 바라보는 쪽으로 0.15초 나감 → 공격 동작 동안 머묾 → 0.25초 돌아옴. 제자리는 처음 놓인 자리로 고정 (겹쳐 불려도 밀리지 않게).
+        private const float HalfStepDistance = 0.6f, StepOut = 0.15f, StepHold = 0.4f, StepBack = 0.25f;
+        private readonly Dictionary<GameObject, Vector3> _homePositions = new();
+        private IEnumerator HalfStep(GameObject model)
+        {
+            if (model == null) yield break;
+            if (!_homePositions.TryGetValue(model, out var home)) _homePositions[model] = home = model.transform.position;
+            var forward = model.transform.forward; forward.y = 0f;
+            var target = home + forward.normalized * HalfStepDistance;
+            for (float t = 0f; t < StepOut && model != null; t += Time.deltaTime)
+            {
+                model.transform.position = Vector3.Lerp(home, target, Mathf.SmoothStep(0f, 1f, t / StepOut));
+                yield return null;
+            }
+            if (model == null) yield break;
+            model.transform.position = target;
+            yield return new WaitForSeconds(StepHold);
+            for (float t = 0f; t < StepBack && model != null; t += Time.deltaTime)
+            {
+                model.transform.position = Vector3.Lerp(target, home, Mathf.SmoothStep(0f, 1f, t / StepBack));
+                yield return null;
+            }
+            if (model != null) model.transform.position = home;
         }
 
         private void PlayHitMotion(BattleUnit target)
@@ -1116,6 +1163,17 @@ namespace Fantasia.Combat
             if (_phase == Phase.ChoosingTarget) OnUnitPicked(target);
         }
 
+        // 촬영용 (-autoplay-motions, 11/11): 아군 1명을 쓰러뜨림 / 적 HP를 1로 (다음 공격에 처치 → 승리 순간 촬영)
+        public void DevKnockDownAlly(BattleUnit unit)
+        {
+            if (unit == null || !unit.IsAlly || !unit.IsAlive) return;
+            unit.TakeDamage(unit.CurrentHP);
+            KnockDown(unit);
+            _hud.RefreshEnemies(null);
+        }
+        public void DevSetEnemyHP1(BattleUnit unit) { if (unit != null && !unit.IsAlly && unit.IsAlive) unit.TakeDamage(unit.CurrentHP - 1); }
+        public GameObject DevModelOf(BattleUnit unit) => unit != null && _models.TryGetValue(unit, out var m) ? m : null;
+
         public void DevDefend() => OnDefendClicked();
         public void DevRetreat() => OnRetreatClicked();
 
@@ -1254,6 +1312,7 @@ namespace Fantasia.Combat
             model.name = unit.DisplayName;
             model.transform.position = position;
             model.transform.rotation = Quaternion.LookRotation(facing);
+            BlobShadow.Attach(model, height); // 발밑 흐린 그림자 (11/10 기획 1A)
             var col = model.AddComponent<CapsuleCollider>();
             col.height = height;
             col.radius = Mathf.Max(0.4f, height * 0.3f);

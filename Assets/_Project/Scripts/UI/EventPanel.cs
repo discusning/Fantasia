@@ -294,7 +294,7 @@ namespace Fantasia.UI
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.45f));
             _root = dim.gameObject;
-            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.24f, 0.2f), new Vector2(0.76f, 0.9f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
+            var win = UGUIKit.CreateThemedPanel(UGUIKit.Safe16x9(dim.transform), "Window", new Vector2(0.24f, 0.15f), new Vector2(0.76f, 0.84f), Gold, Fill, 2f, UITheme.Current != null ? UITheme.Current.PanelFrame : null);
             // 점술마녀 인물 그림 (UI 솔루션 Q8, N18) — 창 왼쪽 바깥, 카드를 가리지 않게
             _witchArt = UGUIKit.CreateImage(UGUIKit.Safe16x9(dim.transform), "WitchArt", new Vector2(0.06f, 0.28f), new Vector2(0.23f, 0.84f), Color.white);
             _witchArt.preserveAspect = true;
@@ -304,9 +304,20 @@ namespace Fantasia.UI
 
             _title = Label(win, "Title", new Vector2(0.2f, 0.86f), new Vector2(0.8f, 0.97f), 26, Gold, true);
             var centBox = UGUIKit.CreateThemedPanel(win, "CentBox", new Vector2(0.79f, 0.86f), new Vector2(0.97f, 0.97f), Gold, Fill, 1.5f);
+            UGUIKit.ApplyThinPlate(centBox); // 11/11 UI 점검: 남색 상자 → 받은 얇은 판 (디자인 U8 오기 전 임시)
             _cent = Label(centBox, "Cent", Vector2.zero, Vector2.one, 11, TextLight, false);
+            // 11/11 UI 점검: 밝은 노란 띠가 새 창 틀과 튐 → 얇은 판 + 금색 글자
             var chipBg = UGUIKit.CreateImage(win, "Chip", new Vector2(0.27f, 0.79f), new Vector2(0.73f, 0.855f), new Color(0.78f, 0.62f, 0.36f));
-            _chip = Label(chipBg.transform, "Text", Vector2.zero, Vector2.one, 13, new Color(0.15f, 0.1f, 0.06f), true);
+            var chipColor = new Color(0.15f, 0.1f, 0.06f);
+            if (UITheme.Current != null && UITheme.Current.Button != null)
+            {
+                chipBg.sprite = UITheme.Current.Button;
+                chipBg.type = Image.Type.Sliced;
+                chipBg.pixelsPerUnitMultiplier = 3f;
+                chipBg.color = new Color(0.7f, 0.62f, 0.5f);
+                chipColor = new Color(0.98f, 0.86f, 0.55f);
+            }
+            _chip = Label(chipBg.transform, "Text", Vector2.zero, Vector2.one, 13, chipColor, true);
             _odds = Label(win, "Odds", new Vector2(0.1f, 0.72f), new Vector2(0.9f, 0.78f), 15, TextLight, false);
             _odds.supportRichText = true;
             _note = Label(win, "Note", new Vector2(0.1f, 0.67f), new Vector2(0.9f, 0.72f), 11, TextDim, false);

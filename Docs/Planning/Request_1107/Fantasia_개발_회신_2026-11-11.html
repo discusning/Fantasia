@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 개발 회신</title>
+<style>
+@page{size:A4;margin:12mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:13px;line-height:1.65;color:#222;background:#fff;margin:0}
+.head{background:#2f2420;color:#fff;padding:14px 18px;border-top:4px solid #b8925a}
+.head .t{font-size:24px;font-weight:bold}.head .s{color:#d8c7a8;font-size:12px}
+h2{font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 8px;color:#6b1e1e}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+img{width:100%;border:1px solid #999;display:block}
+figure{margin:6px 0 10px}figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.done{color:#14803a;font-weight:bold}.plan{color:#b5651d;font-weight:bold}.later{color:#777;font-weight:bold}
+.ask{border-left:5px solid #b8925a;background:#f7f1ea;padding:9px 12px;margin:10px 0}
+.small{font-size:11.5px;color:#555}
+.brk{page-break-before:always}
+</style></head><body>
+<div class="head"><div class="s">FANTASIA / LONDON ACT 1 · 2026.11.11 · 개발 → 기획</div>
+<div class="t">개발 회신 — 보강 제안 8개 항목</div>
+<div class="s">기준 문서: 2026.11.10 기획 회신 (11/7 기획 확인 요청서 보강 제안)</div></div>
+
+<p>회신 감사합니다. 요청하신 <b>크레딧 표기와 안내 문구는 반영했습니다.</b> 판 바깥 배경도 같이 반영했습니다. 나머지는 11/18까지 할 것과 1막 이후로 나눴습니다.</p>
+
+<h2>1. 한눈에</h2>
+<table>
+<tr><th style="width:5%">번호</th><th style="width:14%">항목</th><th style="width:17%">상태</th><th>내용</th></tr>
+<tr><td>01</td><td>크레딧</td><td class="done">반영 (일부)</td><td>메인 메뉴 아래에 음원 출처 문구를 그대로 넣음. <b>팀원 이름·역할, ZEN SERIF 문구는 받으면 바로 추가</b> (아래 3번 요청)</td></tr>
+<tr><td>07</td><td>첫 플레이 안내</td><td class="done">반영</td><td>보드 왼쪽 안내 칸에 3줄 추가 (문구 그대로)</td></tr>
+<tr><td>03</td><td>판 바깥 배경</td><td class="done">반영 (1막 C)</td><td>하늘 → 어두운 단색. 영혼 수확 75 이상일 땐 짙은 붉은색 (기존 붉은 하늘 연출 유지)</td></tr>
+<tr><td>02</td><td>전투 배경</td><td class="plan">11/18까지 (조건)</td><td>아래 2번 일정</td></tr>
+<tr><td>04</td><td>추가 모션</td><td class="plan">11/18까지 (조건)</td><td>회복 모션이 디자인에서 오면 연결. 낫 크기는 디자인 회신 건으로 따로</td></tr>
+<tr><td>05</td><td>타격감</td><td class="later">1막 이후</td><td>크리티컬·처치 때만 짧은 흔들림 + 0.05초 멈칫, 흔들림 끄기 옵션</td></tr>
+<tr><td>06</td><td>전투 속도</td><td class="later">1막 이후</td><td>보통·1.5배·2배, 전투 연출에만</td></tr>
+<tr><td>08</td><td>전체 지도</td><td class="later">1막 이후</td><td>우선 검토 항목으로 기록</td></tr>
+</table>
+
+<h2>2. 반영한 화면</h2>
+<h3 style="font-size:14px">01 크레딧 — 메인 메뉴 아래</h3>
+<div class="two"><figure><img src="reply_img/r01_menu.jpg"><figcaption>메인 메뉴 (빨간 네모 = 크레딧 자리)</figcaption></figure>
+<figure><img src="reply_img/r01_credit.jpg"><figcaption>확대 — 팀원 이름은 이 줄 위에 한 줄씩 추가</figcaption></figure></div>
+
+<h3 style="font-size:14px">07 첫 플레이 안내 — 보드 왼쪽 안내 칸</h3>
+<figure><img src="reply_img/r07_hint.jpg"><figcaption>빨간 네모 = 추가한 문구. 피의 흔적 문장만 화면 폭 때문에 두 줄로 나눔 (글자는 그대로)</figcaption></figure>
+
+<h3 style="font-size:14px">03 판 바깥 배경 — 어두운 단색</h3>
+<div class="two"><figure><img src="reply_img/r03_before.jpg"><figcaption>전: 회갈색 하늘</figcaption></figure>
+<figure><img src="reply_img/r03_after.jpg"><figcaption>후: 짙은 먹색 — 타일·말이 더 잘 보임</figcaption></figure></div>
+<p class="small">확인: 자동 QA 34개 통과·실패 0 (1920×1080, 1024×768), 오류 0.</p>
+
+<h2 class="brk">3. 11/18까지 할 것과 1막 이후</h2>
+<table>
+<tr><th style="width:22%">항목</th><th style="width:20%">언제까지</th><th>조건·방법</th></tr>
+<tr><td>01 팀원 이름·역할 · ZEN SERIF 문구</td><td class="plan">받은 날 바로</td><td>문구만 넣으면 됨. <b>11/14(금)까지 보내 주시면</b> 마감 전 확인 가능</td></tr>
+<tr><td>02 아벨 모로전 — 조명 낮춤</td><td class="plan">11/13</td><td>조명 값만 바꾸는 일이라 작음</td></tr>
+<tr><td>02 일반 전투 — 런던 거리 분위기</td><td class="plan">11/14 시도</td><td>기존 건물·소품을 전투 바닥 뒤에 배치. 약 1일 (짐작). <b>11/15 검수에서 어색하면 빼고 지금 바닥 유지</b></td></tr>
+<tr><td>04 회복 전용 모션</td><td class="plan">11/14</td><td>디자인 그림 마감(11/12) 안에 오면 연결·검수. 안 오면 1막 이후</td></tr>
+<tr><td>사신 낫 크기</td><td>디자인 회신 건</td><td>지금은 개발 임시 2.2m 낫. 디자인에서 낫만 키운 모델이 오면 교체</td></tr>
+<tr><td colspan="3" class="later">1막 이후: 05 타격감 · 06 전투 속도 · 08 전체 지도 · 별도 크레딧 창 · 템스 강·안개 · 걷기·부활 일어서기·일반 주문 모션 · 첫 상황 안내 창</td></tr>
+</table>
+<p class="small">11/16~11/18은 1막 전체 플레이 확인과 버그 수정만 합니다 (기획 회신 우선순위대로).</p>
+
+<div class="ask"><b>기획에 요청</b>
+<ol style="margin:4px 0">
+<li><b>크레딧 팀원 표기</b> — 이름·역할 줄 목록 (예: “기획 ○○○”). 순서도 같이.</li>
+<li><b>ZEN SERIF 출처 문구</b> — 넣을지, 넣는다면 문구.</li>
+<li>02 일반 전투 배경을 11/15에 보여 드릴 테니 넣을지 빼기만 정해 주세요.</li>
+</ol>
+기한: <b>11/14(금)</b></div>
+
+<h2>참고 — 같은 날 고친 것</h2>
+<p>팀장 요청으로 전투 위쪽 순서 칸이 띠·옆 칸과 겹쳐 보이던 것을 고쳤습니다 (칸 크기 줄이고 간격 넓힘). 기획 내용 변화는 없습니다.</p>
+<div class="two"><figure><img src="reply_img/x_tl_before.jpg"><figcaption>전: 칸 틀이 띠 위아래·옆 칸과 겹침</figcaption></figure>
+<figure><img src="reply_img/x_tl_after.jpg"><figcaption>후: 띠 안에 들어가고 칸 사이가 벌어짐</figcaption></figure></div>
+</body></html>
