@@ -99,6 +99,8 @@ namespace Fantasia.Editor
                 if (nrm != null) { mat.SetTexture("_BumpMap", nrm); mat.EnableKeyword("_NORMALMAP"); }
                 mat.SetFloat("_Glossiness", 0.35f);
                 foreach (var r in go.GetComponentsInChildren<Renderer>()) r.sharedMaterial = mat;
+                if (DoubleSided.Contains(item.id)) // 11/13 D2: 접힌 종이 한쪽 면 방향이 뒤집혀 와서 안 보임(테두리 점만 "떠 있는 조각"처럼 보임) → 양면으로
+                    foreach (var mf in go.GetComponentsInChildren<MeshFilter>()) MakeDoubleSided(mf);
 
                 // 구도: 그림 범위를 감싸는 공이 화면에 꽉 차게 (아이템마다 같은 여백)
                 var b = BoundsOf(go);
@@ -142,6 +144,33 @@ namespace Fantasia.Editor
             SaveSheet(sheet);
             big.Release(); small.Release();
             Debug.Log("[ItemIconStudio]\n" + string.Join("\n", report));
+        }
+
+        // 받은 모델 중 면 방향이 뒤집힌 부분이 있는 것 (디자인 요청 D2 — 디자인 수정본 오면 빼도 됨)
+        private static readonly HashSet<string> DoubleSided = new() { "마리의집문서" };
+
+        // 모든 삼각형을 뒷면용으로 한 벌 더 (꼭짓점 복사 + 법선 반대) → 어느 쪽에서 봐도 보이고 빛도 제대로 받음
+        private static void MakeDoubleSided(MeshFilter mf)
+        {
+            var src = mf.sharedMesh;
+            if (src == null) return;
+            var mesh = Object.Instantiate(src);
+            mesh.hideFlags = HideFlags.HideAndDontSave;
+            int n = src.vertexCount;
+            var v = src.vertices; var nr = src.normals; var uv = src.uv; var tg = src.tangents;
+            mesh.vertices = v.Concat(v).ToArray();
+            if (nr.Length == n) mesh.normals = nr.Concat(nr.Select(x => -x)).ToArray();
+            if (uv.Length == n) mesh.uv = uv.Concat(uv).ToArray();
+            if (tg.Length == n) mesh.tangents = tg.Concat(tg.Select(t => new Vector4(-t.x, -t.y, -t.z, t.w))).ToArray();
+            for (int s = 0; s < src.subMeshCount; s++)
+            {
+                var t = src.GetTriangles(s);
+                var back = new int[t.Length];
+                for (int i = 0; i < t.Length; i += 3) { back[i] = t[i] + n; back[i + 1] = t[i + 2] + n; back[i + 2] = t[i + 1] + n; }
+                mesh.SetTriangles(t.Concat(back).ToArray(), s);
+            }
+            mesh.RecalculateBounds();
+            mf.sharedMesh = mesh;
         }
 
         private static void Light(Vector3 euler, float intensity, Color color)
