@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>무기 쥐기 요청 11/13</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body{font-size:14px;line-height:1.7}
+h1{font-size:26px}
+.one{font-size:17px;font-weight:bold;border:3px solid #6b1e1e;background:#fbf5f2;padding:14px 16px;margin:12px 0;line-height:1.8}
+.one .big{color:#b01e1e}
+.pics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.pics figure{margin:0}.pics img{height:210px;object-fit:cover;object-position:top}
+.pics figcaption{font-size:13px;text-align:center;font-weight:bold;color:#b01e1e}
+.todo{display:grid;grid-template-columns:52px 1fr;gap:0 12px;border:1px solid #ccc;border-left:6px solid #b01e1e;padding:12px 14px;margin:12px 0;page-break-inside:avoid}
+.todo .n{font-size:30px;font-weight:bold;color:#b01e1e;line-height:1}
+.todo h3{font-size:16px;margin:0 0 4px}
+.todo.light{border-left-color:#999;background:#fff}.todo.light .n{color:#888}
+.diagram{display:flex;gap:16px;align-items:center;margin:8px 0}
+.diagram svg{flex:0 0 260px}
+td,th{font-size:13.5px;padding:7px 9px}
+.ok{color:#1d6a2a;font-weight:bold}.fix{color:#b01e1e;font-weight:bold}
+</style></head><body>
+
+<h1>디자인 요청: 무기를 손에 "쥐게" 해 주세요</h1>
+<div class="sub">2026-11-13 · 개발 최동환 → 3D 디자인 · <b>11/16(월)까지</b></div>
+
+<div class="one">
+무기 8종 · 걷기 동작 잘 받았어요. 게임에 넣었습니다! 👍<br>
+그런데 <span class="big">손가락이 펴져 있어서 무기가 손에 안 쥐어져요.</span><br>
+→ <span class="big">무기를 쥔 손</span>으로 동작을 다시 + 손에 <span class="big">무기 붙일 자리</span> 하나 부탁드려요.
+</div>
+
+<h2>지금 이렇게 보여요</h2>
+<div class="pics">
+<figure><img src="img/h_det.jpg"><figcaption>명탐정: 단검이 손가락 사이로</figcaption></figure>
+<figure><img src="img/h_sni.jpg"><figcaption>저격수: 권총이 손 밖으로 삐져나옴</figcaption></figure>
+<figure><img src="img/h_pla.jpg"><figcaption>역병 의사: 지팡이가 매달려 있음</figcaption></figure>
+</div>
+<p><b>왜?</b> 받은 동작은 무기 없이 만들어져서 <b>손이 펴진 채</b>예요. 개발이 코드로 붙여 봐도 손 모양은 바꿀 수 없어요.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center">
+<figure style="margin:0"><img src="img/W_아벨전투.jpg"></figure>
+<div><b>아벨 모로(보스)도 문제예요.</b><br>메스가 하얀 코트 앞에 묻혀서 게임 화면에서 <b>거의 안 보여요.</b><br>→ 메스를 <b>몸 바깥쪽</b>으로 들어 주세요.</div>
+</div>
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;align-items:center;margin-top:10px">
+<figure style="margin:0"><img src="img/h_rea.jpg"><figcaption>왼쪽: 서 있기 · 오른쪽: 공격</figcaption></figure>
+<div><b>사신도 같아요.</b><br>서 있을 땐 낫이 손에 <b>대롱대롱 매달려</b> 있고,<br>공격할 땐 낫이 <b>뒤로</b> 휘둘러져요.<br>→ 낫을 <b>양손으로 쥐고 앞으로</b> 휘두르게 해 주세요.</div>
+</div>
+
+<h2 class="brk">해 주실 일 (꼭 3개)</h2>
+
+<div class="todo"><div class="n">1</div><div>
+<h3>손에 "무기 자리" 만들기</h3>
+<ul>
+<li>캐릭터 5명(아군 3 · 아벨 · 사신) 뼈대에 <b>빈 뼈 2개</b>를 추가해 주세요.</li>
+<li>이름: <b>Socket_R</b> (오른손 뼈 아래) · <b>Socket_L</b> (왼손 뼈 아래)</li>
+<li>위치: 손이 무기를 <b>쥐는 곳 가운데</b></li>
+<li>방향: 아래 그림처럼 <b>앞(Z) = 무기 끝</b>, <b>위(Y) = 무기 위쪽</b></li>
+</ul>
+<div class="diagram">
+<svg viewBox="0 0 260 120" width="260" height="120" font-family="Malgun Gothic" font-size="12">
+  <rect x="20" y="52" width="46" height="18" rx="4" fill="#7a5a3a"/>
+  <polygon points="66,52 220,58 220,64 66,70" fill="#b8c2cc" stroke="#667" />
+  <circle cx="43" cy="61" r="6" fill="#b01e1e"/>
+  <text x="18" y="96" fill="#b01e1e" font-weight="bold">● 무기 자리 = 쥐는 곳</text>
+  <line x1="43" y1="61" x2="250" y2="30" stroke="none"/>
+  <line x1="150" y1="40" x2="235" y2="40" stroke="#1d6a2a" stroke-width="2.5" marker-end="url(#a)"/>
+  <text x="150" y="33" fill="#1d6a2a" font-weight="bold">앞(Z) = 칼끝·총구</text>
+  <line x1="43" y1="50" x2="43" y2="12" stroke="#1d5a9a" stroke-width="2.5" marker-end="url(#b)"/>
+  <text x="50" y="18" fill="#1d5a9a" font-weight="bold">위(Y) = 칼등·총 위</text>
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1d6a2a"/></marker>
+  <marker id="b" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1d5a9a"/></marker></defs>
+</svg>
+<div>개발은 무기를 이 자리에 <b>그대로 꽂기만</b> 해요.<br>그래서 자리만 맞으면 어떤 동작에서도 딱 맞아요.<br><span class="small">※ 다른 뼈 이름은 바꾸지 말아 주세요 (받은 동작이 다 연결돼 있어요).</span></div>
+</div>
+</div></div>
+
+<div class="todo"><div class="n">2</div><div>
+<h3>동작 3개를 "무기 쥔 손"으로 다시: 대기 · 걷기 · 공격</h3>
+<ul>
+<li>무기 든 손은 <b>손가락을 오므려 손잡이를 감싸게</b> 해 주세요.</li>
+<li>무기를 붙인 채로 보면서 만들어 주세요. <b>몸·코트에 박히지 않게</b>요.</li>
+<li>내보낼 땐 <b>무기는 빼고</b> 캐릭터만. 파일 이름은 지금과 똑같이 해 주세요 (덮어쓰기 OK).</li>
+</ul>
+<table>
+<tr><th style="width:17%">누구</th><th style="width:22%">손에 들 것</th><th>이렇게 보이면 좋아요</th></tr>
+<tr><td><b>명탐정</b></td><td>오른손 단검</td><td>칼끝을 아래로 들고 서 있기 → 찌르기·베기</td></tr>
+<tr><td><b>역병 의사</b></td><td>오른손 지팡이</td><td>지팡이를 바닥에 짚고 서 있기 → 앞으로 내밀기</td></tr>
+<tr><td><b>저격수</b></td><td>오른손 권총</td><td>총구를 아래로 → 팔 뻗어 적을 겨누고 쏘기</td></tr>
+<tr><td><b>아벨 모로</b></td><td>오른손 메스<br>왼손 수은병</td><td>메스를 <b>몸 바깥</b>으로 들기 → 메스로 베기<br>보스라 멀리서 보여요. <b>동작을 조금 크게</b>.</td></tr>
+<tr><td><b>사신</b></td><td>낫 (양손)<br><span class="small">오른손이 자리, 왼손은 자루 아래쪽</span></td><td>낫을 세워 들고 서 있기 (날이 위) → <b>앞으로</b> 크게 베기<br>낫 크기는 개발이 맞춰요. 손 모양·휘두르는 방향만 부탁해요.</td></tr>
+</table>
+<p class="small">※ 예전 요청 M2(공격 동작 다시)와 M3(사신 낫)는 이걸로 대신해요.</p>
+</div></div>
+
+<div class="todo"><div class="n">3</div><div>
+<h3>무기 파일 3개만 고치기</h3>
+<table>
+<tr><th style="width:22%">무기</th><th>고칠 것</th></tr>
+<tr><td><b>장총</b> (Musket)</td><td class="fix">옆으로 누워 있어요 → 총구가 앞(Z)을 보게 돌려 주세요</td></tr>
+<tr><td><b>지팡이</b> (Staff)</td><td class="fix">기준점이 가운데서 벗어나 있어요 → 손으로 쥐는 높이로</td></tr>
+<tr><td><b>사신 낫</b> (Scythe)</td><td class="fix">누운 채 cm 단위로 와요 → 세워서(날 끝이 위) m 단위로, 기준점은 오른손 쥐는 곳</td></tr>
+<tr><td>나머지 6개</td><td class="ok">그대로 괜찮아요 ✔ (기준점만 손잡이에 있는지 확인)</td></tr>
+</table>
+</div></div>
+
+<h2>여유 있으면</h2>
+<div class="todo light"><div class="n">+</div><div>
+<h3>다른 동작도 쥔 손으로</h3>
+<p>방어 → 아이템 → 맞음 → 승리 순서로 해 주시면 좋아요. 못 하면 그 동작 동안만 개발이 무기를 잠깐 숨길게요.</p>
+</div></div>
+<div class="todo light"><div class="n">+</div><div>
+<h3>두 번째 무기</h3>
+<p><b>저격수 장총</b>(양손으로 드는 동작 필요) · <b>역병 의사 마법서</b>(자리만 맞으면 그대로 될 수도). 녹슨 단검은 안 해도 돼요.</p>
+</div></div>
+
+<h2>무기 자리가 어려우면?</h2>
+<p><b>기본 무기를 캐릭터 파일 안에 손에 쥔 채로 넣어서</b> 보내 주셔도 괜찮아요.<br>
+대신 장착을 바꿔도 무기 모양은 그대로예요. 손 모양(2번)은 꼭 같이 해 주세요.</p>
+
+<h2>보내는 법</h2>
+<ul>
+<li>지금처럼 <b>깃 푸시</b> (폴더·파일 이름 그대로)</li>
+<li>캐릭터마다 <b>서 있는 자세 · 공격 자세 사진 1장</b>씩 같이 주시면 바로 비교할게요.</li>
+<li>받은 날 바로 게임에 넣고 화면 사진 보내 드릴게요.</li>
+</ul>
+
+<div class="ans" style="font-size:14px;padding:10px">
+<b>답 (번호 + 날짜만):</b> 예) "1·2·3 → 11/15", "자리는 어려움, 파일에 넣어서 보냄"<br><br>
+1 무기 자리: ________ &nbsp;&nbsp; 2 동작 3개: ________ &nbsp;&nbsp; 3 무기 파일: ________ &nbsp;&nbsp; 여유분: ________
+</div>
+
+</body></html>

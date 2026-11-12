@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3527700943506284907}
-  - component: {fileID: 8588187996552611474}
+  - component: {fileID: 3292490420016955761}
   m_Layer: 0
   m_Name: WallLamp
   m_TagString: Untagged
@@ -31,10 +31,10 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7898120615525518080}
-  - {fileID: 2131571566275880573}
+  - {fileID: 2751607618786657905}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8588187996552611474
+--- !u!114 &3292490420016955761
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -46,11 +46,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f9ecc11aad122a4e9ae054fe8048fb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Combat.StreetLampGlow
-  Point: {fileID: 2131571566275880573}
+  Point: {fileID: 2751607618786657905}
   Glass:
   - {fileID: 9066007760466440303}
   Wall: 1
---- !u!1 &4643854043856080110
+--- !u!1 &5651133550788728772
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -58,7 +58,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2131571566275880573}
+  - component: {fileID: 2751607618786657905}
   m_Layer: 0
   m_Name: LampPoint
   m_TagString: Untagged
@@ -66,13 +66,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2131571566275880573
+--- !u!4 &2751607618786657905
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4643854043856080110}
+  m_GameObject: {fileID: 5651133550788728772}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7045729, z: -0, w: 0.7096316}
   m_LocalPosition: {x: 0.33809486, y: 0.37574935, z: 0.0024188363}

@@ -21,7 +21,7 @@ namespace Fantasia.Editor
         private static readonly Dictionary<string, (Axis along, Vector3 alongDir, Axis second, Vector3 secondDir)> WeaponPose = new()
         {
             ["Dagger"] = (Axis.Z, (Fwd - Up * 0.35f).normalized, Axis.X, Up),        // 칼날 앞(살짝 아래), 날 폭은 세로
-            ["Scalpel"] = (Axis.Z, (Fwd - Up * 0.35f).normalized, Axis.X, Up),
+            ["Scalpel"] = (Axis.Z, (Fwd * 0.55f - Up * 0.8f + Right * 0.35f).normalized, Axis.X, Fwd), // 11/13: 하얀 코트 앞에서 안 보여 → 몸 밖 아래로
             ["RustDagger"] = (Axis.Z, (Fwd - Up * 0.35f).normalized, Axis.X, Up),
             ["Staff"] = (Axis.Z, Up, Axis.Y, Fwd),                                    // 지팡이 머리가 위, 아래로 바닥 쪽
             ["Pistol"] = (Axis.Z, Fwd, Axis.Y, Up),                                   // 총구 앞, 손잡이 아래
@@ -30,13 +30,13 @@ namespace Fantasia.Editor
             ["Grimoire"] = (Axis.Y, Up, Axis.Z, Right),                               // 책을 세워 옆구리에
         };
 
-        // 무기 이름, 오른손?, 처음에 켤지
-        private static readonly Dictionary<string, (string weapon, bool right, bool on)[]> Weapons = new()
+        // 무기 이름, 오른손?, 처음에 켤지, 크기 배율 (아벨: 보스라 멀리서도 보이게 키움)
+        private static readonly Dictionary<string, (string weapon, bool right, bool on, float scale)[]> Weapons = new()
         {
-            ["Model_Detective"] = new[] { ("Dagger", true, true) },                       // 명탐정 허용: 단검·검·대검 (검·대검 소품 없음 → 빈손)
-            ["Model_PlagueDoctor"] = new[] { ("Staff", true, true), ("Grimoire", true, false) },
-            ["Model_Sniper"] = new[] { ("Pistol", true, true), ("Musket", true, false) },
-            ["Model_AbelMoreau"] = new[] { ("Scalpel", true, true), ("MercuryFlask", false, true) },
+            ["Model_Detective"] = new[] { ("Dagger", true, true, 1f) },                       // 명탐정 허용: 단검·검·대검 (검·대검 소품 없음 → 빈손)
+            ["Model_PlagueDoctor"] = new[] { ("Staff", true, true, 1f), ("Grimoire", true, false, 1f) },
+            ["Model_Sniper"] = new[] { ("Pistol", true, true, 1f), ("Musket", true, false, 1f) },
+            ["Model_AbelMoreau"] = new[] { ("Scalpel", true, true, 1.5f), ("MercuryFlask", false, true, 1.3f) },
         };
 
         private static void AttachWeapons(GameObject model, string name, List<string> report)
@@ -72,7 +72,7 @@ namespace Fantasia.Editor
             if (leftHand != null) { lq = inv * leftHand.rotation; lGrip = GripLocal(leftHand, leftMid); }
             if (idle != null) AnimationMode.StopAnimationMode();
 
-            foreach (var (weapon, right, on) in list)
+            foreach (var (weapon, right, on, scale) in list)
             {
                 var hand = right ? rightHand : leftHand;
                 var src = AssetDatabase.LoadAssetAtPath<GameObject>($"{WeaponRoot}/Prop_Weapon_{weapon}/Prop_Weapon_{weapon}.fbx");
@@ -80,7 +80,7 @@ namespace Fantasia.Editor
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(src);
                 go.name = "Weapon_" + weapon;
                 go.transform.SetParent(hand, false);
-                go.transform.localScale = Vector3.one / Mathf.Max(0.0001f, hand.lossyScale.x); // 손뼈 배율을 되돌려 받은 크기(m) 그대로
+                go.transform.localScale = Vector3.one * scale / Mathf.Max(0.0001f, hand.lossyScale.x); // 손뼈 배율을 되돌려 받은 크기(m) 그대로
                 go.transform.localPosition = right ? rGrip : lGrip;
                 var want = WeaponPose.TryGetValue(weapon, out var p) ? Desired(p.along, p.alongDir, p.second, p.secondDir) : Quaternion.identity;
                 go.transform.localRotation = Quaternion.Inverse(right ? rq : lq) * want;
