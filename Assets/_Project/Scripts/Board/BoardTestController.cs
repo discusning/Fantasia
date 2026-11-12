@@ -461,7 +461,7 @@ namespace Fantasia.Board
             // 3D 주사위가 굴러 나온 눈(face)이 위로 멈춘 뒤 갈 수 있는 칸 표시 (2026-11-06). 모델이 없으면 바로 표시.
             _diceRolling = true;
             _lastFace = face;
-            _dice.Roll(face, () => { _diceRolling = false; ShowRollResult(); });
+            _dice.Roll(face, () => { _diceRolling = false; ShowRollResult(); }, "이동 " + _lastRoll);
         }
 
         private bool _diceRolling;
@@ -519,7 +519,7 @@ namespace Fantasia.Board
         private IEnumerator WalkPath(List<HexCoord> path)
         {
             _isMoving = true;
-            _dice.Hide(); // 칸을 고르면 주사위는 치움
+            _dice.Dock(); // 11/12: 칸을 고르면 주사위는 오른쪽으로 (이번 턴 동안 눈을 보여 줌)
 
             foreach (var coord in path)
             {
@@ -539,6 +539,7 @@ namespace Fantasia.Board
             }
 
             _isMoving = false;
+            _dice.Hide(); // 11/12: 도착하면 오른쪽 주사위도 치움 (조우·이벤트 창과 겹치지 않게)
             BoardSession.Instance.PlayerPosition = _currentCoord;
             BoardSession.Instance.LastSafeCoord = _lastSafeCoord;
             SaveGame.Checkpoint("이동 완료"); // Save.md 3 — 도착 처리(조우·칸 효과)보다 먼저
@@ -984,6 +985,7 @@ namespace Fantasia.Board
         private IEnumerator EndAllyTurn()
         {
             _turnEnding = true;
+            _dice.Hide(); // 11/12: 오른쪽에 둔 주사위는 턴이 끝나면 치움
             _board.ClearHighlights();
             _awaitingSelection = false;
 
@@ -1100,6 +1102,7 @@ namespace Fantasia.Board
 
         public void DevRoll() => TryRoll();
         public bool DevDiceRolling => _diceRolling; // 3D 주사위가 구르는 중 (멈춘 뒤 칸 선택)
+        public BoardDice DevDice => _dice;
         public int DevLastFace => _lastFace; // 주사위에 나온 눈 (피의 사냥 −2 전)
         public void DevOpenShop() => OpenShopHere();
         public void DevRefreshTopBar() => RefreshTopBar(announce: false);
@@ -1224,17 +1227,17 @@ namespace Fantasia.Board
             string rollHint = Clock.Phase != WorldPhase.AllyTurn ? "적 턴 진행 중..."
                 : Clock.HasRolledThisTurn ? $"주사위: {_lastRoll}" : "Space: 주사위 굴리기";
             BoardHintPanel.Set(
-                $"<b>{rollHint}</b>   <color=#A39C92>파티장 {Leader?.Job.DisplayName ?? "-"}</color>",
+                $"<b>{rollHint}</b>   <color=#CFC8BC>파티장 {Leader?.Job.DisplayName ?? "-"}</color>",
                 _awaitingSelection ? "밝은 칸 클릭: 이동" : _isMoving ? "이동 중..." : null,
                 _lastEventBonus >= 0 ? $"이벤트 칸 추가 이동 +{_lastEventBonus}칸 (이번 턴 1회)" : null,
-                "<color=#A39C92>주황 적 · 자주 보스 · 파랑 거점 · 보라 이벤트 · 초록 회복 · 노랑 보물</color>",
+                "<color=#CFC8BC>주황 적 · 자주 보스 · 파랑 거점 · 보라 이벤트 · 초록 회복 · 노랑 보물</color>",
                 // 11/10 기획 회신 07: 첫 플레이 안내 문구 (기획 문구 그대로)
                 "<color=#D9B26A>판정 칸</color> 기본 공격은 판정 칸이 모두 성공하면 치명타가 됩니다.",
                 "<color=#D9B26A>피의 흔적</color> 100이 되면 피의 사냥이 시작됩니다.",
                 "      3월드 라운드 안에 사신 3마리를 모두 쓰러뜨리세요.",
                 "<color=#D9B26A>집중력</color> 집중력 1을 사용하면 판정 칸 1개를 확정 성공시킬 수 있습니다.",
-                "<color=#A39C92>I·초상 클릭: 인벤토리 · Q: 사건 기록 · Esc: 메뉴" + (OnHubTile ? " · B: 상점" : "") + (_hasSave && DevLoadAllowed ? " · F9: 불러오기(개발)" : "") + "</color>",
-                _board != null && _board.UsesWorldMap ? "<color=#A39C92>카메라: WASD·방향키, 휠 줌, F 파티로</color>" : null,
+                "<color=#CFC8BC>I·초상 클릭: 인벤토리 · Q: 사건 기록 · Esc: 메뉴" + (OnHubTile ? " · B: 상점" : "") + (_hasSave && DevLoadAllowed ? " · F9: 불러오기(개발)" : "") + "</color>",
+                _board != null && _board.UsesWorldMap ? "<color=#CFC8BC>카메라: WASD·방향키, 휠 줌, F 파티로</color>" : null,
                 SaveGame.LastError != null ? "<color=#E0675A>저장 실패</color>" : null,
                 !EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage) ? _encounterResultMessage : null,
                 !string.IsNullOrEmpty(_worldMessage) ? "턴 시작: " + _worldMessage : null);

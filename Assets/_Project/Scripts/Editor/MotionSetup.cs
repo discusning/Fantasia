@@ -12,7 +12,8 @@ namespace Fantasia.Editor
     public static class MotionSetup
     {
         private const string Root = "Assets/_Project/Art/Models/Characters/Animations";
-        public static readonly string[] Motions = { "Defend", "Skill", "Item", "Heal", "Recover", "Revive" };
+        // 11/12 N6~N8 추가: 보스 예고(Announce)·금지된 봉합(SelfHeal) · 회피(Dodge) · 승리(Victory, 끝 자세에서 멈춤 → Idle로 안 돌아감)
+        public static readonly string[] Motions = { "Defend", "Skill", "Item", "Heal", "Recover", "Revive", "Announce", "SelfHeal", "Dodge", "Victory" };
 
         [MenuItem("Fantasia/동작 연결 (MotionSetup)")]
         public static void Run()
@@ -52,10 +53,13 @@ namespace Fantasia.Editor
                     into.duration = motion == "Revive" ? 0.05f : 0.1f; // 부활은 누운 자세에서 바로 이어짐
                     into.canTransitionToSelf = false;
 
-                    var back = state.AddTransition(idle);
-                    back.hasExitTime = true;
-                    back.exitTime = 0.95f;
-                    back.duration = 0.15f;
+                    if (motion != "Victory") // 승리는 끝 자세 그대로 (디자인: "끝에서 멈춤")
+                    {
+                        var back = state.AddTransition(idle);
+                        back.hasExitTime = true;
+                        back.exitTime = 0.95f;
+                        back.duration = 0.15f;
+                    }
                     line.Add($"{motion} {clip.length:0.00}초");
                 }
                 if (line.Count > 0)

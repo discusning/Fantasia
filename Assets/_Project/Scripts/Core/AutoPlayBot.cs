@@ -833,9 +833,25 @@ namespace Fantasia.Core
                 yield return WaitFor(() => (board.DevIsIdle && !BoardTopBar.DevTurnDropVisible) || EncounterPanel.IsOpen, 10f, "이동 대기");
                 if (EncounterPanel.IsOpen) break;
                 board.DevRoll();
+                if (turn == 1) { yield return new WaitForSeconds(0.35f); yield return Shot("board_dice_rolling"); }
                 yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
                 Note($"보드 {turn}턴: 월드 라운드 {board.DevWorldRound} 아군 턴 — 주사위 굴림");
-                if (turn == 1) yield return Shot("board_roll_highlight");
+                if (turn == 1)
+                {
+                    // 11/12 주사위 개선 점검: 틀 안에서 굴러 들어옴 · 한 프레임에 크게 안 돎 · 1.3초 뒤 오른쪽으로 옮겨 칸을 안 가림
+                    var dice = board.DevDice;
+                    if (dice.DevVisible || dice.DevMaxStepDeg > 0f)
+                    {
+                        Qa(!dice.DevOutOfFrame, "주사위가 그림 틀 안에서만 굴러감 (위에서 갑자기 안 나옴)");
+                        Qa(dice.DevMaxStepDeg < 22f, $"주사위 한 프레임 최대 회전 {dice.DevMaxStepDeg:0.0}° (22° 미만)");
+                    }
+                    yield return Shot("board_roll_highlight");
+                    yield return WaitFor(() => board.DevDice.DevDock >= 1f, BoardDice.HoldSeconds + 2f, "주사위 오른쪽으로");
+                    var c = dice.DevScreenCenter;
+                    Qa(dice.DevDock >= 1f && c.x > Screen.width * 0.85f && c.y > Screen.height * 0.25f && c.y < Screen.height * 0.6f,
+                        $"주사위가 {BoardDice.HoldSeconds}초 뒤 오른쪽으로 감 (화면 {c.x / Screen.width:0.00}, {c.y / Screen.height:0.00}) · \"{dice.DevLabel}\"");
+                    yield return Shot("board_dice_docked");
+                }
                 bool camShot = turn == 1 && Environment.GetCommandLineArgs().Contains("-camera-preview");
                 if (huntRun)
                 {
@@ -1022,6 +1038,26 @@ namespace Fantasia.Core
             }
         }
 
+        // 11/12 N6~N8 연결 확인 (첫 전투 첫 차례에 한 번): 아군 = 회피·승리, 아벨 모로 = 예고·봉합
+        private bool _motionsChecked, _bossMotionsChecked, _cardPickChecked;
+        private void CheckMotionsWired(Fantasia.Combat.BattleController battle)
+        {
+            if (!_motionsChecked)
+            {
+                _motionsChecked = true;
+                var allies = battle.DevAllies.Select(u => Fantasia.UI.CharacterMotion.Of(battle.DevModelOf(u))).Where(m => m != null).ToList();
+                int ok = allies.Count(m => m.Has("Dodge") && m.Has("Victory"));
+                Qa(allies.Count > 0 && ok == allies.Count, $"아군 회피·승리 동작 연결 ({ok}/{allies.Count})");
+            }
+            var boss = battle.DevEnemies.FirstOrDefault(e => e.Boss != null);
+            if (boss != null && !_bossMotionsChecked)
+            {
+                _bossMotionsChecked = true;
+                var bm = Fantasia.UI.CharacterMotion.Of(battle.DevModelOf(boss));
+                Qa(bm != null && bm.Has("Announce") && bm.Has("SelfHeal"), "아벨 모로 예고·봉합 동작 연결");
+            }
+        }
+
         // 11/12 팀장 지적: 방패 표시가 캐릭터 이동을 따라갔다가 제자리로 바로 안 돌아옴.
         // 보호막을 준 뒤 6초 동안(적이 와서 때리고 돌아가는 동안) 매 프레임 끝에 "방패 ↔ 지금 머리 위" 거리를 잼.
         private IEnumerator SampleShieldMarks(Fantasia.Combat.BattleController battle)
@@ -1046,7 +1082,7 @@ namespace Fantasia.Core
             _lastBattle = battle;
             bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false, usedItem = false, defendDemo = false, sniperShield = false, shieldNoted = false, bossShield = false, bossShieldShot = false; int bossAbsorbBefore = 0; // defendDemo: 11/11 보호막 촬영
             bool shotBanner = false, shotIntro = false, shotTelegraph = false, focusZeroed = false;
-            bool kit = args.Contains("-autoplay-kit"), forceInterrupt = args.Contains("-autoplay-interrupt"), focusZero = args.Contains("-autoplay-focus0");
+            bool kit = args.Contains("-autoplay-kit"), forceInterrupt = args.Contains("-autoplay-interrupt"), focusZero = args.Contains("-autoplay-focus0"), noInterrupt = args.Contains("-autoplay-no-interrupt"); // 11/12: 봉합을 그냥 두고 자가 회복 동작(N6) 확인
             int downs = 0, healsUsed = 0, interrupts = 0;
             // 속도 점검 (-autoplay-ampoule): 역병 의사가 신속의 앰플을 자신에게 (효과가 끝나면 다시) — 다음 라운드 ↑ 화면 촬영
             bool ampouleRun = args.Contains("-autoplay-ampoule");
@@ -1099,7 +1135,7 @@ namespace Fantasia.Core
                 if (battle.DevAwaitingPlayer)
                 {
                     yield return new WaitForSeconds(0.3f);
-                    if (!shotFirstTurn) { shotFirstTurn = true; if (shots) yield return Shot("battle_first_turn"); }
+                    if (!shotFirstTurn) { shotFirstTurn = true; if (shots) yield return Shot("battle_first_turn"); CheckMotionsWired(battle); }
                     // 촬영용 (-autoplay-wipe): 아군 전원을 쓰러뜨려 패배·게임 오버 화면을 띄운다
                     if (Environment.GetCommandLineArgs().Contains("-autoplay-wipe"))
                     {
@@ -1119,8 +1155,9 @@ namespace Fantasia.Core
                         .FirstOrDefault(d => d.Effect == Fantasia.Data.ConsumableEffect.RestoreHP);
                     var poisoned = battle.DevAllies.Where(a => a.InBattle).FirstOrDefault(a => a.Statuses.All.Any(s => s.Effect == Fantasia.Data.StatusEffectType.Poison && s.Stacks >= 2));
                     var antidote = BoardSession.Instance.Party.Inventory.Consumables.Select(s => s.Definition).FirstOrDefault(d => d.Id == Fantasia.Data.ConsumableIds.Antidote);
+                    if (noInterrupt && telegraphBoss != null && skill != null && target == telegraphBoss) skill = null; // 저지 기술도 안 씀
                     bool breakerReady = skill != null && telegraphBoss != null && target == telegraphBoss && skill.Coefficient >= telegraphBoss.Boss.Pending.CancelMinCoefficient;
-                    if (telegraphBoss != null && battle.DevHud.DevInterruptVisible && (forceInterrupt || !breakerReady))
+                    if (!noInterrupt && telegraphBoss != null && battle.DevHud.DevInterruptVisible && (forceInterrupt || !breakerReady))
                     {
                         // 봉합 방해: 저지 기술이 없거나(집중력·쿨다운) 점검으로 강제할 때
                         interrupts++;
@@ -1174,7 +1211,24 @@ namespace Fantasia.Core
                         yield return new WaitForSeconds(0.2f);
                         if (shots) yield return Shot("battle_item_menu");
                         Note($"  소모품 사용: {potion.DisplayName} → {potionTarget.DisplayName} (HP {potionTarget.CurrentHP}/{potionTarget.MaxHP})");
-                        battle.DevUseItem(potion, potionTarget);
+                        if (!_cardPickChecked)
+                        {
+                            // 11/12 아군 대상은 아래 캐릭터 카드를 눌러 고름 (행동 창이 전장 모델을 가려서)
+                            _cardPickChecked = true;
+                            int countBefore = BoardSession.Instance.Party.Inventory.CountOf(potion);
+                            int hpBefore = potionTarget.CurrentHP;
+                            battle.DevPressItem(potion);
+                            yield return null; yield return null;
+                            int valid = PartyHudPanel.DevTargetPickValidCount;
+                            Qa(battle.DevChoosingTarget && PartyHudPanel.DevTargetPickOn && valid >= 1, $"아군 대상 고르기 중 카드에 \"대상\" 덮개 (고를 수 있는 카드 {valid}장)");
+                            if (shots) yield return Shot("battle_target_cards");
+                            bool clicked = PartyHudPanel.DevClickTargetCard(potionTarget.Member);
+                            yield return WaitFor(() => potionTarget.CurrentHP > hpBefore, 4f, "카드로 고른 아이템 효과");
+                            Qa(clicked && BoardSession.Instance.Party.Inventory.CountOf(potion) == countBefore - 1 && potionTarget.CurrentHP > hpBefore,
+                               $"카드를 눌러 {potionTarget.DisplayName}에게 {potion.DisplayName} 사용 (HP {hpBefore} → {potionTarget.CurrentHP})");
+                            Qa(!PartyHudPanel.DevTargetPickOn, "고른 뒤 카드 덮개 사라짐");
+                        }
+                        else battle.DevUseItem(potion, potionTarget);
                         yield return new WaitForSeconds(0.4f);
                         if (shots) yield return Shot("battle_item_used");
                     }
@@ -1249,7 +1303,11 @@ namespace Fantasia.Core
 
             // 보스 처치 후 대화 → 보상 창
             bool bossBattle = battle.DevEnemies.Any(e => e.Boss != null);
-            yield return new WaitForSeconds(0.5f);
+            // 11/12 N8: 승리 동작(약 1.9초) 뒤에 대화·결과 창 → 둘 중 하나가 뜰 때까지
+            bool wonBattle = battle.DevEnemies.All(e => !e.IsAlive);
+            yield return WaitFor(() => DialoguePanel.IsOpen || battle.DevHud.DevResultButtonsVisible || battle.DevHud.DevResultDropPlaying, 6f, "승리 동작 뒤 대화·결과 창");
+            if (wonBattle) { Fantasia.UI.CharacterMotion.DevPlayed.TryGetValue("Victory", out int vic); Qa(vic > 0, $"승리하면 아군 승리 동작 (재생 {vic}번)"); }
+            Note($"  동작 재생: {string.Join(" · ", new[] { "Dodge", "Victory", "Announce", "SelfHeal" }.Select(k => $"{k} {(Fantasia.UI.CharacterMotion.DevPlayed.TryGetValue(k, out int c) ? c : 0)}"))}");
             bool shotOutro = false;
             while (DialoguePanel.IsOpen)
             {
@@ -1516,6 +1574,7 @@ namespace Fantasia.Core
             board.DevArriveAt("Q01");
             yield return WaitFor(() => EncounterPanel.IsOpen, 5f, "Q01 조우");
             EncounterPanel.DevChoose(1);
+            Fantasia.Combat.BattleController.DevShowcaseLoot = true; // 11/12 결과 창 아이템 띠 점검: 전설 무기·에픽 방어구·소모품
             yield return RunBattle(shots: false);
             var b = _lastBattle;
             bool won = b != null && b.DevFinished && b.DevEnemies.All(e => !e.IsAlive);
@@ -1527,6 +1586,7 @@ namespace Fantasia.Core
             {
                 Qa(b.DevHud.DevResultDropPlaying && b.DevHud.DevResultTitle == "전투 승리", $"승리 판 \"{b.DevHud.DevResultTitle}\" · 요약 \"{b.DevHud.DevResultSummary}\"");
                 Qa(!b.DevHud.DevResultButtonsVisible, "판이 멈추기 전 버튼 숨김");
+                Qa(b.DevHud.DevResultItemCount == 3, $"결과 창에 얻은 아이템 그림·등급 색 띠 ({b.DevHud.DevResultItemCount}칸)");
                 yield return new WaitForSecondsRealtime(1.9f);
                 Qa(b.DevHud.DevResultButtonsVisible, "판이 멈춘 뒤 버튼 보임");
                 yield return Shot("qa_victory_panel");
@@ -1582,6 +1642,16 @@ namespace Fantasia.Core
             yield return WaitFor(() => ItemAcquiredToast.DevShowing == "QA 알림 둘째", 4f, "둘째 알림");
             Qa(ItemAcquiredToast.DevShowing == "QA 알림 둘째", $"알림 줄: 둘째가 이어서 (보임 {ItemAcquiredToast.DevShowing})");
             yield return Shot("qa_toast_queue_2");
+
+            // 11/12 아이템 그림·등급 색: 그림 없는 무기도 종류 아이콘 · 전설은 빨간 글 "[전설] ○○ — 장비 획득"
+            var cat = Fantasia.Data.ItemCatalog.Current;
+            var plainWeapon = cat != null ? cat.Weapons.FirstOrDefault(w => w != null && w.Icon == null) : null;
+            if (plainWeapon != null)
+            {
+                int catIcons = cat.Weapons.Concat<object>(cat.Armors).Concat(cat.Consumables).Count(o => o != null && ItemLook.IconOf(o) != null);
+                int all = cat.Weapons.Length + cat.Armors.Length + cat.Consumables.Length;
+                Qa(catIcons == all, $"모든 아이템에 그림 (자체 또는 종류 아이콘) {catIcons}/{all}");
+            }
 
             // 2026-11-06 변경 확인: ① 집중을 여러 개 골라 쓰기 ② 한 명이 퇴각에 성공하면 파티 전원 퇴각
             board.DevArriveAt("O07");

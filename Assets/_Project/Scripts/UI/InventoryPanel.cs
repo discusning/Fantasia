@@ -33,7 +33,7 @@ namespace Fantasia.UI
         private static readonly Color RowFill = new Color(0.16f, 0.15f, 0.17f, 1f);
         private static readonly Color RowSelected = new Color(0.42f, 0.33f, 0.18f, 1f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
-        private static readonly Color TextDim = new Color(0.62f, 0.6f, 0.56f);
+        private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
         private static readonly Color Good = new Color(0.45f, 0.85f, 0.45f);
         private static readonly Color Bad = new Color(0.9f, 0.4f, 0.35f);
         private const int RowsPerPage = 9;
@@ -55,6 +55,7 @@ namespace Fantasia.UI
         private PortraitView _portrait;
         private readonly List<(Button button, Text label)> _slotRows = new();
         private readonly List<(Button button, Image fill, Text name, Text right)> _rows = new();
+        private readonly List<Image> _rowIcons = new(); // 11/12 줄마다 작은 아이템 그림 (없으면 종류 아이콘)
         private readonly List<(Button button, Text label)> _tabButtons = new();
         private Text _pageLabel;
         private CardView _equippedCard, _selectedCard;
@@ -146,7 +147,7 @@ namespace Fantasia.UI
             {
                 var row = _slotRows[(int)slot];
                 var item = _member.GetEquipped(slot);
-                row.label.text = $"{slot.Label()}   {(item != null ? item.DisplayName : "— 비어 있음 —")}";
+                row.label.text = $"{slot.Label()}   {(item != null ? ItemLook.Rich(item) : "— 비어 있음 —")}"; // 11/12 등급 색
                 row.label.color = item != null ? TextLight : TextDim;
                 row.button.targetGraphic.color = _selectedSlot == slot ? RowSelected : RowFill;
             }
@@ -183,7 +184,8 @@ namespace Fantasia.UI
                         var g = inv.Gear[i];
                         row.name.text = g.DisplayName;
                         row.right.text = $"{g.Slot.Label()} · Lv{g.WearLevel}";
-                        row.name.color = g.CanEquip(_member, out _) ? TextLight : TextDim;
+                        row.name.color = g.CanEquip(_member, out _) ? ItemLook.NameColor(g) : TextDim; // 11/12 등급 색
+                        SetRowIcon(r, ItemLook.IconOf(g), g.CanEquip(_member, out _));
                         selected = g == _selectedGear;
                         break;
                     case Tab.Consumables:
@@ -191,17 +193,26 @@ namespace Fantasia.UI
                         row.name.text = c.Definition.DisplayName;
                         row.right.text = $"×{c.Count}";
                         row.name.color = c.Definition.IsImplemented ? TextLight : TextDim;
+                        SetRowIcon(r, ItemLook.IconOf(c.Definition), c.Definition.IsImplemented);
                         selected = c.Definition == _selectedConsumable;
                         break;
                     default:
                         row.name.text = pending[i].Name;
                         row.right.text = pending[i].Gear != null ? "장비" : "소모품";
-                        row.name.color = TextLight;
+                        row.name.color = ItemLook.NameColor(pending[i]);
+                        SetRowIcon(r, ItemLook.IconOf(pending[i]), true);
                         selected = i == _selectedPending;
                         break;
                 }
                 row.fill.color = UGUIKit.RowTint(selected, RowFill, RowSelected); // 11/11 U9
             }
+        }
+
+        private void SetRowIcon(int r, Sprite s, bool bright)
+        {
+            _rowIcons[r].enabled = s != null;
+            _rowIcons[r].sprite = s;
+            _rowIcons[r].color = bright ? Color.white : new Color(1f, 1f, 1f, 0.45f);
         }
 
         private void OnRowClicked(int r)
@@ -250,9 +261,10 @@ namespace Fantasia.UI
                 card.Footer.text = "";
                 return;
             }
-            SetCardIcon(card, item.Icon);
+            SetCardIcon(card, ItemLook.IconOf(item));
             card.Header.text = $"{item.Slot.Label()} · {item.Grade.Label()} · 착용 Lv {item.WearLevel}";
             card.Name.text = item.BaseName;
+            card.Name.color = ItemLook.NameColor(item); // 11/12 등급 색
             var lines = new List<string>();
             if (item.IsWeapon)
             {
@@ -281,8 +293,9 @@ namespace Fantasia.UI
         private void ShowConsumable(CardView card, ConsumableDefinition def)
         {
             card.Header.text = "소모품";
-            SetCardIcon(card, def.Icon);
+            SetCardIcon(card, ItemLook.IconOf(def));
             card.Name.text = def.DisplayName;
+            card.Name.color = ItemLook.ConsumableColor;
             card.Main.text = $"보유 {_party.Inventory.CountOf(def)} / {def.MaxStack}";
             string where = (def.Usable & UseContext.Battle) != 0 && (def.Usable & UseContext.World) != 0 ? "전투·월드"
                 : (def.Usable & UseContext.Battle) != 0 ? "전투" : (def.Usable & UseContext.World) != 0 ? "월드" : "사용 불가 (재료 등)";
@@ -572,7 +585,11 @@ namespace Fantasia.UI
                 var b = bg.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = bg;
                 b.onClick.AddListener(() => OnRowClicked(index));
-                var name = Label(bg.transform, "Name", new Vector2(0.02f, 0f), new Vector2(0.7f, 1f), 11, TextAnchor.MiddleLeft, TextLight, false);
+                var rowIcon = UGUIKit.CreateImage(bg.transform, "Icon", new Vector2(0.01f, 0.05f), new Vector2(0.07f, 0.95f), Color.white);
+                rowIcon.preserveAspect = true;
+                rowIcon.raycastTarget = false;
+                _rowIcons.Add(rowIcon);
+                var name = Label(bg.transform, "Name", new Vector2(0.08f, 0f), new Vector2(0.7f, 1f), 11, TextAnchor.MiddleLeft, TextLight, false);
                 var right = Label(bg.transform, "Right", new Vector2(0.7f, 0f), new Vector2(0.98f, 1f), 10, TextAnchor.MiddleRight, TextDim, false);
                 _rows.Add((b, bg, name, right));
             }

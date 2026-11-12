@@ -52,8 +52,8 @@ namespace Fantasia.UI
                 _evidenceIcons[i].color = got ? Color.white : new Color(0f, 0f, 0f, 0.85f); // 미확보: 검은 그림자
                 _evidenceTexts[i].gameObject.SetActive(true);
                 _evidenceTexts[i].text = got
-                    ? $"<b><color=#D9B45A>{ev.Name}</color></b>  — 확보\n{ev.Description}\n<color=#8C877F>획득: {ev.Source}\n연결: {ev.LinkedQuests}</color>"
-                    : "<b>???</b>  — 미확보\n<color=#8C877F>아직 확보하지 못한 증거.</color>";
+                    ? $"<b><color=#D9B45A>{ev.Name}</color></b>  — 확보\n{ev.Description}\n<color=#C2BBAF>획득: {ev.Source}\n연결: {ev.LinkedQuests}</color>"
+                    : "<b>???</b>  — 미확보\n<color=#C2BBAF>아직 확보하지 못한 증거.</color>";
             }
         }
     }

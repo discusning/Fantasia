@@ -81,6 +81,7 @@ namespace Fantasia.Combat
             _hud.FocusChanged += () => { if (_phase == Phase.ChoosingTarget && _hovered != null) _hud.SetHint(PreviewText(_current, _hovered)); };
             _hud.ReviveClicked += OnReviveClicked;
             _hud.EnemyBarClicked += OnUnitPicked;
+            PartyHudPanel.TargetCardClicked += OnTargetCardClicked; // 11/12 아군 대상은 아래 캐릭터 카드로도 고름
             _hud.SkillChosen += OnSkillChosen;
             _hud.ItemChosen += OnItemChosen;
             _hud.CancelRequested += () => { if (_phase == Phase.ChoosingTarget) CancelTargeting(); };
@@ -283,6 +284,7 @@ namespace Fantasia.Combat
 
                 case EnemyActionKind.Announce:
                     // 예고는 피해 없음 (보스 공통 규칙). HP 바 아래 예고는 실행·저지·사망·전투 종료까지 유지, 하단 알림은 2초.
+                    MotionOf(boss)?.Announce(); // 11/12 N6 손을 높이 들고 위협 (1초)
                     var pending = boss.Boss.Pending;
                     string next = pending != null ? $"다음 보스 행동: {pending.FollowUp.Name}" : "";
                     Log($"{boss.DisplayName} 예고 [{action.Name}] {next}");
@@ -299,6 +301,8 @@ namespace Fantasia.Combat
                     break;
 
                 case EnemyActionKind.SelfHeal:
+                    // 11/12 N6 금지된 봉합: 왼팔을 세 번 꿰매는 동작 → 꿰맨 뒤 회복 숫자
+                    if (MotionOf(boss)?.SelfHeal() == true) yield return new WaitForSeconds(CharacterMotion.SelfHealLead);
                     int healed = boss.HealEnemy(action.HealAmount);
                     Log($"{boss.DisplayName} [{action.Name}] HP +{healed} · HP {boss.CurrentHP}/{boss.MaxHP}");
                     RefreshBossTelegraph();
@@ -871,6 +875,7 @@ namespace Fantasia.Combat
             Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus > 0 ? $", 집중 {useFocus}" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             SfxPlayer.Play(outcome.Evaded ? SfxIds.Miss : outcome.IsCritical ? SfxIds.Crit : SfxIds.Hit);
             _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : Mathf.Max(0, outcome.Damage - absorbed).ToString(), ResultColor(outcome));
+            if (outcome.Evaded) MotionOf(target)?.Dodge(); // 11/12 N7 회피: 몸을 옆으로 비킴 (동작 있는 아군만)
             if (!target.IsAlive) KnockDown(target);
             else if (!outcome.Evaded)
             {
@@ -1046,6 +1051,18 @@ namespace Fantasia.Combat
             if (unit.IsAlive) MotionOf(unit)?.Recover();
         }
 
+        // 11/12 N8 승리: 마지막 적이 쓰러지면 서 있는 아군이 승리 동작(1.5초, 끝 자세 유지) → 그다음 결과 창·대화.
+        // 저장·보상은 먼저 끝내 둠 (동작 중 게임을 꺼도 보상은 저장됨). 동작이 없으면 바로 다음.
+        public const float VictoryStartDelay = 0.4f; // 마지막 공격·쓰러짐 동작이 끝나게 잠깐
+        private IEnumerator AfterVictoryMotion(System.Action next)
+        {
+            yield return new WaitForSeconds(VictoryStartDelay);
+            bool any = false;
+            foreach (var ally in _allies.Where(a => a.InBattle && a.IsAlive)) any |= MotionOf(ally)?.Victory() == true;
+            if (any) yield return new WaitForSeconds(CharacterMotion.VictoryHold);
+            next();
+        }
+
         private CharacterMotion MotionOf(BattleUnit unit) => unit != null && _models.TryGetValue(unit, out var model) ? CharacterMotion.Of(model) : null;
 
         private void PlayHitMotion(BattleUnit target)
@@ -1089,14 +1106,18 @@ namespace Fantasia.Combat
                     ActOneStory.MarkBossDefeated(session);
                     EndPlayLog("승리 (보스)", LastRewards, 0);
                     SaveGame.Checkpoint("보스 처치·보상·증거품"); // 보상 확정 → 저장 → 대화·보상 창
-                    StartCoroutine(PlayDialogueThen(ActOneStory.AfterBattle, () =>
+                    StartCoroutine(AfterVictoryMotion(() => StartCoroutine(PlayDialogueThen(ActOneStory.AfterBattle, () =>
                     {
                         session.StoryFlags.Add(ActOneStory.FlagAfterDialogueDone); // 도중 종료면 이어하기 때 이 대화만 다시 (결정서 T16-35)
                         SaveGame.Checkpoint("처치 후 대화");
                         SfxPlayer.Play(SfxIds.Victory); _hud.ShowPanelResult(true, "아벨 모로 격파", RewardSummary(), $"검시관 아벨 모로를 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard);
-                    }));
+                    }))));
                 }
-                else { EndPlayLog("승리", LastRewards, 0); SaveGame.Checkpoint("전투 승리·보상"); SfxPlayer.Play(SfxIds.Victory); _hud.ShowPanelResult(true, "전투 승리", RewardSummary(), $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }
+                else
+                {
+                    EndPlayLog("승리", LastRewards, 0); SaveGame.Checkpoint("전투 승리·보상");
+                    StartCoroutine(AfterVictoryMotion(() => { SfxPlayer.Play(SfxIds.Victory); _hud.ShowPanelResult(true, "전투 승리", RewardSummary(), $"적을 모두 쓰러뜨렸다.\n{loot}{downed}", ReturnToBoard); }));
+                }
             }
             else if (!wiped)
             {
@@ -1186,33 +1207,59 @@ namespace Fantasia.Combat
             if (_setup.FixedExp > 0) rewards.Experience = _setup.FixedExp;
             // 부의 기도: 전투 Cent +20%, 여러 명이 받아도 파티당 1회 (버림)
             if (PrayerRules.PartyHas(party, PrayerKind.Wealth)) rewards.Cent += Mathf.FloorToInt(rewards.Cent * PrayerRules.WealthCentBonus);
+            if (DevShowcaseLoot) ShowcaseLoot(rewards);
             LootRules.Apply(rewards, party);
             session.PendingLoot.AddRange(rewards.Overflow);
             LastRewards = rewards;
             PlaytestLog.Cent("전투 보상", rewards.Cent, party.Cent, string.Join(" + ", _setup.Enemies.Select(e => e.DisplayName)));
 
             var lines = new List<string> { $"보상 {rewards.SlotCount}칸 — {rewards.Cent} Cent (소지 {party.Cent})" };
+            var shown = new List<string>(lines); // 결과 창 글 — 아이템은 아래 그림 띠로 (11/12)
+            var cells = new List<(Sprite, string, Color)>();
             foreach (var item in rewards.Items)
             {
                 bool lost = rewards.Overflow.Contains(item);
                 lines.Add($"· {item.Name}{(lost ? " (인벤토리 가득 — 보관함에 대기)" : "")}");
+                cells.Add((ItemLook.IconOf(item), ItemLook.NameWithGrade(item) + (lost ? "\n(보관함 대기)" : ""), ItemLook.NameColor(item)));
             }
+            _hud.SetResultItems(cells);
             foreach (var key in _setup.Enemies.Where(en => en.KeyItemRewards != null).SelectMany(en => en.KeyItemRewards))
             {
                 if (session.KeyItems.Contains(key)) continue;
                 session.KeyItems.Add(key);
                 lines.Add($"★ 퀘스트 물건: {key}");
+                shown.Add($"★ 퀘스트 물건: {key}");
             }
             var survivors = party.AliveMembers.ToList();
             lines.Add($"경험치 +{rewards.Experience} ({string.Join(", ", survivors.Select(m => m.Job.DisplayName))})");
+            shown.Add(lines[^1]);
             foreach (var m in survivors.Where(m => m.Level > levels[m]))
+            {
                 lines.Add($"{m.Job.DisplayName} 레벨 업! Lv {m.Level}");
+                shown.Add(lines[^1]);
+            }
             Log($"  → 보상: {string.Join(" / ", lines)}");
-            if (rewards.Items.Count > 0) ItemAcquiredToast.Show($"전리품 {rewards.Items.Count}개 획득");
-            return string.Join("\n", lines);
+            if (rewards.Items.Count > 0) ItemAcquiredToast.Show($"전리품 {rewards.Items.Count}개 획득"); // 11/12 팀장: 하나씩 알림 X → 결과 창에서 그림·등급 색으로 한꺼번에
+            return string.Join("\n", shown);
         }
 
         public BattleRewards LastRewards { get; private set; }
+
+        // 점검용 (자동 플레이): 다음 승리 보상 아이템을 전설 무기 · 에픽 방어구 · 소모품으로 (결과 창 그림 띠·등급 색 사진)
+        public static bool DevShowcaseLoot;
+        private static void ShowcaseLoot(BattleRewards rewards)
+        {
+            DevShowcaseLoot = false;
+            var cat = ItemCatalog.Current;
+            if (cat == null) return;
+            var w = cat.Weapons.FirstOrDefault(x => x != null && x.Icon == null);
+            var a = cat.Armors.FirstOrDefault(x => x != null);
+            var c = cat.Consumables.FirstOrDefault(x => x != null && x.Icon != null);
+            rewards.Items.Clear();
+            if (w != null) rewards.Items.Add(new LootDrop(new GearItem(w, EquipmentGrade.Legendary)));
+            if (a != null) rewards.Items.Add(new LootDrop(new GearItem(a, EquipmentGrade.Epic)));
+            if (c != null) rewards.Items.Add(new LootDrop(c));
+        }
 
         // 결과 판 한 줄 요약: "180 Cent · 경험치 100 · 전리품 획득" (보고서 11/3 B6)
         private string RewardSummary()
@@ -1263,6 +1310,7 @@ namespace Fantasia.Combat
         public GameObject DevModelOf(BattleUnit unit) => unit != null && _models.TryGetValue(unit, out var m) ? m : null;
 
         public void DevDefend() => OnDefendClicked();
+        public void DevPressItem(ConsumableDefinition item) => OnItemChosen(item); // 11/12 아이템만 고르고 대상은 아직 (카드 클릭 점검)
         public void DevPressSkill(SkillDefinition skill) => OnSkillChosen(skill); // 11/11 스킬 칸 누르기 (대상 고르기 시작·같은 칸 다시 누르면 취소)
         public void DevDefendButton() => OnDefendClicked();
         public bool DevChoosingTarget => _phase == Phase.ChoosingTarget;
@@ -1301,13 +1349,33 @@ namespace Fantasia.Combat
         private void OnDestroy()
         {
             PartyHudPanel.QuickSlotClicked -= OnQuickSlotClicked;
+            PartyHudPanel.TargetCardClicked -= OnTargetCardClicked;
             PartyHudPanel.ClearShields(); // 전투가 끝나면 보호막 표시도 끝
             ConsumesEscape = false;
+        }
+
+        // ───────────── 11/12 아군 대상: 아래 캐릭터 카드로 고르기 ─────────────
+        // 가운데 행동 창이 전장의 아군 모델을 가려서, 아군 대상(회복·강화 스킬, 아이템, 부활)을 고르는 동안 카드에 "대상" 덮개를 띄움.
+        private object _cardPickKey;
+        private void SyncTargetCards()
+        {
+            bool want = _phase == Phase.ChoosingTarget && _targetAllies;
+            object key = !want ? null : _reviving ? "부활" : _pendingItem != null ? _pendingItem : _pendingSkill != null ? _pendingSkill : (object)"아군";
+            if (Equals(key, _cardPickKey)) return;
+            _cardPickKey = key;
+            PartyHudPanel.SetTargetPick(want ? m => IsValidTarget(_allies.FirstOrDefault(a => a.Member == m)) : null);
+        }
+
+        private void OnTargetCardClicked(PartyMember member)
+        {
+            if (_phase != Phase.ChoosingTarget || !_targetAllies) return;
+            OnUnitPicked(_allies.FirstOrDefault(a => a.Member == member));
         }
 
         // ───────────── 대상 선택 (전장 클릭) ─────────────
         private void Update()
         {
+            SyncTargetCards();
             if (PauseMenu.IsOpen) return; // 게임 중 메뉴 — 진행 일시정지
             // 사건 기록 (Q) — 전투 중엔 열람만
             if (Input.GetKeyDown(KeyCode.Q) && !DialoguePanel.IsOpen) CaseLogPanel.Toggle();
@@ -1326,7 +1394,9 @@ namespace Fantasia.Combat
             }
 
             BattleUnit hovered = null;
-            if (!BattleHud.PointerOverUI && _camera != null &&
+            var cardHover = PartyHudPanel.HoveredTargetCard != null ? _allies.FirstOrDefault(a => a.Member == PartyHudPanel.HoveredTargetCard) : null;
+            if (cardHover != null && IsValidTarget(cardHover)) hovered = cardHover; // 11/12 아래 카드에 마우스 → 전장 표시·미리보기도 같이
+            else if (!BattleHud.PointerOverUI && _camera != null &&
                 Physics.Raycast(_camera.ScreenPointToRay(Input.mousePosition), out var hit) &&
                 _targets.TryGetValue(hit.collider, out var unit) && IsValidTarget(unit))
             {

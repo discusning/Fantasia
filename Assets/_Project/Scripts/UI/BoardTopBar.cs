@@ -22,7 +22,7 @@ namespace Fantasia.UI
         private static readonly Color Gold = new Color(0.72f, 0.6f, 0.38f);
         private static readonly Color BarFill = new Color(0.07f, 0.06f, 0.08f, 0.94f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
-        private static readonly Color TextDim = new Color(0.62f, 0.6f, 0.56f);
+        private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
         private static readonly Color AllyColor = new Color(0.95f, 0.75f, 0.35f);
         private static readonly Color EnemyColor = new Color(0.55f, 0.45f, 0.85f);
         private static readonly Color Blood = new Color(0.85f, 0.2f, 0.22f);

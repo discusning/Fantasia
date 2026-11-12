@@ -19,6 +19,7 @@ namespace Fantasia.UI
             if (IsDown || !Has(trigger)) return false;
             foreach (var p in Anim.parameters) if (p.type == AnimatorControllerParameterType.Trigger && p.name != trigger) Anim.ResetTrigger(p.name);
             Anim.SetTrigger(trigger);
+            DevPlayed.TryGetValue(trigger, out int n); DevPlayed[trigger] = n + 1;
             return true;
         }
 
@@ -27,5 +28,14 @@ namespace Fantasia.UI
         public bool UseItem() => Play("Item");
         public bool Heal() => Play("Heal") || Play("Skill"); // 회복 동작이 없는 직업은 강화 스킬 동작
         public bool Recover() => Play("Recover");
+        // 11/12 N6~N8 (팀원 11/11 푸시)
+        public bool Announce() => Play("Announce");   // 아벨 모로 예고 1초
+        public bool SelfHeal() => Play("SelfHeal");   // 아벨 모로 금지된 봉합 1.5초
+        public bool Dodge() => Play("Dodge");         // 아군 회피 0.53초
+        public bool Victory() => Play("Victory");     // 아군 승리 1.5초, 끝 자세 유지
+        public const float SelfHealLead = 0.9f, VictoryHold = 1.5f;
+
+        // 점검용: 동작별 실제로 재생한 횟수
+        public static readonly System.Collections.Generic.Dictionary<string, int> DevPlayed = new();
     }
 }

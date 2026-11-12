@@ -28,7 +28,7 @@ namespace Fantasia.UI
         private static readonly Color PanelFill = new Color(0.07f, 0.06f, 0.08f, 0.93f);
         private static readonly Color ButtonFill = new Color(0.36f, 0.12f, 0.14f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
-        private static readonly Color TextDim = new Color(0.62f, 0.6f, 0.56f);
+        private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
         private static readonly Color HpColor = new Color(0.85f, 0.25f, 0.25f);
         private static readonly Color SlotUnknown = new Color(0.22f, 0.2f, 0.24f);
         public static readonly Color SlotSuccess = new Color(0.3f, 0.65f, 0.4f);
@@ -742,6 +742,7 @@ namespace Fantasia.UI
             _resultCard.pivot = new Vector2(0.5f, 1f);
             _resultCard.sizeDelta = new Vector2(470f, 260f);
             _resultCard.anchoredPosition = new Vector2(0f, -(drop.BoardBottom + 6f));
+            ApplyResultItems(victory); // 11/12 얻은 아이템 그림·등급 색 띠
             _resultCard.gameObject.SetActive(false);
             _shownDrop = drop;
             drop.Play(title, summary);
@@ -765,6 +766,7 @@ namespace Fantasia.UI
 
         private void UseCardLayout()
         {
+            HideResultItems();
             if (_resultReveal != null) { StopCoroutine(_resultReveal); _resultReveal = null; }
             if (_shownDrop != null) { _shownDrop.Hide(); _shownDrop = null; }
             _resultTitle.gameObject.SetActive(true);
@@ -945,8 +947,8 @@ namespace Fantasia.UI
                 bar.Telegraph = tele.parent.gameObject;
                 bar.TelegraphText = Label(tele, "Text", new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.96f), 10, TextAnchor.MiddleLeft, TextLight, bold: false);
                 bar.TelegraphText.resizeTextForBestFit = true;
-                bar.TelegraphText.resizeTextMinSize = 8;
-                bar.TelegraphText.resizeTextMaxSize = 11;
+                bar.TelegraphText.resizeTextMinSize = 9;
+                bar.TelegraphText.resizeTextMaxSize = 12;
                 bar.Telegraph.SetActive(false);
 
                 // 적 바를 눌러도 공격 대상 선택 (전장 클릭과 같은 효과)
@@ -1119,7 +1121,7 @@ namespace Fantasia.UI
             // 보상 줄이 많아도(아이템 3칸·퀘스트 물건·레벨 업) 잘리지 않게 글자 크기 자동 축소
             _resultBody = Label(panel, "Body", new Vector2(0.06f, 0.19f), new Vector2(0.94f, 0.81f), 12, TextAnchor.MiddleCenter, TextLight, bold: false);
             _resultBody.resizeTextForBestFit = true;
-            _resultBody.resizeTextMinSize = 8;
+            _resultBody.resizeTextMinSize = 10;
             _resultBody.resizeTextMaxSize = 13;
             _resultBodyRect = _resultBody.rectTransform;
             var button = UGUIKit.CreateThemedButton(panel, "Continue", new Vector2(0.3f, 0.04f), new Vector2(0.7f, 0.15f), "보드로 돌아가기", ButtonFill, 13);

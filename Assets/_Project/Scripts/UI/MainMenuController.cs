@@ -24,7 +24,7 @@ namespace Fantasia.UI
         private static readonly Color ButtonFill = new Color(0.16f, 0.15f, 0.17f, 1f);
         private static readonly Color StartFill = new Color(0.45f, 0.18f, 0.16f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
-        private static readonly Color TextDim = new Color(0.55f, 0.53f, 0.5f);
+        private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
 
         // 11/10 기획 회신 01 (A 조정): 메인 메뉴 아래 크레딧 글. 별도 크레딧 창은 1막 이후.
         // 팀원 이름·역할, ZEN SERIF 출처 문구는 기획이 확인 후 전달 → 받으면 아래 배열에 한 줄씩 추가.

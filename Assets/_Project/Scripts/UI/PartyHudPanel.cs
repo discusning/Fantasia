@@ -30,7 +30,7 @@ namespace Fantasia.UI
         private static readonly Color BorderActive = new Color(0.95f, 0.78f, 0.4f);
         private static readonly Color CardFill = new Color(0.07f, 0.06f, 0.08f, 0.93f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
-        private static readonly Color TextDim = new Color(0.62f, 0.6f, 0.56f);
+        private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
         private static readonly Color HpColor = new Color(0.85f, 0.25f, 0.25f);
         private static readonly Color MpColor = new Color(0.3f, 0.5f, 0.9f);
         private static readonly Color BarBack = new Color(0.16f, 0.15f, 0.17f);
@@ -376,6 +376,7 @@ namespace Fantasia.UI
             card.Status.gameObject.SetActive(false);
 
             BuildTurnLook(card, outer);
+            BuildTargetPick(card); // 11/12 대상 고르기 덮개 (PartyHudPanel.TargetPick)
             return card;
         }
 
@@ -396,8 +397,8 @@ namespace Fantasia.UI
                     var tag = MakeText(framed.Slot, "Tag", Vector2.zero, Vector2.one, 9, TextAnchor.MiddleCenter, kind == "MP" ? new Color(0.62f, 0.75f, 1f) : TextLight, bold: true);
                     tag.text = kind;
                     tag.resizeTextForBestFit = true;
-                    tag.resizeTextMinSize = 6;
-                    tag.resizeTextMaxSize = 11;
+                    tag.resizeTextMinSize = 8;
+                    tag.resizeTextMaxSize = 12;
                 }
                 var value = MakeText(framed.Plank, "Value", Vector2.zero, Vector2.one, 10, TextAnchor.MiddleCenter, TextLight, bold: true);
                 value.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f); // 나무판 위에서도 읽히게

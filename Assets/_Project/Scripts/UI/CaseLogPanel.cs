@@ -33,7 +33,7 @@ namespace Fantasia.UI
         private static readonly Color RowFill = new Color(0.14f, 0.13f, 0.15f, 1f);
         private static readonly Color Selected = new Color(0.42f, 0.33f, 0.18f, 1f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
-        private static readonly Color TextDim = new Color(0.55f, 0.53f, 0.5f);
+        private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
 
         public static CaseLogPanel Instance { get; private set; }
         public static bool IsOpen => Instance != null && Instance._root.activeSelf;
@@ -87,7 +87,7 @@ namespace Fantasia.UI
                     break;
                 case Tab.Completed:
                     _body.text = s.CompletedQuests.Count == 0 ? "아직 완료한 사건이 없다."
-                        : string.Join("\n\n", s.CompletedQuests.Select(q => $"<b>{q.Title}</b>  — 완료\n<color=#8C877F>{q.Objective}</color>"));
+                        : string.Join("\n\n", s.CompletedQuests.Select(q => $"<b>{q.Title}</b>  — 완료\n<color=#C2BBAF>{q.Objective}</color>"));
                     break;
                 case Tab.Evidence:
                     _body.text = ""; // 증거품은 그림 + 글 줄로 따로 (CaseLogPanel.Evidence.cs)

@@ -45,10 +45,10 @@ namespace Fantasia.UI
         // 11/11 규칙 1: 알림은 줄을 서서 하나씩 (예전엔 새 알림이 앞 알림을 바로 덮어 앞 것이 안 보였음)
         // 규칙 2: 대화창·창·턴 판이 떠 있으면 기다렸다가 나옴 (UIFlow.ToastBlocked)
         private const float GapSeconds = 0.2f, MaxQueue = 6;
-        private readonly System.Collections.Generic.Queue<(string label, Sprite icon, Color tint)> _queue = new System.Collections.Generic.Queue<(string, Sprite, Color)>();
+        private readonly System.Collections.Generic.Queue<(string label, Sprite icon, Color tint, Color? text)> _queue = new System.Collections.Generic.Queue<(string, Sprite, Color, Color?)>();
         private float _nextAt;
-        private (string label, Sprite icon, Color tint) _current;
-        private (string label, Sprite icon, Color tint)? _held; // 턴 판·창 때문에 잠깐 내린 알림
+        private (string label, Sprite icon, Color tint, Color? text) _current;
+        private (string label, Sprite icon, Color tint, Color? text)? _held; // 턴 판·창 때문에 잠깐 내린 알림
 
         private void Update()
         {
@@ -65,8 +65,8 @@ namespace Fantasia.UI
             }
             if (!_root.activeSelf && Time.unscaledTime >= _nextAt && !UIFlow.ToastBlocked)
             {
-                if (_held.HasValue) { var h = _held.Value; _held = null; Display(h.label, h.icon, h.tint, sound: false); }
-                else if (_queue.Count > 0) { var next = _queue.Dequeue(); Display(next.label, next.icon, next.tint); }
+                if (_held.HasValue) { var h = _held.Value; _held = null; Display(h.label, h.icon, h.tint, h.text, sound: false); }
+                else if (_queue.Count > 0) { var next = _queue.Dequeue(); Display(next.label, next.icon, next.tint, next.text); }
             }
         }
 
@@ -86,7 +86,10 @@ namespace Fantasia.UI
         public static string DevLast; // 자동 플레이 QA: 마지막으로 요청한 알림
         public static int DevQueued => Instance != null ? Instance._queue.Count + (Instance._held.HasValue ? 1 : 0) : 0;
         public static string DevShowing => Instance != null && Instance._root.activeSelf ? Instance._label.text : null;
-        public static void Show(string label, Sprite icon = null, Color? tint = null)
+        public static Color DevShowingColor => Instance != null ? Instance._label.color : Color.clear;
+        public static bool DevShowingIcon => Instance != null && Instance._root.activeSelf && Instance._icon.gameObject.activeSelf && Instance._icon.sprite != null;
+        // textColor: 11/12 아이템 등급 색 (전설 빨강 등). 없으면 종류별 색 규칙
+        public static void Show(string label, Sprite icon = null, Color? tint = null, Color? textColor = null)
         {
             DevLast = label;
             EnsureExists();
@@ -94,13 +97,13 @@ namespace Fantasia.UI
             // 같은 글이 이미 떠 있거나 줄 끝에 있으면 또 넣지 않음
             if ((Instance._root.activeSelf && Instance._label.text == label) || (q.Count > 0 && System.Linq.Enumerable.Last(q).label == label)) return;
             if (q.Count >= MaxQueue) q.Dequeue(); // 너무 밀리면 가장 오래된 것부터 버림
-            q.Enqueue((label, icon, tint ?? new Color(0.75f, 0.65f, 0.4f)));
+            q.Enqueue((label, icon, tint ?? new Color(0.75f, 0.65f, 0.4f), textColor));
         }
 
-        private void Display(string label, Sprite icon, Color tint, bool sound = true)
+        private void Display(string label, Sprite icon, Color tint, Color? textColor, bool sound = true)
         {
             if (sound) Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.ItemGet); // 소리는 실제로 보일 때 (다시 보일 때는 없이)
-            _current = (label, icon, tint);
+            _current = (label, icon, tint, textColor);
             bool hasIcon = icon != null;
             _icon.sprite = icon;
             _icon.color = Color.white;
@@ -108,7 +111,7 @@ namespace Fantasia.UI
             _label.text = label;
             // 피의 흔적·사냥 경고는 붉은 글, 나머지(획득·완료)는 금색 글
             // 11/11 팀장 결정 규칙 3: 종류별 색 — 경고(피의 흔적·사냥) 붉은색 · 의뢰 완료 초록 · 획득·그 밖 금색. 왼쪽 띠도 같은 색
-            var kind = label.StartsWith("피의") ? WarnText : label.StartsWith("의뢰 완료") ? QuestText : GoldText;
+            var kind = textColor ?? (label.StartsWith("피의") ? WarnText : label.StartsWith("의뢰 완료") ? QuestText : GoldText);
             _label.color = kind;
             _accent.color = new Color(kind.r, kind.g, kind.b, 0.9f);
             var labelRect = (RectTransform)_label.transform;

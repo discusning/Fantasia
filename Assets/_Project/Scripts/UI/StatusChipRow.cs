@@ -39,6 +39,9 @@ namespace Fantasia.UI
                 label.fontStyle = FontStyle.Bold;
                 var countText = UGUIKit.CreateText(fill, "Count", new Vector2(0.45f, 0f), new Vector2(1f, 0.55f), "", fontSize - 1, TextAnchor.LowerRight);
                 countText.color = TextColor;
+                // 11/12 팀장: 디버프(상태) 표시는 가독성 손질 대상 아님 → 예전 크기·굵기 그대로
+                label.resizeTextForBestFit = countText.resizeTextForBestFit = false;
+                countText.fontStyle = FontStyle.Normal;
                 countText.gameObject.AddComponent<Outline>().effectColor = Color.black;
                 fill.parent.gameObject.SetActive(false);
                 _chips.Add((fill.parent.gameObject, icon, label, countText));

@@ -24,7 +24,7 @@ namespace Fantasia.UI
         private static readonly Color CardSelected = new Color(0.32f, 0.24f, 0.12f, 1f);
         private static readonly Color RedFrame = new Color(0.7f, 0.22f, 0.2f);
         private static readonly Color TextLight = new Color(0.94f, 0.9f, 0.84f);
-        private static readonly Color TextDim = new Color(0.6f, 0.57f, 0.53f);
+        private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
         private static readonly Color Good = new Color(0.4f, 0.75f, 0.45f);
         private static readonly Color Bad = new Color(0.88f, 0.38f, 0.33f);
 
@@ -159,7 +159,7 @@ namespace Fantasia.UI
             {
                 int pct = EventTiles.SuccessPercent(_judge);
                 _chip.text = $"참가비 {EventTiles.WitchFee} Cent · 카드 1장 선택";
-                _odds.text = $"♣ 행운 {_judge.FinalStats.Luck} · 성공률 {pct}%  <color=#9A948C>({_judge.Job.DisplayName})</color>";
+                _odds.text = $"♣ 행운 {_judge.FinalStats.Luck} · 성공률 {pct}%  <color=#C9C2B6>({_judge.Job.DisplayName})</color>";
                 _note.text = _waitRounds > 0 ? $"<color=#E0675A>점술은 {_waitRounds}라운드 뒤에 다시 볼 수 있습니다</color>" : "실패 시 보상 없음";
                 _footer.text = "카드 선택 후 행운 판정 · 집중력 사용 불가";
                 for (int i = 0; i < _cards.Count; i++)

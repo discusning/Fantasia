@@ -245,12 +245,22 @@ namespace Fantasia.UI
             return button;
         }
 
+        public const int MinReadableSize = 12, BoldBelowSize = 13;
         public static Text CreateText(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, string content, int fontSize, TextAnchor alignment)
         {
             var rt = CreateRect(parent, name, anchorMin, anchorMax);
             var text = rt.gameObject.AddComponent<Text>();
             text.font = UIFont;
             text.fontSize = fontSize;
+            // 11/12 가독성 ①: 1080p에서 18px(기준 720 → 12) 아래 글자는 칸에 들어가는 만큼 12까지 키움 (넘치면 원래 크기까지만 줄어듦)
+            if (fontSize < MinReadableSize)
+            {
+                text.resizeTextForBestFit = true;
+                text.resizeTextMinSize = fontSize;
+                text.resizeTextMaxSize = MinReadableSize;
+            }
+            // ④: 가는 세리프(ZEN SERIF)가 작은 크기에서 뭉개짐 → 13 이하는 굵게 (부르는 쪽이 따로 정하면 그대로)
+            if (fontSize <= BoldBelowSize) text.fontStyle = FontStyle.Bold;
             text.alignment = alignment;
             text.color = Color.black;
             text.text = content;

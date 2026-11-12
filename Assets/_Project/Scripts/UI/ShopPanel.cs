@@ -28,7 +28,7 @@ namespace Fantasia.UI
         private static readonly Color RowFill = new Color(0.16f, 0.15f, 0.17f, 1f);
         private static readonly Color RowSelected = new Color(0.42f, 0.33f, 0.18f, 1f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
-        private static readonly Color TextDim = new Color(0.55f, 0.53f, 0.5f);
+        private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
         private static readonly Color Bad = new Color(0.9f, 0.4f, 0.35f);
         private const int RowsPerPage = 10;
 
@@ -161,7 +161,7 @@ namespace Fantasia.UI
                 row.name.text = name;
                 row.price.text = price;
                 row.stock.text = stock;
-                row.name.color = dim ? TextDim : TextLight;
+                row.name.color = dim ? TextDim : NameColorOf(_shown[i]); // 11/12 등급 색
                 row.stock.color = stock.Contains("품절") || stock.Contains("완료") ? Bad : TextDim;
                 row.fill.color = UGUIKit.RowTint(i == _selected, RowFill, RowSelected); // 11/11 U9
                 var icon = IconOf(_shown[i]);
@@ -202,13 +202,20 @@ namespace Fantasia.UI
             return ("?", "", "", true);
         }
 
+        private static Color NameColorOf(object o) => o switch
+        {
+            ShopEntry e when e.Item != null => ItemLook.NameColor(e.Item),
+            GearItem g => ItemLook.NameColor(g),
+            _ => TextLight,
+        };
+
         private static Sprite IconOf(object o) => o switch
         {
-            ShopEntry { Item: WeaponDefinition w } => w.Icon,
-            ShopEntry { Item: ArmorDefinition a } => a.Icon,
-            ShopEntry { Item: ConsumableDefinition c } => c.Icon,
-            PartyInventory.Stack st => st.Definition.Icon,
-            GearItem g => g.Icon,
+            int recipe => ItemCatalog.Current != null ? ItemLook.IconOf(ItemCatalog.Current.Consumable(ShopRules.Recipes[recipe].Item1)) : null,
+            // 11/12: 자체 그림이 없으면 종류 아이콘 (ItemLook)
+            ShopEntry e when e.Item != null => ItemLook.IconOf(e.Item),
+            PartyInventory.Stack st => ItemLook.IconOf(st.Definition),
+            GearItem g => ItemLook.IconOf(g),
             _ => null,
         };
 
@@ -252,6 +259,7 @@ namespace Fantasia.UI
             bodyRt.anchorMax = new Vector2(0.95f, icon != null ? 0.57f : 0.85f);
             ShowCompare(o);
             ShowTargets(o as ShopService?);
+            _detailName.color = o != null ? NameColorOf(o) : TextLight; // 11/12 등급 색
             if (o == null)
             {
                 _detailName.text = "";

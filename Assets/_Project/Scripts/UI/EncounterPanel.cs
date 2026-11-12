@@ -34,7 +34,7 @@ namespace Fantasia.UI
         private static readonly Color PanelFill = new Color(0.07f, 0.06f, 0.08f, 0.95f);
         private static readonly Color ButtonFill = new Color(0.36f, 0.12f, 0.14f);
         private static readonly Color TextLight = new Color(0.92f, 0.9f, 0.86f);
-        private static readonly Color TextDim = new Color(0.7f, 0.68f, 0.64f);
+        private static readonly Color TextDim = new Color(0.82f, 0.79f, 0.73f); // 11/12 가독성 ②
         private static readonly Color TextAccent = new Color(0.95f, 0.72f, 0.35f);
         private static readonly Color SlotUnknown = new Color(0.22f, 0.2f, 0.24f);
         private static readonly Color SlotSuccess = new Color(0.3f, 0.65f, 0.4f);
@@ -450,7 +450,7 @@ namespace Fantasia.UI
             }
 
             _footerText = UGUIKit.CreateText(card, "Footer", new Vector2(0.04f, 0.03f), new Vector2(0.96f, 0.17f), "", 11, TextAnchor.MiddleCenter);
-            _footerText.resizeTextForBestFit = true; _footerText.resizeTextMinSize = 8; _footerText.resizeTextMaxSize = 11; // 11/11 글자 잘림: 긴 설명
+            _footerText.resizeTextForBestFit = true; _footerText.resizeTextMinSize = 9; _footerText.resizeTextMaxSize = 12; // 11/11 글자 잘림: 긴 설명
             _footerText.color = TextAccent;
 
         }
