@@ -144,7 +144,7 @@ namespace Fantasia.Editor
             a[1].HasRetreated = true;
             errors += Expect("새 라운드 시작", queue.Advance().DisplayName, "아군0");
             errors += Expect("라운드 번호", queue.Round.ToString(), "2");
-            errors += Expect("퇴각한 참가자 빠짐 · 타임라인은 다음 라운드(예상)까지", Names(queue.Preview(3).Select(x => x.Unit)), "아군0,아군0");
+            errors += Expect("퇴각한 참가자 빠짐 · 타임라인은 칸을 채울 때까지 예상 라운드 이어 붙임 (11/11)", Names(queue.Preview(3).Select(x => x.Unit)), "아군0,아군0,아군0");
             return errors;
         }
 

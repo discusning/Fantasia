@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.teleport
   DisplayName: "\uD154\uB808\uD3EC\uD2B8\uAD8C"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: b2718f4d54514444291f232901b366e4, type: 3}
   EffectDescription: "\uC774\uBBF8 \uD0D0\uC0C9\uD55C 10\uCE78 \uC774\uB0B4 \uC548\uC804
     \uD0C0\uC77C\uB85C \uD604\uC7AC \uCE90\uB9AD\uD130 \uC774\uB3D9; \uD589\uB3D9
     \uC885\uB8CC"

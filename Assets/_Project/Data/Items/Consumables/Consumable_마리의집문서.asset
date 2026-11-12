@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.marie_deed
   DisplayName: "\uB9C8\uB9AC\uC758 \uC9D1\uBB38\uC11C"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: bccbdf2ae5434d648975a0ab6690744d, type: 3}
   EffectDescription: "\uC77C\uBC18 \uBB34\uAE30 1\uAC1C\uC758 \uB4F1\uAE09 1\uB2E8\uACC4
     \uC0C1\uC2B9; \uC138\uBD80 \uC81C\uD55C\uC740 \uBB34\uAE30 \uC808 \uCC38\uC870"
   Effect: 17

@@ -33,7 +33,14 @@ namespace Fantasia.UI
             _art = UGUIKit.CreateImage(fill, "Art", Vector2.zero, Vector2.one, Color.white);
             _art.preserveAspect = true;
             _art.enabled = false;
+
+            // 11/11 U4 얼굴 액자: 청동 칸 틀을 얼굴 위에 덮고 예전 노란 선은 숨김. 강조(지금 차례)는 틀 색으로
+            _frame = UGUIKit.AddPortraitFrame(Root, 3f);
+            if (_frame != null) _border.color = new Color(0f, 0f, 0f, 0f);
         }
+
+        private readonly Image _frame;
+        private static readonly Color FrameHighlight = new Color(1f, 0.86f, 0.45f);
 
         // art: 2D 초상(있으면 우선), model: 3D 렌더 텍스처. 둘 다 없으면 빈 칸.
         public void Set(Sprite art, Texture model)
@@ -46,7 +53,11 @@ namespace Fantasia.UI
         }
 
         // 현재 판정·행동 중인 캐릭터 강조용.
-        public void SetHighlighted(bool highlighted) => _border.color = highlighted ? HighlightBorder : _normalBorder;
+        public void SetHighlighted(bool highlighted)
+        {
+            if (_frame != null) { _frame.color = highlighted ? FrameHighlight : Color.white; return; }
+            _border.color = highlighted ? HighlightBorder : _normalBorder;
+        }
 
         public void SetVisible(bool visible) => Root.gameObject.SetActive(visible);
     }

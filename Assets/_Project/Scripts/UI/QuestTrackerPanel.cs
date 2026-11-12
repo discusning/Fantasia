@@ -181,6 +181,7 @@ namespace Fantasia.UI
                 new Color(0.65f, 0.6f, 0.5f, 0.55f), new Color(0.05f, 0.05f, 0.08f, 0.5f), 1.5f);
             var outerRect = (RectTransform)inner.transform.parent;
             outerRect.sizeDelta = new Vector2(RowWidth, RowHeight);
+            UGUIKit.ApplyThinPlate(inner, 0.5f); // 11/11 U8 작은 상자: 회색 반투명 → 받은 얇은 판
 
             // Anchor point (1,1) is the canvas's top-right *corner* — without
             // matching the pivot to that same corner, anchoredPosition offsets

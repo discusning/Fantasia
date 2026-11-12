@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: armor.necklace.broken_pocketwatch
   DisplayName: "\uBD80\uC11C\uC9C4 \uD68C\uC911\uC2DC\uACC4"
   Slot: 4
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: fd19ce21591814d46a9301ed704dcc52, type: 3}
   Grade: 5
   WearLevel: 7
   Price: 650

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Fantasia.Combat;
 using Fantasia.Data;
 using Fantasia.World;
@@ -19,7 +20,7 @@ namespace Fantasia.UI
     // 결과 처리(전투 진입, 안전 타일 복귀 등)는 Show에 넘긴 콜백 쪽 책임.
     //
     // Screen Space - Overlay + DontDestroyOnLoad, LandmarkInfoPanel과 같은 이유.
-    public class EncounterPanel : MonoBehaviour
+    public partial class EncounterPanel : MonoBehaviour
     {
         private enum Choice { Fight, Ambush, Sneak, Retreat }
 
@@ -41,6 +42,11 @@ namespace Fantasia.UI
 
         private GameObject _root;
         private Text _sizeBadgeText;
+        private RawImage _enemyModel;   // 11/11 적 3D 모델 Idle (모델 있으면 크기 원 대신)
+        private static readonly Vector2 ModelSize = new Vector2(434f, 310f);
+        private GameObject _sizeRing;
+        private Text _sizeSmall;        // 모델이 보일 때 크기 글자는 숫자 원 옆에 작게
+        private RectTransform _slotBadgeRect; // 모델이 보이면 숫자 원을 오른쪽으로 (몸을 가리지 않게)
         private Text _slotBadgeText;
         private Text _nameText;
         private Text _statsText;
@@ -111,6 +117,17 @@ namespace Fantasia.UI
             _enemyArt.sprite = enemy.Portrait;
             _enemyArt.enabled = hasEnemyArt;
             _sizeBadgeText.enabled = !hasEnemyArt;
+            bool hasModel = enemy.Model != null; // 11/11 3D 모델이 있으면 크기 원 대신 Idle 모델
+            _enemyModel.texture = hasModel ? EncounterModelView.Show(enemy) : null;
+            if (!hasModel) EncounterModelView.HideAll();
+            _enemyModel.enabled = hasModel;
+            _sizeRing.SetActive(!hasModel);
+            if (hasModel) { _enemyArt.enabled = false; _sizeBadgeText.enabled = false; }
+            _sizeSmall.text = SizeLabel(enemy.Size);
+            _sizeSmall.enabled = hasModel;
+            var badgeAt = hasModel ? new Vector2(0.335f, 0.655f) : new Vector2(0.21f, 0.655f); // 모델 오른쪽 아래 / 예전엔 원 아래 가운데
+            _slotBadgeRect.anchorMin = _slotBadgeRect.anchorMax = badgeAt;
+            _sizeSmall.rectTransform.anchorMin = _sizeSmall.rectTransform.anchorMax = badgeAt;
 
             // 명탐정 패시브 "현장 검증": 조우 화면에 적 HP·속도·양쪽 방어력 표시.
             bool fieldInvestigation = hero != null && hero.Job.Id == JobId.Detective;
@@ -264,6 +281,7 @@ namespace Fantasia.UI
         private void Finish(EncounterOutcome outcome)
         {
             _root.SetActive(false);
+            EncounterModelView.HideAll(); // 창이 닫히면 모델 카메라도 끔
             var callback = _onResolved;
             _onResolved = null;
             _enemy = null;
@@ -314,6 +332,7 @@ namespace Fantasia.UI
                 outer.sizeDelta = new Vector2(size, size);
                 outer.anchoredPosition = new Vector2(-totalWidth / 2f + size / 2f + i * (size + gap), 0f);
                 outer.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                UGUIKit.ApplyRing(fill, tintable: true); // 11/11 U10: 보라 마름모 → 받은 청동 원을 칠용으로 (색은 그대로 곱함)
 
                 var label = UGUIKit.CreateText(_slotRow, $"SlotLabel{i}", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), "?", 13, TextAnchor.MiddleCenter);
                 var labelRect = (RectTransform)label.transform;
@@ -359,6 +378,8 @@ namespace Fantasia.UI
             var frame = (RectTransform)frameFill.parent;
             frame.sizeDelta = new Vector2(150f, 150f);
             frame.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            if (UGUIKit.ApplyRing(frameFill)) frameFill.GetComponent<Image>().color = Color.white; // 11/11 U6 적 크기 표식: 보라 마름모 → 청동 원
+            _sizeRing = frame.gameObject;
 
             _sizeBadgeText = UGUIKit.CreateText(parent, "SizeBadge", new Vector2(0.21f, 0.8f), new Vector2(0.21f, 0.8f), "", 34, TextAnchor.MiddleCenter);
             ((RectTransform)_sizeBadgeText.transform).sizeDelta = new Vector2(160f, 60f);
@@ -374,9 +395,25 @@ namespace Fantasia.UI
             var badgeFill = UGUIKit.CreateBorderedPanel(parent, "SlotBadge", new Vector2(0.21f, 0.655f), new Vector2(0.21f, 0.655f),
                 BorderGold, new Color(0.3f, 0.1f, 0.1f), 2f);
             ((RectTransform)badgeFill.parent).sizeDelta = new Vector2(46f, 46f);
+            _slotBadgeRect = (RectTransform)badgeFill.parent;
+            if (UGUIKit.ApplyRing(badgeFill)) badgeFill.GetComponent<Image>().color = Color.white; // 11/11 U6 숫자 칸 → 청동 원
             _slotBadgeText = UGUIKit.CreateText(badgeFill, "Value", Vector2.zero, Vector2.one, "", 20, TextAnchor.MiddleCenter);
             _slotBadgeText.color = TextLight;
             _slotBadgeText.fontStyle = FontStyle.Bold;
+
+            // 11/11 팀장 결정: 크기 원 자리(위 칸 아래 ~ 숫자 원 위)에 적 3D 모델 Idle. 3:2 투명 그림
+            _enemyModel = UGUIKit.CreateRect(parent, "EnemyModel", new Vector2(0.21f, 0.7535f), new Vector2(0.21f, 0.7535f)).gameObject.AddComponent<RawImage>();
+            _enemyModel.rectTransform.sizeDelta = new Vector2(434f, 310f); // 아래 끝은 이름 띠 뒤 (잘린 선 숨김)
+            _enemyModel.raycastTarget = false;
+            _enemyModel.enabled = false;
+            _enemyModel.transform.SetSiblingIndex(badgeFill.parent.GetSiblingIndex()); // 숫자 원이 모델 위에 오게
+            BuildDuo(parent, _enemyModel.transform.GetSiblingIndex());
+            _sizeSmall = UGUIKit.CreateText(parent, "SizeSmall", new Vector2(0.21f, 0.655f), new Vector2(0.21f, 0.655f), "", 13, TextAnchor.MiddleLeft);
+            _sizeSmall.rectTransform.sizeDelta = new Vector2(80f, 24f);
+            _sizeSmall.rectTransform.anchoredPosition = new Vector2(70f, 0f);
+            _sizeSmall.color = TextLight;
+            _sizeSmall.enabled = false;
+            _sizeSmall.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.9f); // 보드 위에서도 읽히게
 
         }
 
@@ -385,7 +422,9 @@ namespace Fantasia.UI
             var card = UGUIKit.CreateBorderedPanel(parent, "ChoiceCard", new Vector2(0.04f, 0.24f), new Vector2(0.38f, 0.6f), BorderGold, PanelFill, 2.5f);
 
             // 이름 배너 — 카드 위쪽 테두리에 걸쳐 놓는다.
+            UGUIKit.ApplyInnerPlate(card, PanelFill); // 11/11 U3 안쪽 판
             var bannerFill = UGUIKit.CreateBorderedPanel(card, "NameBanner", new Vector2(0.22f, 0.9f), new Vector2(0.78f, 1.06f), BorderGold, new Color(0.2f, 0.08f, 0.1f), 2f);
+            UGUIKit.ApplyBand(bannerFill, 30f); // 11/11 U6 제목 띠 → 나무 탭
             _nameText = UGUIKit.CreateText(bannerFill, "Name", Vector2.zero, Vector2.one, "", 18, TextAnchor.MiddleCenter);
             _nameText.color = TextLight;
             _nameText.fontStyle = FontStyle.Bold;
@@ -411,6 +450,7 @@ namespace Fantasia.UI
             }
 
             _footerText = UGUIKit.CreateText(card, "Footer", new Vector2(0.04f, 0.03f), new Vector2(0.96f, 0.17f), "", 11, TextAnchor.MiddleCenter);
+            _footerText.resizeTextForBestFit = true; _footerText.resizeTextMinSize = 8; _footerText.resizeTextMaxSize = 11; // 11/11 글자 잘림: 긴 설명
             _footerText.color = TextAccent;
 
         }
@@ -422,8 +462,10 @@ namespace Fantasia.UI
 
         private void BuildComposition(Transform parent)
         {
-            var panel = UGUIKit.CreateBorderedPanel(parent, "Composition", new Vector2(0.4f, 0.6f), new Vector2(0.64f, 0.8f), BorderGold, PanelFill, 2.5f);
+            var panel = UGUIKit.CreateBorderedPanel(parent, "Composition", new Vector2(0.4f, 0.575f), new Vector2(0.64f, 0.775f), BorderGold, PanelFill, 2.5f);
+            UGUIKit.ApplyInnerPlate(panel, PanelFill); // 11/11 U3 안쪽 판
             var bannerFill = UGUIKit.CreateBorderedPanel(panel, "CompositionBanner", new Vector2(0.1f, 0.84f), new Vector2(0.9f, 1.1f), BorderGold, new Color(0.2f, 0.08f, 0.1f), 2f);
+            UGUIKit.ApplyBand(bannerFill, 26f); // 11/11 U6 제목 띠 → 나무 탭
             _compositionTitle = UGUIKit.CreateText(bannerFill, "Title", Vector2.zero, Vector2.one, "", 14, TextAnchor.MiddleCenter);
             _compositionTitle.color = TextLight;
             _compositionTitle.fontStyle = FontStyle.Bold;
@@ -433,6 +475,7 @@ namespace Fantasia.UI
                 var row = UGUIKit.CreateRect(panel, $"Enemy{i}", new Vector2(x0, y1 - 0.22f), new Vector2(x0 + 0.44f, y1));
                 var frame = UGUIKit.CreateBorderedPanel(row, "Portrait", new Vector2(0f, 0f), new Vector2(0.3f, 1f), BorderGold, new Color(0.13f, 0.12f, 0.15f), 1f);
                 var portrait = UGUIKit.CreateRect(frame, "Image", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
+                if (UGUIKit.AddPortraitFrame((RectTransform)frame.parent, 2f) != null) frame.parent.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f); // 11/11 U4 얼굴 액자
                 var name = UGUIKit.CreateText(row, "Name", new Vector2(0.34f, 0f), new Vector2(1f, 1f), "", 13, TextAnchor.MiddleLeft);
                 name.color = TextLight;
                 name.supportRichText = true;
@@ -442,6 +485,7 @@ namespace Fantasia.UI
 
         private void ShowComposition(IReadOnlyList<EnemyDefinition> enemies)
         {
+            if (!_previewing) _group = enemies;
             var groups = MapTileRules.Group(enemies);
             int total = 0;
             foreach (var g in groups) total += g.count;
@@ -454,20 +498,49 @@ namespace Fantasia.UI
                 _compositionRows[i].portrait.texture = PortraitStudio.TextureFor(groups[i].enemy);
                 _compositionRows[i].name.text = $"{groups[i].enemy.DisplayName}  <color=#D9B45A><b>×{groups[i].count}</b></color>";
             }
+            LayoutModels(groups.Select(g => g.enemy));
+        }
+
+
+        // 자동 플레이 점검용: 지금 창에 다른 종류 적을 섞은 구성으로 다시 그림
+        private IReadOnlyList<EnemyDefinition> _group;
+        private bool _previewing;
+        public static void DevPreviewMixed(bool on)
+        {
+            if (Instance == null || Instance._enemy == null) return;
+            if (!on) { Instance._previewing = false; if (Instance._group != null) Instance.ShowComposition(Instance._group); return; }
+            Instance._previewing = true;
+            var other = Resources.FindObjectsOfTypeAll<EnemyDefinition>().Where(e => e != Instance._enemy && e.Model != null).OrderBy(e => e.Size).ThenBy(e => e.name).FirstOrDefault();
+            if (other == null) return;
+            Instance.ShowComposition(new[] { Instance._enemy, other });
+        }
+
+        // 점검용: 데이터 이름(Enemy_ 뒤)으로 원하는 적 묶음을 그려 봄 (DevPreviewMixed(false)로 원래대로)
+        public static void DevPreviewGroup(params string[] names)
+        {
+            if (Instance == null) return;
+            var all = Resources.FindObjectsOfTypeAll<EnemyDefinition>();
+            var group = names.Select(n => all.FirstOrDefault(e => e.name == "Enemy_" + n)).Where(e => e != null).ToArray();
+            if (group.Length == 0) return;
+            Instance._previewing = true;
+            Instance.ShowComposition(group);
         }
 
         public static string DevCompositionTitle => Instance != null ? Instance._compositionTitle.text : null;
 
         private void BuildOddsPanel(Transform parent)
         {
-            var panel = UGUIKit.CreateBorderedPanel(parent, "OddsPanel", new Vector2(0.4f, 0.34f), new Vector2(0.64f, 0.54f), BorderGold, PanelFill, 2.5f);
+            var panel = UGUIKit.CreateBorderedPanel(parent, "OddsPanel", new Vector2(0.4f, 0.32f), new Vector2(0.64f, 0.52f), BorderGold, PanelFill, 2.5f);
 
+            UGUIKit.ApplyInnerPlate(panel, PanelFill); // 11/11 U3 안쪽 판
             var bannerFill = UGUIKit.CreateBorderedPanel(panel, "OddsBanner", new Vector2(0.15f, 0.82f), new Vector2(0.85f, 1.1f), BorderGold, new Color(0.2f, 0.08f, 0.1f), 2f);
+            UGUIKit.ApplyBand(bannerFill, 26f); // 11/11 U6 제목 띠 → 나무 탭
             _oddsTitleText = UGUIKit.CreateText(bannerFill, "Title", Vector2.zero, Vector2.one, "판정 확률", 14, TextAnchor.MiddleCenter);
             _oddsTitleText.color = TextLight;
             _oddsTitleText.fontStyle = FontStyle.Bold;
 
             _oddsBodyText = UGUIKit.CreateText(panel, "Body", new Vector2(0.08f, 0.06f), new Vector2(0.95f, 0.78f), "", 13, TextAnchor.UpperLeft);
+            _oddsBodyText.resizeTextForBestFit = true; _oddsBodyText.resizeTextMinSize = 9; _oddsBodyText.resizeTextMaxSize = 13; // 11/11 글자 잘림: 보스 4칸이면 6줄
             _oddsBodyText.color = TextLight;
             _oddsBodyText.lineSpacing = 1.15f;
         }

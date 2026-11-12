@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.repair_kit
   DisplayName: "\uD734\uB300 \uC218\uB9AC \uB3C4\uAD6C"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: c41622ee82d367a478bc2655e67504bf, type: 3}
   EffectDescription: "\uD30C\uC190 \uBB34\uAE30 1\uAC1C \uBCF5\uAD6C"
   Effect: 14
   Amount: 0

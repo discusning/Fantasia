@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.life_laurel
   DisplayName: "\uC0DD\uBA85\uC758 \uC6D4\uACC4\uAD00"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 3b4237ebce54b614aace85d56d6498cd, type: 3}
   EffectDescription: "\uC120\uD0DD \uCE90\uB9AD\uD130 LP +1, \uCD5C\uB300 5; \uC0AC\uB9DD\uC790
     \uBD80\uD65C\uC740 \uBD88\uAC00"
   Effect: 10

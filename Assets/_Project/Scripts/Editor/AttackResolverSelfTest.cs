@@ -181,9 +181,9 @@ namespace Fantasia.Editor
             errors += ExpectFloat("맨손 슬롯 확률(힘71)", a.SlotChance, 0.571f, 0.0005f);
             errors += Expect("맨손 공격력(무기 보너스 0)", a.AttackValue, 8);
 
-            // 방어 행동 +8, 회피는 최종 속도 기준.
+            // 방어 행동은 11/11부터 보호막 8 (방어력 보너스 없음), 회피는 최종 속도 기준.
             var def = AttackResolver.DefenseOf(d, defending: true);
-            errors += Expect("방어 행동 물리 방어 6+8", def.PhysicalDefense, 14);
+            errors += Expect("방어 행동 물리 방어 그대로(보호막 방식)", def.PhysicalDefense, 6);
             errors += ExpectFloat("명탐정 회피(속도73)", def.EvasionChance, 0.123f, 0.0001f);
 
             // 집중력: 부족하면 차감 안 됨.

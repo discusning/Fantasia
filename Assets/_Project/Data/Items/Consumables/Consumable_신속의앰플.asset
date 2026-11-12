@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.swift_ampoule
   DisplayName: "\uC2E0\uC18D\uC758 \uC570\uD50C"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 4fab77e7a539a324c8ba0ed055532d10, type: 3}
   EffectDescription: "\uC544\uAD70 1\uBA85 \uC18D\uB3C4 +15 (\uD589\uB3D9 1\uD68C).
     \uB2E4\uC74C \uB77C\uC6B4\uB4DC \uC21C\uC11C\uBD80\uD130 \uBC18\uC601, \uC0AC\uC6A9\uD55C
     \uB77C\uC6B4\uB4DC\uB97C \uBE7C\uACE0 2\uB77C\uC6B4\uB4DC \uC720\uC9C0. \uB2E4\uC2DC

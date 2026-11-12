@@ -58,6 +58,7 @@ namespace Fantasia.Combat
             {
                 hp = u.IsAlly ? 0 : u.CurrentHP,
                 defending = u.IsDefending,
+                shield = u.Shield,
                 retreated = u.HasRetreated,
                 firstGunShotUsed = u.FirstGunShotUsed,
                 cooldowns = u.Cooldowns.Select(kv => new BattleSnapshot.CooldownData { skillId = kv.Key.Id, left = kv.Value }).ToList(),
@@ -124,6 +125,7 @@ namespace Fantasia.Combat
         private static void ApplyUnit(BattleUnit u, BattleSnapshot.UnitData d, ItemCatalog catalog)
         {
             u.IsDefending = d.defending;
+            u.Shield = d.shield;
             u.HasRetreated = d.retreated;
             u.FirstGunShotUsed = d.firstGunShotUsed;
             var skills = u.IsAlly && u.Member.Job.Skills != null ? u.Member.Job.Skills : new SkillDefinition[0];

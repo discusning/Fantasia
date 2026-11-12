@@ -64,7 +64,8 @@ namespace Fantasia.Combat
         public const float BaseEvasion = 0.05f;
         public const float EvasionPerSpeed = 0.001f;
         public const float MaxEvasion = 0.40f;
-        public const int DefendActionBonus = 8; // 방어 행동: 다음 개인 턴 전까지 물리·마법 방어 +8
+        public const int DefendActionBonus = 0; // 11/11 팀장 결정: 방어 행동은 방어력 +8 대신 보호막 8 (DefendShield) — 방어력 보너스 없음
+        public const int DefendShield = 8;      // 방어 행동: 다음 개인 턴 시작 전까지 피해를 먼저 막는 보호막 (HP 바에 흰색)
 
         // 계수 × 공격력 곱이 13.0이 12.9999로 떨어지는 부동소수점 오차 방지.
         private const float FloorEpsilon = 0.0001f;

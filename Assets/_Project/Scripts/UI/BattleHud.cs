@@ -14,10 +14,10 @@ namespace Fantasia.UI
     //   ④ 슬롯 판정 연출  ⑤ 피해 숫자  ⑥ 승리·패배 창 을 그린다.
     // 틀·버튼·게이지·아이콘 그림은 UITheme, 초상은 PortraitStudio(데이터의 Model/Portrait) — 아트가
     // 들어오면 코드 수정 없이 바뀐다. 전투 진행은 BattleController가 이 클래스의 메서드를 부른다.
-    public class BattleHud : MonoBehaviour
+    public partial class BattleHud : MonoBehaviour
     {
         private const int TimelineLength = 10;  // 한 화면 칸 수 (UI 솔루션 Q6)
-        public const int TimelineMax = 12;      // 이번 + 다음 라운드 최대 (아군 3 + 적 3) × 2 — 넘치면 넘겨 봄
+        public const int TimelineMax = TimelineLength; // 11/11: 띠를 늘 10칸 꽉 채움 (예상 라운드로 채워서 넘겨 보기 필요 없음)
         private const int MaxEnemyBars = 3;
         private const int StatusIconSlots = 4;
         private const float SecondsPerSlot = 0.3f;
@@ -85,7 +85,7 @@ namespace Fantasia.UI
 
         private RectTransform _canvasRect;
 
-        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public Text Speed; public Text Arrow; public Image Dashed; public Image Team; public Image FrameArt; public GameObject Divider; public RectTransform Rect; }
+        private class TimelineEntry { public GameObject Root; public Image Border; public RawImage Portrait; public Text Round; public Text Mark; public Text Speed; public Text Arrow; public Image Dashed; public Image Team; public Image FrameArt; public GameObject Divider; public RectTransform Rect; public bool IsAlly, Predicted; }
         private IReadOnlyList<BattleQueue.Entry> _timelineEntries;
         private int _timelineRound, _timelineOffset;
         private Button _timelinePrev, _timelineNext;
@@ -98,7 +98,7 @@ namespace Fantasia.UI
         private class EnemyBar
         {
             public GameObject Root; public Image Border; public RawImage Portrait; public Text Name; public Text Badge;
-            public Text Hp; public RectTransform HpFill; public StatusChipRow Statuses; public BattleUnit Unit;
+            public Text Hp; public RectTransform HpFill; public StatusChipRow Statuses; public BattleUnit Unit; public Transform Plate;
             public GameObject Telegraph; public Text TelegraphText; public float FlashUntil;
         }
         private readonly List<EnemyBar> _enemyBars = new();
@@ -162,9 +162,91 @@ namespace Fantasia.UI
                 if (_arrowHide != null) StopCoroutine(_arrowHide);
                 _arrowHide = _arrows.Count > 0 ? StartCoroutine(HideArrows(2.5f)) : null;
             }
+            // 11/11 팀장 확인: 디자인 턴 순서 움직임(11/10 패키지) — 한 차례가 끝나 다음 사람이 맨 앞이 되면 칸이 왼쪽으로 한 칸 밀림
+            bool advance = _timelineOffset == 0 && _shownUnits.Count > 1 && entries != null && entries.Count > 0
+                           && entries[0].Unit == _shownUnits[1] && entries[0].Unit != _shownUnits[0] && _timeline[0].Root.activeSelf;
+            GameObject leaving = advance ? Instantiate(_timeline[0].Root, _timeline[0].Rect.parent) : null; // 나가는 칸 (예전 내용 그대로 복사)
+            // 11/11 팀장 요청: 라운드가 바뀔 때 예상 칸(흐림·점선)이 한 번에 밝은 틀로 바뀌던 것 → 왼쪽부터 한 칸씩 밝아짐
+            bool newRound = _timelineRound > 0 && currentRound != _timelineRound;
+            if (newRound) for (int i = 0; i < _reveal.Length; i++) _reveal[i] = 0f;
             _timelineEntries = entries;
             _timelineRound = currentRound;
             RenderTimeline();
+            if (newRound)
+            {
+                if (_revealRoutine != null) StopCoroutine(_revealRoutine);
+                _revealRoutine = StartCoroutine(RevealRound());
+            }
+            _shownUnits.Clear();
+            if (entries != null) foreach (var e in entries) _shownUnits.Add(e.Unit);
+            if (advance)
+            {
+                if (_slide != null) { StopCoroutine(_slide); if (_leaving != null) Destroy(_leaving); } // 앞 움직임이 안 끝났으면 정리하고 새로
+                _slide = StartCoroutine(SlideTimeline(leaving));
+            }
+        }
+
+        // 턴 순서 움직임 (디자인 패키지 README: 0.42초, 왼쪽으로 한 칸, 첫 칸 122% + 금 틀, 새 끝 칸은 오른쪽에서 같이 들어옴).
+        // 칸 구조(10칸·점선·3D 초상)는 그대로 두고, 새 내용을 그린 뒤 각 칸을 "오른쪽 옆 칸 자리 → 제자리"로 옮겨 보이게 함.
+        // 첫 칸은 작은 칸 자리에서 큰 칸 자리로 커짐 (큰 칸 0.08 / 작은 칸 0.065 = 123%).
+        public const float TimelineSlideSeconds = 0.42f;
+        private readonly List<BattleUnit> _shownUnits = new();
+        private readonly List<Vector2> _homeMin = new(), _homeMax = new();
+        private Coroutine _slide;
+        private GameObject _leaving;
+        public bool DevTimelineSliding => _slide != null;
+
+        private IEnumerator SlideTimeline(GameObject leaving)
+        {
+            int n = _timeline.Count;
+            Vector2 step = _homeMin[n - 1] - _homeMin[n - 2]; // 작은 칸 한 칸 간격
+            var fromMin = new Vector2[n];
+            var fromMax = new Vector2[n];
+            for (int i = 0; i < n; i++)
+            {
+                fromMin[i] = i + 1 < n ? _homeMin[i + 1] : _homeMin[i] + step;
+                fromMax[i] = i + 1 < n ? _homeMax[i + 1] : _homeMax[i] + step;
+            }
+            // 나가는 칸: 첫 칸 자리 → 왼쪽으로 한 칸, 작아지며 흐려짐
+            RectTransform leaveRect = null;
+            CanvasGroup leaveGroup = null;
+            Vector2 leaveMin0 = _homeMin[0], leaveMax0 = _homeMax[0];
+            Vector2 leaveSize = _homeMax[1] - _homeMin[1];
+            Vector2 leaveCenter = (leaveMin0 + leaveMax0) * 0.5f - new Vector2(step.x, 0f);
+            _leaving = leaving;
+            if (leaving != null)
+            {
+                leaveRect = (RectTransform)leaving.transform;
+                leaving.transform.SetAsFirstSibling(); // 다른 칸 뒤로
+                leaveGroup = leaving.AddComponent<CanvasGroup>();
+                leaveGroup.blocksRaycasts = false;
+            }
+            var lastGroup = _timeline[n - 1].Root.GetComponent<CanvasGroup>() ?? _timeline[n - 1].Root.AddComponent<CanvasGroup>();
+
+            for (float t = 0f; t < TimelineSlideSeconds; t += Time.unscaledDeltaTime)
+            {
+                float k = 1f - Mathf.Pow(1f - t / TimelineSlideSeconds, 3f); // 끝에서 부드럽게 멈춤
+                for (int i = 0; i < n; i++)
+                {
+                    _timeline[i].Rect.anchorMin = Vector2.Lerp(fromMin[i], _homeMin[i], k);
+                    _timeline[i].Rect.anchorMax = Vector2.Lerp(fromMax[i], _homeMax[i], k);
+                }
+                lastGroup.alpha = k; // 새 끝 칸은 오른쪽에서 나타나며 들어옴
+                if (leaveRect != null)
+                {
+                    Vector2 c = Vector2.Lerp((leaveMin0 + leaveMax0) * 0.5f, leaveCenter, k);
+                    Vector2 s = Vector2.Lerp(leaveMax0 - leaveMin0, leaveSize * 0.8f, k);
+                    leaveRect.anchorMin = c - s * 0.5f;
+                    leaveRect.anchorMax = c + s * 0.5f;
+                    leaveGroup.alpha = 1f - k;
+                }
+                yield return null;
+            }
+            for (int i = 0; i < n; i++) { _timeline[i].Rect.anchorMin = _homeMin[i]; _timeline[i].Rect.anchorMax = _homeMax[i]; }
+            lastGroup.alpha = 1f;
+            if (leaving != null) Destroy(leaving);
+            _leaving = null;
+            _slide = null;
         }
 
         // 타임라인 그리기 (UI 솔루션 Q6): 한 화면 최대 10칸 — 넘치면 ◀ ▶로 넘겨 본다 (자르지 않음).
@@ -183,6 +265,7 @@ namespace Fantasia.UI
             _timelineNext.interactable = _timelineOffset < maxOffset;
 
             int prevRound = _timelineOffset > 0 ? entries[_timelineOffset - 1].Round : currentRound;
+            int lastMark = -9; // 11/11 글자 겹침: 라운드가 짧아 표시가 붙으면 짧은 글자
             for (int i = 0; i < _timeline.Count; i++)
             {
                 var slot = _timeline[i];
@@ -194,21 +277,15 @@ namespace Fantasia.UI
                 var unit = entries[idx].Unit;
                 slot.Portrait.texture = PortraitStudio.TextureFor(unit.Definition);
                 bool predicted = entries[idx].Round != currentRound;
-                var border = unit.IsAlly ? AllyBorder : EnemyBorder;
-                slot.Border.color = predicted ? new Color(border.r, border.g, border.b, 0.15f) : border;
-                slot.Dashed.enabled = predicted;
-                if (slot.FrameArt != null) // 11/10 그림 틀: 바깥 단색 테두리 대신 아래 색 줄, 다음 라운드 칸은 틀을 어둡게
-                {
-                    slot.Border.color = new Color(0f, 0f, 0f, 0f);
-                    slot.Team.color = predicted ? new Color(border.r, border.g, border.b, 0.45f) : border;
-                    slot.FrameArt.color = predicted ? new Color(0.55f, 0.55f, 0.55f, 1f) : Color.white;
-                }
-                slot.Dashed.color = border;
-                slot.Portrait.color = predicted ? new Color(0.6f, 0.6f, 0.6f, 1f) : Color.white;
+                slot.IsAlly = unit.IsAlly;
+                slot.Predicted = predicted;
+                ApplySlotLook(i);
                 // 다음 라운드가 시작되는 칸에 "전투 R3 예상" + 구분선 (속도 변화는 이 칸부터 반영된다).
                 bool newRound = entries[idx].Round != prevRound;
                 slot.Round.gameObject.SetActive(newRound);
-                slot.Round.text = $"전투 R{entries[idx].Round} 예상";
+                slot.Round.text = newRound && i - lastMark <= 2 ? $"R{entries[idx].Round}" : $"전투 R{entries[idx].Round} 예상";
+                if (newRound && i - lastMark <= 2 && lastMark >= 0) _timeline[lastMark].Round.text = _timeline[lastMark].Round.text.Replace("전투 ", "").Replace(" 예상", ""); // 앞 표시도 짧게
+                if (newRound) lastMark = i;
                 slot.Divider.SetActive(newRound);
                 slot.Mark.gameObject.SetActive(unit.Boss != null && unit.Boss.HasPending && unit.IsAlive);
                 slot.Speed.text = $"속도 {entries[idx].Speed}";
@@ -221,6 +298,46 @@ namespace Fantasia.UI
                 }
                 prevRound = entries[idx].Round;
             }
+        }
+
+        // 칸 모양: 예상 칸 = 초상 60%·틀 어둡게·점선 / 이번 라운드 칸 = 밝게. _reveal[i](0→1)로 그 사이를 부드럽게 바꿈.
+        private readonly float[] _reveal = { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f };
+        private Coroutine _revealRoutine;
+        private const float RevealSeconds = 0.3f, RevealStagger = 0.07f;
+
+        private void ApplySlotLook(int i)
+        {
+            var slot = _timeline[i];
+            var border = slot.IsAlly ? AllyBorder : EnemyBorder;
+            float t = slot.Predicted ? 0f : _reveal[i]; // 0 = 예상 모양, 1 = 이번 라운드 모양
+            slot.Border.color = new Color(border.r, border.g, border.b, Mathf.Lerp(0.15f, 1f, t));
+            slot.Dashed.enabled = t < 1f;
+            slot.Dashed.color = new Color(border.r, border.g, border.b, 1f - t);
+            if (slot.FrameArt != null) // 11/10 그림 틀: 바깥 단색 테두리 대신 아래 색 줄, 다음 라운드 칸은 틀을 어둡게
+            {
+                slot.Border.color = new Color(0f, 0f, 0f, 0f);
+                slot.Team.color = new Color(border.r, border.g, border.b, Mathf.Lerp(0.45f, 1f, t));
+                float f = Mathf.Lerp(0.55f, 1f, t);
+                slot.FrameArt.color = new Color(f, f, f, 1f);
+            }
+            float p = Mathf.Lerp(0.6f, 1f, t);
+            slot.Portrait.color = new Color(p, p, p, 1f);
+        }
+
+        private IEnumerator RevealRound()
+        {
+            float total = RevealSeconds + RevealStagger * (_reveal.Length - 1);
+            for (float time = 0f; time < total; time += Time.unscaledDeltaTime)
+            {
+                for (int i = 0; i < _reveal.Length && i < _timeline.Count; i++)
+                {
+                    _reveal[i] = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((time - i * RevealStagger) / RevealSeconds));
+                    if (_timeline[i].Root.activeSelf) ApplySlotLook(i);
+                }
+                yield return null;
+            }
+            for (int i = 0; i < _reveal.Length && i < _timeline.Count; i++) { _reveal[i] = 1f; if (_timeline[i].Root.activeSelf) ApplySlotLook(i); }
+            _revealRoutine = null;
         }
 
         private void ScrollTimeline(int step)
@@ -287,6 +404,7 @@ namespace Fantasia.UI
                 float ratio = bar.Unit.MaxHP > 0 ? Mathf.Clamp01((float)bar.Unit.CurrentHP / bar.Unit.MaxHP) : 0f;
                 bar.HpFill.anchorMax = new Vector2(ratio, 1f);
                 bar.Border.color = bar.Unit == highlighted ? CritColor : Gold;
+                UGUIKit.SetPlateTint(bar.Plate, bar.Unit == highlighted ? new Color(1f, 0.62f, 0.55f) : UGUIKit.PlateNormal); // 11/11 U12: 판 그림이면 대상은 붉게
                 bar.Statuses.Show(StatusChipRow.EntriesFor(bar.Unit.Statuses, bar.Unit.HasEvasionState));
                 bar.Root.GetComponent<CanvasGroup>().alpha = bar.Unit.IsAlive ? 1f : 0.35f;
             }
@@ -297,6 +415,7 @@ namespace Fantasia.UI
         public void ShowActions(BattleUnit actor, bool canRevive = false)
         {
             _actionPanel.SetActive(true);
+            ClearChosen();
             _actorText.text = $"{actor.DisplayName}의 차례";
             _attackButton.interactable = actor.CanBasicAttack;
             _defendButton.interactable = true;
@@ -325,8 +444,9 @@ namespace Fantasia.UI
         private void ToggleSkills()
         {
             if (_actionActor == null) return;
-            if (_skillPanel.activeSelf) { _skillPanel.SetActive(false); return; }
+            if (_skillPanel.activeSelf) { _skillPanel.SetActive(false); if (_chosen != ChosenKind.None) CancelRequested?.Invoke(); return; } // 11/11 칸을 접으면 고른 스킬도 취소
             _itemPanel.SetActive(false);
+            if (_chosen == ChosenKind.Item) CancelRequested?.Invoke(); // 소모품을 고른 채 스킬 칸으로 바꾸면 소모품 취소
 
             _shownSkills.Clear();
             _shownSkills.AddRange(_actionActor.ActiveSkills());
@@ -364,8 +484,9 @@ namespace Fantasia.UI
         private void ToggleItems()
         {
             if (_actionActor == null) return;
-            if (_itemPanel.activeSelf) { _itemPanel.SetActive(false); return; }
+            if (_itemPanel.activeSelf) { _itemPanel.SetActive(false); if (_chosen != ChosenKind.None) CancelRequested?.Invoke(); return; }
             _skillPanel.SetActive(false);
+            if (_chosen == ChosenKind.Skill) CancelRequested?.Invoke();
             var stacks = BattleItems();
             _shownItems.Clear();
             for (int i = 0; i < _itemSlots.Count; i++)
@@ -403,7 +524,7 @@ namespace Fantasia.UI
             SetHint($"{skill.DisplayName} — {skill.EffectDescription}{(reason != null ? $" ({reason})" : "")}");
         }
 
-        public void SetHint(string text) => _hintText.text = text;
+        public void SetHint(string text) { _hintText.text = text; ApplyHintStyle(); }
 
         // ── 보스 예고 (Boss_Abel_v1.0 예고 UI) ──
         private Button _interruptButton;
@@ -478,6 +599,13 @@ namespace Fantasia.UI
         {
             var band = UGUIKit.CreateImage(parent, "BossBanner", new Vector2(0f, 0.5f), new Vector2(1f, 0.66f), new Color(0.05f, 0.02f, 0.02f, 0.88f));
             _banner = band.gameObject;
+            if (UITheme.Current.Banner != null) // 11/11 U7 보스 등장 띠: 검은 띠 → 받은 나무 탭을 화면 가로로 (양 끝 구리 장식)
+            {
+                band.sprite = UITheme.Current.Banner;
+                band.type = Image.Type.Sliced;
+                band.pixelsPerUnitMultiplier = 0.9f;
+                band.color = new Color(0.85f, 0.8f, 0.8f, 0.97f);
+            }
             _bannerAct = Label(band.transform, "Act", new Vector2(0.2f, 0.62f), new Vector2(0.8f, 0.95f), 14, TextAnchor.MiddleCenter, CritColor, bold: true);
             _bannerName = Label(band.transform, "Name", new Vector2(0.15f, 0.08f), new Vector2(0.85f, 0.65f), 34, TextAnchor.MiddleCenter, TextLight, bold: true);
             var skip = UGUIKit.CreateThemedButton(band.transform, "Skip", new Vector2(0.84f, 0.1f), new Vector2(0.98f, 0.4f), "연출 건너뛰기", ButtonFill, 11);
@@ -535,6 +663,7 @@ namespace Fantasia.UI
         public void PopText(Camera cam, Vector3 worldPos, string text, Color color)
         {
             var label = UGUIKit.CreateText(_canvasRect, "Popup", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), text, 30, TextAnchor.MiddleCenter);
+            label.horizontalOverflow = HorizontalWrapMode.Overflow; // 11/11 긴 팝업("방어 태세 · 보호막 8")이 줄바꿈되어 잘림
             label.color = color;
             label.fontStyle = FontStyle.Bold;
             var outline = label.gameObject.AddComponent<Outline>();
@@ -569,6 +698,7 @@ namespace Fantasia.UI
         public void ShowResult(string title, string body, Action onContinue, string buttonLabel = "보드로 돌아가기")
         {
             HideActions();
+            ClearShieldMarks(); // 11/12 팀장 지적: 방어 방패가 승리·패배 창 위에 남음 → 전투가 끝나면 지움
             UseCardLayout();
             _resultTitle.text = title;
             _resultBody.text = body;
@@ -751,6 +881,8 @@ namespace Fantasia.UI
                 entry.Mark.gameObject.SetActive(false);
                 entry.Root.SetActive(false); // 행동 순서가 정해지기 전(전투 전 대화 등)에는 빈칸을 보이지 않음
                 _timeline.Add(entry);
+                _homeMin.Add(entry.Rect.anchorMin); // 턴 순서 움직임의 제자리
+                _homeMax.Add(entry.Rect.anchorMax);
                 x += w + 0.02f;
             }
             // 10칸이 넘으면 좌우로 넘겨 보기 (Q6) — 넘치지 않으면 숨김
@@ -768,30 +900,48 @@ namespace Fantasia.UI
             {
                 float x0 = 0.03f + i * 0.325f;
                 var bar = new EnemyBar();
-                var fill = UGUIKit.CreateThemedPanel(parent, $"EnemyBar{i}", new Vector2(x0, 0.79f), new Vector2(x0 + 0.29f, 0.895f), Gold, PanelFill, 1.5f);
+                var fill = UGUIKit.CreateThemedPanel(parent, $"EnemyBar{i}", new Vector2(x0, 0.775f), new Vector2(x0 + 0.29f, 0.88f), Gold, PanelFill, 1.5f); // 11/11 겹침: 순서 띠 화살표·예상 글자와 띄움
                 var outer = (RectTransform)fill.parent;
                 bar.Root = outer.gameObject;
                 bar.Border = outer.GetComponent<Image>();
+                bar.Plate = fill;
                 bar.Root.AddComponent<CanvasGroup>();
 
                 var portraitFill = UGUIKit.CreateThemedPanel(fill, "Portrait", new Vector2(0.01f, 0.06f), new Vector2(0.2f, 0.94f), EnemyBorder, new Color(0.13f, 0.12f, 0.15f), 1.5f, UITheme.Current.PortraitFrame);
                 bar.Portrait = UGUIKit.CreateRect(portraitFill, "Image", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
+                if (UGUIKit.AddPortraitFrame((RectTransform)portraitFill.parent, 2.5f) != null) portraitFill.parent.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f); // 11/11 U4 얼굴 액자
 
                 bar.Name = Label(fill, "Name", new Vector2(0.23f, 0.55f), new Vector2(0.72f, 0.95f), 13, TextAnchor.MiddleLeft, TextLight, bold: true);
                 bar.Badge = Label(fill, "Badge", new Vector2(0.23f, 0.05f), new Vector2(0.55f, 0.32f), 10, TextAnchor.MiddleLeft, TextDim, bold: false);
-                bar.Hp = Label(fill, "Hp", new Vector2(0.73f, 0.35f), new Vector2(0.99f, 1f), 26, TextAnchor.MiddleRight, HpColor, bold: true);
+                bar.Hp = Label(fill, "Hp", new Vector2(0.73f, 0.5f), new Vector2(0.97f, 0.95f), 24, TextAnchor.MiddleRight, HpColor, bold: true);
 
-                var back = UGUIKit.CreateImage(fill, "HpBar", new Vector2(0.23f, 0.36f), new Vector2(0.98f, 0.52f), new Color(0.16f, 0.15f, 0.17f));
-                UITheme.Apply(back, UITheme.Current.BarBack, sliceHeight: 12f);
-                var hpFill = UGUIKit.CreateImage(back.transform, "Fill", Vector2.zero, Vector2.one, HpColor);
-                UITheme.Apply(hpFill, UITheme.Current.BarFill, tint: true, sliceHeight: 12f);
-                bar.HpFill = (RectTransform)hpFill.transform;
+                // 11/11 팀장 결정: 적 HP도 같은 바 틀(N21) — 왼쪽 칸에 하트(Z07)
+                var framed = FramedBar.Create(fill, "HpBar", new Vector2(0.23f, 0.33f), new Vector2(0.98f, 0.55f), HpColor, out var framedFill);
+                if (framed != null)
+                {
+                    if (UITheme.Current.VitalityIcon != null)
+                    {
+                        var icon = UGUIKit.CreateImage(framed.Slot, "Icon", new Vector2(0.12f, 0.08f), new Vector2(0.88f, 0.92f), Color.white);
+                        icon.sprite = UITheme.Current.VitalityIcon;
+                        icon.preserveAspect = true;
+                        icon.raycastTarget = false;
+                    }
+                    bar.HpFill = framedFill;
+                }
+                else
+                {
+                    var back = UGUIKit.CreateImage(fill, "HpBar", new Vector2(0.23f, 0.36f), new Vector2(0.98f, 0.52f), new Color(0.16f, 0.15f, 0.17f));
+                    UITheme.Apply(back, UITheme.Current.BarBack, sliceHeight: 12f);
+                    var hpFill = UGUIKit.CreateImage(back.transform, "Fill", Vector2.zero, Vector2.one, HpColor);
+                    UITheme.Apply(hpFill, UITheme.Current.BarFill, tint: true, sliceHeight: 12f);
+                    bar.HpFill = (RectTransform)hpFill.transform;
+                }
 
                 // 상태 칸 — 상시 특성(회피 상태) + 걸린 상태 효과. 그림은 StatusEffectDefinition.Icon.
                 bar.Statuses = new StatusChipRow(fill, "Status", new Vector2(0.57f, 0.05f), new Vector2(0.99f, 0.33f), StatusIconSlots);
 
                 // 보스 예고 — HP 바 바로 아래, 실행·저지·사망·전투 종료까지 유지 (Boss_Abel_v1.0 예고 UI)
-                var tele = UGUIKit.CreateThemedPanel(parent, $"EnemyTelegraph{i}", new Vector2(x0, 0.665f), new Vector2(x0 + 0.29f, 0.785f), CritColor, new Color(0.18f, 0.08f, 0.08f, 0.95f), 1.5f);
+                var tele = UGUIKit.CreateThemedPanel(parent, $"EnemyTelegraph{i}", new Vector2(x0, 0.64f), new Vector2(x0 + 0.29f, 0.76f), CritColor, new Color(0.18f, 0.08f, 0.08f, 0.95f), 1.5f);
                 bar.Telegraph = tele.parent.gameObject;
                 bar.TelegraphText = Label(tele, "Text", new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.96f), 10, TextAnchor.MiddleLeft, TextLight, bold: false);
                 bar.TelegraphText.resizeTextForBestFit = true;
@@ -924,7 +1074,7 @@ namespace Fantasia.UI
 
         private void BuildRollPanel(Transform parent)
         {
-            var panel = UGUIKit.CreateThemedPanel(parent, "RollPanel", new Vector2(0.03f, 0.58f), new Vector2(0.31f, 0.77f), Gold, PanelFill, 2f);
+            var panel = UGUIKit.CreateThemedPanel(parent, "RollPanel", new Vector2(0.03f, 0.42f), new Vector2(0.31f, 0.61f), Gold, PanelFill, 2f); // 11/11 겹침: 적 카드를 덮던 굴림 창을 아래로
             _rollPanel = panel.parent.gameObject;
             _rollTitle = Label(panel, "Title", new Vector2(0.03f, 0.72f), new Vector2(0.97f, 0.97f), 13, TextAnchor.MiddleCenter, TextLight, bold: true);
             _rollSlotRow = UGUIKit.CreateRect(panel, "Slots", new Vector2(0.05f, 0.3f), new Vector2(0.95f, 0.72f));

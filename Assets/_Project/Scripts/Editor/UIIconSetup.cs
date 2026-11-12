@@ -26,6 +26,9 @@ namespace Fantasia.Editor
             // 11/10 받은 UI 수정본 (Docs/Art/UI_Revision_1110) — 투명 여백을 잘라 낸 것. 테두리: 왼·아래·오른·위
             SetBorderAt(Cut + "TopBar2_Plank.png", new Vector4(200, 0, 50, 0));     // 왼쪽 초상 칸까지 고정
             SetBorderAt(Cut + "TopBar2_RegionTab.png", new Vector4(40, 0, 40, 0));
+            SetBorderAt("Assets/_Project/UI/Sprites/HUD/N21_체력마나_바.png", new Vector4(200, 0, 50, 0)); // 왼쪽 네모 칸까지 고정, 좌우로만 늘어남
+            SetBorderAt(Cut + "InnerPlate.png", new Vector4(40, 40, 40, 40)); // 11/11 U3 안쪽 판: 구리 테두리 약 33px
+            SetBorderAt(Cut + "Timeline2_Slot.png", new Vector4(24, 24, 24, 24)); // 11/11 U4 얼굴 액자로도 씀 (순서 띠는 Simple로 그려 영향 없음)
             SetBorderAt("Assets/_Project/UI/Sprites/Panels/Panel2_Window.png", new Vector4(180, 285, 180, 300)); // 모서리 장식 포함
             SetBorderAt("Assets/_Project/UI/Sprites/Buttons/Button2_Plain.png", new Vector4(24, 24, 24, 24));
             SetBorderAt(Cut + "Timeline2_Backing.png", new Vector4(50, 0, 50, 0));
@@ -42,8 +45,19 @@ namespace Fantasia.Editor
             theme.FocusPip = S("Z29"); theme.FocusPipEmpty = S("Z30");
             theme.ObjectiveOpen = S("Z33"); theme.ObjectiveDone = S("Z34");
             theme.QuickSlotFrame = S("Z35"); theme.QuickSlotSelected = S("Z36");
-            theme.LevelBadge = S("Z37");
+            theme.LevelBadge = A(Dir + "N22_레벨_원.png") ?? S("Z37"); // 11/11 받은 청동 원 (팀장: 레벨 UI)
+            theme.ShieldIcon = A(Dir + "Shield_방어막_임시.png"); // 11/11 방어 보호막 (임시 — 개발이 그림)
+            // 11/12 메인 화면 (디자인): 로고는 가장자리 거의 투명한 픽셀에 빨간 색이 묻어 있어 Alpha Is Transparency 켬 (크기 줄일 때 번짐 막기)
+            const string Main = "Assets/_Project/UI/Sprites/MainMenu/";
+            MainMenuImport(Main + "Main_게임로고.png", transparent: true);
+            MainMenuImport(Main + "Main_메인배경.png", transparent: false);
+            theme.MainLogo = A(Main + "Main_게임로고.png");
+            theme.MainBackground = A(Main + "Main_메인배경.png");
             theme.BarBack = S("Z38"); theme.BarFill = S("Z39");
+            theme.Banner = A(Cut + "TopBar_RegionTab.png"); // 11/11 U1 이름 줄 — 받은 나무 탭 다시 씀
+            theme.PanelFill = A(Cut + "InnerPlate.png");     // 11/11 U3 안쪽 판 — 받은 N09 내용패널(여백 자름)
+            theme.SlotIcon = A(Cut + "Ring_Tintable.png");  // 11/11 U10 주사위 칸 표식 — 받은 레벨 원(N22)을 가운데 밝게 바꾼 칠용 (성공=초록·실패=빨강)
+            theme.HpMpFrame = A("Assets/_Project/UI/Sprites/HUD/N21_체력마나_바.png"); // 11/11 받은 체력·마나 바 틀 (FramedBar)
             // 상단 바 그림 (UI 적용 ①)
             theme.TopBarFrame = A(Cut + "TopBar2_Plank.png");     // 11/10 새 그림 (예전 N07 조각: TopBar_*.png)
             theme.TopBarCircle = A(Cut + "TopBar2_Circle.png");
@@ -64,7 +78,7 @@ namespace Fantasia.Editor
             {
                 new SpeakerPortrait { Speaker = "점술마녀", Sprite = A("Assets/_Project/UI/Sprites/Portraits/N18_대화인물_점술마녀_3x4.png") ?? P("N18") }, // 11/10 3:4 새 그림
                 new SpeakerPortrait { Speaker = "제임스", Sprite = A("Assets/_Project/UI/Sprites/Portraits/N19_대화인물_제임스_3x4.png") ?? P("N19") },
-                new SpeakerPortrait { Speaker = "아벨 모로", Sprite = P("N20") },
+                new SpeakerPortrait { Speaker = "아벨 모로", Sprite = A("Assets/_Project/UI/Sprites/Portraits/N20_대화인물_아벨모로_3x4.png") ?? P("N20") }, // 11/11 팀장: 상처완화 대체본을 3:4로 자름
             };
             EditorUtility.SetDirty(theme);
 
@@ -105,6 +119,22 @@ namespace Fantasia.Editor
             var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
             if (sprite == null) Debug.LogWarning($"[UIIconSetup] 그림 없음: {path}");
             return sprite;
+        }
+
+        // 큰 그림(메인 화면) — 스프라이트, 밉맵 없음, 2048까지, 압축은 고품질
+        private static void MainMenuImport(string path, bool transparent)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) return;
+            bool changed = importer.textureType != TextureImporterType.Sprite || importer.mipmapEnabled || importer.alphaIsTransparency != transparent || importer.maxTextureSize != 2048 || importer.textureCompression != TextureImporterCompression.CompressedHQ;
+            if (!changed) return;
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.mipmapEnabled = false;
+            importer.alphaIsTransparency = transparent;
+            importer.maxTextureSize = 2048;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            importer.SaveAndReimport();
         }
 
         private static void SetBorderAt(string path, Vector4 border)

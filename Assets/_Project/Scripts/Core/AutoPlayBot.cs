@@ -37,6 +37,7 @@ namespace Fantasia.Core
             var go = new GameObject("AutoPlayBot");
             DontDestroyOnLoad(go);
             go.AddComponent<AutoPlayBot>();
+            if (Environment.GetCommandLineArgs().Contains("-autoplay-spikes")) go.AddComponent<FrameSpikeLog>(); // 11/12 느린 프레임 기록
         }
 
         private IEnumerator Start()
@@ -232,6 +233,15 @@ namespace Fantasia.Core
 
                 var board = FindFirstObjectByType<BoardTestController>();
                 if (board == null) continue;
+                if (DialoguePanel.IsOpen && !_boxClickChecked && DialoguePanel.DevLineIndex == 0)
+                {
+                    // 11/12 팀장 지시: 대화 창 아무 곳이나 눌러도 다음 줄
+                    _boxClickChecked = true;
+                    DialoguePanel.DevClickBox();
+                    yield return null;
+                    Qa(!DialoguePanel.IsOpen || DialoguePanel.DevLineIndex == 1, $"대화 창 글 부분을 누르면 다음 줄 (줄 0 → {DialoguePanel.DevLineIndex})");
+                    continue;
+                }
                 if (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); yield return new WaitForSeconds(0.15f); continue; }
                 if (ConfirmPanel.IsOpen) { Note("보스 레벨 경고 → 진입"); ConfirmPanel.DevChoose(true); continue; }
                 if (EncounterPanel.IsOpen) { yield return new WaitForSeconds(0.4f); EncounterPanel.DevChoose(1); yield return new WaitForSeconds(0.8f); continue; }
@@ -445,6 +455,42 @@ namespace Fantasia.Core
             yield return SkipIntro();
             var board = FindFirstObjectByType<BoardTestController>();
             yield return Shot("board_start");
+            // 11/12 팀장 결정 1번: 구조물 있는 밟는 칸 — 말이 서는 자리가 구조물 밖인지, 구조물이 칸 폭(1.6m) 안인지
+            {
+                var walk = Fantasia.Board.HexTile.WithProps.Where(t => t != null && t.StandFront > 0f).ToList();
+                int inside = walk.Count(t => { var b = t.PropBounds(); b.Expand(-0.05f); var p = t.transform.position + Vector3.back * t.StandFront; p.y = b.min.y + 0.4f; return b.Contains(p); });
+                float widest = walk.Count > 0 ? walk.Max(t => t.DevPropWidth) : 0f;
+                Qa(walk.Count > 0 && inside == 0 && widest <= Fantasia.Board.HexTile.WalkablePropMaxWidth + 0.01f, $"구조물 칸 {walk.Count}개: 말이 구조물 안에 서는 칸 {inside}개 · 가장 넓은 구조물 {widest:0.00}m");
+            }
+            // 11/12 시점 사진 (-camera-preview): 구조물 칸에 선 모습 + 집 뒤로 지나간 모습 (반투명 확인). 끝나면 원래 자리로.
+            if (Environment.GetCommandLineArgs().Contains("-camera-preview"))
+            {
+                var home = board.DevPosition;
+                int cm = Fantasia.Board.BoardCameraRig.Preview;
+                foreach (var (kind, label) in new[] { (Fantasia.Board.MapTileKind.Hub, "거점"), (Fantasia.Board.MapTileKind.Recovery, "우물"), (Fantasia.Board.MapTileKind.Event, "이벤트"), (Fantasia.Board.MapTileKind.Exit, "출구") })
+                {
+                    var tile = Fantasia.Board.HexTile.WithProps.FirstOrDefault(t => t != null && t.MapKind == kind && t.StandFront > 0f && t.PropVisible);
+                    if (tile == null) continue;
+                    board.DevTeleport(tile.Coordinate);
+                    yield return new WaitForSeconds(1.2f);
+                    yield return Shot($"구조물칸_{label}_시점{cm}");
+                }
+                // 집 뒤 칸: 막힌 집 칸 바로 뒤(+z)의 빈 칸
+                var all = UnityEngine.Object.FindObjectsByType<Fantasia.Board.HexTile>(FindObjectsSortMode.None);
+                var homePos = board.DevBoard.CoordToWorld(home);
+                var behind = all.Where(t => !t.IsBlocked && t.StandFront == 0f && t.MapKind == Fantasia.Board.MapTileKind.Walkable).OrderBy(t => (t.transform.position - homePos).sqrMagnitude)
+                    .FirstOrDefault(t => Fantasia.Board.HexTile.WithProps.Any(h => h != null && h.IsBlocked && h.PropBounds().size.y > 1f
+                        && Mathf.Abs(h.transform.position.x - t.transform.position.x) < 1f && t.transform.position.z - h.transform.position.z is > 1.2f and < 1.8f));
+                if (behind != null)
+                {
+                    board.DevTeleport(behind.Coordinate);
+                    yield return new WaitForSeconds(1.2f);
+                    Note($"  (점검) 집 뒤 칸 — 반투명 구조물 {Fantasia.Board.BoardOccluderFade.DevFadedCount}개");
+                    yield return Shot($"구조물칸_집뒤_시점{cm}");
+                }
+                board.DevTeleport(home);
+                yield return new WaitForSeconds(1f);
+            }
             ApplyStartOverrides();
             NoteParty("보드 시작");
             var args = Environment.GetCommandLineArgs();
@@ -453,6 +499,61 @@ namespace Fantasia.Core
             bool bossRun = args.Contains("-autoplay-boss");
             bool huntRun = args.Contains("-autoplay-hunt");
             bool shotHunt = false, shotSky = false;
+
+            // ── 11/12 이동 QA (-autoplay-move-qa, 보통 -boardcam 0~3과 같이): 집 뒤 칸들을 차례로 돌며 프레임·반투명·서는 자리·카메라 점검. 스크린샷 없음 ──
+            if (args.Contains("-autoplay-move-qa"))
+            {
+                var mq = gameObject.AddComponent<BoardMoveQa>();
+                mq.Board = board;
+                var tiles = UnityEngine.Object.FindObjectsByType<Fantasia.Board.HexTile>(FindObjectsSortMode.None);
+                var tall = Fantasia.Board.HexTile.WithProps.Where(h => h != null && h.IsBlocked && h.PropBounds().size.y > 0.9f).ToList();
+                // 집 뒤(+z, 카메라 반대쪽) 빈 칸 — 말이 가려지기 쉬운 곳
+                var behind = tiles.Where(t => !t.IsBlocked && !t.IsEncounter && t.MapKind == Fantasia.Board.MapTileKind.Walkable
+                    && tall.Any(h => Mathf.Abs(h.transform.position.x - t.transform.position.x) < 1f && t.transform.position.z - h.transform.position.z is > 1.2f and < 1.8f)).ToList();
+                var order = new System.Collections.Generic.List<Fantasia.Board.HexTile>();
+                var from = board.DevToken.position;
+                while (behind.Count > 0 && order.Count < 12)
+                {
+                    var next = behind.OrderBy(t => (t.transform.position - from).sqrMagnitude).First();
+                    order.Add(next); behind.Remove(next); from = next.transform.position;
+                }
+                Note($"이동 QA: 시점 {Fantasia.Board.BoardCameraRig.Preview} · 집 뒤 목표 칸 {order.Count}개");
+                int turnsMq = 0, reached = 0, stuck = 0, target = 0;
+                while (turnsMq < 40 && target < order.Count && !EncounterPanel.IsOpen)
+                {
+                    float until = Time.time + 15f;
+                    while (Time.time < until && !((board.DevIsIdle && !BoardTopBar.DevTurnDropVisible) || EncounterPanel.IsOpen))
+                    {
+                        if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance();
+                        if (EventPanel.IsOpen) EventPanel.DevLeave(); // 이동 QA와 상관없는 이벤트 창은 닫고 계속
+                        if (ConfirmPanel.IsOpen) ConfirmPanel.DevChoose(false);
+                        if (board.DevAwaitingSelection && !board.DevMoving && !EventPanel.IsOpen) board.DevMoveTowardAvoiding(new[] { order[Math.Min(target, order.Count - 1)].Coordinate }); // 이벤트 추가 이동도 목표 쪽
+                        yield return new WaitForSeconds(0.15f);
+                    }
+                    if (EncounterPanel.IsOpen || !board.DevIsIdle) { Note($"  멈춤: 이벤트 {EventPanel.IsOpen} 대화 {DialoguePanel.IsOpen} 선택대기 {board.DevAwaitingSelection}"); break; }
+                    turnsMq++;
+                    board.DevRoll();
+                    yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
+                    var goal = order[target].Coordinate;
+                    board.DevMoveTowardAvoiding(new[] { goal });
+                    yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen || board.DevAwaitingSelection || ConfirmPanel.IsOpen || EventPanel.IsOpen, 15f, "이동");
+                    if (!board.DevIsIdle && !EncounterPanel.IsOpen && !EventPanel.IsOpen) Note($"  상태: 이동 {board.DevMoving} 선택대기 {board.DevAwaitingSelection} 대화 {DialoguePanel.IsOpen} 확인 {ConfirmPanel.IsOpen} 이벤트 {EventPanel.IsOpen} 상점 {Fantasia.UI.ShopPanel.IsOpen} 가방 {InventoryPanel.IsOpen} 명소 {LandmarkInfoPanel.IsOpen} 사건 {CaseLogPanel.IsOpen} 위치 {board.DevPosition}");
+                    if (ConfirmPanel.IsOpen) ConfirmPanel.DevChoose(false);
+                    if (board.DevPosition.Equals(goal)) { reached++; target++; stuck = 0; }
+                    else if (++stuck >= 4) { target++; stuck = 0; } // 4턴 동안 못 가면 다음 목표
+                }
+                Note($"이동 QA: {turnsMq}턴 · 목표 도착 {reached}/{order.Count} · 멈춤 {mq.Stops}번");
+                Qa(mq.MovingMs.Count > 0, mq.Summary(out bool frameOk));
+                Qa(frameOk, "이동 중 33ms 넘는 프레임 1% 이하");
+                Qa(mq.LateFade == 0, $"말을 가리는 구조물이 0.35초 안에 반투명 (늦은 구조물 {mq.LateFade}개)");
+                Qa(mq.StuckFade == 0, $"안 가리는데 반투명으로 남은 구조물 없음 ({mq.StuckFade}개)");
+                Qa(mq.TokenInside == 0, $"멈춘 자리가 구조물 안 아님 ({mq.TokenInside}번)");
+                Qa(mq.CamInside == 0, $"카메라가 구조물 안에 안 들어감 ({mq.CamInside}프레임)");
+                Qa(mq.MaxYawStep < 90f, $"카메라가 빠르게 안 돎 (최대 초당 {mq.MaxYawStep:0}°, 기준 90°)");
+                Note($"  반투명이 생긴 프레임 {mq.FadedFrames}개");
+                Note("자동 플레이 완료");
+                yield break;
+            }
 
             // ── 이벤트 칸 점검 (-autoplay-event): 점술마녀(M02) 회복 카드 → 분수대(S10) ──
             if (args.Contains("-autoplay-event"))
@@ -735,6 +836,7 @@ namespace Fantasia.Core
                 yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
                 Note($"보드 {turn}턴: 월드 라운드 {board.DevWorldRound} 아군 턴 — 주사위 굴림");
                 if (turn == 1) yield return Shot("board_roll_highlight");
+                bool camShot = turn == 1 && Environment.GetCommandLineArgs().Contains("-camera-preview");
                 if (huntRun)
                 {
                     // D24 점검: 피의 사냥 전에는 적 칸을 피해 다니고, 시작되면 사신 쪽으로
@@ -746,6 +848,7 @@ namespace Fantasia.Core
                     else board.DevMoveAvoidingEncounters();
                 }
                 else board.DevMoveTowardEncounter(bossRun);
+                if (camShot) { yield return new WaitForSeconds(0.9f); Note($"  (점검) 이동 중 반투명 구조물 {Fantasia.Board.BoardOccluderFade.DevFadedCount}개"); yield return Shot($"이동시점_{Fantasia.Board.BoardCameraRig.Preview}_이동중"); }
                 yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen || board.DevAwaitingSelection || ConfirmPanel.IsOpen, 15f, "이동");
                 if (ConfirmPanel.IsOpen)
                 {
@@ -776,6 +879,23 @@ namespace Fantasia.Core
             // ── 2. 조우 창 → 기습 ──
             yield return new WaitForSeconds(0.6f);
             yield return Shot("encounter_panel");
+            // 11/11 다른 종류 적 2마리면 두 모델 (점검용으로 섞어 그린 뒤 원래대로)
+            EncounterPanel.DevPreviewMixed(true);
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("encounter_two_kinds");
+            // 11/12 연성 독거미 구도 점검 (혼자 · 쥐와 함께)
+            EncounterPanel.DevPreviewGroup("연성독거미유체");
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("encounter_spider");
+            EncounterPanel.DevPreviewGroup("역병쥐", "연성독거미유체");
+            yield return new WaitForSeconds(0.4f);
+            yield return Shot("encounter_three_kinds");
+            Note($"조우 창 3종류 칸 수: {EncounterPanel.DevModelCount} (기대 3)");
+            EncounterPanel.DevPreviewGroup("역병쥐", "연성독거미유체", "가고일유체");
+            yield return new WaitForSeconds(0.4f);
+            Note($"조우 창 4종류 칸 수: {EncounterPanel.DevModelCount} (기대 3)");
+            EncounterPanel.DevPreviewMixed(false);
+            yield return new WaitForSeconds(0.1f);
             Note("조우 창 열림 → 기습 선택");
             EncounterPanel.DevChoose(1);
             yield return new WaitForSeconds(0.55f);
@@ -902,6 +1022,21 @@ namespace Fantasia.Core
             }
         }
 
+        // 11/12 팀장 지적: 방패 표시가 캐릭터 이동을 따라갔다가 제자리로 바로 안 돌아옴.
+        // 보호막을 준 뒤 6초 동안(적이 와서 때리고 돌아가는 동안) 매 프레임 끝에 "방패 ↔ 지금 머리 위" 거리를 잼.
+        private IEnumerator SampleShieldMarks(Fantasia.Combat.BattleController battle)
+        {
+            float end = Time.time + 6f, worst = 0f;
+            int frames = 0;
+            while (Time.time < end && battle != null && !battle.DevFinished)
+            {
+                yield return new WaitForEndOfFrame();
+                worst = Mathf.Max(worst, battle.DevShieldMarkError);
+                frames++;
+            }
+            Qa(worst < 0.05f, $"방패 표시가 캐릭터를 따라감 (프레임 {frames}개 · 가장 크게 어긋남 {worst:0.000}m)");
+        }
+
         private IEnumerator RunBattle(bool shots)
         {
             var args = Environment.GetCommandLineArgs();
@@ -909,7 +1044,7 @@ namespace Fantasia.Core
             yield return WaitFor(() => FindFirstObjectByType<BattleController>() != null, 10f, "전투 관리자");
             var battle = FindFirstObjectByType<BattleController>();
             _lastBattle = battle;
-            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false, usedItem = false;
+            bool shotFirstTurn = false, shotRoll = false, shotEnemy = false, defended = false, shotSkillMenu = false, shotSkill = false, shotRevive = false, usedItem = false, defendDemo = false, sniperShield = false, shieldNoted = false, bossShield = false, bossShieldShot = false; int bossAbsorbBefore = 0; // defendDemo: 11/11 보호막 촬영
             bool shotBanner = false, shotIntro = false, shotTelegraph = false, focusZeroed = false;
             bool kit = args.Contains("-autoplay-kit"), forceInterrupt = args.Contains("-autoplay-interrupt"), focusZero = args.Contains("-autoplay-focus0");
             int downs = 0, healsUsed = 0, interrupts = 0;
@@ -933,6 +1068,11 @@ namespace Fantasia.Core
                     continue;
                 }
                 foreach (var a in battle.DevAllies) if (a.Member.IsDowned && wasDowned.Add(a)) downs++; else if (!a.Member.IsDowned) wasDowned.Remove(a);
+                if (defendDemo && !sniperShield && battle.DevCurrent != null && !battle.DevCurrent.IsAlly) { sniperShield = true; battle.DevShieldAll(Fantasia.Combat.AttackResolver.DefendShield); Note("  (점검) 적 차례 시작 — 아군 모두 보호막 8"); StartCoroutine(SampleShieldMarks(battle)); } // 11/11 보호막 흡수 확인
+                // 11/12 팀장 확인: 아벨 모로가 보호막 8 낀 아군을 때리면 "보호막 -8" + 남은 피해만 숫자로
+                if (!bossShield && battle.DevCurrent != null && battle.DevCurrent.Boss != null) { bossShield = true; bossAbsorbBefore = battle.DevAbsorbed; battle.DevShieldAll(Fantasia.Combat.AttackResolver.DefendShield); Note("  (점검) 아벨 모로 차례 — 아군 모두 보호막 8"); }
+                if (bossShield && !bossShieldShot && battle.DevAbsorbed > bossAbsorbBefore) { bossShieldShot = true; Note($"  아벨 모로 → 보호막 막음 {battle.DevAbsorbed - bossAbsorbBefore} · HP 피해 {battle.DevLastHpDamage}"); yield return new WaitForSeconds(0.2f); if (shots) yield return Shot("boss_shield_hit"); }
+                if (sniperShield && !shieldNoted && battle.DevAbsorbed > 0) { shieldNoted = true; Note($"  보호막 흡수 확인: 막은 피해 {battle.DevAbsorbed}"); yield return new WaitForSeconds(0.3f); if (shots) yield return Shot("battle_shield_absorbed"); }
                 var telegraphBoss = battle.DevEnemies.FirstOrDefault(e => e.Boss != null && e.Boss.HasPending && e.IsAlive);
                 if (telegraphBoss != null && focusZero && !focusZeroed)
                 {
@@ -1046,6 +1186,25 @@ namespace Fantasia.Core
                             battle.DevHud.DevOpenSkills();
                             yield return new WaitForSeconds(0.2f);
                             if (shots) yield return Shot("battle_skill_menu");
+                            // 11/11 고른 스킬 빨간 테두리 → 같은 스킬 다시 눌러 취소 (대상 고르는 스킬일 때만)
+                            if (shots && (skill.Target == Fantasia.Data.SkillTarget.SingleEnemy || skill.Target == Fantasia.Data.SkillTarget.SingleAlly))
+                            {
+                                battle.DevPressSkill(skill);
+                                yield return new WaitForSeconds(0.2f);
+                                yield return Shot("battle_skill_chosen");
+                                Qa(battle.DevChoosingTarget, "스킬 고르면 대상 고르기");
+                                battle.DevPressSkill(skill);
+                                yield return new WaitForSeconds(0.2f);
+                                yield return Shot("battle_skill_cancelled");
+                                Qa(!battle.DevChoosingTarget && battle.DevAwaitingPlayer, "같은 스킬 다시 누르면 취소");
+                                battle.DevPressSkill(skill);
+                                battle.DevDefendButton();
+                                Qa(!battle.DevChoosingTarget && battle.DevCurrent != actor, "대상 고르는 중 방어 = 고르던 스킬 취소 후 본인 방어");
+                                yield return new WaitForSeconds(0.5f);
+                                yield return Shot("battle_defend_shield");
+                                defendDemo = true;
+                                continue;
+                            }
                         }
                         if (skill.Effect == Fantasia.Data.SkillEffect.Heal || skill.Effect == Fantasia.Data.SkillEffect.Cleanse) healsUsed++;
                         bool bossNow = battle.DevEnemies.Any(e => e.InBattle && e.Boss != null) && !(target != null && target.Boss != null && target.Boss.HasPending);
@@ -1263,6 +1422,15 @@ namespace Fantasia.Core
             yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null, 10f, "보드");
             yield return WaitFor(() => DialoguePanel.IsOpen, 3f, "시작 대화");
             int lines = 0;
+            if (DialoguePanel.IsOpen && DialoguePanel.DevLineIndex == 0)
+            {
+                // 11/12 팀장 지시: 대화 창 아무 곳(글 부분)을 눌러도 다음 줄 — 첫 줄은 창 몸통 클릭으로 넘김
+                DialoguePanel.DevClickBox();
+                yield return null;
+                Qa(!DialoguePanel.IsOpen || DialoguePanel.DevLineIndex == 1, $"대화 창 글 부분을 누르면 다음 줄 (줄 0 → {DialoguePanel.DevLineIndex})");
+                lines++;
+                yield return new WaitForSeconds(0.15f);
+            }
             while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); lines++; yield return new WaitForSeconds(0.15f); }
             var board = FindFirstObjectByType<BoardTestController>();
             var s = BoardSession.Instance;
@@ -1284,6 +1452,15 @@ namespace Fantasia.Core
             yield return new WaitForSeconds(0.3f);
             yield return Shot("qa_shop_weapons");
             Qa(ui.DevRowCount == 3, $"런던 무기 진열 3종 (실제 {ui.DevRowCount})");
+            // 11/12 받은 모델로 찍은 아이템 아이콘 확인 (보급품 · 방어구 탭)
+            ui.DevSelectTab(0);
+            ui.DevSelectRow(0);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_shop_supplies");
+            ui.DevSelectTab(2);
+            ui.DevSelectRow(0);
+            yield return new WaitForSeconds(0.3f);
+            yield return Shot("qa_shop_armor");
             ui.DevSelectTab(6);
             Qa(ui.DevRowCount == 2, $"의뢰 탭 2개 (실제 {ui.DevRowCount})");
             ui.DevSelectRow(0);
@@ -1353,6 +1530,15 @@ namespace Fantasia.Core
                 yield return new WaitForSecondsRealtime(1.9f);
                 Qa(b.DevHud.DevResultButtonsVisible, "판이 멈춘 뒤 버튼 보임");
                 yield return Shot("qa_victory_panel");
+                // 11/12 팀장 지적: 방어 방패가 결과 창 위에 남던 것 — 결과 창이 뜨면 0개, 그 뒤 보호막이 생겨도 안 그림
+                Qa(b.DevHud.DevShieldMarkCount == 0, $"결과 창 위 방패 표시 없음 (실제 {b.DevHud.DevShieldMarkCount})");
+                b.DevShieldAll(Fantasia.Combat.AttackResolver.DefendShield);
+                Qa(b.DevHud.DevShieldMarkCount == 0, $"결과 창 뒤 보호막 생겨도 방패 표시 안 함 (실제 {b.DevHud.DevShieldMarkCount})");
+                // 11/12 팀장 확인: 보호막 8에 아벨 모로 10 → 보호막 -8, 피해 2 (HP가 낮아도 같음, 피해가 작으면 다 막음)
+                var s1 = Fantasia.Combat.BattleController.ShieldSplit(10, 8, 100);
+                var s2 = Fantasia.Combat.BattleController.ShieldSplit(10, 8, 5);
+                var s3 = Fantasia.Combat.BattleController.ShieldSplit(6, 8, 100);
+                Qa(s1 == (8, 2) && s2 == (8, 2) && s3 == (6, 0), $"보호막 나누기 10/8→{s1} · HP5일 때→{s2} · 6/8→{s3} (기대 (8,2)·(8,2)·(6,0))");
             }
             b?.DevContinue();
             yield return WaitFor(() => FindFirstObjectByType<BoardTestController>() != null && DialoguePanel.IsOpen, 10f, "의뢰 완료 대사");
@@ -1969,7 +2155,7 @@ namespace Fantasia.Core
                     battle.DevUseItem(potion, actor);
                     yield return BurstTimed("m_item", 0.2f, 0.6f, 1.2f);
                 }
-                else if (job == Fantasia.Data.JobId.Sniper && done.Add("defend")) { step = "defend"; battle.DevDefend(); yield return BurstTimed("m_defend", 0.1f, 0.5f); }
+                else if (job == Fantasia.Data.JobId.Sniper && done.Add("defend")) { step = "defend"; battle.DevDefend(); yield return BurstTimed("m_defend", 0.15f, 0.35f, 0.7f); }
                 else if (done.Add("revive"))
                 {
                     step = "revive";
@@ -1978,7 +2164,7 @@ namespace Fantasia.Core
                     yield return new WaitForSeconds(2.3f);
                     yield return Shot("m_revive_down");
                     battle.DevRevive(victim);
-                    yield return BurstTimed("m_revive", 0.05f, 0.3f, 0.7f);
+                    yield return BurstTimed("m_revive", 0.2f, 0.7f, 1.3f) /* 11/11 일어서기 동작 1.5초 */;
                 }
                 else if (!win)
                 {
@@ -2106,6 +2292,16 @@ namespace Fantasia.Core
             if (!DialoguePanel.IsOpen) yield break;
             yield return Shot("intro_dialogue");
             int lines = 0;
+            if (DialoguePanel.IsOpen && DialoguePanel.DevLineIndex == 0)
+            {
+                // 11/12 팀장 지시: 대화 창 아무 곳(글 부분)을 눌러도 다음 줄
+                _boxClickChecked = true;
+                DialoguePanel.DevClickBox();
+                yield return null;
+                Qa(!DialoguePanel.IsOpen || DialoguePanel.DevLineIndex == 1, $"대화 창 글 부분을 누르면 다음 줄 (줄 0 → {DialoguePanel.DevLineIndex})");
+                lines++;
+                yield return new WaitForSeconds(0.15f);
+            }
             while (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); lines++; yield return new WaitForSeconds(0.15f); }
             Note($"시작 대화 {lines}번 넘김");
             yield return new WaitForSeconds(0.5f);
@@ -2118,12 +2314,16 @@ namespace Fantasia.Core
             if (!condition()) Note($"시간 초과: {what}");
         }
 
+        private bool _boxClickChecked;
+
         private IEnumerator Shot(string name)
         {
             yield return new WaitForEndOfFrame();
             string file = Path.Combine(_outDir, $"{++_shot:00}_{name}.png");
             ScreenCapture.CaptureScreenshot(file);
+            FrameSpikeLog.LastShotFrame = Time.frameCount;
             Note($"스크린샷 {Path.GetFileName(file)}");
+            foreach (var line in TextCoverCheck.Run()) Note($"[글자] {name}: {line}"); // 11/11 글자 가림 점검
             yield return null;
         }
 

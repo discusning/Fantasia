@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.fog_smoke_bomb
   DisplayName: "\uC548\uAC1C \uC5F0\uB9C9\uBCD1"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 7974461cef4040b498702bb31fe76f09, type: 3}
   EffectDescription: "\uB2E4\uC74C \uAE30\uC2B5 \uC2AC\uB86F \uC131\uACF5\uB960 +15%p;
     \uBA85\uD0D0\uC815 \uD328\uC2DC\uBE0C\uC640 \uD569\uC0B0, \uCD5C\uB300 95%"
   Effect: 8

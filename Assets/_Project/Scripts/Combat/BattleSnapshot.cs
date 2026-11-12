@@ -37,6 +37,7 @@ namespace Fantasia.Combat
         {
             public int hp;                    // 적만 (아군은 파티 정보)
             public bool defending, retreated, firstGunShotUsed;
+            public int shield; // 11/11 방어 보호막
             public List<StatusData> statuses = new(); // 적만
             public List<CooldownData> cooldowns = new();
             // 보스

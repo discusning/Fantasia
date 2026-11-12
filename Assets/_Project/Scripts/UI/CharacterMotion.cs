@@ -5,7 +5,7 @@ namespace Fantasia.UI
     // 받은 움직임(11/6, 디자인 컨트롤러: 상태 Idle·Attack·Hit·Death, 신호 Attack·Hit·Die)을 게임에서 부르는 곳.
     // Editor/ArtSetup이 움직임 컨트롤러가 있는 인물 프리팹에만 붙인다 → 없으면 호출하는 쪽이 예전 연출(눕히기 등)을 쓴다.
     [RequireComponent(typeof(Animator))]
-    public class CharacterMotion : MonoBehaviour
+    public partial class CharacterMotion : MonoBehaviour
     {
         public const float AttackLead = 0.35f; // 공격 시작 → 맞는 순간까지 (받은 Attack 1초 중 팔이 앞으로 나오는 때, 짐작)
 
@@ -41,13 +41,15 @@ namespace Fantasia.UI
             else Anim.SetTrigger("Die");
         }
 
-        // 부활 — 바로 서 있는 자세로 (일어나는 움직임은 받지 않음)
+        // 부활 — 11/11 받은 Revive(누운 자세에서 일어서기)가 있으면 그 동작, 없으면 바로 서 있는 자세로
         public void Revive()
         {
             if (!Ready()) return;
-            IsDown = false;
             Anim.ResetTrigger("Die");
-            Anim.Play("Idle", 0, 0f);
+            bool hasMotion = Has("Revive");
+            IsDown = false;
+            if (hasMotion) Anim.SetTrigger("Revive");
+            else Anim.Play("Idle", 0, 0f);
         }
 
         // 꺼진 모델(퇴각 등)은 Animator가 돌지 않으므로 무시

@@ -23,6 +23,10 @@ namespace Fantasia.UI
         [Header("게이지")]
         public Sprite BarBack;
         public Sprite BarFill;      // HP/MP 공용 — 색은 코드에서 곱한다
+        public Sprite HpMpFrame;    // 11/11 받은 체력·마나 바 틀 (N21) — 왼쪽 네모 칸 + 나무판. 있으면 FramedBar로 씀
+        public Sprite ShieldIcon;   // 11/11 방어 보호막 표시 (임시 그림 Shield_방어막_임시, 디자인 오면 교체)
+        public Sprite MainLogo;       // 11/12 받은 메인 화면 게임 로고 (Main_게임로고, 투명 배경)
+        public Sprite MainBackground; // 11/12 받은 메인 화면 배경 (Main_메인배경, 안개 낀 런던 골목)
 
         [Header("판정·자원")]
         public Sprite SlotIcon;     // 슬롯 판정 아이콘 (미정/성공/실패는 색으로 구분)

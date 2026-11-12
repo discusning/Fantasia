@@ -337,14 +337,13 @@ namespace Fantasia.Board
         private Vector3 TokenSurfacePosition(HexCoord coord)
         {
             var pos = _board.CoordToWorld(coord) + Vector3.up * _board.TileHeight;
-            // 거점 칸은 큰 건물이 칸을 덮어 말이 건물 속에 묻힘 → 칸 앞쪽(카메라 쪽) 가장자리에 세움 (2026-11-08).
-            // 보이는 위치만 바뀜, 서 있는 칸·이동 규칙은 그대로.
-            if (_board.TryGetTile(coord, out var tile) && tile.MapKind == MapTileKind.Hub)
-                pos += Vector3.back * HubFrontOffset;
+            // 구조물이 있는 밟는 칸(거점·보스·우물·분수·천막·출구·보물)은 구조물 앞(입구)에 세움.
+            // 2026-11-08 거점만 → 11/12 모든 구조물 칸 (HexTile.FitWalkableProp). 보이는 위치만 바뀜, 칸·이동 규칙은 그대로.
+            if (_board.TryGetTile(coord, out var tile) && tile.StandFront > 0f)
+                pos += Vector3.back * tile.StandFront;
             return pos;
         }
 
-        private const float HubFrontOffset = 1.0f; // 칸 앞 꼭짓점 쪽 (0.7은 건물 앞면에 아직 묻힘)
 
         private static int ZoneWearLevel(int region) => region switch { 1 => 4, 2 => 7, _ => 1 };
 
@@ -1109,6 +1108,14 @@ namespace Fantasia.Board
         public void DevReportToJames() { DevTeleport(ActOneStory.HubLabel); StartCoroutine(ReportToJames()); }
 
         // 자동 플레이: 월드맵 칸 이름(예: "M10")으로 파티를 옮긴다
+        public void DevTeleport(HexCoord coord)
+        {
+            if (!_board.TryGetTile(coord, out _)) return;
+            _currentCoord = coord; _lastSafeCoord = coord;
+            BoardSession.Instance.PlayerPosition = coord;
+            _token.position = TokenSurfacePosition(coord);
+        }
+
         public void DevTeleport(string label)
         {
             if (!_board.UsesWorldMap || !WorldMapData.TryParseLabel(label, out var coord) || !_board.TryGetTile(coord, out _)) return;
@@ -1139,6 +1146,19 @@ namespace Fantasia.Board
         }
 
         // 피의 사냥 점검: 전투 칸을 피해 가까운 빈 칸으로 (게이지가 찰 때까지 시간 보내기)
+        // 이동 QA: 목표 쪽으로, 단 적 칸에는 서지 않음
+        public void DevMoveTowardAvoiding(IEnumerable<HexCoord> targets)
+        {
+            if (!_awaitingSelection) return;
+            var field = _board.DistanceField(targets.ToList());
+            var options = _reachability.ReachableTiles.Where(c => _board.TryGetTile(c, out var t) && !t.IsEncounter && !t.IsBoss).ToList();
+            if (options.Count == 0) return;
+            var best = options.OrderBy(c => field.TryGetValue(c, out int v) ? v : int.MaxValue).ThenByDescending(c => c.DistanceTo(_currentCoord)).First();
+            MoveTo(best);
+        }
+        public bool DevMoving => _isMoving;
+        public Transform DevToken => _token;
+
         public void DevMoveAvoidingEncounters()
         {
             if (!_awaitingSelection) return;

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.escape
   DisplayName: "\uD0C8\uCD9C\uAD8C"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: ac371c2a2dc2a9c48a660188305e054d, type: 3}
   EffectDescription: "\uBCF4\uC2A4 \uBD09\uC1C4\uB97C \uC81C\uC678\uD55C \uC804\uD22C\uC5D0\uC11C
     \uC0DD\uC874 \uC544\uAD70 \uC804\uC6D0 \uD1F4\uAC01; \uACBD\uD5D8\uCE58\xB7\uC804\uB9AC\uD488
     \uC5C6\uC74C"

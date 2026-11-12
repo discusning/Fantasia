@@ -47,6 +47,7 @@ namespace Fantasia.UI
         private void Update()
         {
             if (!Input.GetKeyDown(KeyCode.Escape) || Time.frameCount == _closedFrame || _inSettings) return;
+            if (!IsOpen && Fantasia.Combat.BattleController.ConsumesEscape) return; // 11/11 전투 대상 고르는 중 Esc = 취소 (메뉴 대신)
             if (IsOpen)
             {
                 if (_confirm.activeSelf) _confirm.SetActive(false);

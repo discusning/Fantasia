@@ -24,6 +24,9 @@ namespace Fantasia.Board
             if (rig == null) rig = cam.gameObject.AddComponent<BoardCameraRig>();
             cam.transform.rotation = Quaternion.Euler(Pitch, 0f, 0f); // 큰 맵이라 더 내려다보게
             rig.Target = target;
+            var fade = cam.GetComponent<BoardOccluderFade>();
+            if (fade == null) fade = cam.gameObject.AddComponent<BoardOccluderFade>(); // 11/12 말을 가리는 구조물 반투명
+            fade.Target = target;
             rig.SnapToTarget();
             return rig;
         }
@@ -34,6 +37,7 @@ namespace Fantasia.Board
             _lookOffset = Vector3.zero;
             _focus = Target.position;
             _lastTargetPos = Target.position;
+            _pvPrev = Target.position;
             Apply();
         }
 
@@ -69,9 +73,37 @@ namespace Fantasia.Board
 
             var desired = Target.position + _lookOffset;
             _focus = Vector3.Lerp(_focus, desired, 1f - Mathf.Exp(-FollowSharpness * Time.deltaTime));
+            if (Preview > 0) PreviewPose();
             Apply();
         }
 
-        private void Apply() => transform.position = _focus - transform.forward * Distance;
+        private void Apply() => transform.position = _focus - transform.forward * (Preview > 0 ? _pvDist : Distance);
+
+        // ── 11/12 팀장 결정: 이동 시점 A+B (Docs/Planning/플레이어시점_연구_1112.md 6절) ──
+        // A: 낮추고 다가감 (52° 16m → 40° 11m, 화각 60 → 50) · B: 이동하는 쪽으로 카메라가 천천히 돌아 파티 뒤에서 봄 (초당 최대 70°)
+        // C(이동 중 확대)는 프레임·구조물 깨짐 걱정으로 안 함. 비교용 -boardcam 0 = 예전 시점, 1 = A만.
+        public static readonly int Preview = ReadPreview();
+        private static int ReadPreview()
+        {
+            var a = System.Environment.GetCommandLineArgs();
+            int i = System.Array.IndexOf(a, "-boardcam");
+            return i >= 0 && i + 1 < a.Length && int.TryParse(a[i + 1], out var n) ? Mathf.Clamp(n, 0, 2) : 2;
+        }
+        public const float Pitch2 = 40f, DistanceScale = 0.7f, Fov = 50f, MaxYawSpeed = 70f;
+        private float _pvDist = 11f, _pvYaw, _pvHeading;
+        private Vector3 _pvPrev;
+
+        private void PreviewPose()
+        {
+            var step = Target.position - _pvPrev; step.y = 0f;
+            _pvPrev = Target.position;
+            if (step.sqrMagnitude > 1e-6f && Preview >= 2) _pvHeading = Mathf.Atan2(step.x, step.z) * Mathf.Rad2Deg;
+            // 길이 꺾여도 한 프레임에 크게 돌지 않게: 부드럽게 + 초당 최대 70° (11/12 이동 QA: 예전엔 한 프레임 9.9°)
+            if (Preview >= 2) _pvYaw = Mathf.MoveTowardsAngle(_pvYaw, Mathf.LerpAngle(_pvYaw, _pvHeading, 1f - Mathf.Exp(-2.5f * Time.deltaTime)), MaxYawSpeed * Time.deltaTime);
+            _pvDist = Distance * DistanceScale;
+            transform.rotation = Quaternion.Euler(Pitch2, _pvYaw, 0f);
+            var cam = GetComponent<Camera>();
+            if (cam != null) cam.fieldOfView = Fov;
+        }
     }
 }

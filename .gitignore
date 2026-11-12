@@ -68,18 +68,11 @@ Thumbs.db
 /Assets/_Project/Resources/Fonts/ZEN-SERIF-TTF-Regular.ttf
 /Assets/_Project/Resources/Fonts/ZEN-SERIF-TTF-Regular.ttf.meta
 
-# 받은 3D 소품 중 게임에서 안 쓰는 것 (2026-11-06) — 원본은 ArtSource\2026-11-05_디자인_3D원본. 쓰게 되면 이 줄을 지우고 커밋
-Assets/_Project/Art/Models/Props/Prop_Fence/
-Assets/_Project/Art/Models/Props/Prop_Fence.meta
-Assets/_Project/Art/Models/Props/Prop_House_C/
-Assets/_Project/Art/Models/Props/Prop_House_C.meta
-Assets/_Project/Art/Models/Props/Prop_StoneArch/
-Assets/_Project/Art/Models/Props/Prop_StoneArch.meta
-Assets/_Project/Art/Models/Props/Prop_StoneWall/
-Assets/_Project/Art/Models/Props/Prop_StoneWall.meta
-Assets/_Project/Art/Models/Props/Prop_Trees_B/
-Assets/_Project/Art/Models/Props/Prop_Trees_B.meta
 
 # 디자인에서 받은 원본 묶음 (unitypackage·Meshy FBX 원본, 약 1GB) — 로컬 보관만, git 제외 (2026-11-06)
 # 게임에 쓰는 것은 Assets/_Project/Art/Models/에 줄여서 들어가 있음. 팀원은 팀 공유 폴더에서 받기
 /ArtSource/
+
+# 받은 아이템 3D 모델 (2026-11-12): 아이콘 촬영용(ItemIconStudio)만 씀. 게임엔 아이콘 그림만 들어감. 원본은 ArtSource 2026-11-11_디자인_ 폴더들
+/Assets/_Project/Art/Models/Items/
+/Assets/_Project/Art/Models/Items.meta

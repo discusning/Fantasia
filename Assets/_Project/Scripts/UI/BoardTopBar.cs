@@ -45,6 +45,7 @@ namespace Fantasia.UI
         private Text _cent;
         private Text _region;
 
+
         private GameObject _splash;
         private CanvasGroup _splashGroup;
         private Image _splashFill;
@@ -349,6 +350,10 @@ namespace Fantasia.UI
                 regionFill = tab.transform;
             }
             else regionFill = UGUIKit.CreateThemedPanel(strip, "Region", new Vector2(0.42f, S(0.855f)), new Vector2(0.58f, S(0.895f)), Gold, new Color(0.2f, 0.08f, 0.1f, 0.95f), 1.5f, theme.RegionBanner);
+            // 11/11 팀장 지적: 지역명 칸("런던 · 아침")이 창들 위에 남음 → 이 칸만 창(8~)보다 아래 층(7)으로 내림. 창이 열리면 창이 덮는다
+            var regionCanvas = regionFill.gameObject.AddComponent<Canvas>();
+            regionCanvas.overrideSorting = true;
+            regionCanvas.sortingOrder = 7;
             _region = Label(regionFill, "Name", Vector2.zero, Vector2.one, 12, TextAnchor.MiddleCenter, TextLight, true);
             if (_art) _region.rectTransform.offsetMax = new Vector2(0f, -4f); // 칸 테두리 안쪽 가운데로 (원은 위 테두리에만 걸침)
 

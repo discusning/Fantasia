@@ -16,6 +16,7 @@ namespace Fantasia.Combat
         public string DisplayName { get; set; }
 
         public bool IsDefending { get; set; }  // 방어 행동 — 다음 자기 개인 턴 시작 전까지
+        public int Shield { get; set; }        // 11/11 방어 보호막 — 피해를 HP보다 먼저 받음, 다음 자기 개인 턴 시작에 사라짐
         public bool HasRetreated { get; set; } // 전투 중 퇴각 성공
 
         private int _enemyHP;

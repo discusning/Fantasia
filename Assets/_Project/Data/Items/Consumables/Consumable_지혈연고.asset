@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.Data.ConsumableDefinition
   Id: consumable.hemostatic_salve
   DisplayName: "\uC9C0\uD608 \uC5F0\uACE0"
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: b91a3341c30f7304e9afa836e673e4c0, type: 3}
   EffectDescription: "\uBAA8\uB4E0 \uCD9C\uD608 \uC81C\uAC70"
   Effect: 4
   Amount: 0

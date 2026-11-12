@@ -81,6 +81,10 @@ namespace Fantasia.Editor
             BuildCharacterPrefabs(report);
             BuildBoardPrefabs(report);
             BuildDicePrefab(report);
+            BuildBattlePrefabs(report);
+            AssetDatabase.SaveAssets();
+            StreetLampSetup.Run(); // 가로등 프리팹에 불 위치·발광 다시 넣음 (위에서 프리팹을 새로 저장하므로)
+            BoardFadeSetup.Run(); // 11/12 보드 구조물 반투명 재질
             AssetDatabase.SaveAssets();
             File.WriteAllLines(Path.Combine(Application.dataPath, "../Logs/art_setup_report.txt"), report);
             Debug.Log("[ArtSetup] 완료\n" + string.Join("\n", report));
@@ -278,6 +282,58 @@ namespace Fantasia.Editor
             }
         }
 
+
+        // ── 전투 배경 (2026-11-11 일반 전투 런던 거리 프로토타입) ──
+        // 이미 받은 집·나무·울타리·돌 아치·돌담을 실제 크기(높이 m)로 맞춰 Resources/BattleArt에. 놓는 곳은 Combat/BattleScenery.
+        private const string BattleArtDir = "Assets/_Project/Resources/BattleArt";
+        private static readonly (string role, string src, bool prop, float height)[] BattleProps =
+        {
+            ("House_A", Root + "/Buildings/Prop_House_A.prefab", false, 6.5f),
+            ("House_B", Root + "/Buildings/Prop_House_B.prefab", false, 6f),
+            ("House_C", Root + "/Props/Prop_House_C/Prop_House_C.fbx", true, 6.5f),
+            ("Trees_A", Root + "/Props/Prop_Trees_A/Prop_Trees_A.fbx", true, 4.5f),
+            ("Trees_B", Root + "/Props/Prop_Trees_B/Prop_Trees_B.fbx", true, 5f),
+            ("Fence", Root + "/Props/Prop_Fence/Prop_Fence.fbx", true, 1.3f),
+            ("StoneArch", Root + "/Props/Prop_StoneArch/Prop_StoneArch.fbx", true, 4.5f),
+            ("StoneWall", Root + "/Props/Prop_StoneWall/Prop_StoneWall.fbx", true, 1.2f),
+            // 11/12 C1 런던 시내 소품 (받은 6종). 크기: 양수 = 높이(m), 음수 = 가로 폭(m) — 하수구·돌길처럼 납작한 것
+            ("Cart", Root + "/Props/Prop_Cart/Prop_Cart.fbx", true, 1.5f),
+            ("WoodFence", Root + "/Props/Prop_WoodFence/Prop_WoodFence.fbx", true, 1.2f),
+            ("Sewer", Root + "/Props/Prop_Sewer/Prop_Sewer.fbx", true, -1.3f),
+            ("Cobble", Root + "/Props/Prop_Cobble/Prop_Cobble.fbx", true, -4f),
+            ("WallLamp", Root + "/Props/Prop_WallLamp/Prop_WallLamp.fbx", true, 1.1f),
+            ("StreetLamp", Root + "/Props/Prop_StreetLamp/Prop_StreetLamp.fbx", true, 3.8f),
+        };
+
+        private static void BuildBattlePrefabs(List<string> report)
+        {
+            Directory.CreateDirectory(BattleArtDir);
+            foreach (var (role, srcPath, prop, height) in BattleProps)
+            {
+                var src = AssetDatabase.LoadAssetAtPath<GameObject>(srcPath);
+                if (src == null) { report.Add($"전투 배경 {role}: 원본 없음 {srcPath}"); continue; }
+                var root = new GameObject(role);
+                var model = (GameObject)PrefabUtility.InstantiatePrefab(src);
+                model.transform.SetParent(root.transform, false);
+                if (prop)
+                {
+                    string propName = Path.GetFileNameWithoutExtension(srcPath);
+                    ApplyPropMaterial(model, propName);
+                    foreach (var mf in model.GetComponentsInChildren<MeshFilter>())
+                        mf.sharedMesh = Lighter(mf.sharedMesh, BoardSingleTris, $"{Root}/Props/{propName}/{propName}_Battle.asset");
+                }
+                foreach (var col in model.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(col);
+                foreach (var r in model.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                var b = Bounds(model);
+                model.transform.localScale *= height >= 0f ? height / Mathf.Max(b.size.y, 0.01f) : -height / Mathf.Max(Mathf.Max(b.size.x, b.size.z), 0.01f);
+                b = Bounds(model);
+                model.transform.localPosition -= new Vector3(b.center.x, b.min.y, b.center.z);
+                b = Bounds(model);
+                PrefabUtility.SaveAsPrefabAsset(root, $"{BattleArtDir}/{role}.prefab");
+                Object.DestroyImmediate(root);
+                report.Add($"전투 배경 {role}: {b.size.x:F1}×{b.size.y:F1}×{b.size.z:F1}m");
+            }
+        }
         // ── 보드 주사위 (2026-11-06) ── 가운데 기준·한 변 1m로 맞춤 → Board/BoardDice가 원하는 크기로 키움
         private static void BuildDicePrefab(List<string> report)
         {

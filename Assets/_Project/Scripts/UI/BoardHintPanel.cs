@@ -55,6 +55,7 @@ namespace Fantasia.UI
             UGUIKit.ConfigureScaler(scaler);
 
             var bg = UGUIKit.CreateImage(canvasGO.transform, "Hint", new Vector2(0f, 1f), new Vector2(0f, 1f), new Color(0.05f, 0.04f, 0.05f, 0.62f));
+            UGUIKit.SkinThinPlate(bg, 0.5f, 0.9f); // 11/11 U8 작은 상자: 회색 반투명 → 받은 얇은 판
             bg.raycastTarget = false;
             var rect = (RectTransform)bg.transform;
             rect.pivot = new Vector2(0f, 1f);

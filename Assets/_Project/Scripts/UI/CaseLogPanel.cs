@@ -9,7 +9,7 @@ namespace Fantasia.UI
     // 사건 기록 창 (Boss_Abel_v1.0 06 · D22): [진행 중] [완료] [증거품] 탭. Q 키·사건 기록 버튼으로 열고 Esc로 닫는다.
     // 증거품은 파티 공용 기록 — 가방 칸·무게를 쓰지 않고 판매·버리기·사용 불가. 미획득 증거는 이름·설명을 숨긴다.
     // 전투 중에도 열람만 가능 (행동 연출 중 입력은 전투 쪽에서 막음).
-    public class CaseLogPanel : MonoBehaviour
+    public partial class CaseLogPanel : MonoBehaviour
     {
         public readonly struct Evidence
         {
@@ -76,6 +76,7 @@ namespace Fantasia.UI
         private void Refresh()
         {
             for (int i = 0; i < _tabs.Count; i++) _tabs[i].targetGraphic.color = (int)_tab == i ? Selected : RowFill;
+            HideEvidenceRows();
             var s = BoardSession.Instance;
             if (s == null) { _body.text = ""; return; }
             switch (_tab)
@@ -89,9 +90,8 @@ namespace Fantasia.UI
                         : string.Join("\n\n", s.CompletedQuests.Select(q => $"<b>{q.Title}</b>  — 완료\n<color=#8C877F>{q.Objective}</color>"));
                     break;
                 case Tab.Evidence:
-                    _body.text = string.Join("\n\n", AllEvidence.Select(ev => s.KeyItems.Contains(ev.Name)
-                        ? $"<b><color=#D9B45A>📄 {ev.Name}</color></b>  — 확보\n{ev.Description}\n<color=#8C877F>획득: {ev.Source}\n연결: {ev.LinkedQuests}</color>"
-                        : "<b>📄 ???</b>  — 미확보\n<color=#8C877F>아직 확보하지 못한 증거.</color>"));
+                    _body.text = ""; // 증거품은 그림 + 글 줄로 따로 (CaseLogPanel.Evidence.cs)
+                    ShowEvidenceRows(s);
                     break;
             }
         }
@@ -138,6 +138,7 @@ namespace Fantasia.UI
             _body = UGUIKit.CreateText(win, "Body", new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.77f), "", 13, TextAnchor.UpperLeft);
             _body.color = TextLight;
             _body.supportRichText = true;
+            BuildEvidenceRows(win);
             _root.SetActive(false);
             return this;
         }

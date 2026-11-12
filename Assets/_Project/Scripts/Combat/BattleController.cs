@@ -71,6 +71,7 @@ namespace Fantasia.Combat
             session.PendingBattle = null;
 
             SpawnUnits(session.Party);
+            BattleScenery.Apply(_setup.Enemies.Any(e => ActOneStory.IsActOneBoss(e))); // 11/11 아벨전 조명 · 일반 전투 런던 거리
 
             _hud = BattleHud.Create();
             _hud.AttackClicked += OnAttackClicked;
@@ -82,6 +83,7 @@ namespace Fantasia.Combat
             _hud.EnemyBarClicked += OnUnitPicked;
             _hud.SkillChosen += OnSkillChosen;
             _hud.ItemChosen += OnItemChosen;
+            _hud.CancelRequested += () => { if (_phase == Phase.ChoosingTarget) CancelTargeting(); };
             _hud.SetEnemies(_enemies);
             CaseLogPanel.EnsureExists(new Vector2(-10f, -6f));
 
@@ -188,6 +190,7 @@ namespace Fantasia.Combat
             _current = _queue.Advance();
             if (_current == null) { CheckBattleEnd(); return; }
             _current.IsDefending = false; // 방어 효과는 다음 자기 개인 턴 시작 전까지
+            if (_current.Shield > 0) { _current.Shield = 0; ShieldChanged(_current); } // 남은 보호막도 사라짐
             _current.TickCooldowns();
 
             // 개인 턴 시작: 지속 피해 → 사망 확인 → 기간 감소 → 행동 선택 (System.md 상태 효과 처리 순서).
@@ -206,6 +209,7 @@ namespace Fantasia.Combat
         // 개인 턴 시작 처리(지속 피해·쿨다운) 뒤 — 저장하고 행동 선택·적 행동으로. 이어하기도 여기서 시작.
         private void BeginCurrentTurn(bool confused)
         {
+            foreach (var u in _allies.Concat(_enemies)) if (u.Shield > 0) ShieldChanged(u); // 이어하기 뒤에도 보호막 표시
             SaveBattle($"전투 R{_queue.Round} {_current.DisplayName} 차례", confused: confused);
             Log($"[R{_queue.Round}] {_current.DisplayName} 차례 (속도 {_current.Speed}) — 순서: {string.Join(" > ", _queue.Preview(6).Select(x => x.Unit.DisplayName))}");
             _hud.SetTimeline(_queue.Preview(BattleHud.TimelineMax), _queue.Round, _queue.OrderChangeOf);
@@ -351,6 +355,7 @@ namespace Fantasia.Combat
 
         private void OnInterruptClicked()
         {
+            if (_phase == Phase.ChoosingTarget) CancelTargeting(quiet: true); // 11/11 고르던 대상 취소 후 새 행동
             if (_phase != Phase.ChoosingAction) return; // 두 번 눌러도 한 번만 (행동하면 페이즈가 바뀜)
             var boss = InterruptibleBoss;
             if (boss == null) return;
@@ -438,17 +443,21 @@ namespace Fantasia.Combat
         // ───────────── 아군 행동 선택 ─────────────
         private void OnAttackClicked()
         {
+            if (_phase == Phase.ChoosingTarget) { bool same = _pendingSkill == null && _pendingItem == null && !_reviving; CancelTargeting(quiet: !same); if (same) return; } // 11/11 다시 누르면 취소, 다른 행동이면 바꿈
             if (_phase != Phase.ChoosingAction || !_current.CanBasicAttack) return;
             _pendingSkill = null;
+            _hud.MarkChosenAttack();
             BeginTargeting(allies: false);
         }
 
         private void OnSkillChosen(SkillDefinition skill)
         {
+            if (_phase == Phase.ChoosingTarget && skill != null) { bool same = _pendingSkill == skill; CancelTargeting(quiet: !same); if (same) return; } // 11/11 같은 스킬 다시 누르면 취소
             if (_phase != Phase.ChoosingAction || skill == null) return;
             string reason = _current.CannotUseReason(skill);
             if (reason != null) { _hud.SetHint($"{skill.DisplayName}: {reason}"); return; }
 
+            _hud.MarkChosenSkill(skill); // 고른 칸 빨간 테두리
             _pendingSkill = skill;
             switch (skill.Target)
             {
@@ -477,12 +486,14 @@ namespace Fantasia.Combat
 
         private void OnItemChosen(ConsumableDefinition item)
         {
+            if (_phase == Phase.ChoosingTarget && item != null) { bool same = _pendingItem == item; CancelTargeting(quiet: !same); if (same) return; }
             if (_phase != Phase.ChoosingAction || item == null) return;
             if (Inventory.CountOf(item) <= 0) { _hud.SetHint($"{item.DisplayName}: 남은 개수 없음"); return; }
             if (!item.UsableIn(UseContext.Battle)) { _hud.SetHint($"{item.DisplayName}: 전투에서 쓸 수 없음"); return; }
             if (item.Effect == ConsumableEffect.Escape && EscapeBlocked) { _hud.SetHint($"{item.DisplayName}: 보스 봉쇄 중에는 쓸 수 없음"); return; }
             _pendingSkill = null;
             _pendingItem = item;
+            _hud.MarkChosenItem(item);
             if (ConsumableRules.TargetsAlly(item)) BeginTargeting(allies: true);
             else if (ConsumableRules.TargetsEnemy(item)) BeginTargeting(allies: false);
             else StartCoroutine(PlayerAct(null));
@@ -490,6 +501,7 @@ namespace Fantasia.Combat
 
         private IEnumerator ResolveItem(BattleUnit user, BattleUnit target, ConsumableDefinition item)
         {
+            if (MotionOf(user)?.UseItem() == true) yield return new WaitForSeconds(CharacterMotion.ItemLead); // 11/11 아이템 동작 (N4)
             Inventory.RemoveConsumable(item);
             _playLog?.Item(item.DisplayName);
             if (_playLog != null && (item.Effect == ConsumableEffect.RestoreHP || item.Effect == ConsumableEffect.Cure)) _playLog.Heals++;
@@ -531,12 +543,31 @@ namespace Fantasia.Combat
             yield return new WaitForSeconds(0.6f);
         }
 
+        // 11/11 팀장 결정: 안내 줄은 크게 "약점 간파 → 대상 적 선택" + 취소 방법
+        private const string CancelHelp = "   (취소: 다시 누르기 · 우클릭 · Esc)";
         private string TargetingHint()
         {
-            if (_reviving) return "부활 — 쓰러진 아군을 클릭하세요 (LP 1 소모, HP 30%) (우클릭: 취소)";
-            if (_pendingItem != null) return $"{_pendingItem.DisplayName} — 대상 {(_targetAllies ? "아군" : "적")}을 클릭하세요 (우클릭: 취소)";
-            string what = _pendingSkill != null ? _pendingSkill.DisplayName : "공격";
-            return _targetAllies ? $"{what} — 대상 아군을 클릭하세요 (우클릭: 취소)" : $"{what} — 대상 적을 클릭하세요 (우클릭: 취소)";
+            if (_reviving) return "부활 → 쓰러진 아군 선택 (LP 1, HP 30%)" + CancelHelp;
+            string what = _pendingItem != null ? _pendingItem.DisplayName : _pendingSkill != null ? _pendingSkill.DisplayName : "공격";
+            return $"{what} → 대상 {(_targetAllies ? "아군" : "적")} 선택" + CancelHelp;
+        }
+
+        // 대상 고르기 취소 — 고른 칸 표시·대상 표시·적 카드 강조를 모두 지우고 행동 고르기로. quiet: 다른 행동으로 바로 넘어갈 때
+        private int _escConsumedFrame = -1;
+        public static bool ConsumesEscape { get; private set; } // 대상 고르는 중 Esc = 취소 (메뉴 안 열림)
+        private void CancelTargeting(bool quiet = false)
+        {
+            if (_phase != Phase.ChoosingTarget) return;
+            string what = _reviving ? "부활" : _pendingItem != null ? _pendingItem.DisplayName : _pendingSkill != null ? _pendingSkill.DisplayName : "공격";
+            _phase = Phase.ChoosingAction;
+            _pendingSkill = null;
+            _pendingItem = null;
+            _reviving = false;
+            _hovered = null;
+            HideMarker();
+            _hud.RefreshEnemies(null);
+            _hud.ClearChosen();
+            if (!quiet) _hud.SetHint($"{what} 취소됨 — 행동을 다시 고르세요");
         }
 
         // 지금 고르는 행동의 대상이 될 수 있는지 — 부활은 쓰러진(LP 남은) 아군, 나머지는 전투 중인 해당 진영.
@@ -565,6 +596,7 @@ namespace Fantasia.Combat
 
         private void OnReviveClicked()
         {
+            if (_phase == Phase.ChoosingTarget) { bool same = _reviving; CancelTargeting(quiet: !same); if (same) return; }
             if (_phase != Phase.ChoosingAction || !CanRevive()) return;
             _pendingSkill = null;
             _reviving = true;
@@ -579,7 +611,7 @@ namespace Fantasia.Combat
             StandUp(target);
             Log($"{reviver.DisplayName} → {target.DisplayName} 부활 (LP 1 소모, 남은 LP {target.Member.CurrentLP}) · HP {target.CurrentHP}/{target.MaxHP} · 출혈·중독 제거 — 다음 라운드부터 행동");
             _hud.PopText(_camera, ModelTop(target), $"부활 +{target.CurrentHP}", BattleHud.SlotSuccess);
-            yield return new WaitForSeconds(0.7f);
+            yield return new WaitForSeconds(1.2f); // 11/11 일어서기 동작(1.5초)이 보이게 0.7 → 1.2
         }
 
         // 비용 지불 → 쿨다운 → 효과. 기본 공격·스킬·부활 공용 (target: 단일 대상, 전체 대상이면 null).
@@ -644,13 +676,16 @@ namespace Fantasia.Combat
                     TryCancelBossFollowUp(target, skill);
                     break;
                 case SkillEffect.Heal:
+                    if (MotionOf(actor)?.Heal() == true) yield return new WaitForSeconds(CharacterMotion.HealLead); // 11/11 회복 동작 (N1)
                     yield return ResolveHeal(actor, target, skill, useFocus);
                     break;
                 case SkillEffect.Cleanse:
+                    if (MotionOf(actor)?.Heal() == true) yield return new WaitForSeconds(CharacterMotion.HealLead);
                     Cleanse(target, skill.CleansedStatuses, skill.DisplayName);
                     yield return new WaitForSeconds(0.6f);
                     break;
                 case SkillEffect.ApplyStatus:
+                    if (MotionOf(actor)?.BuffSkill() == true) yield return new WaitForSeconds(CharacterMotion.SkillLead); // 11/11 강화 스킬 동작 (N3)
                     ApplyStatuses(target, skill.AppliedStatuses, 0);
                     yield return new WaitForSeconds(0.6f);
                     break;
@@ -659,19 +694,36 @@ namespace Fantasia.Combat
             NextTurn();
         }
 
+        // 방어: 지금 차례인 본인에게만 (대상 고르기 없음). 11/11 팀장 결정 — 방어력 +8 대신 보호막 8 (피해를 HP보다 먼저 받음, 다음 자기 차례에 사라짐)
         private void OnDefendClicked()
         {
+            if (_phase == Phase.ChoosingTarget) CancelTargeting(quiet: true); // 고르던 스킬이 다른 아군에게 들어가지 않게
             if (_phase != Phase.ChoosingAction) return;
             SaveBattle("전투 행동 확정 — 방어", CommandFor(BattleSnapshot.CommandKind.Defend));
             _current.IsDefending = true;
-            Log($"{_current.DisplayName} 방어 (물리·마법 방어 +{AttackResolver.DefendActionBonus})");
-            _hud.PopText(_camera, ModelTop(_current), "방어 +8", BattleHud.SlotSuccess);
+            _current.Shield = AttackResolver.DefendShield;
+            MotionOf(_current)?.Defend(); // 11/11 방어 동작 (N5)
+            ShieldChanged(_current);
+            Log($"{_current.DisplayName} 방어 태세 — 보호막 {AttackResolver.DefendShield} (다음 자기 차례까지)");
+            _hud.PopText(_camera, ModelTop(_current), $"방어 태세 · 보호막 {AttackResolver.DefendShield}", new Color(0.95f, 0.96f, 1f));
             NextTurn();
+        }
+
+        // 보호막 표시 갱신: 파티 카드 HP 바(흰색) + 발밑 방패
+        private void ShieldChanged(BattleUnit unit)
+        {
+            if (unit == null) return;
+            if (unit.IsAlly) PartyHudPanel.SetShield(unit.Member, unit.Shield);
+            // 머리 위 (발밑은 행동 패널에 가려짐). 11/12: 좌표 고정 대신 캐릭터를 따라감 — 이동했다 돌아와도 바로 제자리
+            if (_models.TryGetValue(unit, out var model) && model != null)
+                _hud.SetShieldMark(unit, _camera, model.transform, ModelTop(unit) - Vector3.up * 0.15f - model.transform.position, unit.Shield);
+            else _hud.SetShieldMark(unit, _camera, ModelTop(unit) - Vector3.up * 0.15f, unit.Shield);
         }
 
         // 전투 중 퇴각: 고른 캐릭터의 속도로 2슬롯 판정, 성공하면 생존 아군 전원 전투 이탈 (2026-11-06 변경, 확률은 System.md 표 그대로).
         private void OnRetreatClicked()
         {
+            if (_phase == Phase.ChoosingTarget) CancelTargeting(quiet: true);
             if (_phase != Phase.ChoosingAction) return;
             if (EscapeBlocked) { _hud.SetHint("보스가 퇴로를 막고 있다 — 퇴각할 수 없다"); return; }
             StartCoroutine(PlayerRetreat());
@@ -785,20 +837,47 @@ namespace Fantasia.Combat
             yield return new WaitForSeconds(0.25f);
         }
 
+        // 보호막 나누기: 전체 피해 → 보호막이 먼저 (보호막만큼) → 남은 피해만 HP (HP를 넘는 부분은 버림).
+        // 예) 아벨 모로 10 vs 보호막 8 → 보호막 -8, HP -2. 화면 숫자는 "보호막 -8"과 "2".
+        public static (int absorbed, int hpDamage) ShieldSplit(int damage, int shield, int currentHP)
+        {
+            int absorbed = Mathf.Clamp(Mathf.Min(shield, damage), 0, int.MaxValue);
+            int rest = Mathf.Max(0, damage - absorbed);
+            return (absorbed, Mathf.Min(rest, Mathf.Max(0, currentHP)));
+        }
+
         // 명중 처리 공통: HP 차감 → 로그·팝업 → 쓰러짐 → (크리티컬) 상태 효과 → 턴 밀기.
         private void ApplyHit(BattleUnit attacker, BattleUnit target, AttackRequest request, AttackOutcome outcome, int useFocus,
             StatusEffectDefinition[] onCritStatuses, TurnShift onCritShift, SkillDefinition skill)
         {
-            if (!outcome.Evaded) target.TakeDamage(outcome.AppliedDamage);
+            // 11/11 방어 보호막이 HP보다 먼저 받음. 11/12 고침: 보호막은 "전체 피해"로 계산 (예전엔 HP를 넘는 부분을 뺀 값이라 HP가 낮으면 틀렸음)
+            var (absorbed, hpDamage) = outcome.Evaded ? (0, 0) : ShieldSplit(outcome.Damage, target.Shield, target.CurrentHP);
+            if (absorbed > 0)
+            {
+                target.Shield -= absorbed;
+                DevAbsorbed += absorbed;
+                ShieldChanged(target);
+            }
+            if (!outcome.Evaded) target.TakeDamage(hpDamage);
             _lastOutcomeEvaded = outcome.Evaded;
-            _lastDamageDealt = outcome.Evaded ? 0 : outcome.AppliedDamage;
+            _lastDamageDealt = hpDamage;
+            if (absorbed > 0)
+            {
+                Log($"  → {target.DisplayName} 보호막이 {absorbed} 막음 (남은 보호막 {target.Shield})");
+                _hud.PopText(_camera, ModelTop(target) + Vector3.up * 0.45f, $"보호막 -{absorbed}", new Color(0.95f, 0.96f, 1f));
+            }
             LogHit(attacker, request, outcome);
             string result = ResultText(outcome);
             Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus > 0 ? $", 집중 {useFocus}" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             SfxPlayer.Play(outcome.Evaded ? SfxIds.Miss : outcome.IsCritical ? SfxIds.Crit : SfxIds.Hit);
-            _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : outcome.Damage.ToString(), ResultColor(outcome));
+            _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : Mathf.Max(0, outcome.Damage - absorbed).ToString(), ResultColor(outcome));
             if (!target.IsAlive) KnockDown(target);
-            else if (!outcome.Evaded) PlayHitMotion(target);
+            else if (!outcome.Evaded)
+            {
+                PlayHitMotion(target);
+                // 11/11 받은 추스르기: 아군이 최대 HP 20% 이상 맞으면 맞음 뒤에 몸 추스름 (작은 피해마다 하면 산만)
+                if (target.IsAlly && hpDamage >= target.MaxHP * RecoverDamageRatio) StartCoroutine(RecoverAfterHit(target));
+            }
 
             // 공격에 붙은 상태 효과는 크리티컬이 실제 명중한 뒤 적용 (System.md).
             if (!outcome.IsCritical || outcome.Evaded || !target.IsAlive) return;
@@ -959,6 +1038,15 @@ namespace Fantasia.Combat
             }
             if (model != null) model.transform.position = home;
         }
+
+        private const float RecoverDamageRatio = 0.2f;
+        private IEnumerator RecoverAfterHit(BattleUnit unit)
+        {
+            yield return new WaitForSeconds(0.35f); // 맞음(0.4초)이 거의 끝난 뒤
+            if (unit.IsAlive) MotionOf(unit)?.Recover();
+        }
+
+        private CharacterMotion MotionOf(BattleUnit unit) => unit != null && _models.TryGetValue(unit, out var model) ? CharacterMotion.Of(model) : null;
 
         private void PlayHitMotion(BattleUnit target)
         {
@@ -1175,6 +1263,15 @@ namespace Fantasia.Combat
         public GameObject DevModelOf(BattleUnit unit) => unit != null && _models.TryGetValue(unit, out var m) ? m : null;
 
         public void DevDefend() => OnDefendClicked();
+        public void DevPressSkill(SkillDefinition skill) => OnSkillChosen(skill); // 11/11 스킬 칸 누르기 (대상 고르기 시작·같은 칸 다시 누르면 취소)
+        public void DevDefendButton() => OnDefendClicked();
+        public bool DevChoosingTarget => _phase == Phase.ChoosingTarget;
+        public int DevShieldTotal => _allies.Sum(a => a.Shield);
+        public int DevAbsorbed { get; private set; } // 보호막이 막은 피해 합 (자동 점검용)
+        public int DevLastHpDamage => _lastDamageDealt;
+        // 점검: 보호막 있는 캐릭터의 방패 표시가 "지금 캐릭터 머리 위"에서 얼마나 떨어져 있나 (m)
+        public float DevShieldMarkError => _allies.Concat(_enemies).Where(u => u.Shield > 0 && _models.ContainsKey(u)).Select(u => _hud.DevShieldMarkWorld(u) is Vector3 w ? Vector3.Distance(w, ModelTop(u) - Vector3.up * 0.15f) : 99f).DefaultIfEmpty(0f).Max();
+        public void DevShieldAll(int amount) { foreach (var a in _allies) if (a.IsAlive && !a.HasRetreated) { a.Shield = amount; ShieldChanged(a); } }
         public void DevRetreat() => OnRetreatClicked();
 
         // 소모품 메뉴 → 아이템 → (대상 클릭)과 같은 순서.
@@ -1201,7 +1298,12 @@ namespace Fantasia.Combat
             SceneManager.LoadScene(BoardSceneName);
         }
 
-        private void OnDestroy() => PartyHudPanel.QuickSlotClicked -= OnQuickSlotClicked;
+        private void OnDestroy()
+        {
+            PartyHudPanel.QuickSlotClicked -= OnQuickSlotClicked;
+            PartyHudPanel.ClearShields(); // 전투가 끝나면 보호막 표시도 끝
+            ConsumesEscape = false;
+        }
 
         // ───────────── 대상 선택 (전장 클릭) ─────────────
         private void Update()
@@ -1210,16 +1312,16 @@ namespace Fantasia.Combat
             // 사건 기록 (Q) — 전투 중엔 열람만
             if (Input.GetKeyDown(KeyCode.Q) && !DialoguePanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen) return;
+            ConsumesEscape = _phase == Phase.ChoosingTarget || _escConsumedFrame == Time.frameCount;
             if (_phase != Phase.ChoosingTarget) return;
 
-            if (Input.GetMouseButtonDown(1))
+            // 11/11 취소: 우클릭 또는 Esc. 예전엔 우클릭만, 적 카드 강조가 남아 취소됐는지 헷갈렸음
+            bool esc = Input.GetKeyDown(KeyCode.Escape);
+            if (Input.GetMouseButtonDown(1) || esc)
             {
-                _phase = Phase.ChoosingAction;
-                _pendingSkill = null;
-                _pendingItem = null;
-                _reviving = false;
-                HideMarker();
-                ShowAllyActions();
+                if (esc) _escConsumedFrame = Time.frameCount;
+                CancelTargeting();
+                ConsumesEscape = true;
                 return;
             }
 

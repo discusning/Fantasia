@@ -11,7 +11,7 @@ namespace Fantasia.UI
     // 메인 메뉴 씬 (Scenes/MainMenu/MainMenu.unity, 빌드 첫 씬): 새 게임 → 파티 구성 → 보드 / 이어하기 / 종료.
     // 파티 구성: 3칸, 1번 = 파티장. 칸마다 ◀ ▶로 직업을 바꾸고, 다른 칸에 있는 직업을 고르면 서로 자리를 바꾼다 (☆ 중복 직업 없음).
     // 저장 규칙(기획 요청 15~23)이 정해지기 전이라 이어하기는 지금 저장(아군 턴 시작 자동 저장)을 그대로 불러온다.
-    public class MainMenuController : MonoBehaviour
+    public partial class MainMenuController : MonoBehaviour
     {
         public const string SceneName = "MainMenu";
         private const string BoardSceneName = "BoardTest";
@@ -185,11 +185,12 @@ namespace Fantasia.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             UGUIKit.ConfigureScaler(scaler);
             var bg = UGUIKit.CreateImage(canvasGO.transform, "Background", Vector2.zero, Vector2.one, new Color(0.05f, 0.045f, 0.06f));
+            BuildMainArt(bg.transform); // 11/12 받은 배경 그림 (없으면 예전 단색)
 
             // 메뉴
             _menu = UGUIKit.CreateRect(UGUIKit.Safe16x9(bg.transform), "Menu", Vector2.zero, Vector2.one).gameObject;
-            Label(_menu.transform, "Title", new Vector2(0.2f, 0.66f), new Vector2(0.8f, 0.86f), 64, TextAnchor.MiddleCenter, Gold, true).text = "판타지아";
-            Label(_menu.transform, "Subtitle", new Vector2(0.2f, 0.6f), new Vector2(0.8f, 0.67f), 16, TextAnchor.MiddleCenter, TextDim, false).text = "1막 — 런던";
+            BuildTitle(_menu.transform); // 11/12 받은 로고 (없으면 예전 "판타지아" 글자)
+            Label(_menu.transform, "Subtitle", new Vector2(0.2f, 0.555f), new Vector2(0.8f, 0.615f), 16, TextAnchor.MiddleCenter, TextLight, false).text = "1막 — 런던";
             UGUIKit.CreateThemedButton(_menu.transform, "NewGame", new Vector2(0.4f, 0.46f), new Vector2(0.6f, 0.53f), "새 게임", StartFill, 18).onClick.AddListener(OnNewGame);
             _continueButton = UGUIKit.CreateThemedButton(_menu.transform, "Continue", new Vector2(0.4f, 0.36f), new Vector2(0.6f, 0.43f), "이어하기", ButtonFill, 18);
             _continueButton.onClick.AddListener(OnContinue);
@@ -260,6 +261,7 @@ namespace Fantasia.UI
             Label(box, "Hint", new Vector2(0.05f, 0.62f), new Vector2(0.95f, 0.76f), 11, TextAnchor.MiddleCenter, TextDim, false).text = $"상단에 표시됩니다 · 최대 {NameMaxLength}글자 · 비우면 \"{BoardSession.DefaultPlayerName}\"";
 
             var field = UGUIKit.CreateImage(box, "Input", new Vector2(0.12f, 0.38f), new Vector2(0.88f, 0.6f), new Color(0.16f, 0.15f, 0.17f));
+            UGUIKit.SkinThinPlate(field, 0.4f, 1f); // 11/11 U8 입력 칸: 남색 상자 → 받은 얇은 판
             var text = UGUIKit.CreateText(field.transform, "Text", Vector2.zero, Vector2.one, "", 16, TextAnchor.MiddleCenter);
             text.color = TextLight;
             text.supportRichText = false;

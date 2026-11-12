@@ -287,6 +287,22 @@ namespace Fantasia.UI
 
         public static void DevAdvance() { if (IsOpen) Instance.Advance(); }
 
+        private Button _boxClick;
+        private void OnBoxClicked()
+        {
+            if (_offer.HasValue && _lineIndex == _lines.Length - 1) return; // 수락·거절은 버튼으로만 고름
+            Advance();
+        }
+        // 점검: 대화 창 몸통(글 부분)을 실제 클릭처럼 눌러 봄
+        public static void DevClickBox()
+        {
+            if (!IsOpen || Instance._bodyText == null) return;
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            var data = new UnityEngine.EventSystems.PointerEventData(es);
+            UnityEngine.EventSystems.ExecuteEvents.ExecuteHierarchy(Instance._bodyText.gameObject, data, UnityEngine.EventSystems.ExecuteEvents.pointerClickHandler);
+        }
+        public static int DevLineIndex => IsOpen ? Instance._lineIndex : -1;
+
         private void Advance()
         {
             if (_lineIndex < _lines.Length - 1)
@@ -347,6 +363,11 @@ namespace Fantasia.UI
             outerRect.pivot = new Vector2(0.5f, 0f);
             outerRect.sizeDelta = new Vector2(900f, 160f);
             outerRect.anchoredPosition = new Vector2(0f, 40f);
+            // 11/12 팀장 지시: "다음" 버튼이 아니라 대화 창 아무 곳이나 눌러도 다음 줄 (다른 게임처럼). 안쪽 버튼(다음·스킵·수락·거절)은 제 일만.
+            _boxClick = outerRect.gameObject.AddComponent<Button>();
+            _boxClick.transition = Selectable.Transition.None;
+            _boxClick.navigation = new Navigation { mode = Navigation.Mode.None };
+            _boxClick.onClick.AddListener(OnBoxClicked);
 
             // 인물 칸 (UI 솔루션 Q8): 왼쪽 액자 — 그림이 있는 화자만, 없으면 숨기고 글을 넓게
             var portraitArea = UGUIKit.CreateBorderedPanel(inner, "PortraitFrame", new Vector2(0.015f, 0.06f), new Vector2(0.155f, 0.94f), new Color(0.72f, 0.6f, 0.38f), new Color(0.12f, 0.11f, 0.13f), 1.5f);
@@ -355,6 +376,13 @@ namespace Fantasia.UI
             _portraitSprite.preserveAspect = true;
             _portraitRender = UGUIKit.CreateRect(portraitArea, "Render", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
             _portraitFrame.SetActive(false);
+            // 11/11 UI 요청 U2 대화 창: 회색 상자 → 받은 안쪽 판(N09) + 인물 칸 청동 액자(U4)
+            if (UITheme.Current.PanelFill != null)
+            {
+                UGUIKit.ApplyInnerPlate(inner, new Color(0.1f, 0.09f, 0.1f, 0.97f));
+                if (UGUIKit.AddPortraitFrame((RectTransform)portraitArea.parent, 3f) != null)
+                    portraitArea.parent.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            }
             _speakerText = UGUIKit.CreateText(inner, "Speaker", new Vector2(0.04f, 0.8f), new Vector2(0.6f, 0.94f), "", 14, TextAnchor.MiddleLeft);
             _speakerText.color = new Color(0.95f, 0.85f, 0.55f);
             _speakerText.fontStyle = FontStyle.Bold;

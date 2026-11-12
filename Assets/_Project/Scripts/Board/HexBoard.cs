@@ -132,7 +132,11 @@ namespace Fantasia.Board
                 // 받은 구조물이 있으면 칸 위에 세우고 납작한 표식은 쓰지 않는다 (일반 적 칸은 표식 그대로).
                 var propPrefab = _art.PropFor(mapTile);
                 if (mapTile.Kind == MapTileKind.Blocked && HidesTileBehind(coord)) propPrefab = _art.LowBlockFor(mapTile) ?? propPrefab;
-                if (propPrefab != null) tile.SetProp(Instantiate(propPrefab), tileHeight);
+                if (propPrefab != null)
+                {
+                    tile.SetProp(Instantiate(propPrefab), tileHeight);
+                    if (mapTile.Kind != MapTileKind.Blocked) tile.FitWalkableProp(); // 11/12: 밟는 칸 구조물은 칸 안·뒤쪽으로, 말은 앞에
+                }
                 else tile.SetMarker(MarkerFor(mapTile, tile), tileHeight);
             }
         }

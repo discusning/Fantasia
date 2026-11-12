@@ -163,7 +163,7 @@ namespace Fantasia.UI
                 row.stock.text = stock;
                 row.name.color = dim ? TextDim : TextLight;
                 row.stock.color = stock.Contains("품절") || stock.Contains("완료") ? Bad : TextDim;
-                row.fill.color = i == _selected ? RowSelected : RowFill;
+                row.fill.color = UGUIKit.RowTint(i == _selected, RowFill, RowSelected); // 11/11 U9
                 var icon = IconOf(_shown[i]);
                 _rowIcons[r].enabled = icon != null;
                 _rowIcons[r].sprite = icon;
@@ -395,7 +395,7 @@ namespace Fantasia.UI
                 var m = members[i];
                 bool helps = ShopRules.ServiceWouldHelp(m, service.Value);
                 button.interactable = helps;
-                fill.color = m == _serviceTarget ? RowSelected : RowFill;
+                fill.color = UGUIKit.RowTint(m == _serviceTarget, RowFill, RowSelected); // 11/11 U9
                 string mp = m.MaxMP > 0 ? $" · MP {m.CurrentMP}/{m.MaxMP}" : "";
                 label.text = !m.IsAlive ? $"{m.Job.DisplayName}\n쓰러짐" : $"{(m == _serviceTarget ? "▶ " : "")}{m.Job.DisplayName}\nHP {m.CurrentHP}/{m.MaxHP}{mp} · 집중 {m.CurrentFocus}/{m.MaxFocus}{(helps ? "" : "\n받을 효과 없음")}";
                 label.color = helps ? TextLight : TextDim;
@@ -423,8 +423,8 @@ namespace Fantasia.UI
 
             _title = Label(win, "Title", new Vector2(0.02f, 0.935f), new Vector2(0.4f, 0.995f), 18, TextAnchor.MiddleLeft, Gold, true);
             _subtitle = Label(win, "Subtitle", new Vector2(0.02f, 0.895f), new Vector2(0.4f, 0.94f), 11, TextAnchor.MiddleLeft, TextDim, false);
-            _restock = Label(win, "Restock", new Vector2(0.4f, 0.9f), new Vector2(0.7f, 0.99f), 11, TextAnchor.MiddleCenter, TextDim, false);
-            _cent = Label(win, "Cent", new Vector2(0.7f, 0.9f), new Vector2(0.93f, 0.99f), 15, TextAnchor.MiddleRight, Gold, true);
+            _restock = Label(win, "Restock", new Vector2(0.64f, 0.9f), new Vector2(0.8f, 0.99f), 11, TextAnchor.MiddleRight, TextDim, false); // 11/11 글자 가림: 가운데 머리 장식에 덮여 오른쪽으로
+            _cent = Label(win, "Cent", new Vector2(0.81f, 0.9f), new Vector2(0.93f, 0.99f), 15, TextAnchor.MiddleRight, Gold, true);
             UGUIKit.CreateThemedButton(win, "Close", new Vector2(0.945f, 0.91f), new Vector2(0.99f, 0.99f), "×", RowFill, 14).onClick.AddListener(Close);
 
             for (int i = 0; i < TabNames.Length; i++)
@@ -445,6 +445,8 @@ namespace Fantasia.UI
                 int index = r;
                 float y1 = 0.75f - r * 0.063f;
                 var bg = UGUIKit.CreateImage(win, $"Row{r}", new Vector2(0.015f, y1 - 0.058f), new Vector2(0.47f, y1), RowFill);
+                UGUIKit.SkinThinPlate(bg, 0.5f, 1f); // 11/11 U9 목록 한 줄 → 받은 얇은 판
+                bg.pixelsPerUnitMultiplier = 5f; // 줄이 얇아서 테두리도 얇게
                 var b = bg.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = bg;
                 b.onClick.AddListener(() => { _selected = _page * RowsPerPage + index; Refresh(); });
@@ -493,6 +495,7 @@ namespace Fantasia.UI
                 int index = i;
                 float y1 = 0.86f - i * 0.28f;
                 var bg = UGUIKit.CreateImage(targets, $"Target{i}", new Vector2(0.05f, y1 - 0.25f), new Vector2(0.95f, y1), RowFill);
+                UGUIKit.SkinThinPlate(bg, 0.5f, 1f); // 11/11 U9
                 var b = bg.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = bg;
                 b.onClick.AddListener(() => { if (index < _party.Members.Count) _serviceTarget = _party.Members[index]; Refresh(); });
@@ -502,7 +505,7 @@ namespace Fantasia.UI
             _targetCard.SetActive(false);
 
             // 거점 [상점] 다시 열기 — 창이 닫혀 있을 때만, 화면 왼쪽 안내 칸 아래
-            var reopen = UGUIKit.CreateThemedButton(canvasGO.transform, "ReopenShop", new Vector2(0.006f, 0.6f), new Vector2(0.12f, 0.655f), "상점 열기 (B)", new Color(0.45f, 0.18f, 0.16f), 13);
+            var reopen = UGUIKit.CreateThemedButton(canvasGO.transform, "ReopenShop", new Vector2(0.006f, 0.53f), new Vector2(0.12f, 0.585f), "상점 열기 (B)", new Color(0.45f, 0.18f, 0.16f), 13); // 11/11 겹침: 도움말 글이 길어지면 닿아서 아래로
             reopen.onClick.AddListener(() => _onReopen?.Invoke());
             _reopenButton = reopen.gameObject;
             _reopenButton.SetActive(false);

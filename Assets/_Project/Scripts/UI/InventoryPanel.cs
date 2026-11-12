@@ -16,7 +16,7 @@ namespace Fantasia.UI
     //   오른쪽: 캐릭터 탭 · 능력치 줄 · 장비 5칸 · 3D 초상 · 아래 목록(장비 / 소모품 / 보관함)
     // 파티 공용 인벤토리(Party.Inventory)를 보여주고, 장비는 보고 있는 캐릭터에게 입힌다.
     // 보드에서만 연다 (전투 중 장비 교체는 행동 1회 — 아직 미연결). 그림은 UITheme 공용 틀.
-    public class InventoryPanel : MonoBehaviour
+    public partial class InventoryPanel : MonoBehaviour
     {
         public static InventoryPanel Instance { get; private set; }
         public static bool IsOpen => Instance != null && Instance._root.activeSelf;
@@ -64,6 +64,7 @@ namespace Fantasia.UI
         private class CardView
         {
             public Text Header, Name, Main, Body, Footer;
+            public Image Icon; // 11/12 상점 설명 칸과 같은 큰 그림 (InventoryPanel.Icon.cs)
         }
 
         public static InventoryPanel EnsureExists()
@@ -199,7 +200,7 @@ namespace Fantasia.UI
                         selected = i == _selectedPending;
                         break;
                 }
-                row.fill.color = selected ? RowSelected : RowFill;
+                row.fill.color = UGUIKit.RowTint(selected, RowFill, RowSelected); // 11/11 U9
             }
         }
 
@@ -245,9 +246,11 @@ namespace Fantasia.UI
                 card.Name.text = "";
                 card.Main.text = "";
                 card.Body.text = card == _equippedCard ? "장착한 장비 없음" : "목록에서 장비나 소모품을 고르세요";
+                SetCardIcon(card, null);
                 card.Footer.text = "";
                 return;
             }
+            SetCardIcon(card, item.Icon);
             card.Header.text = $"{item.Slot.Label()} · {item.Grade.Label()} · 착용 Lv {item.WearLevel}";
             card.Name.text = item.BaseName;
             var lines = new List<string>();
@@ -278,6 +281,7 @@ namespace Fantasia.UI
         private void ShowConsumable(CardView card, ConsumableDefinition def)
         {
             card.Header.text = "소모품";
+            SetCardIcon(card, def.Icon);
             card.Name.text = def.DisplayName;
             card.Main.text = $"보유 {_party.Inventory.CountOf(def)} / {def.MaxStack}";
             string where = (def.Usable & UseContext.Battle) != 0 && (def.Usable & UseContext.World) != 0 ? "전투·월드"
@@ -492,6 +496,7 @@ namespace Fantasia.UI
             };
             card.Body.supportRichText = true;
             card.Body.horizontalOverflow = HorizontalWrapMode.Wrap;
+            BuildCardIcon(fill, card);
             return card;
         }
 
@@ -562,6 +567,8 @@ namespace Fantasia.UI
                 int index = r;
                 float y1 = 0.345f - r * 0.037f;
                 var bg = UGUIKit.CreateImage(fill, $"Row{r}", new Vector2(0.02f, y1 - 0.034f), new Vector2(0.98f, y1), RowFill);
+                UGUIKit.SkinThinPlate(bg, 0.5f, 1f); // 11/11 U9 목록 한 줄 → 받은 얇은 판
+                bg.pixelsPerUnitMultiplier = 5f; // 줄이 얇아서 테두리도 얇게
                 var b = bg.gameObject.AddComponent<Button>(); b.onClick.AddListener(SfxPlayer.Click);
                 b.targetGraphic = bg;
                 b.onClick.AddListener(() => OnRowClicked(index));

@@ -31,6 +31,7 @@ namespace Fantasia.UI
             {
                 float x0 = min.x + i * width;
                 var fill = UGUIKit.CreateThemedPanel(parent, $"{name}{i}", new Vector2(x0, min.y), new Vector2(x0 + width * 0.9f, max.y), Border, Fill, 1f);
+                UGUIKit.ApplyThinPlate(fill, 0.6f); // 11/11 U8: 상태 칩은 작아서 안쪽 판 대신 얇은 판
                 var icon = UGUIKit.CreateImage(fill, "Icon", new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.92f), Color.white);
                 icon.preserveAspect = true;
                 var label = UGUIKit.CreateText(fill, "Label", Vector2.zero, Vector2.one, "", fontSize, TextAnchor.MiddleCenter);

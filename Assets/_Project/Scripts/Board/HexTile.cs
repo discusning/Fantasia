@@ -136,7 +136,86 @@ namespace Fantasia.Board
             prop.transform.localPosition = new Vector3(0f, topY, 0f);
             prop.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             _propRenderers = prop.GetComponentsInChildren<Renderer>();
+            WithProps.Add(this);
             RefreshMarker();
+        }
+
+        private void OnDestroy() => WithProps.Remove(this);
+
+        // ── 11/12 팀장 결정 (1번): 밟는 칸의 구조물이 말을 삼킴 → 칸 안(폭 1.6m)으로 줄이고 칸 뒤쪽으로 밀어, 말은 구조물 앞(입구)에 섬.
+        public const float WalkablePropMaxWidth = 1.6f, WalkablePropBack = 0.3f;
+        public float StandFront { get; private set; } // 말이 설 자리: 칸 가운데에서 앞(−Z, 카메라 쪽)으로 이만큼. 0 = 가운데
+        public float DevPropWidth { get; private set; }
+
+        public void FitWalkableProp()
+        {
+            if (_prop == null) return;
+            var b = PropBounds();
+            float w = Mathf.Max(b.size.x, b.size.z);
+            if (w > WalkablePropMaxWidth) _prop.transform.localScale *= WalkablePropMaxWidth / w;
+            _prop.transform.position += Vector3.forward * WalkablePropBack;
+            b = PropBounds();
+            DevPropWidth = Mathf.Max(b.size.x, b.size.z);
+            StandFront = Mathf.Clamp(transform.position.z - b.min.z + 0.15f, 0.35f, 0.95f); // 구조물 앞면보다 0.15m 앞
+        }
+
+        public Bounds PropBounds()
+        {
+            if (_propRenderers == null || _propRenderers.Length == 0) return new Bounds(transform.position, Vector3.zero);
+            var b = _propRenderers[0].bounds;
+            foreach (var r in _propRenderers) b.Encapsulate(r.bounds);
+            return b;
+        }
+
+        // ── 11/12 팀장 결정 (2번): 말을 가리는 구조물은 그동안만 반투명 (BoardOccluderFade가 부름) ──
+        public static readonly System.Collections.Generic.List<HexTile> WithProps = new();
+        public bool PropVisible => _prop != null && _prop.activeInHierarchy;
+        private Material[][] _opaqueMats, _fadeMats;
+        public float PropAlpha { get; private set; } = 1f;
+
+        public void SetPropAlpha(float a)
+        {
+            if (_prop == null || Mathf.Approximately(a, PropAlpha)) return;
+            if (_opaqueMats == null)
+            {
+                _opaqueMats = new Material[_propRenderers.Length][];
+                _fadeMats = new Material[_propRenderers.Length][];
+                for (int i = 0; i < _propRenderers.Length; i++)
+                {
+                    _opaqueMats[i] = _propRenderers[i].sharedMaterials;
+                    _fadeMats[i] = System.Array.ConvertAll(_opaqueMats[i], m => FadeOf(m));
+                }
+            }
+            PropAlpha = a;
+            if (a >= 0.999f)
+            {
+                for (int i = 0; i < _propRenderers.Length; i++) _propRenderers[i].sharedMaterials = _opaqueMats[i];
+                PropAlpha = 1f;
+                RefreshProp(); // 원래 모습 (쓴 칸 어둡게 포함)
+                return;
+            }
+            var tint = UsedButKept ? new Color(0.45f, 0.45f, 0.45f) : Color.white;
+            tint.a = a;
+            for (int i = 0; i < _propRenderers.Length; i++)
+            {
+                var r = _propRenderers[i];
+                r.sharedMaterials = _fadeMats[i];
+                r.GetPropertyBlock(_props);
+                _props.SetColor(ColorId, tint);
+                r.SetPropertyBlock(_props);
+            }
+        }
+
+        // 반투명 재질: 에디터 BoardFadeSetup이 Resources/BoardArt/Fade/<이름>_Fade 로 미리 만듦 (빌드에 반투명 셰이더가 빠지지 않게)
+        private static readonly System.Collections.Generic.Dictionary<Material, Material> FadeCache = new();
+        private static Material FadeOf(Material m)
+        {
+            if (m == null) return null;
+            if (FadeCache.TryGetValue(m, out var f)) return f;
+            f = Resources.Load<Material>("BoardArt/Fade/" + m.name + "_Fade");
+            if (f == null) f = m; // 없으면 그대로 (불투명) — 반투명 대신 아무 일 없음
+            FadeCache[m] = f;
+            return f;
         }
 
         private void RefreshProp()

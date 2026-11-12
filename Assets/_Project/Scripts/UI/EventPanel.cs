@@ -137,7 +137,7 @@ namespace Fantasia.UI
                     : "캐릭터당 기도 1개 · 이번 회차 동안 유지";
                 _footer.text = "기도와 캐릭터를 고르고 확정하세요 · 떠나면 횟수를 쓰지 않음";
                 for (int i = 0; i < _prayerButtons.Count; i++)
-                    _prayerButtons[i].fill.color = _prayer.HasValue && PrayerRules.Offered[i] == _prayer.Value ? CardSelected : CardFill;
+                    _prayerButtons[i].fill.color = UGUIKit.PlateTint(_prayer.HasValue && PrayerRules.Offered[i] == _prayer.Value, CardFill, CardSelected); // 11/11 U3
                 _targetRow.SetActive(!_statueUsed && !_done);
                 var list = _party.Members.ToList();
                 for (int i = 0; i < _targets.Count; i++)
@@ -163,7 +163,7 @@ namespace Fantasia.UI
                 _note.text = _waitRounds > 0 ? $"<color=#E0675A>점술은 {_waitRounds}라운드 뒤에 다시 볼 수 있습니다</color>" : "실패 시 보상 없음";
                 _footer.text = "카드 선택 후 행운 판정 · 집중력 사용 불가";
                 for (int i = 0; i < _cards.Count; i++)
-                    _cards[i].fill.color = _card.HasValue && (int)_card.Value == i ? CardSelected : CardFill;
+                    _cards[i].fill.color = UGUIKit.PlateTint(_card.HasValue && (int)_card.Value == i, CardFill, CardSelected); // 11/11 U3
             }
             else
             {
@@ -339,6 +339,7 @@ namespace Fantasia.UI
                 b.onClick.AddListener(() => PickCard(index));
                 Label(inner, "Symbol", new Vector2(0f, 0.45f), new Vector2(1f, 0.95f), 46, frameColor, true).text = card switch { FortuneCard.Wealth => "₵", FortuneCard.Recovery => "♥", _ => "◆" };
                 var nameBg = UGUIKit.CreateImage(inner, "NameBar", new Vector2(0.05f, 0.3f), new Vector2(0.95f, 0.44f), new Color(0.05f, 0.04f, 0.05f, 0.9f));
+                UGUIKit.SkinThinPlate(nameBg, 0.45f, 0.95f); // 11/11 U8
                 Label(nameBg.transform, "Name", Vector2.zero, Vector2.one, 16, Gold, true).text = EventTiles.CardName(card);
                 Label(inner, "Reward", new Vector2(0.05f, 0.03f), new Vector2(0.95f, 0.28f), 11, TextLight, false).text = EventTiles.CardReward(card).Replace("성공 시 ", "성공 시\n");
                 _cards.Add((b, fill, frame));

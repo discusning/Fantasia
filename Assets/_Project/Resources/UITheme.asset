@@ -14,12 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fantasia.Scripts::Fantasia.UI.UITheme
   PanelFrame: {fileID: 21300000, guid: 03248d4d05e044146a4794a44959827a, type: 3}
   WindowHeader: {fileID: 21300000, guid: 1e48cae1c3e9703459efe7942e37c720, type: 3}
-  PanelFill: {fileID: 0}
-  Banner: {fileID: 0}
+  PanelFill: {fileID: 21300000, guid: 7566d7b895307ec41b306a11488476f7, type: 3}
+  Banner: {fileID: 21300000, guid: f113e41fad198ca49bb9d97466491eb8, type: 3}
   Button: {fileID: 21300000, guid: d869dd4996c89dc4186111ffe93d13af, type: 3}
   BarBack: {fileID: 21300000, guid: 6e43da1b57a97b0459c32b2fcac9d97b, type: 3}
   BarFill: {fileID: 21300000, guid: b7a8fd2b8398be043adac943f8bf3755, type: 3}
-  SlotIcon: {fileID: 0}
+  HpMpFrame: {fileID: 21300000, guid: 8b19f4bed82430049baae19dbf275f82, type: 3}
+  ShieldIcon: {fileID: 21300000, guid: 279b490ab482e3347852d527b252b5ad, type: 3}
+  MainLogo: {fileID: 21300000, guid: 1cbce72a9c8790144ba1deb8b4992c96, type: 3}
+  MainBackground: {fileID: 21300000, guid: 2b55ca3e0d339d64daead6e9249626cf, type: 3}
+  SlotIcon: {fileID: 21300000, guid: 2591a8a2106a2d346a4e2d8f76fd0988, type: 3}
   FocusPip: {fileID: 21300000, guid: 541174e905c849345a001dc5a835c765, type: 3}
   PortraitFrame: {fileID: 0}
   TimelineFrame: {fileID: 21300000, guid: 0363c82d346aa194b9f7ad02ef080889, type: 3}
@@ -50,7 +54,7 @@ MonoBehaviour:
   SoulIcon: {fileID: 21300000, guid: 88ce1cc14b9387447b21bb0372f191c9, type: 3}
   CentIcon: {fileID: 21300000, guid: 909bab485367dd64a99f83b7f0558b91, type: 3}
   LpIcon: {fileID: 21300000, guid: d9505c11a407a274bbb2edf7055786dd, type: 3}
-  LevelBadge: {fileID: 21300000, guid: 6785b80056b5aa149b271c5dbdec77be, type: 3}
+  LevelBadge: {fileID: 21300000, guid: 15e80b703aa277c46907a380e1fda9f1, type: 3}
   StrengthIcon: {fileID: 21300000, guid: f75531cb5e45e7347a80f3052ed41349, type: 3}
   SpeedIcon: {fileID: 21300000, guid: bd19f628b3a8c1143a18b93b42d8f660, type: 3}
   VitalityIcon: {fileID: 21300000, guid: 14b52e8c67fd09647a7d54c9e5861425, type: 3}
@@ -74,7 +78,7 @@ MonoBehaviour:
   - Speaker: "\uC81C\uC784\uC2A4"
     Sprite: {fileID: 21300000, guid: 95856f80e9a3d6947b72eec097225503, type: 3}
   - Speaker: "\uC544\uBCA8 \uBAA8\uB85C"
-    Sprite: {fileID: 21300000, guid: 73c7c5bfafb6fd04f9a907d93ec2366c, type: 3}
+    Sprite: {fileID: 21300000, guid: 5a1e6ebe78c9de149a64212aa1cb072c, type: 3}
   BossMarker: {fileID: 21300000, guid: 3786438c44958d7429c614d1d928f422, type: 3}
   RecoveryMarker: {fileID: 21300000, guid: 7d983a65bf21a3b488230b16e8b09c09, type: 3}
   EventMarker: {fileID: 21300000, guid: bb5d51546a57b9b44b66ba1dc824960d, type: 3}
