@@ -37,6 +37,7 @@ namespace Fantasia.UI
             _instance._onClose = onClose;
             _instance.LoadDisplayChoices();
             _instance._root.SetActive(true);
+            Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.UiOpen); // 11/13
             _instance.Refresh();
         }
 
@@ -149,6 +150,7 @@ namespace Fantasia.UI
         {
             if (_confirmUntil >= 0f) RevertDisplay();
             _root.SetActive(false);
+            Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.UiClose); // 11/13
             _onClose?.Invoke();
         }
 

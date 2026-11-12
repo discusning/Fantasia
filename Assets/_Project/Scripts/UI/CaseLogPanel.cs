@@ -55,15 +55,15 @@ namespace Fantasia.UI
         public static void Toggle()
         {
             if (Instance == null) return;
-            if (IsOpen) Instance._root.SetActive(false);
-            else Instance.Open(Tab.Active);
+            if (IsOpen) { Instance._root.SetActive(false); Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.UiClose); }
+            else { Instance.Open(Tab.Active); Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.UiOpen); } // 11/13 창 열기·닫기 소리
         }
 
         private void OnDestroy() { if (Instance == this) Instance = null; }
 
         private void Update()
         {
-            if (IsOpen && Input.GetKeyDown(KeyCode.Escape)) _root.SetActive(false);
+            if (IsOpen && Input.GetKeyDown(KeyCode.Escape)) { _root.SetActive(false); Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.UiClose); }
         }
 
         private void Open(Tab tab)

@@ -76,11 +76,13 @@ namespace Fantasia.UI
             Time.timeScale = 0f; // 전투 연출·적 턴 진행을 멈춤
             _instance._confirm.SetActive(false);
             _instance._root.SetActive(true);
+            Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.UiOpen); // 11/13
         }
 
         private void Close()
         {
             _root.SetActive(false);
+            Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.UiClose);
             Time.timeScale = _timeScaleBefore;
             _closedFrame = Time.frameCount;
         }

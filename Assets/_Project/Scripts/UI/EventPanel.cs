@@ -241,6 +241,7 @@ namespace Fantasia.UI
             {
                 if (!_card.HasValue) return;
                 var result = _playWitch(_card.Value, _target);
+                if (result.Ok) Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.Coin); // 11/13 참가비 낼 때 동전 소리
                 if (!result.Ok) { _footer.text = result.Message; return; }
                 _done = true;
                 _lastMessage = $"점술마녀 [{EventTiles.CardName(_card.Value)}] — {result.Message}";
