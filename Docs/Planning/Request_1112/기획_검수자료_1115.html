@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>11/15 기획 검수 자료</title>
+<link rel="stylesheet" href="style.css"></head><body>
+
+<h1>11/15 기획 검수 자료 — 기획서에 없던 변경 21개</h1>
+<div class="sub">2026-11-12 · 개발 최동환 → 기획 · 검수일 <b>11/15(일)</b></div>
+
+<div class="box">
+<b>무엇을 보나요:</b> 11/11~11/12에 개발이 먼저 넣은 것입니다. 기획서에 없던 규칙·연출·화면입니다.<br>
+<b>어떻게 답하나요:</b> 번호마다 <b>OK</b> 또는 <b>고쳐 주세요(+이유)</b>만 적어 주세요.<br>
+<b>꼭 볼 것:</b> <span class="tag rule">규칙 변경</span> 표시가 붙은 3개입니다. 나머지는 보이는 모습만 바뀌었습니다.<br>
+<b>되돌리기:</b> 모두 되돌릴 수 있습니다. "고쳐 주세요"가 나오면 11/16~17에 고칩니다.
+</div>
+
+<h2>1. 한눈에 보는 목록</h2>
+<table>
+<tr><th style="width:6%">번호</th><th style="width:12%">구역</th><th>바뀐 것</th><th style="width:15%">종류</th></tr>
+<tr><td>R1</td><td>전투</td><td>방어 = 보호막 8 (예전: 방어 +8)</td><td><span class="tag rule">규칙 변경</span></td></tr>
+<tr><td>R2</td><td>전투</td><td>전투 순서 띠 늘 10칸 (예전: 다음 라운드까지만)</td><td><span class="tag rule">규칙 변경</span></td></tr>
+<tr><td>R3</td><td>전투</td><td>추스르기 동작: 한 번에 HP 20% 이상 맞을 때</td><td><span class="tag rule">기준 확인</span></td></tr>
+<tr><td>R4</td><td>전투</td><td>고른 행동 빨간 테두리 · 취소 방법</td><td>화면</td></tr>
+<tr><td>R5</td><td>전투</td><td>차례 카드 밝게, 나머지 어둡게</td><td>화면</td></tr>
+<tr><td>R6</td><td>전투</td><td>아군 대상을 아래 캐릭터 카드로도 고름</td><td>조작</td></tr>
+<tr><td>R7</td><td>전투</td><td>받은 동작 10개 연결 (방어·강화·회복 등)</td><td>연출</td></tr>
+<tr><td>R8</td><td>전투</td><td>퇴각: 돌아서서 물러난 뒤 사라짐</td><td>연출</td></tr>
+<tr><td>R9</td><td>전투</td><td>승리 창에 얻은 아이템 그림 + 등급 색</td><td>화면</td></tr>
+<tr><td>R10</td><td>전투</td><td>런던 시내 전투 배경 · 가로등 불빛</td><td>배경</td></tr>
+<tr><td>R11</td><td>이동</td><td>이동 시점: 낮추고 다가감 + 이동 방향 따라 돎</td><td>카메라</td></tr>
+<tr><td>R12</td><td>이동</td><td>구조물 칸: 말은 입구 앞 · 가리는 건물 반투명</td><td>화면</td></tr>
+<tr><td>R13</td><td>이동</td><td>주사위: 옆에서 굴림 → 오른쪽으로 옮김 · "이동 N"</td><td>연출</td></tr>
+<tr><td>R14</td><td>공통</td><td>시간대마다 빛·안개 색</td><td>연출</td></tr>
+<tr><td>R15</td><td>공통</td><td>알림: 줄 서서 하나씩 · 종류별 색</td><td>화면</td></tr>
+<tr><td>R16</td><td>공통</td><td>대화 창 아무 곳 클릭 = 다음 줄</td><td>조작</td></tr>
+<tr><td>R17</td><td>조우</td><td>적 3D 모델 · 여러 종류면 화면 나눔</td><td>화면</td></tr>
+<tr><td>R18</td><td>공통</td><td>메인 메뉴 로고 · 배경</td><td>화면</td></tr>
+<tr><td>R19</td><td>아이템</td><td>아이템 그림 통일 · 종류 아이콘 · 등급 색 6가지</td><td>화면</td></tr>
+<tr><td>R20</td><td>아이템</td><td>가방 설명 카드 큰 그림 · 목록 줄 작은 그림 · 증거품 그림</td><td>화면</td></tr>
+<tr><td>R21</td><td>공통</td><td>가독성: 작은 글자 키움 · 회색 글 밝게</td><td>화면</td></tr>
+</table>
+
+<h2 class="brk">2. 전투 — 규칙이 바뀐 것 (꼭 봐 주세요)</h2>
+
+<div class="item"><h3><span class="num">R1</span>방어 = 보호막 8 <span class="tag rule">규칙 변경</span></h3>
+<ul>
+<li><span class="was">예전:</span> 방어를 누르면 물리·마법 방어 +8. 화면에 "+8"만 떠서 무슨 뜻인지 몰랐습니다.</li>
+<li><span class="now">지금:</span> 보호막 8. 피해를 HP보다 먼저 받습니다. 다음 자기 차례가 오면 사라집니다.</li>
+<li>예) 아벨 모로 18 피해 → 보호막 -8, HP -10.</li>
+<li>부식·무기 파손 면역은 그대로입니다. System.md 162줄도 고쳤습니다.</li>
+</ul>
+<div class="two"><figure><img src="img/UI_Apply_1111_전투_보호막.jpg"><figcaption>HP 바 끝 흰 칸 "+8", 머리 위 방패</figcaption></figure>
+<figure><img src="img/Battle_Scenery_1112_보호막_아벨18_막음8_피해10.jpg"><figcaption>18 피해 → 보호막 8 막음, HP 10 깎임</figcaption></figure></div>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요 (숫자 8 ☐ 그대로 ☐ ___)</div></div>
+
+<div class="item"><h3><span class="num">R2</span>전투 순서 띠 늘 10칸 <span class="tag rule">규칙 변경</span></h3>
+<ul>
+<li><span class="was">10/26 기획:</span> 다음 라운드까지만 보여 줌. 그래서 띠 오른쪽이 비는 때가 많았습니다.</li>
+<li><span class="now">지금:</span> 늘 10칸. 모자라면 그다음 라운드 예상(R3·R4…)까지 채웁니다.</li>
+<li>한 차례가 끝나면 칸이 왼쪽으로 한 칸 미끄러집니다 (0.42초, 디자인 패키지 그대로).</li>
+</ul>
+<div class="ans">답: ☐ OK ☐ 다음 라운드까지만으로 되돌림</div></div>
+
+<div class="item"><h3><span class="num">R3</span>추스르기 동작 기준 <span class="tag rule">기준 확인</span></h3>
+<ul>
+<li>3D 쪽이 요청서에 없던 "맞은 뒤 몸을 추스르는" 동작을 보내 줬습니다.</li>
+<li>지금: 한 번에 최대 HP의 <b>20% 이상</b> 맞으면 나옵니다. 작은 피해마다 나오면 산만해서 기준을 뒀습니다.</li>
+</ul>
+<div class="ans">답: ☐ 20% 그대로 ☐ 다른 값 ___% ☐ 빼기</div></div>
+
+<h2 class="brk">3. 전투 — 화면·연출</h2>
+
+<div class="item"><h3><span class="num">R4</span>고른 행동 빨간 테두리 · 취소</h3>
+<ul>
+<li>고른 스킬·공격·소모품 칸에 빨간 테두리. 같은 줄 나머지는 어둡게.</li>
+<li>취소: 같은 칸 다시 누르기 · 우클릭 · Esc. 취소하면 "○○ 취소됨" 안내.</li>
+</ul>
+<div class="two"><figure><img src="img/UI_Apply_1111_전투_스킬선택_빨간테두리.jpg"><figcaption>고른 스킬</figcaption></figure>
+<figure><img src="img/UI_Apply_1111_전투_스킬취소.jpg"><figcaption>취소했을 때</figcaption></figure></div>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R5</span>차례 카드 밝게</h3>
+<ul><li>차례가 아닌 카드는 전체를 어둡게. 지금 차례 카드는 금 테두리를 둘러 조금 크게.</li>
+<li>보드(이동)에서는 어둡게 하지 않습니다.</li></ul>
+<figure><img class="half" src="img/UI_Apply_1111_전투_차례카드_밝게.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R6</span>아군 대상을 캐릭터 카드로도 고름</h3>
+<ul><li>문제: 회복·강화·아이템·부활은 전장 모델을 눌러 골랐는데, 가운데 행동 창이 모델을 가렸습니다.</li>
+<li>지금: 고르는 동안 아래 카드에 "▼ 대상 선택" 금 테두리. 카드를 눌러 고릅니다. 못 고르는 카드는 어둡게.</li>
+<li>전장 모델 클릭도 그대로 됩니다.</li></ul>
+<figure><img src="img/TargetCards_1112.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R7</span>받은 동작 10개 연결</h3>
+<table>
+<tr><th>동작</th><th>언제 나오나</th></tr>
+<tr><td>방어</td><td>방어 버튼</td></tr>
+<tr><td>강화</td><td>상태를 거는 스킬</td></tr>
+<tr><td>회복</td><td>회복·정화 스킬 (역병 의사)</td></tr>
+<tr><td>아이템</td><td>소모품 (화염병 포함)</td></tr>
+<tr><td>부활</td><td>누운 자세에서 일어섬</td></tr>
+<tr><td>추스르기</td><td>R3 기준</td></tr>
+<tr><td>보스 예고</td><td>아벨 모로가 큰 공격을 예고할 때 (1초)</td></tr>
+<tr><td>금지된 봉합</td><td>아벨 자기 회복 (동작 0.9초 뒤 회복 숫자)</td></tr>
+<tr><td>회피</td><td>아군이 공격을 피할 때 (MISS와 같이)</td></tr>
+<tr><td>승리</td><td>마지막 적이 쓰러지면 0.4초 뒤 서 있는 아군 모두 → 1.5초 뒤 결과 창</td></tr>
+</table>
+<figure><img src="img/Motion_Request_1111_img_게임연결_회복_강화_아이템_방어.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요 (번호·동작 이름)</div></div>
+
+<div class="item"><h3><span class="num">R8</span>퇴각 · 탈출권 연출</h3>
+<ul><li><span class="was">예전:</span> 그 자리에서 순간 사라짐.</li>
+<li><span class="now">지금:</span> 돌아서서 뒤로 물러난 뒤 사라짐 (0.7초). 새 3D 동작은 안 썼습니다.</li></ul>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R9</span>승리 창에 얻은 아이템</h3>
+<ul><li>얻은 아이템을 결과 창 아래 띠에 한꺼번에 보여 줍니다. 칸마다 그림 + 등급 색 이름 (최대 4칸).</li>
+<li>아이템마다 알림은 띄우지 않습니다 (화면이 이미 복잡해서). 알림은 "전리품 N개 획득" 한 줄 그대로.</li></ul>
+<figure><img class="half" src="img/전투승리_아이템띠_1112.jpg"><figcaption>전설 무기 빨강 · 에픽 코트 보라 · 붕대 흰색 (점검용으로 넣은 보상)</figcaption></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R10</span>런던 시내 전투 배경 · 가로등</h3>
+<ul><li>받은 소품 6종을 놓았습니다: 돌길 인도 · 가로등 · 벽 가로등 · 손수레 · 하수구 · 나무 울타리.</li>
+<li>가로등은 가스등처럼 켜짐: 아침 25% · 낮 꺼짐 · 저녁 70% · 새벽 100%. 런던 시내 전투에만.</li></ul>
+<div class="two"><figure><img src="img/Battle_Scenery_1112_후_낮.jpg"><figcaption>낮</figcaption></figure>
+<figure><img src="img/Battle_Scenery_1112_가로등불빛_은은하게_저녁.jpg"><figcaption>저녁 가로등</figcaption></figure></div>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<h2 class="brk">4. 이동(보드)</h2>
+
+<div class="item"><h3><span class="num">R11</span>이동 시점</h3>
+<ul><li><span class="was">예전:</span> 52° 위에서 16m 떨어져 내려다봄. 말이 작고 멀었습니다.</li>
+<li><span class="now">지금:</span> 40°로 낮추고 11m로 다가감. 이동 방향을 따라 천천히 돎 (초당 최대 70°).</li>
+<li>이동 중 확대(C안)는 화면 끊김 걱정으로 안 했습니다.</li></ul>
+<figure><img src="img/Camera_1112_00_한눈에_비교.jpg"><figcaption>사진 속 "지금(52° 16m)"은 바꾸기 전. <b>왼쪽 아래 "A+B"가 지금 게임</b>. 오른쪽 아래 C는 안 씀</figcaption></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R12</span>구조물 칸 · 가리는 건물</h3>
+<ul><li>거점·우물·분수·출구 같은 밟는 칸 구조물은 칸 안 뒤쪽으로. 말은 입구 앞에 섭니다.</li>
+<li>말을 가리는 건물은 그동안만 반투명. 안 가리면 원래대로.</li></ul>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R13</span>주사위</h3>
+<ul><li><span class="was">예전:</span> 위에서 갑자기 떨어지고 끊겨 보임. 멈춘 뒤 말 위에 남아 칸을 가림.</li>
+<li><span class="now">지금:</span> 옆에서 던져 굴림. 눈을 1.3초 보여 준 뒤 화면 오른쪽으로 작게 옮김. 아래 <b>"이동 N"</b> 글자 (피의 사냥 −2 등으로 눈과 다를 때 알기 쉽게).</li>
+<li>도착하면 치웁니다.</li></ul>
+<figure><img src="img/Dice_1112_주사위_전·후.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요 ("이동 N" 글자 ☐ 둠 ☐ 뺌)</div></div>
+
+<h2 class="brk">5. 공통 화면</h2>
+
+<div class="item"><h3><span class="num">R14</span>시간대마다 빛·안개</h3>
+<ul><li>월드 라운드마다 아침 → 낮 → 저녁 → 새벽. 빛 색·세기, 안개가 2초에 걸쳐 바뀜.</li>
+<li>규칙은 그대로입니다. 가장 어두운 새벽도 빛 60% 아래로 안 내립니다. 아벨전은 전용 조명.</li></ul>
+<figure><img src="img/TimeOfDay_1111_보드_시간대4.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R15</span>알림 줄 서기 · 색</h3>
+<ul><li>알림이 겹치거나 앞 것을 지우던 문제 → 줄을 서서 하나씩.</li>
+<li>순서: 대화·창 → 턴 판 → 알림. 색: 경고 붉은색 · 의뢰 완료 초록 · 획득 금색.</li></ul>
+<figure><img src="img/UI_Apply_1111_겹침_전후_전투.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R16</span>대화 창 클릭</h3>
+<ul><li>대화 창 아무 곳을 눌러도 다음 줄. 예전엔 "다음" 버튼만 됐습니다.</li>
+<li>수락·거절은 버튼으로만 (잘못 누르지 않게).</li></ul>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R17</span>조우 창 적 3D 모델</h3>
+<ul><li>크기 원 자리 → 출몰한 적의 3D 모델이 움직임(Idle). 가슴~머리 구도.</li>
+<li>다른 종류가 섞이면 금색 비스듬한 선으로 화면을 나눔 (최대 3종류).</li>
+<li>연성 독거미처럼 낮고 넓은 적은 몸 전체. 가고일은 뿔·팔까지 넓게.</li></ul>
+<div class="two"><figure><img src="img/ItemIcons_1112_조우_3종류_세칸.jpg"><figcaption>3종류 세 칸</figcaption></figure>
+<figure><img src="img/ItemIcons_1112_조우_독거미_후_몸전체.jpg"><figcaption>독거미 몸 전체</figcaption></figure></div>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R18</span>메인 메뉴</h3>
+<ul><li>받은 로고를 "판타지아" 글자 자리에, 런던 골목 그림을 배경에. 버튼 위치는 그대로.</li></ul>
+<figure><img class="half" src="img/MainMenu_1112_메인메뉴_1920.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<h2 class="brk">6. 아이템 · 글자</h2>
+
+<div class="item"><h3><span class="num">R19</span>아이템 그림 · 등급 색</h3>
+<ul><li>받은 3D 모델 25개를 같은 각도로 찍어 그림으로 통일. 생명·마력의 영약, 해독제도 새 그림.</li>
+<li>그림이 없는 아이템 58개는 종류 아이콘(검·활·물약 등 17장, 개발 임시 그림).</li>
+<li>등급 색: <span style="color:#555">노말 흰</span> · <span style="color:#3d7fd6">희귀 파랑</span> · <span style="color:#9b5fd6">에픽 보라</span> · <span style="color:#c99a1e">유니크 금</span> · <span style="color:#d6342a">전설 빨강</span> · <span style="color:#1f9e85">스페셜 청록</span>. 상점·가방 이름, 승리 창.</li></ul>
+<figure><img src="img/아이템그림_등급색_1112.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요 (색: ☐ 그대로 ☐ ___)</div></div>
+
+<div class="item"><h3><span class="num">R20</span>가방 · 사건 기록 그림</h3>
+<ul><li>가방에서 아이템을 고르면 설명 카드 위에 상점처럼 큰 그림.</li>
+<li>가방 목록 줄마다 작은 그림 (예전 질문 P1 — 팀장이 "넣기"로 정함).</li>
+<li>사건 기록 증거품마다 그림. 못 얻은 증거품은 검은 그림자.</li></ul>
+<div class="two"><figure><img src="img/ItemIcons_1112_가방_설명칸_그림_장비.jpg"><figcaption>가방 설명 카드</figcaption></figure>
+<figure><img src="img/ItemIcons_1112_사건기록_증거품.jpg"><figcaption>사건 기록 증거품</figcaption></figure></div>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<div class="item"><h3><span class="num">R21</span>가독성 손질</h3>
+<ul><li>판·배치는 그대로. 작은 글자를 1080p 기준 18px까지 키움 (칸에 들어가는 만큼만).</li>
+<li>회색 보조 글을 밝게. 전투 피해 숫자·디버프 표시는 그대로 둠.</li></ul>
+<figure><img src="img/가독성_전·후_1112.jpg"></figure>
+<div class="ans">답: ☐ OK ☐ 고쳐 주세요</div></div>
+
+<h2>7. 답 정리 칸</h2>
+<table>
+<tr><th>번호</th><th>답</th><th>번호</th><th>답</th><th>번호</th><th>답</th></tr>
+<tr><td>R1</td><td></td><td>R8</td><td></td><td>R15</td><td></td></tr>
+<tr><td>R2</td><td></td><td>R9</td><td></td><td>R16</td><td></td></tr>
+<tr><td>R3</td><td></td><td>R10</td><td></td><td>R17</td><td></td></tr>
+<tr><td>R4</td><td></td><td>R11</td><td></td><td>R18</td><td></td></tr>
+<tr><td>R5</td><td></td><td>R12</td><td></td><td>R19</td><td></td></tr>
+<tr><td>R6</td><td></td><td>R13</td><td></td><td>R20</td><td></td></tr>
+<tr><td>R7</td><td></td><td>R14</td><td></td><td>R21</td><td></td></tr>
+</table>
+<p class="small">따로 답이 필요한 질문(크레딧 문구·야영 텐트 등)은 "기획 요청서 11/12"에 있습니다.</p>
+</body></html>

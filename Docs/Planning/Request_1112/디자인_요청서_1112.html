@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>디자인 요청서 11/12</title>
+<link rel="stylesheet" href="style.css"></head><body>
+
+<h1>디자인 요청서 — 남은 그림·모델·동작 15개</h1>
+<div class="sub">2026-11-12 · 개발 최동환 → 디자인(2D · 3D) · <b>11/16(월)까지</b> 받으면 마감 안에 넣을 수 있어요</div>
+
+<div class="box">
+<b>먼저:</b> 11/10·11/11에 보내 주신 UI 그림·모션 N1~N8·아이템 모델 25개·런던 소품은 게임에 모두 넣었습니다. 고맙습니다.<br>
+<b>이 문서:</b> 아직 없는 것과 받은 파일에서 확인할 것을 모았습니다.<br>
+<b>시간이 모자라면:</b> <span class="tag must">꼭 필요</span> 5개만 해 주세요. 나머지는 개발이 임시 그림으로 둡니다.<br>
+<b>답하는 법:</b> 번호와 날짜만. 예) "D9 11/15", "D7 다시 보냄", "M3 가".
+</div>
+
+<h2>1. 한눈에 보는 목록</h2>
+<table>
+<tr><th style="width:7%">번호</th><th>무엇</th><th style="width:9%">담당</th><th style="width:16%">중요도</th></tr>
+<tr><td>D9</td><td>아군 3명 초상화 + 아벨 모로 적 칸 초상</td><td>2D</td><td><span class="tag must">꼭 필요</span></td></tr>
+<tr><td>D1</td><td>빠진 모델: 압박 붕대</td><td>3D</td><td><span class="tag must">꼭 필요</span></td></tr>
+<tr><td>D7</td><td>검시대 파일이 세척대와 같음</td><td>3D</td><td><span class="tag must">꼭 필요</span></td></tr>
+<tr><td>D8</td><td>약품장 파일 이름이 "돌 벤치"</td><td>3D</td><td><span class="tag must">꼭 필요</span></td></tr>
+<tr><td>M1</td><td>무기 4개 (명탐정·역병 의사·저격수·아벨)</td><td>3D</td><td><span class="tag must">꼭 필요</span></td></tr>
+<tr><td>D2</td><td>집문서 모델의 떠 있는 조각</td><td>3D</td><td><span class="tag rec">있으면 좋음</span></td></tr>
+<tr><td>D4</td><td>보호막 방패 그림</td><td>2D</td><td><span class="tag rec">있으면 좋음</span></td></tr>
+<tr><td>D10</td><td>아이템 종류 아이콘 17장</td><td>2D</td><td><span class="tag rec">있으면 좋음</span></td></tr>
+<tr><td>M2</td><td>공격 동작 다시 (명탐정·저격수·아벨)</td><td>3D</td><td><span class="tag rec">있으면 좋음</span></td></tr>
+<tr><td>M3</td><td>사신 낫 — 답만 (가/나)</td><td>3D</td><td><span class="tag rec">있으면 좋음</span></td></tr>
+<tr><td>U11</td><td>분수대 · 석상 그림</td><td>2D</td><td><span class="tag opt">시간 남으면</span></td></tr>
+<tr><td>U13</td><td>행동 아이콘 7개</td><td>2D</td><td><span class="tag opt">시간 남으면</span></td></tr>
+<tr><td>U15</td><td>창 이름 칸 뾰족 장식 수정</td><td>2D</td><td><span class="tag opt">시간 남으면</span></td></tr>
+<tr><td>D5</td><td>그림 없는 아이템 58개 (기획이 고른 것부터)</td><td>3D·2D</td><td><span class="tag opt">시간 남으면</span></td></tr>
+<tr><td>D3</td><td>파일 이름 오타 4개 (확인만)</td><td>3D</td><td><span class="tag opt">확인만</span></td></tr>
+</table>
+<p class="small">걷기 동작(N9)은 1막 뒤로 미뤘습니다 (기획 결정: 1막은 선 채로 이동). 이번에는 안 해도 됩니다.</p>
+
+<h2 class="brk">2. 꼭 필요 (5개)</h2>
+
+<div class="item"><h3><span class="num">D9</span>아군 3명 초상화 · 아벨 모로 적 칸 초상 <span class="tag must">꼭 필요</span> 2D</h3>
+<ul>
+<li>지금 캐릭터 카드 얼굴은 3D 모델을 찍은 사진이라 작고 어둡습니다.</li>
+<li>대화 초상(N19 제임스 · N20 아벨 모로)처럼 그린 초상화가 필요합니다.</li>
+<li><b>필요한 것:</b> 명탐정 · 역병 의사 · 저격수 3장.</li>
+<li><b>크기:</b> N19·N20과 같은 3:4 세로, 투명 배경 PNG (예: 1086×1448). 얼굴이 위쪽 1/3 안에.</li>
+<li>카드 얼굴 칸은 정사각형이라 개발이 얼굴 쪽을 잘라 씁니다. 대화 창에도 그대로 씁니다.</li>
+<li><b>쓰는 곳:</b> 아래 캐릭터 카드 · 보드 위쪽 파티장 칸 · 전투 순서 띠 · 가방.</li>
+<li><b>같이:</b> 전투 순서 띠·적 카드의 아벨 모로 얼굴. 대화 초상(N20)을 잘라 써도 되면 "N20 써도 됨"이라고만 답해 주세요.</li>
+</ul>
+<figure><img src="img/UI_Apply_1111_파티카드_바_레벨.jpg"><figcaption>지금 카드 얼굴 (왼쪽 칸)</figcaption></figure>
+<div class="ans">답: 날짜 ___ / 아벨 적 칸: ☐ 새로 그림 ☐ N20 써도 됨</div></div>
+
+<div class="item"><h3><span class="num">D1</span>빠진 모델 — 압박 붕대 <span class="tag must">꼭 필요</span> 3D</h3>
+<ul>
+<li>"판매 및 고정 획득 아이템 11종" 폴더에 10개만 있었습니다. 압박 붕대가 빠졌습니다.</li>
+<li>모든 캐릭터 첫 슬롯에 있는 아이템이라 가장 자주 보입니다.</li>
+<li>지금은 예전 손그림이라 다른 아이템과 느낌이 다릅니다.</li>
+</ul>
+<div class="ans">답: 날짜 ___</div></div>
+
+<div class="item"><h3><span class="num">D7</span>폐검시소 "검시대" 파일 <span class="tag must">꼭 필요</span> 3D</h3>
+<ul>
+<li><code>검시대.zip</code>과 <code>세척대.zip</code> 안 파일이 똑같습니다 (둘 다 돌 세례대 모양).</li>
+<li>검시대(시체를 눕히는 긴 대) 파일을 다시 보내 주세요. 폐검시소 전투 배경 가운데에 놓을 물건입니다.</li>
+</ul>
+<div class="ans">답: ☐ 다시 보냄 (날짜 ___)</div></div>
+
+<div class="item"><h3><span class="num">D8</span>폐검시소 "약품장" 이름 <span class="tag must">꼭 필요</span> 3D</h3>
+<ul>
+<li><code>약품장.zip</code> 안 파일 이름이 "Stone Hearth Bench"(돌 벤치)입니다.</li>
+<li>약품을 넣는 장(선반·찬장)이 맞는지 확인 부탁드립니다. 다른 파일이면 다시 보내 주세요.</li>
+</ul>
+<div class="ans">답: ☐ 맞음 ☐ 다시 보냄</div></div>
+
+<div class="item"><h3><span class="num">M1</span>무기 4개 <span class="tag must">꼭 필요</span> 3D</h3>
+<ul>
+<li>명탐정 · 역병 의사 · 저격수 · 아벨 모로가 모두 맨손이라 공격이 손짓처럼 보입니다.</li>
+<li>11/11 모션 요청서 W1과 같습니다. 무기만 <b>따로 된 파일</b>로 주세요.</li>
+<li>개발이 사신 낫처럼 오른손 뼈에 붙입니다. 캐릭터 모델은 다시 만들 필요 없습니다.</li>
+<li>내보낼 때: Apply Transform · Scale 1.0 · Forward −Z · Up Y. 원본 .blend도 같이.</li>
+</ul>
+<figure><img class="half" src="img/Motion_Request_1111_img_w_det_attack.jpg"><figcaption>명탐정 공격 — 손에 아무것도 없음</figcaption></figure>
+<div class="ans">답: 날짜 ___</div></div>
+
+<h2 class="brk">3. 있으면 좋음</h2>
+
+<div class="item"><h3><span class="num">D2</span>마리의 집문서 — 떠 있는 조각 3D</h3>
+<ul><li>종이 아래 작은 조각들이 공중에 떠 있습니다. 아이콘에도 점처럼 찍힙니다.</li>
+<li>조각을 지우거나 종이에 붙여 주세요.</li></ul>
+<figure><img src="img/ItemIcons_1112_아이템아이콘_25종.jpg"><figcaption>셋째 줄 셋째 칸</figcaption></figure></div>
+
+<div class="item"><h3><span class="num">D4</span>보호막 방패 그림 2D</h3>
+<ul><li>방어가 "보호막"으로 바뀌어 방패 그림이 생겼습니다. 지금은 개발이 그린 임시 그림입니다.</li>
+<li>쓰는 곳: 카드 HP 칸 왼쪽(하트 자리), 캐릭터 머리 위.</li>
+<li>크기: 64×64 투명 PNG. 하트 아이콘(Z07)과 같은 느낌.</li></ul>
+<figure><img class="half" src="img/UI_Apply_1111_전투_보호막.jpg"></figure></div>
+
+<div class="item"><h3><span class="num">D10</span>아이템 종류 아이콘 17장 2D</h3>
+<ul><li>그림 없는 아이템 58개는 지금 개발이 그린 종류 아이콘을 씁니다 (아래 사진).</li>
+<li>같은 이름으로 그려 주시면 파일만 바꿉니다.</li>
+<li>무기 10: 단검 · 검 · 대검 · 창 · 활 · 권총 · 장총 · 스태프 · 마법서 · 악기</li>
+<li>방어구 4: 몸통 · 머리 · 반지 · 목걸이 / 소모품 3: 물약 · 두루마리 · 주머니</li>
+<li>128×128 투명 PNG. 아이템별 그림(D5)이 오면 그 그림이 먼저 보입니다.</li>
+<li>등급 테두리(노말 흰 · 희귀 파랑 · 에픽 보라 · 유니크 금 · 전설 빨강 · 스페셜 청록) 그림이 있으면 더 좋습니다.</li></ul>
+<figure><img src="img/종류아이콘_임시_1112.jpg"><figcaption>개발 임시 그림 17장</figcaption></figure></div>
+
+<div class="item"><h3><span class="num">M2</span>공격 동작 다시 3D</h3>
+<ul><li>명탐정 · 저격수 · 아벨: 손을 살짝 내미는 정도라 약해 보입니다. 아벨은 팔을 옆으로 쭉 폅니다.</li>
+<li>M1 무기를 쥔 자세로 찌르기·쏘기·휘두르기가 보이면 됩니다. 약 1초.</li>
+<li>11/11 모션 요청서 W2와 같습니다.</li></ul></div>
+
+<div class="item"><h3><span class="num">M3</span>사신 낫 — 답만 3D</h3>
+<ul><li>사신이 공격할 때 낫이 몸 뒤로 끌려갑니다. 받은 공격 동작이 낫 없이 만든 것이라서입니다.</li>
+<li><b>가 (추천):</b> 개발이 Unity에서 쥐는 위치·각도만 맞춤. 3D 일 없음.</li>
+<li><b>나:</b> 두 손으로 크게 휘두르는 사신 전용 공격을 새로 만듦. 어려우면 1막 뒤.</li>
+<li>11/10·11/11에 물었고 아직 답이 없습니다. 답이 없으면 "가"로 진행합니다.</li></ul>
+<figure><img class="half" src="img/Motion_Request_1111_img_w_reaper_battle.jpg"></figure>
+<div class="ans">답: ☐ 가 ☐ 나</div></div>
+
+<h2 class="brk">4. 시간 남으면</h2>
+
+<div class="item"><h3><span class="num">U11</span>분수대 · 석상 그림 2D</h3>
+<ul><li>분수대·석상 이벤트 창 왼쪽이 그림 없이 비어 있습니다.</li>
+<li>파일 이름: <code>U11_분수대.png</code> · <code>U11_석상.png</code>. 세로 그림 (예: 600×800).</li></ul>
+<figure><img class="half" src="img/Design_Request_UI_1110_img_b12b_fountain.jpg"><figcaption>11/10 사진 — 왼쪽 빈자리</figcaption></figure></div>
+
+<div class="item"><h3><span class="num">U13</span>행동 아이콘 7개 2D</h3>
+<ul><li>공격 · 스킬 · 소모품 · 방어 · 부활 · 퇴각 · 집중 버튼. 지금은 글자만 있습니다. 자리는 있습니다.</li>
+<li>파일 이름: <code>U13_공격.png</code> … 7개. 64×64 투명 PNG.</li></ul>
+<figure><img class="half" src="img/Design_Request_UI_1110_img_b05_action_skill.jpg"></figure></div>
+
+<div class="item"><h3><span class="num">U15</span>창 이름 칸 뾰족 장식 2D</h3>
+<ul><li>받은 창 위 장식의 가운데 뾰족 끝이 이름 칸 안까지 내려옵니다. 그래서 개발이 나무색으로 덮어 두었습니다.</li>
+<li>뾰족 끝이 테두리에서 멈추는 그림이면 바로 바꿉니다. 파일 이름: <code>U15_창이름칸.png</code>.</li>
+<li>지금 그대로도 괜찮습니다.</li></ul></div>
+
+<div class="item"><h3><span class="num">D5</span>그림 없는 아이템 58개 3D·2D</h3>
+<ul><li>받은 25개처럼 3D 모델로 주시면 개발이 같은 각도로 찍어 그림을 만듭니다. 2D 그림도 됩니다.</li>
+<li>기획이 1막에 나오는 것부터 고르기로 했습니다 (기획 요청서 Q5). 목록이 오면 바로 보내 드립니다.</li></ul></div>
+
+<div class="item"><h3><span class="num">D3</span>파일 이름 오타 — 확인만 3D</h3>
+<table>
+<tr><th>받은 이름</th><th>바른 이름</th></tr>
+<tr><td>인부의 두꺼운 코드</td><td>인부의 두꺼운 코트</td></tr>
+<tr><td>야겅대 삼각모</td><td>야경대 삼각모</td></tr>
+<tr><td>검사기록</td><td>검시 기록</td></tr>
+<tr><td>마리의 질문서</td><td>마리의 집문서</td></tr>
+</table>
+<p class="small">게임에는 바른 이름으로 넣었습니다. 다음 파일부터 맞춰 주시면 됩니다.</p></div>
+
+<h2>답 정리 칸</h2>
+<table>
+<tr><th style="width:12%">번호</th><th>답</th><th style="width:12%">번호</th><th>답</th></tr>
+<tr><td>D9</td><td></td><td>D10</td><td></td></tr>
+<tr><td>D1</td><td></td><td>M2</td><td></td></tr>
+<tr><td>D7</td><td></td><td>M3</td><td></td></tr>
+<tr><td>D8</td><td></td><td>U11</td><td></td></tr>
+<tr><td>M1</td><td></td><td>U13</td><td></td></tr>
+<tr><td>D2</td><td></td><td>U15</td><td></td></tr>
+<tr><td>D4</td><td></td><td>D5</td><td></td></tr>
+</table>
+</body></html>

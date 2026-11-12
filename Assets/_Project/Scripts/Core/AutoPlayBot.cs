@@ -518,6 +518,22 @@ namespace Fantasia.Core
                     order.Add(next); behind.Remove(next); from = next.transform.position;
                 }
                 Note($"이동 QA: 시점 {Fantasia.Board.BoardCameraRig.Preview} · 집 뒤 목표 칸 {order.Count}개");
+                if (args.Contains("-autoplay-move-shot"))
+                {
+                    // 11/12 기획 검수 자료: 같은 자리에서 반투명 켬/끔 비교 사진 (집 뒤 칸 2곳)
+                    var fade = Camera.main.GetComponent<Fantasia.Board.BoardOccluderFade>();
+                    for (int k = 0; k < Math.Min(2, order.Count) && fade != null; k++)
+                    {
+                        board.DevTeleport(order[k].Coordinate);
+                        yield return new WaitForSeconds(1.5f);
+                        yield return Shot($"반투명_켬_{k}");
+                        fade.enabled = false;
+                        foreach (var h in Fantasia.Board.HexTile.WithProps) if (h != null) h.SetPropAlpha(1f);
+                        yield return new WaitForSeconds(0.3f);
+                        yield return Shot($"반투명_끔_{k}");
+                        fade.enabled = true;
+                    }
+                }
                 int turnsMq = 0, reached = 0, stuck = 0, target = 0;
                 while (turnsMq < 40 && target < order.Count && !EncounterPanel.IsOpen)
                 {
@@ -536,6 +552,12 @@ namespace Fantasia.Core
                     yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
                     var goal = order[target].Coordinate;
                     board.DevMoveTowardAvoiding(new[] { goal });
+                    if (_fadeShots < 3 && args.Contains("-autoplay-move-shot")) // 11/12 기획 검수 자료용: 건물이 반투명해진 순간 사진
+                    {
+                        float fadeUntil = Time.time + 4f;
+                        while (Time.time < fadeUntil && Fantasia.Board.BoardOccluderFade.DevFadedCount == 0 && !board.DevIsIdle) yield return null;
+                        if (Fantasia.Board.BoardOccluderFade.DevFadedCount > 0) { yield return new WaitForSeconds(0.3f); yield return Shot($"이동_반투명_{_fadeShots++}"); }
+                    }
                     yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen || board.DevAwaitingSelection || ConfirmPanel.IsOpen || EventPanel.IsOpen, 15f, "이동");
                     if (!board.DevIsIdle && !EncounterPanel.IsOpen && !EventPanel.IsOpen) Note($"  상태: 이동 {board.DevMoving} 선택대기 {board.DevAwaitingSelection} 대화 {DialoguePanel.IsOpen} 확인 {ConfirmPanel.IsOpen} 이벤트 {EventPanel.IsOpen} 상점 {Fantasia.UI.ShopPanel.IsOpen} 가방 {InventoryPanel.IsOpen} 명소 {LandmarkInfoPanel.IsOpen} 사건 {CaseLogPanel.IsOpen} 위치 {board.DevPosition}");
                     if (ConfirmPanel.IsOpen) ConfirmPanel.DevChoose(false);
@@ -1040,6 +1062,7 @@ namespace Fantasia.Core
 
         // 11/12 N6~N8 연결 확인 (첫 전투 첫 차례에 한 번): 아군 = 회피·승리, 아벨 모로 = 예고·봉합
         private bool _motionsChecked, _bossMotionsChecked, _cardPickChecked;
+        private int _fadeShots;
         private void CheckMotionsWired(Fantasia.Combat.BattleController battle)
         {
             if (!_motionsChecked)
