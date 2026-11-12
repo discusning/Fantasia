@@ -62,6 +62,26 @@ namespace Fantasia.Editor
                     }
                     line.Add($"{motion} {clip.length:0.00}초");
                 }
+                // 11/13 N9 걷기(Walk, 반복): 보드 말 이동 중에만. 신호 대신 켜고 끄는 값 "Walking" (Idle ↔ Walk)
+                var walk = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{dir}/{name}@Walk.anim");
+                if (walk != null)
+                {
+                    var ws = AnimationUtility.GetAnimationClipSettings(walk);
+                    if (!ws.loopTime) { ws.loopTime = true; AnimationUtility.SetAnimationClipSettings(walk, ws); EditorUtility.SetDirty(walk); }
+                    if (!ctrl.parameters.Any(p => p.name == "Walking")) ctrl.AddParameter("Walking", AnimatorControllerParameterType.Bool);
+                    var wstate = sm.states.Select(s => s.state).FirstOrDefault(s => s.name == "Walk");
+                    if (wstate == null) { wstate = sm.AddState("Walk", new Vector3(300f, -120f, 0f)); added++; }
+                    wstate.motion = walk;
+                    foreach (var t in idle.transitions.Where(t => t.destinationState == wstate).ToArray()) idle.RemoveTransition(t);
+                    foreach (var t in wstate.transitions.ToArray()) wstate.RemoveTransition(t);
+                    var startWalk = idle.AddTransition(wstate);
+                    startWalk.AddCondition(AnimatorConditionMode.If, 0f, "Walking");
+                    startWalk.hasExitTime = false; startWalk.duration = 0.12f;
+                    var stopWalk = wstate.AddTransition(idle);
+                    stopWalk.AddCondition(AnimatorConditionMode.IfNot, 0f, "Walking");
+                    stopWalk.hasExitTime = false; stopWalk.duration = 0.18f;
+                    line.Add($"Walk {walk.length:0.00}초 반복");
+                }
                 if (line.Count > 0)
                 {
                     EditorUtility.SetDirty(ctrl);

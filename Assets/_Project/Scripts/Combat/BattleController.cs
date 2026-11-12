@@ -755,14 +755,16 @@ namespace Fantasia.Combat
         }
 
         // 11/11 팀장 결정: 퇴각·탈출권 — 순간 사라지던 것을 "돌아서서 뒤로 물러난 뒤 사라짐"으로 (0.2초 돌기 + 0.5초 2.5m 물러남).
-        // 새 3D 없이 개발만으로 처리. 물러나는 동안은 서 있는 자세(대기 움직임) 그대로.
-        private const float WithdrawTurn = 0.2f, WithdrawMove = 0.5f, WithdrawDistance = 2.5f;
+        // 11/13 팀장 요청: 물러나는 동안 걷기 모션(N9). 걸음이 보이게 물러나는 시간 0.5 → 0.8초 (걷기 한 바퀴 0.95초).
+        private const float WithdrawTurn = 0.2f, WithdrawMove = 0.8f, WithdrawDistance = 2.5f;
         private IEnumerator Withdraw(List<BattleUnit> units)
         {
             var models = units.Where(u => _models.ContainsKey(u)).Select(u => _models[u]).Where(m => m != null && m.activeSelf).ToList();
             var from = models.Select(m => m.transform.position).ToList();
             var faceFrom = models.Select(m => m.transform.rotation).ToList();
             var back = models.Select(m => { var f = -m.transform.forward; f.y = 0f; return f.normalized; }).ToList();
+            var walkers = models.Select(m => CharacterMotion.Of(m)).Where(w => w != null).ToList();
+            foreach (var w in walkers) w.SetWalking(true); // 도는 동안 걸음 시작 → 자연스럽게 이어짐
             for (float t = 0f; t < WithdrawTurn + WithdrawMove; t += Time.deltaTime)
             {
                 for (int i = 0; i < models.Count; i++)
@@ -775,6 +777,7 @@ namespace Fantasia.Combat
                 }
                 yield return null;
             }
+            foreach (var w in walkers) if (w != null) w.SetWalking(false);
             foreach (var m in models) if (m != null) m.SetActive(false);
         }
 
@@ -1485,6 +1488,7 @@ namespace Fantasia.Combat
             model.transform.position = position;
             model.transform.rotation = Quaternion.LookRotation(facing);
             BlobShadow.Attach(model, height); // 발밑 흐린 그림자 (11/10 기획 1A)
+            HeldWeapon.Show(model, unit.Member); // 11/13 아군: 장착 무기 종류에 맞는 소품만 손에
             var col = model.AddComponent<CapsuleCollider>();
             col.height = height;
             col.radius = Mathf.Max(0.4f, height * 0.3f);

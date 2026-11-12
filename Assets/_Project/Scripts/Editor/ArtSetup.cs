@@ -11,7 +11,7 @@ namespace Fantasia.Editor
     // 디자인에서 받은 3D 에셋(2026-11-06, Docs/Art/Model_Request_1105) 연결.
     // ① 가져오기 설정(텍스처 크기·노멀 맵·리그 종류) ② 게임 크기에 맞춘 감싸기 프리팹 ③ 직업·적 데이터 Model 칸 연결.
     // 다시 받은 파일로 바꾼 뒤 이 메뉴를 한 번 더 돌리면 된다.
-    public static class ArtSetup
+    public static partial class ArtSetup
     {
         private const string Root = "Assets/_Project/Art/Models";
         private const string PrefabDir = "Assets/_Project/Art/Prefabs";
@@ -165,6 +165,7 @@ namespace Fantasia.Editor
 
                 UseNormalMap(model, name);
                 if (name == "Model_ShadowReaper") AttachScythe(model, report);
+                AttachWeapons(model, name, report);
 
                 string prefabPath = $"{PrefabDir}/{name}.prefab";
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);

@@ -178,6 +178,18 @@ namespace Fantasia.Combat
             ("Morgue_Desk", -7.2f, 0f, 5.6f, 150f),
             ("WallLamp", -3.4f, 2.6f, BackWallZ - 0.25f, 180f), ("WallLamp", 4f, 2.6f, BackWallZ - 0.25f, 180f),
         };
+        // 11/13 핏자국 (팀장 "과하지 않게"): 검시대 둘레 6곳만. 종류 0 웅덩이 · 1 튄 자국 · 2 끌린 자국 · 3 방울 (Editor/BloodDecalSetup)
+        // 종류, 위치(x, 높이 y, z), 크기(m), 돌림(도). 높이 0.012 = 바닥 바로 위, 0.805 = 빈 검시대 윗면
+        private static readonly (int kind, float x, float y, float z, float size, float yaw)[] MorgueBlood =
+        {
+            (0, 6.3f, 0.012f, -0.9f, 1.3f, 30f),    // 보스 바로 뒤 검시대 앞 웅덩이 (보스에 안 가리게)
+            (3, 6.3f, 0.014f, 1.5f, 0.8f, 0f),      // 그 앞쪽 떨어진 방울
+            (2, 7.0f, 0.013f, 6.0f, 1.7f, 80f),     // 둘째 검시대에서 뒤쪽으로 끌린 자국
+            (1, 10.6f, 0.012f, 3.0f, 1.0f, 200f),   // 안쪽 줄 검시대 옆 튄 자국
+            (3, 7.2f, 0.805f, -3.2f, 0.9f, 15f),    // 빈 검시대 윗면 얼룩
+            (0, -8.6f, 0.012f, 1.2f, 0.9f, -40f),   // 왼쪽 검시대 아래
+        };
+
         // 검시대 위 차가운 등 (빛 웅덩이) — 나머지는 보스 조명 그대로 어둡게
         private static readonly Vector3[] MorgueLamps = { new(7.2f, 3.2f, 0.6f), new(8.5f, 3.2f, 4.2f), new(9.8f, 3.2f, -1.3f), new(-9.4f, 3.2f, 1.6f) };
 
@@ -194,6 +206,14 @@ namespace Fantasia.Combat
                 var go = Object.Instantiate(prefab, new Vector3(x, y, z), Quaternion.Euler(0f, yaw + 180f, 0f), parent);
                 go.name = name;
                 DevMorgueCount++;
+            }
+            foreach (var (kind, bx, by, bz, size, byaw) in MorgueBlood)
+            {
+                var prefab = Resources.Load<GameObject>("BattleArt/Blood_" + kind);
+                if (prefab == null) continue;
+                var go = Object.Instantiate(prefab, new Vector3(bx, by, bz), Quaternion.Euler(0f, byaw, 0f), parent);
+                go.transform.localScale = new Vector3(size, 1f, size);
+                go.name = "Blood_" + kind;
             }
             foreach (var p in MorgueLamps)
             {

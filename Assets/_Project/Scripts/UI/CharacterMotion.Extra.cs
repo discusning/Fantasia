@@ -35,6 +35,14 @@ namespace Fantasia.UI
         public bool Victory() => Play("Victory");     // 아군 승리 1.5초, 끝 자세 유지
         public const float SelfHealLead = 0.9f, VictoryHold = 1.5f;
 
+        // 11/13 N9 걷기: 보드 말이 칸을 옮겨 가는 동안만 켬 (값이 없는 인물은 예전처럼 미끄러짐)
+        public void SetWalking(bool on)
+        {
+            if (IsDown || !Ready() || !Anim.parameters.Any(p => p.name == "Walking")) return;
+            Anim.SetBool("Walking", on);
+            if (on) { DevPlayed.TryGetValue("Walk", out int n); DevPlayed["Walk"] = n + 1; }
+        }
+
         // 점검용: 동작별 실제로 재생한 횟수
         public static readonly System.Collections.Generic.Dictionary<string, int> DevPlayed = new();
     }

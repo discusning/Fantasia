@@ -552,6 +552,12 @@ namespace Fantasia.Core
                     yield return WaitFor(() => !board.DevDiceRolling, 5f, "주사위 멈춤");
                     var goal = order[target].Coordinate;
                     board.DevMoveTowardAvoiding(new[] { goal });
+                    if (_walkShots < 2 && args.Contains("-autoplay-move-shot")) // 11/13 N9 걷기 모션 확인: 걷는 도중 사진
+                    {
+                        float walkUntil = Time.time + 3f;
+                        while (Time.time < walkUntil && !board.DevMoving) yield return null;
+                        if (board.DevMoving) { yield return new WaitForSeconds(0.35f); yield return Shot($"이동_걷기_{_walkShots++}"); }
+                    }
                     if (_fadeShots < 3 && args.Contains("-autoplay-move-shot")) // 11/12 기획 검수 자료용: 건물이 반투명해진 순간 사진
                     {
                         float fadeUntil = Time.time + 4f;
@@ -1062,7 +1068,7 @@ namespace Fantasia.Core
 
         // 11/12 N6~N8 연결 확인 (첫 전투 첫 차례에 한 번): 아군 = 회피·승리, 아벨 모로 = 예고·봉합
         private bool _motionsChecked, _bossMotionsChecked, _cardPickChecked;
-        private int _fadeShots;
+        private int _fadeShots, _walkShots;
         private void CheckMotionsWired(Fantasia.Combat.BattleController battle)
         {
             if (!_motionsChecked)
@@ -1330,7 +1336,7 @@ namespace Fantasia.Core
             bool wonBattle = battle.DevEnemies.All(e => !e.IsAlive);
             yield return WaitFor(() => DialoguePanel.IsOpen || battle.DevHud.DevResultButtonsVisible || battle.DevHud.DevResultDropPlaying, 6f, "승리 동작 뒤 대화·결과 창");
             if (wonBattle) { Fantasia.UI.CharacterMotion.DevPlayed.TryGetValue("Victory", out int vic); Qa(vic > 0, $"승리하면 아군 승리 동작 (재생 {vic}번)"); }
-            Note($"  동작 재생: {string.Join(" · ", new[] { "Dodge", "Victory", "Announce", "SelfHeal" }.Select(k => $"{k} {(Fantasia.UI.CharacterMotion.DevPlayed.TryGetValue(k, out int c) ? c : 0)}"))}");
+            Note($"  동작 재생: {string.Join(" · ", new[] { "Dodge", "Victory", "Announce", "SelfHeal", "Walk" }.Select(k => $"{k} {(Fantasia.UI.CharacterMotion.DevPlayed.TryGetValue(k, out int c) ? c : 0)}"))}");
             bool shotOutro = false;
             while (DialoguePanel.IsOpen)
             {
@@ -2264,7 +2270,7 @@ namespace Fantasia.Core
                     step = "retreat";
                     battle.DevRetreat();
                     yield return WaitFor(() => battle.DevAllies.Any(a => a.HasRetreated) || battle.DevAwaitingPlayer, 12f, "퇴각 판정");
-                    if (battle.DevAllies.Any(a => a.HasRetreated)) { yield return BurstTimed("m_retreat", 0.05f, 0.3f, 0.55f); break; }
+                    if (battle.DevAllies.Any(a => a.HasRetreated)) { yield return BurstTimed("m_retreat", 0.1f, 0.5f, 0.85f) /* 11/13 돌기 0.2 + 걸어서 물러남 0.8초 */; break; }
                     continue;
                 }
                 else

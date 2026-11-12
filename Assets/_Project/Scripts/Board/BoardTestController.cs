@@ -282,7 +282,8 @@ namespace Fantasia.Board
         {
             if (_token == null) return;
             var job = Leader?.Job;
-            if (_tokenFigure != null && job == _tokenFigureJob && (job != null || _tokenIsSphere)) return;
+            if (_tokenFigure != null && job == _tokenFigureJob && (job != null || _tokenIsSphere))
+            { Fantasia.UI.HeldWeapon.Show(_tokenFigure, Leader); return; } // 같은 사람이어도 무기는 바뀌었을 수 있음
             if (_tokenFigure != null) DestroySafe(_tokenFigure);
 
             _tokenFigureJob = job;
@@ -306,6 +307,7 @@ namespace Fantasia.Board
             // 칸 클릭(레이캐스트)을 말이 가로막지 않게 충돌체 제거
             foreach (var col in _tokenFigure.GetComponentsInChildren<Collider>(true)) DestroySafe(col);
             if (!_tokenIsSphere) Fantasia.UI.BlobShadow.Attach(_tokenFigure, _tokenFigureHeight); // 발밑 흐린 그림자 (11/10 기획 1A)
+            Fantasia.UI.HeldWeapon.Show(_tokenFigure, Leader); // 11/13 장착 무기 종류에 맞는 소품만
         }
 
         private static void DestroySafe(Object o)
@@ -520,6 +522,8 @@ namespace Fantasia.Board
         {
             _isMoving = true;
             _dice.Dock(); // 11/12: 칸을 고르면 주사위는 오른쪽으로 (이번 턴 동안 눈을 보여 줌)
+            var walker = Fantasia.UI.CharacterMotion.Of(_tokenFigure); // 11/13 N9 걷기 모션
+            if (walker != null) walker.SetWalking(true);
 
             foreach (var coord in path)
             {
@@ -539,6 +543,7 @@ namespace Fantasia.Board
             }
 
             _isMoving = false;
+            if (walker != null) walker.SetWalking(false);
             _dice.Hide(); // 11/12: 도착하면 오른쪽 주사위도 치움 (조우·이벤트 창과 겹치지 않게)
             BoardSession.Instance.PlayerPosition = _currentCoord;
             BoardSession.Instance.LastSafeCoord = _lastSafeCoord;
