@@ -156,7 +156,7 @@ namespace Fantasia.UI
             ApplyTurnLook(card, active);
             card.Border.color = active ? BorderActive : BorderNormal;
             if (UGUIKit.SetPlateTint(card.Plate, Color.white)) /* 어둡게는 TurnDim이 카드 전체에 */ card.Border.color = active ? new Color(BorderActive.r, BorderActive.g, BorderActive.b, 0.9f) : new Color(0f, 0f, 0f, 0f); // 판 그림이면 지금 차례만 금 테두리
-            card.Portrait.Set(m.Job.Portrait, PortraitStudio.TextureFor(m.Job));
+            card.Portrait.Set(m.Job.CardArt, PortraitStudio.TextureFor(m.Job));
             card.Status.gameObject.SetActive(active && !string.IsNullOrEmpty(_statusText));
             card.Status.text = _statusText;
             card.Portrait.SetHighlighted(active);

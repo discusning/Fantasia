@@ -275,7 +275,7 @@ namespace Fantasia.UI
                 if (!has) continue;
 
                 var unit = entries[idx].Unit;
-                slot.Portrait.texture = PortraitStudio.TextureFor(unit.Definition);
+                slot.Portrait.texture = PortraitStudio.FaceFor(unit.Definition);
                 bool predicted = entries[idx].Round != currentRound;
                 slot.IsAlly = unit.IsAlly;
                 slot.Predicted = predicted;
@@ -387,7 +387,7 @@ namespace Fantasia.UI
                 if (bar.Unit == null) continue;
 
                 var e = bar.Unit.Enemy;
-                bar.Portrait.texture = PortraitStudio.TextureFor(e);
+                bar.Portrait.texture = PortraitStudio.FaceFor(e);
                 bar.Name.text = bar.Unit.DisplayName;
                 bar.Badge.text = $"{SizeLabel(e.Size)} · {e.SlotCount}슬롯";
 

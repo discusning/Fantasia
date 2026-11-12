@@ -137,7 +137,7 @@ namespace Fantasia.UI
             {
                 var job = _chosen[i];
                 var (portrait, name, body) = _cards[i];
-                portrait.Set(job != null ? job.Portrait : null, job != null ? PortraitStudio.TextureFor(job) : null);
+                portrait.Set(job != null ? job.CardArt : null, job != null ? PortraitStudio.TextureFor(job) : null);
                 name.text = job != null ? job.DisplayName : "—";
                 body.text = job == null ? "" : string.Join("\n",
                     job.Role,

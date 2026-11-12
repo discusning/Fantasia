@@ -19,6 +19,8 @@ namespace Fantasia.Data
         public GameObject Model;
         // 2D 초상 그림 — 넣으면 3D보다 우선. 조우 창 마름모 안에도 이 그림이 들어간다.
         public Sprite Portrait;
+        // 11/12: 전투 순서 띠·적 카드 얼굴 칸 (정사각). 비우면 3D 모델 렌더
+        public Sprite Face;
 
         [Header("전투 수치")]
         public int MaxHP;

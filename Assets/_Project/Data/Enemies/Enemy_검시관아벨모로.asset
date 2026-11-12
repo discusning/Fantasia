@@ -18,6 +18,7 @@ MonoBehaviour:
   TypeTag: "\uC778\uAC04\uD615"
   Model: {fileID: 7279083587621027413, guid: 3eae5e7749ecb8a40a7ce984dfe66752, type: 3}
   Portrait: {fileID: 0}
+  Face: {fileID: 21300000, guid: 41139df3449eb654b8ab615fd07911ed, type: 3}
   MaxHP: 300
   Speed: 58
   PhysicalAttack: 24

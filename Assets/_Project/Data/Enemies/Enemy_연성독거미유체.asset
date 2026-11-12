@@ -18,6 +18,7 @@ MonoBehaviour:
   TypeTag: "\uD0A4\uBA54\uB77C\uD615"
   Model: {fileID: 2528467955017434554, guid: 059ab9d2744abfa4ba7268774e80aa74, type: 3}
   Portrait: {fileID: 0}
+  Face: {fileID: 0}
   MaxHP: 36
   Speed: 44
   PhysicalAttack: 0

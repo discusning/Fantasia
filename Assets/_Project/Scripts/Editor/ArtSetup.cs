@@ -303,6 +303,15 @@ namespace Fantasia.Editor
             ("Cobble", Root + "/Props/Prop_Cobble/Prop_Cobble.fbx", true, -4f),
             ("WallLamp", Root + "/Props/Prop_WallLamp/Prop_WallLamp.fbx", true, 1.1f),
             ("StreetLamp", Root + "/Props/Prop_StreetLamp/Prop_StreetLamp.fbx", true, 3.8f),
+            // 11/13 C2 폐검시소 (아벨 모로전) 받은 8종. 검시대·시체는 길이(음수)로, 시체는 검시대 위에 올림 (BattleScenery.Morgue)
+            ("Morgue_Table", Root + "/Props/Prop_Morgue_Table/Prop_Morgue_Table.fbx", true, -2.3f),
+            ("Morgue_Corpse", Root + "/Props/Prop_Morgue_Corpse/Prop_Morgue_Corpse.fbx", true, -1.8f),
+            ("Morgue_Skeleton", Root + "/Props/Prop_Morgue_Skeleton/Prop_Morgue_Skeleton.fbx", true, 1.9f),
+            ("Morgue_Cabinet", Root + "/Props/Prop_Morgue_Cabinet/Prop_Morgue_Cabinet.fbx", true, 2.1f),
+            ("Morgue_Desk", Root + "/Props/Prop_Morgue_Desk/Prop_Morgue_Desk.fbx", true, 1.0f),
+            ("Morgue_Basin", Root + "/Props/Prop_Morgue_Basin/Prop_Morgue_Basin.fbx", true, 0.85f),
+            ("Morgue_Door", Root + "/Props/Prop_Morgue_Door/Prop_Morgue_Door.fbx", true, 2.7f),
+            ("Morgue_Screen", Root + "/Props/Prop_Morgue_Screen/Prop_Morgue_Screen.fbx", true, 1.8f),
         };
 
         private static void BuildBattlePrefabs(List<string> report)

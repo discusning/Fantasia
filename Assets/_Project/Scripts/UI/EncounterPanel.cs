@@ -495,7 +495,7 @@ namespace Fantasia.UI
                 bool has = i < groups.Count;
                 _compositionRows[i].root.SetActive(has);
                 if (!has) continue;
-                _compositionRows[i].portrait.texture = PortraitStudio.TextureFor(groups[i].enemy);
+                _compositionRows[i].portrait.texture = PortraitStudio.FaceFor(groups[i].enemy);
                 _compositionRows[i].name.text = $"{groups[i].enemy.DisplayName}  <color=#D9B45A><b>×{groups[i].count}</b></color>";
             }
             LayoutModels(groups.Select(g => g.enemy));

@@ -141,7 +141,7 @@ namespace Fantasia.UI
                           + $"HP {_member.CurrentHP}/{_member.MaxHP}  MP {(_member.MaxMP > 0 ? $"{_member.CurrentMP}/{_member.MaxMP}" : "없음")}  집중 {_member.CurrentFocus}/{_member.MaxFocus}";
             _levelLine.text = _member.Level >= PartyMember.MaxLevel ? $"Lv {_member.Level} (최대)" : $"Lv {_member.Level}  ·  EXP {_member.Experience}/{_member.ExperienceToNextLevel}";
             _cent.text = $"{_party.Cent} Cent";
-            _portrait.Set(_member.Job.Portrait, PortraitStudio.TextureFor(_member.Job));
+            _portrait.Set(_member.Job.CardArt, PortraitStudio.TextureFor(_member.Job));
 
             foreach (GearSlot slot in Enum.GetValues(typeof(GearSlot)))
             {

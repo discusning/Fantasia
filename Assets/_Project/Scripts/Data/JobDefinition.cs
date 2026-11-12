@@ -21,6 +21,9 @@ namespace Fantasia.Data
         // 2D 초상 그림이 따로 생기면 여기에 — 넣으면 3D 모델보다 우선한다.
         // Texture Type을 Sprite (2D and UI)로 임포트할 것.
         public Sprite Portrait;
+        // 11/12 D9: 카드·순서 띠·가방 같은 정사각 얼굴 칸용 (Portrait 3:4에서 얼굴만 자른 그림). 비우면 Portrait → 3D 모델 순
+        public Sprite Face;
+        public Sprite CardArt => Face != null ? Face : Portrait;
         // 직업 아이콘 (Z20~Z22) — 파티 카드 이름 앞, 파티 구성. 비우면 글자만.
         public Sprite Icon;
 

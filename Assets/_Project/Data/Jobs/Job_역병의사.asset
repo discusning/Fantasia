@@ -16,7 +16,8 @@ MonoBehaviour:
   DisplayName: "\uC5ED\uBCD1 \uC758\uC0AC"
   Role: "\uCE58\uB8CC\xB7\uD574\uB3C5\xB7\uB9C8\uBC95 \uC9C0\uC6D0"
   Model: {fileID: 1332155180439408954, guid: 9c1438bd78d919441bfe03845c51bb98, type: 3}
-  Portrait: {fileID: 0}
+  Portrait: {fileID: 21300000, guid: 8b851392b8f242048acb46d1f613bd5f, type: 3}
+  Face: {fileID: 21300000, guid: ade21653d0534194b8467bf328769184, type: 3}
   Icon: {fileID: 21300000, guid: 8aa64f6463c992942a77a63f18a85d6a, type: 3}
   StartingHP: 132
   StartingMP: 132

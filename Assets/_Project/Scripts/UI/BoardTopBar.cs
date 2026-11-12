@@ -71,7 +71,7 @@ namespace Fantasia.UI
             _leaderName.text = session != null && !string.IsNullOrEmpty(session.PlayerName) ? session.PlayerName : Fantasia.Core.BoardSession.DefaultPlayerName;
             if (leader != null)
             {
-                _leaderPortrait.Set(leader.Job.Portrait, PortraitStudio.TextureFor(leader.Job));
+                _leaderPortrait.Set(leader.Job.CardArt, PortraitStudio.TextureFor(leader.Job));
                 _leaderRole.text = $"{leader.Job.DisplayName} · 파티장";
             }
 

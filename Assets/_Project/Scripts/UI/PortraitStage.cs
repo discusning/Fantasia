@@ -82,6 +82,18 @@ namespace Fantasia.UI
         private static PortraitStudio _instance;
         private readonly Dictionary<ScriptableObject, PortraitStage> _stages = new();
 
+        // 11/12 D9: 그린 얼굴 그림이 있으면 그것 (RawImage 칸용), 없으면 3D 모델 렌더
+        public static Texture FaceFor(ScriptableObject definition)
+        {
+            Sprite face = definition switch
+            {
+                Fantasia.Data.JobDefinition j => j.CardArt,
+                Fantasia.Data.EnemyDefinition e => e.Face,
+                _ => null,
+            };
+            return face != null ? face.texture : TextureFor(definition);
+        }
+
         public static Texture TextureFor(ScriptableObject definition)
         {
             if (definition == null) return null;

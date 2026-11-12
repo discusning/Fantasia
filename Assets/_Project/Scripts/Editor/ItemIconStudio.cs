@@ -20,7 +20,7 @@ namespace Fantasia.Editor
         private const string EvidenceDir = "Assets/_Project/Resources/EvidenceIcons";
         private const int Size = 256, Render = 512;
 
-        private enum Kind { Consumable, Armor, Evidence }
+        private enum Kind { Consumable, Armor, Evidence, Preview }
 
         // id = 모델 폴더 Item_<id> 이름 = 데이터 파일 이름 뒷부분. yaw·tilt·roll: 모델마다 보기 좋은 방향 (도). tilt는 앞으로 숙임.
         private static readonly (string id, Kind kind, float yaw, float tilt, float roll)[] Items =
@@ -40,6 +40,7 @@ namespace Fantasia.Editor
             ("생명의영약", Kind.Consumable, 25f, 0f, 0f),
             ("마력의영약", Kind.Consumable, 25f, 0f, -25f),
             ("해독제", Kind.Consumable, 25f, 0f, 0f),
+            ("압박붕대", Kind.Consumable, 25f, 0f, 0f) /* 11/12 받음 (D1) */,
             ("텔레포트권", Kind.Consumable, 25f, 0f, 0f),
             ("마리의집문서", Kind.Consumable, 25f, 0f, 0f),
             ("인부의두꺼운코트", Kind.Armor, 25f, 0f, 0f),
@@ -120,7 +121,7 @@ namespace Fantasia.Editor
                 AddOutline(tex);
                 tex.Apply();
 
-                string outPath = item.kind == Kind.Evidence ? $"{EvidenceDir}/Icon_{item.id}.png" : $"{IconDir}/Icon_{item.id}.png";
+                string outPath = item.kind == Kind.Preview ? $"Logs/preview_{item.id}.png" : item.kind == Kind.Evidence ? $"{EvidenceDir}/Icon_{item.id}.png" : $"{IconDir}/Icon_{item.id}.png";
                 File.WriteAllBytes(outPath, tex.EncodeToPNG());
                 sheet.Add(tex);
                 Object.DestroyImmediate(go);
@@ -132,6 +133,7 @@ namespace Fantasia.Editor
             foreach (var item in Items)
             {
                 if (only != null && !only.Contains(item.id)) continue;
+                if (item.kind == Kind.Preview) continue;
                 string path = item.kind == Kind.Evidence ? $"{EvidenceDir}/Icon_{item.id}.png" : $"{IconDir}/Icon_{item.id}.png";
                 ImportAsSprite(path);
                 Assign(item.id, item.kind, path, report);
