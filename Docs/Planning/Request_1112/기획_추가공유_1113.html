@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>기획 추가 공유 11/13</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body{font-size:14px;line-height:1.7}
+h1{font-size:26px}
+.one{font-size:16px;border:3px solid #6b1e1e;background:#fbf5f2;padding:13px 16px;margin:12px 0;line-height:1.8}
+.card{border:1px solid #ccc;border-left:6px solid #6b1e1e;padding:11px 14px;margin:12px 0;page-break-inside:avoid}
+.card.ask{border-left-color:#b01e1e;background:#fffaf8}
+.card.info{border-left-color:#1d6a2a}
+.card h3{font-size:16px;margin:0 0 6px}
+.n{display:inline-block;min-width:26px;text-align:center;background:#6b1e1e;color:#fff;font-weight:bold;border-radius:4px;padding:0 6px;margin-right:6px}
+.ask .n{background:#b01e1e}.info .n{background:#1d6a2a}
+.q{background:#fff3f0;border:2px solid #b01e1e;border-radius:6px;padding:7px 10px;margin-top:8px;font-weight:bold}
+.chk{margin-top:6px;padding:5px 9px;background:#f6f6f6;border:1px dashed #aaa;font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+td,th{font-size:13.5px;padding:7px 9px}
+</style></head><body>
+
+<h1>기획 추가 공유: 11/12 검수자료 뒤에 바뀐 것</h1>
+<div class="sub">2026-11-13 · 개발 최동환 → 기획 · <b>11/15 검수 때 같이 봐 주세요</b></div>
+
+<div class="one">
+어제 보낸 <b>요청서(Q1~Q6)</b>와 <b>검수자료(R1~R21)</b>는 그대로예요. 이 문서는 그 <b>뒤에 새로 바뀐 것만</b> 모았어요.<br>
+<b>빨간 카드 3개</b>는 기획 의견이 필요해요. <b>초록 카드</b>는 알려 드리는 것이라 보고 OK만 해 주세요.
+</div>
+
+<h2>한눈에 보기</h2>
+<table>
+<tr><th style="width:7%">번호</th><th>무엇</th><th style="width:22%">필요한 것</th></tr>
+<tr><td>A1</td><td>걷기 모션 넣음 (보드 이동 · 전투 퇴각)</td><td><b style="color:#b01e1e">의견 필요</b></td></tr>
+<tr><td>A2</td><td>손에 무기 들기 · 장착 무기에 따라 바뀜</td><td><b style="color:#b01e1e">의견 필요</b></td></tr>
+<tr><td>A3</td><td>아벨 보스전 배경 "폐검시소" + 핏자국</td><td><b style="color:#b01e1e">의견 필요</b></td></tr>
+<tr><td>B1</td><td>아군 초상화 · 아벨 얼굴 새 그림</td><td>확인만</td></tr>
+<tr><td>B2</td><td>효과음 빠진 곳 채움</td><td>확인만</td></tr>
+<tr><td>B3</td><td>마리의 집문서 아이콘 고침</td><td>확인만</td></tr>
+</table>
+
+<h2 class="brk">의견이 필요한 것</h2>
+
+<div class="card ask"><h3><span class="n">A1</span>걷기 모션을 넣었어요</h3>
+<div class="two">
+<figure><img src="img/P_걷기.jpg"><figcaption>보드: 칸을 옮길 때 걸어감</figcaption></figure>
+<figure><img src="img/P_퇴각.jpg"><figcaption>전투 퇴각: 돌아서서 걸어 나감</figcaption></figure>
+</div>
+<ul>
+<li><b>보드:</b> 말이 칸을 옮기는 동안만 걸어요. 멈추면 서 있어요.</li>
+<li><b>전투 퇴각:</b> 돌아서서 걸어 나간 뒤 사라져요. 걸음이 보이게 0.5초 → <b>0.8초</b>로 늘렸어요.</li>
+<li><b>왜:</b> 디자인이 걷기를 미리 보내 줬어요. 미끄러지던 말보다 자연스러워서 팀장 판단으로 넣었어요.</li>
+</ul>
+<div class="q">❓ 예전 기획 결정 "1막은 서 있는 자세로 이동"(3-2 A)과 달라요. 걷기로 바꿔도 될까요?</div>
+<div class="chk">☐ 걷기 OK &nbsp;&nbsp; ☐ 예전처럼 서서 이동 (개발이 바로 끌 수 있어요) &nbsp;&nbsp; ☐ 퇴각만 걷기</div>
+</div>
+
+<div class="card ask"><h3><span class="n">A2</span>캐릭터가 손에 무기를 들어요</h3>
+<figure><img class="half" src="img/P_무기.jpg"><figcaption>전투 화면: 저격수 권총 · 명탐정 단검</figcaption></figure>
+<table>
+<tr><th style="width:22%">누구</th><th>처음 든 것</th><th style="width:38%">바뀌는 것 (장착하면)</th></tr>
+<tr><td>명탐정</td><td>단검</td><td>검·대검 → 빈손 (모델 없음)</td></tr>
+<tr><td>역병 의사</td><td>지팡이</td><td>마법서</td></tr>
+<tr><td>저격수</td><td>권총</td><td>장총 · 활은 빈손</td></tr>
+<tr><td>아벨 모로</td><td>메스 · 수은병</td><td>(적이라 그대로)</td></tr>
+</table>
+<ul>
+<li><b>규칙:</b> 장착한 무기의 <b>종류</b>로 모양이 정해져요. 같은 종류면 이름이 달라도 같은 모양이에요.</li>
+<li><b>지금 상태:</b> 손가락이 펴져 있어서 무기가 손에 <b>떠 보여요</b>. 디자인에 "쥔 손으로 다시" 요청했어요 (11/16까지).</li>
+</ul>
+<div class="q">❓ ① 위 규칙(종류별 모양, 모델 없으면 빈손) 괜찮을까요?<br>❓ ② 디자인 수정본이 오기 전 11/15 검수 때는 무기를 숨길까요, 보여 줄까요?</div>
+<div class="chk">① ☐ OK ☐ 다르게: ________ &nbsp;&nbsp; ② ☐ 숨김 ☐ 보여 줌</div>
+</div>
+
+<div class="card ask"><h3><span class="n">A3</span>아벨 보스전 배경: 폐검시소 + 핏자국</h3>
+<figure><img src="img/P_폐검시소지금.jpg"><figcaption>아벨 모로 보스전 (예전엔 빈 바닥)</figcaption></figure>
+<ul>
+<li>받은 구조물 8종으로 버려진 검시소를 꾸몄어요: 검시대 6개(시체 4) · 약품장 · 해골 모형 · 세척대 · 문 · 가림막 · 돌벽 · 돌바닥.</li>
+<li>검시대 위에 차가운 등 4개. 나머지는 어둡게.</li>
+<li><b>핏자국:</b> 팀장 지시로 "과하지 않게" 검시대 둘레 6곳만. 마른 검붉은 색이에요.</li>
+</ul>
+<figure><img class="half" src="img/P_핏자국.jpg"><figcaption>핏자국 확대</figcaption></figure>
+<div class="q">❓ 핏자국 정도가 게임 분위기·이용 등급에 맞나요?</div>
+<div class="chk">☐ 이대로 OK &nbsp;&nbsp; ☐ 더 줄이기 &nbsp;&nbsp; ☐ 빼기 &nbsp;&nbsp; ☐ 배경 자체 다르게: ________</div>
+</div>
+
+<h2 class="brk">알려 드리는 것 (확인만)</h2>
+
+<div class="card info"><h3><span class="n">B1</span>아군 초상화 · 아벨 얼굴 새 그림</h3>
+<figure><img src="img/P_초상화.jpg"><figcaption>파티 구성 · 보드 · 전투 · 대화 모두 새 그림</figcaption></figure>
+<ul>
+<li>디자인이 그린 3명 초상화를 넣었어요. 카드·순서 띠·가방은 얼굴 부분만 잘라 써요.</li>
+<li>아벨 모로 적 칸·순서 띠 얼굴은 대화 초상(상처 덜한 대체본)에서 잘랐어요.</li>
+<li>명탐정 그림은 "일단 넣어 보고 판단" 중이에요 (팀장).</li>
+</ul>
+<figure><img src="img/P_아벨칸.jpg"><figcaption>순서 띠·적 칸의 아벨 얼굴</figcaption></figure>
+<div class="chk">☐ 확인함 &nbsp;&nbsp; 의견: ______________________</div>
+</div>
+
+<div class="card info"><h3><span class="n">B2</span>효과음 빠진 곳 채움</h3>
+<table>
+<tr><th style="width:26%">소리</th><th style="width:30%">전</th><th>지금</th></tr>
+<tr><td>버튼 클릭</td><td>거의 다 소리 없음 (2곳만)</td><td><b>모든 버튼</b></td></tr>
+<tr><td>창 열기·닫기</td><td>가방 · 상점만</td><td>+ 사건 기록 · 일시정지 메뉴 · 설정</td></tr>
+<tr><td>동전</td><td>상점만</td><td>+ 점술마녀 참가비</td></tr>
+</table>
+<p class="small">효과음 18종 모두 게임에서 소리 나는 것 확인했어요.</p>
+<div class="chk">☐ 확인함</div>
+</div>
+
+<div class="card info"><h3><span class="n">B3</span>마리의 집문서 아이콘 고침</h3>
+<div style="display:grid;grid-template-columns:1fr 1.3fr;gap:12px;align-items:center">
+<figure style="margin:0"><img src="img/P_집문서.jpg"></figure>
+<div>왼쪽 전 · 오른쪽 지금.<br>아래로 접힌 종이가 안 보여서 점만 떠 있었어요. 개발이 고쳤어요.</div>
+</div>
+<div class="chk">☐ 확인함</div>
+</div>
+
+<h2>답하는 법</h2>
+<div class="chk" style="font-size:14px;padding:10px">
+번호 + 고른 것만 보내 주세요. 예) "A1 걷기 OK, A2 ① OK ② 숨김, A3 이대로"<br>
+<b>11/15 검수 때까지 답이 없으면</b> A1 걷기 유지 · A2 규칙 유지·검수 때 보여 줌 · A3 이대로 진행할게요.
+</div>
+
+</body></html>
