@@ -258,6 +258,7 @@ namespace Fantasia.UI
                 card.Main.text = "";
                 card.Body.text = card == _equippedCard ? "장착한 장비 없음" : "목록에서 장비나 소모품을 고르세요";
                 SetCardIcon(card, null);
+                CenterEmptyText(card);
                 card.Footer.text = "";
                 return;
             }

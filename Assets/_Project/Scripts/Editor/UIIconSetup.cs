@@ -42,7 +42,10 @@ namespace Fantasia.Editor
             theme.HubMarker = S("Z23"); theme.HoundMarker = S("Z24"); theme.BossMarker = S("Z25");
             theme.EnemyMarker = S("Z19"); // 공용 적 표식 — 새 그림이 오면 그 파일로 바꿀 것 (UI 솔루션 Q7)
             theme.RecoveryMarker = S("Z26"); theme.EventMarker = S("Z27"); theme.ExitMarker = S("Z28");
-            theme.FocusPip = S("Z29"); theme.FocusPipEmpty = S("Z30");
+            // 11/13 팀장: 집중 칸은 새 그림 — 활성화(붉은 보석) = 집중 있음·쓰기로 고름, 비활성화(금 테두리) = 없음·안 고름. 예전 Z29·Z30은 그림 없을 때만
+            MainMenuImport(Dir + "Focus_집중_활성화.png", transparent: true);
+            MainMenuImport(Dir + "Focus_집중_비활성화.png", transparent: true);
+            theme.FocusPip = A(Dir + "Focus_집중_활성화.png") ?? S("Z29"); theme.FocusPipEmpty = A(Dir + "Focus_집중_비활성화.png") ?? S("Z30");
             theme.ObjectiveOpen = S("Z33"); theme.ObjectiveDone = S("Z34");
             theme.QuickSlotFrame = S("Z35"); theme.QuickSlotSelected = S("Z36");
             theme.LevelBadge = A(Dir + "N22_레벨_원.png") ?? S("Z37"); // 11/11 받은 청동 원 (팀장: 레벨 UI)

@@ -429,10 +429,10 @@ namespace Fantasia.UI
             _nameText.color = TextLight;
             _nameText.fontStyle = FontStyle.Bold;
 
-            _statsText = UGUIKit.CreateText(card, "Stats", new Vector2(0.04f, 0.76f), new Vector2(0.96f, 0.86f), "", 11, TextAnchor.MiddleCenter);
+            _statsText = UGUIKit.CreateText(card, "Stats", new Vector2(0.04f, 0.76f), new Vector2(0.96f, 0.86f), "", 11, TextAnchor.MiddleLeft); // 11/13 정렬: 한 줄 정보 왼쪽
             _statsText.color = TextDim;
 
-            _descriptionText = UGUIKit.CreateText(card, "Description", new Vector2(0.05f, 0.58f), new Vector2(0.95f, 0.76f), "", 12, TextAnchor.MiddleCenter);
+            _descriptionText = UGUIKit.CreateText(card, "Description", new Vector2(0.04f, 0.58f), new Vector2(0.96f, 0.76f), "", 12, TextAnchor.UpperLeft); // 11/13 정렬: 설명 왼쪽 위
             _descriptionText.color = TextLight;
 
             _slotRow = UGUIKit.CreateRect(card, "SlotRow", new Vector2(0.1f, 0.38f), new Vector2(0.9f, 0.56f));
@@ -449,7 +449,7 @@ namespace Fantasia.UI
                 _buttons[choice] = button;
             }
 
-            _footerText = UGUIKit.CreateText(card, "Footer", new Vector2(0.04f, 0.03f), new Vector2(0.96f, 0.17f), "", 11, TextAnchor.MiddleCenter);
+            _footerText = UGUIKit.CreateText(card, "Footer", new Vector2(0.04f, 0.03f), new Vector2(0.96f, 0.17f), "", 11, TextAnchor.UpperLeft); // 11/13 정렬: 설명 왼쪽 위
             _footerText.resizeTextForBestFit = true; _footerText.resizeTextMinSize = 9; _footerText.resizeTextMaxSize = 12; // 11/11 글자 잘림: 긴 설명
             _footerText.color = TextAccent;
 

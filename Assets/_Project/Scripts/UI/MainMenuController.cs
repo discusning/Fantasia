@@ -27,9 +27,10 @@ namespace Fantasia.UI
         private static readonly Color TextDim = new Color(0.8f, 0.77f, 0.71f); // 11/12 가독성 ②: 갈색 판 위 회색 글이 흐림 → 밝게
 
         // 11/10 기획 회신 01 (A 조정): 메인 메뉴 아래 크레딧 글. 별도 크레딧 창은 1막 이후.
-        // 팀원 이름·역할, ZEN SERIF 출처 문구는 기획이 확인 후 전달 → 받으면 아래 배열에 한 줄씩 추가.
-        private static readonly string[] TeamCredits = { };
-        private static readonly string[] SourceCredits = { "Instrument sounds: GeneralUser GS by S. Christian Collins" };
+        // 11/14 기획 회신 Q1: 순서 기획 → 개발 → 디자인 · 글꼴 출처 ZEN SERIF · ODDATELIER. 이름은 팀장이 11/14 확정.
+        // 11/14: 무료 에셋 출처 (CC0 — 표기 의무는 없지만 밝혀 둠)
+        private static readonly string[] TeamCredits = { "기획 유용우 · 개발 최동환 · 디자인 송재원 · 신지성" };
+        private static readonly string[] SourceCredits = { "Font: ZEN SERIF · ODDATELIER (OA 엔터테인먼트 주식회사)", "Instrument sounds: GeneralUser GS by S. Christian Collins", "Props & nature: Quaternius (CC0)" };
 
         private GameObject _menu, _partySelect, _confirm, _namePanel;
         private InputField _nameInput;

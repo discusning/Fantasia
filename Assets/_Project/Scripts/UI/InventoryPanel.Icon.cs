@@ -42,6 +42,18 @@ namespace Fantasia.UI
                 texts[i].rectTransform.anchorMin = layout[i].min;
                 texts[i].rectTransform.anchorMax = layout[i].max;
             }
+            // 11/13 글자 정렬 기준: 그림이 위에 있는 카드는 그림·이름(머리 3줄) 가운데, 설명은 왼쪽 위. 그림이 없으면 모두 왼쪽.
+            var head = sprite != null ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
+            card.Header.alignment = head; card.Name.alignment = head; card.Main.alignment = head;
+            card.Body.alignment = TextAnchor.UpperLeft;
+        }
+
+        // 빈 카드 문구("장착한 장비 없음" 등)는 카드 정가운데 (11/13 정렬 기준)
+        private static void CenterEmptyText(CardView card)
+        {
+            card.Body.alignment = TextAnchor.MiddleCenter;
+            card.Body.rectTransform.anchorMin = new Vector2(0.04f, 0.1f);
+            card.Body.rectTransform.anchorMax = new Vector2(0.96f, 0.9f);
         }
 
         // 자동 플레이 점검용

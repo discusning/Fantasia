@@ -71,7 +71,10 @@ namespace Fantasia.Combat
             session.PendingBattle = null;
 
             SpawnUnits(session.Party);
-            BattleScenery.Apply(_setup.Enemies.Any(e => ActOneStory.IsActOneBoss(e))); // 11/11 아벨전 조명 · 일반 전투 런던 거리
+            // 11/13 6차: 일반 전투 맵 = 싸운 자리 구역 (이어하기 등으로 모르면 적 이름으로 고정 무작위 — 다시 불러와도 같은 맵)
+            int theme = session.PendingBattleTheme;
+            if (theme < 0) { uint hh = 2166136261; foreach (var e in _setup.Enemies) if (e != null) foreach (char ch in e.Id ?? "") hh = (hh ^ ch) * 16777619; theme = (int)(hh % 3); }
+            BattleScenery.Apply(_setup.Enemies.Any(e => ActOneStory.IsActOneBoss(e)), theme); // 11/11 아벨전 조명 · 일반 전투 맵 3종
 
             _hud = BattleHud.Create();
             _hud.AttackClicked += OnAttackClicked;
@@ -200,7 +203,7 @@ namespace Fantasia.Combat
             {
                 int dot = StatusSet.ClampDamageOverTime(start.Damage, _current.CurrentHP);
                 _current.TakeDamage(dot);
-                _hud.PopText(_camera, ModelTop(_current), $"-{dot}", BattleHud.SlotFailure);
+                _hud.PopText(_camera, ModelTop(_current), $"-{dot}", BattleHud.DamageColor);
                 Log($"{_current.DisplayName} 턴 시작 지속 피해 {dot} ({start.Summary}) · HP {_current.CurrentHP}/{_current.MaxHP}");
             }
             if (!_current.InBattle) { NextTurn(); return; }
@@ -307,7 +310,7 @@ namespace Fantasia.Combat
                     Log($"{boss.DisplayName} [{action.Name}] HP +{healed} · HP {boss.CurrentHP}/{boss.MaxHP}");
                     RefreshBossTelegraph();
                     _hud.ShowNotice($"{boss.DisplayName} [{action.Name}] HP +{healed}", 2f);
-                    _hud.PopText(_camera, ModelTop(boss), $"+{healed}", BattleHud.SlotSuccess);
+                    _hud.PopText(_camera, ModelTop(boss), $"+{healed}", BattleHud.HealColor);
                     _hud.RefreshEnemies(null);
                     yield return new WaitForSeconds(0.7f);
                     break;
@@ -522,7 +525,7 @@ namespace Fantasia.Combat
                     {
                         int dmg = Mathf.Max(0, item.Amount - enemy.Defense().DefenseAgainst(DamageType.Magic));
                         enemy.TakeDamage(dmg);
-                        _hud.PopText(_camera, ModelTop(enemy), dmg.ToString(), BattleHud.SlotSuccess);
+                        _hud.PopText(_camera, ModelTop(enemy), dmg.ToString(), BattleHud.DamageColor);
                         Log($"{user.DisplayName} [{item.DisplayName}] → {enemy.DisplayName}: {dmg} · HP {enemy.CurrentHP}/{enemy.MaxHP}");
                         if (!enemy.IsAlive) KnockDown(enemy);
                         else PlayHitMotion(enemy);
@@ -614,7 +617,8 @@ namespace Fantasia.Combat
             SfxPlayer.Play(SfxIds.Revive);
             StandUp(target);
             Log($"{reviver.DisplayName} → {target.DisplayName} 부활 (LP 1 소모, 남은 LP {target.Member.CurrentLP}) · HP {target.CurrentHP}/{target.MaxHP} · 출혈·중독 제거 — 다음 라운드부터 행동");
-            _hud.PopText(_camera, ModelTop(target), $"부활 +{target.CurrentHP}", BattleHud.SlotSuccess);
+            _hud.PopText(_camera, ModelTop(target), $"부활 +{target.CurrentHP}", BattleHud.HealColor);
+            BattleVfx.Play(BattleVfx.Revive, ModelFeet(target), VfxScale(target)); // 11/13 이펙트 1차
             yield return new WaitForSeconds(1.2f); // 11/11 일어서기 동작(1.5초)이 보이게 0.7 → 1.2
         }
 
@@ -680,14 +684,27 @@ namespace Fantasia.Combat
                     TryCancelBossFollowUp(target, skill);
                     break;
                 case SkillEffect.Heal:
+                {
+                    // 11/13 팀장 지적: 다른 아군 회복 때 모습이 이상함 — 회복 동작은 "약을 아군 쪽으로 내밂"인데 적 쪽을 본 채 내밀었음
+                    // → 다른 아군이면 먼저 그쪽으로 돌아서 내밀고, 끝나면 원래 방향으로
+                    var turnedFrom = target != actor ? TurnToward(actor, target) : null;
+                    if (turnedFrom.HasValue) yield return new WaitForSeconds(TurnTime);
                     if (MotionOf(actor)?.Heal() == true) yield return new WaitForSeconds(CharacterMotion.HealLead); // 11/11 회복 동작 (N1)
                     yield return ResolveHeal(actor, target, skill, useFocus);
+                    if (turnedFrom.HasValue && _models.TryGetValue(actor, out var healerModel)) StartCoroutine(TurnModel(healerModel, turnedFrom.Value));
                     break;
+                }
                 case SkillEffect.Cleanse:
+                {
+                    var turnedFrom = target != actor ? TurnToward(actor, target) : null; // 회복과 같은 동작 → 같은 규칙
+                    if (turnedFrom.HasValue) yield return new WaitForSeconds(TurnTime);
                     if (MotionOf(actor)?.Heal() == true) yield return new WaitForSeconds(CharacterMotion.HealLead);
                     Cleanse(target, skill.CleansedStatuses, skill.DisplayName);
+                    if (SkillVfxKey(skill) is string ck) BattleVfx.Play(ck, ModelFront(target), VfxScale(target)); // 6차: 역병 정화 = 맑은 빛 (몸 앞 — 몸에 묻히지 않게)
                     yield return new WaitForSeconds(0.6f);
+                    if (turnedFrom.HasValue && _models.TryGetValue(actor, out var cleanserModel)) StartCoroutine(TurnModel(cleanserModel, turnedFrom.Value));
                     break;
+                }
                 case SkillEffect.ApplyStatus:
                     if (MotionOf(actor)?.BuffSkill() == true) yield return new WaitForSeconds(CharacterMotion.SkillLead); // 11/11 강화 스킬 동작 (N3)
                     ApplyStatuses(target, skill.AppliedStatuses, 0);
@@ -710,6 +727,7 @@ namespace Fantasia.Combat
             ShieldChanged(_current);
             Log($"{_current.DisplayName} 방어 태세 — 보호막 {AttackResolver.DefendShield} (다음 자기 차례까지)");
             _hud.PopText(_camera, ModelTop(_current), $"방어 태세 · 보호막 {AttackResolver.DefendShield}", new Color(0.95f, 0.96f, 1f));
+            BattleVfx.Play(BattleVfx.Defend, ModelChest(_current), VfxScale(_current)); // 11/13 이펙트 1차
             NextTurn();
         }
 
@@ -877,8 +895,9 @@ namespace Fantasia.Combat
             string result = ResultText(outcome);
             Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus > 0 ? $", 집중 {useFocus}" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             SfxPlayer.Play(outcome.Evaded ? SfxIds.Miss : outcome.IsCritical ? SfxIds.Crit : SfxIds.Hit);
-            _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : Mathf.Max(0, outcome.Damage - absorbed).ToString(), ResultColor(outcome));
+            _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : Mathf.Max(0, outcome.Damage - absorbed).ToString(), ResultColor(outcome), outcome.IsCritical && !outcome.Evaded ? 38 : 30);
             if (outcome.Evaded) MotionOf(target)?.Dodge(); // 11/12 N7 회피: 몸을 옆으로 비킴 (동작 있는 아군만)
+            PlayHitVfx(attacker, target, request, outcome, skill); // 11/13 이펙트 1차 (무기 종류별) · 6차 스킬별
             if (!target.IsAlive) KnockDown(target);
             else if (!outcome.Evaded)
             {
@@ -910,6 +929,10 @@ namespace Fantasia.Combat
             target.Member.Heal(amount);
             SfxPlayer.Play(SfxIds.Heal);
             int healed = target.CurrentHP - before;
+            // 11/13 팀장: 다른 아군 회복이 이상함 — 약을 내민 뒤 정화 판정 창(약 2초)이 끝나야 효과가 나와 동작과 따로 놂
+            // → 회복은 이미 확정이므로 내미는 순간 바로 효과·숫자, 그다음 정화 판정
+            _hud.PopText(_camera, ModelTop(target), $"+{healed}", BattleHud.HealColor);
+            var healKey = SkillVfxKey(skill); BattleVfx.Play(healKey != null && BattleVfx.Has(healKey) ? healKey : BattleVfx.Heal, ModelFeet(target), VfxScale(target)); // 6차: 응급 봉합 = 봉합 원
 
             if (skill.CleanseNeedsFullSuccess && skill.SlotCount > 0)
             {
@@ -924,7 +947,6 @@ namespace Fantasia.Combat
                 Log($"{healer.DisplayName} [{skill.DisplayName}] → {target.DisplayName}: 회복 {healed} · HP {target.CurrentHP}/{target.MaxHP}");
                 yield return new WaitForSeconds(0.4f);
             }
-            _hud.PopText(_camera, ModelTop(target), $"+{healed}", BattleHud.SlotSuccess);
         }
 
         private void Cleanse(BattleUnit target, StatusEffectType[] types, string source)
@@ -958,6 +980,9 @@ namespace Fantasia.Combat
                 if (applied == null) continue;
                 string stacks = applied.Stacks > 1 ? $" ×{applied.Stacks}" : "";
                 _hud.PopText(_camera, ModelTop(target) + Vector3.up * (0.45f * line++), def.DisplayName + stacks, BattleHud.StatusColor);
+                if (StatusAura.IsDebuff(def.Effect)) BattleVfx.Play("Debuff_" + def.Effect, def.Effect is StatusEffectType.DefenseDown or StatusEffectType.WeakBleed ? ModelFront(target) : def.Effect is StatusEffectType.EvasionRevealed ? ModelChest(target) : ModelFeet(target), VfxScale(target)); // 11/13 디버프가 걸리는 순간 (조준·장막·출혈은 가슴, 나머지 발밑)
+                else if (def.Effect is StatusEffectType.AccuracyUp) BattleVfx.Play("Buff_AccuracyUp", ModelTop(target) + Vector3.down * 0.25f, VfxScale(target)); // 11/13 강화: 영점 조정 = 머리 앞 조준선
+                else if (def.Effect is StatusEffectType.SpeedUp) BattleVfx.Play("Buff_SpeedUp", ModelFeet(target), VfxScale(target)); // 신속 = 발밑 빛줄기
                 Log($"  → {target.DisplayName}에게 [{def.DisplayName}{stacks}] (남은 {(applied.RemainingTurns < 0 ? "정화 전까지" : applied.RemainingTurns + "턴")})");
             }
             return line;
@@ -982,7 +1007,7 @@ namespace Fantasia.Combat
             : outcome.IsCritical ? $"크리티컬! {outcome.Damage}" : $"명중 {outcome.Damage}";
 
         private static Color ResultColor(AttackOutcome outcome) =>
-            outcome.Evaded ? BattleHud.SlotFailure : outcome.IsCritical ? BattleHud.CritColor : BattleHud.SlotSuccess;
+            outcome.Evaded ? BattleHud.SlotFailure : outcome.IsCritical ? BattleHud.CritDamageColor : BattleHud.DamageColor; // 11/13 피해 주황 · 크리티컬 붉은 주황
 
         // 쓰러짐 연출. 적은 대상 선택에서 빠지게 콜라이더를 끄고, 아군은 부활 대상으로 클릭할 수 있게 둔다.
         // instant: 전투 시작·이어하기에서 이미 쓰러져 있던 경우 (쓰러지는 움직임 없이 누운 자세로)
@@ -1311,6 +1336,19 @@ namespace Fantasia.Combat
         }
         public void DevSetEnemyHP1(BattleUnit unit) { if (unit != null && !unit.IsAlly && unit.IsAlive) unit.TakeDamage(unit.CurrentHP - 1); }
         public GameObject DevModelOf(BattleUnit unit) => unit != null && _models.TryGetValue(unit, out var m) ? m : null;
+        public Vector3 DevChest(BattleUnit unit) => ModelChest(unit); // 11/13 이펙트 QA
+        public Vector3 DevFeet(BattleUnit unit) => ModelFeet(unit);
+        public Vector3 DevFront(BattleUnit unit) => ModelFront(unit); // 방어력 감소·출혈 자리 (몸 앞)
+        // 11/13 6차 스킬 이펙트 점검: 실제 전투와 같은 자리 규칙(PlaySkillVfx)으로 재생. 회복·정화는 대상 아군
+        public void DevPlaySkillVfx(string id, BattleUnit attacker, BattleUnit target)
+        {
+            var s = ScriptableObject.CreateInstance<SkillDefinition>(); s.Id = id;
+            string key = SkillVfxKey(s);
+            if (id.EndsWith("emergency_suture")) BattleVfx.Play(key, ModelFeet(target), VfxScale(target));
+            else if (id.EndsWith("purge_plague")) BattleVfx.Play(key, ModelFront(target), VfxScale(target));
+            else PlaySkillVfx(s, key, attacker, target);
+        }
+        public Vector3 DevTop(BattleUnit unit) => ModelTop(unit);
 
         public void DevDefend() => OnDefendClicked();
         public void DevPressItem(ConsumableDefinition item) => OnItemChosen(item); // 11/12 아이템만 고르고 대상은 아직 (카드 클릭 점검)
@@ -1489,6 +1527,7 @@ namespace Fantasia.Combat
             model.transform.rotation = Quaternion.LookRotation(facing);
             BlobShadow.Attach(model, height); // 발밑 흐린 그림자 (11/10 기획 1A)
             HeldWeapon.Show(model, unit.Member); // 11/13 아군: 장착 무기 종류에 맞는 소품만 손에
+            StatusAura.Attach(model, unit, height); // 11/13 디버프가 걸려 있는 동안 은은한 둘레 효과
             var col = model.AddComponent<CapsuleCollider>();
             col.height = height;
             col.radius = Mathf.Max(0.4f, height * 0.3f);
@@ -1496,6 +1535,104 @@ namespace Fantasia.Combat
             _models[unit] = model;
             _targets[col] = unit;
         }
+
+        // 11/13 이펙트 1차 — 동작이 무엇인지에 따라 (조사 문서 Docs/Art/VFX_연구_1113):
+        // 총 = 총구 불꽃 + 맞은 자리 연기 · 지팡이·마법서·마법 피해 = 푸른 흰 빛 · 칼·적 공격 = 작은 주황 섬광 · 크리티컬만 조금 크게 · 빗나감 = 발밑 흙먼지
+        // 11/13 팀장 6차: 캐릭터 스킬 컨셉마다 이펙트가 모두 다르게 → Resources/VFX/Skill_{스킬 id 끝}.prefab 이 있으면 맞는 자리에 그걸 씀
+        public static string SkillVfxKey(SkillDefinition skill) => skill == null || string.IsNullOrEmpty(skill.Id) ? null : "Skill_" + skill.Id.Substring(skill.Id.LastIndexOf('.') + 1);
+
+        private void PlayHitVfx(BattleUnit attacker, BattleUnit target, AttackRequest request, AttackOutcome outcome, SkillDefinition skill = null)
+        {
+            var category = attacker != null && attacker.Member != null && attacker.Member.EquippedWeapon != null
+                ? attacker.Member.EquippedWeapon.Category : (WeaponCategory?)null;
+            bool shot = category is WeaponCategory.Pistol or WeaponCategory.Musket or WeaponCategory.Bow;
+            if (shot && category != WeaponCategory.Bow && attacker != null)
+            {
+                var from = ModelChest(attacker);
+                var dir = ModelChest(target) - from; dir.y = 0f;
+                BattleVfx.Play(BattleVfx.Muzzle, from + (dir.sqrMagnitude > 0.01f ? dir.normalized * 0.6f : Vector3.zero));
+            }
+            if (outcome.Evaded) { BattleVfx.Play(BattleVfx.Miss, ModelFeet(target), VfxScale(target)); return; }
+            string skillKey = SkillVfxKey(skill);
+            if (skillKey != null && BattleVfx.Has(skillKey))
+            {
+                PlaySkillVfx(skill, skillKey, attacker, target);
+                if (outcome.IsCritical) BattleVfx.Play(BattleVfx.Crit, ModelFront(target), VfxScale(target) * 0.7f);
+                return;
+            }
+            bool magic = request.Type == DamageType.Magic || (category.HasValue && category.Value.IsMagic());
+            // 11/13 팀장: 크리티컬 불티 터짐은 총에만 어울림 → 근접(칼·발톱·물기) = 베기 궤적, 마법 = 큰 마법 빛
+            if (outcome.IsCritical) { BattleVfx.Play(shot ? BattleVfx.Crit : magic ? BattleVfx.CritMagic : BattleVfx.CritMelee, ModelChest(target), VfxScale(target)); return; }
+            BattleVfx.Play(shot ? BattleVfx.HitShot : magic ? BattleVfx.HitMagic : BattleVfx.Hit, ModelChest(target), VfxScale(target));
+        }
+
+        // 11/13 팀장 6차 "스킬 이펙트 위치도 충분히 고려": 스킬 뜻 + 카메라에서 보이는 자리
+        //  · 몸 가운데(ModelChest)에 두면 몸에 반쯤 묻힘 → 맞는 자리 효과는 몸 앞(카메라 쪽 겉면, ModelFront)
+        //  · 일점 돌파 = 몸 앞 가슴 한 점 · 관통탄 = 앞에 들어간 섬광 + 등 뒤(쏜 쪽 반대)로 빠져나가는 금속 불티
+        //  · 검은 연무 = 발밑에서 안개가 몸을 덮으며 올라옴 · 저지 사격 = 발 바로 앞 땅(쏜 쪽)에 흙이 튐 — 몸에 가리지 않게
+        //  · 크기는 모델 키에 맞춤(VfxScale) — 쥐 같은 작은 적에 사람 크기 효과가 나가지 않게
+        private void PlaySkillVfx(SkillDefinition skill, string key, BattleUnit attacker, BattleUnit target)
+        {
+            float scale = VfxScale(target);
+            float radius = _models.TryGetValue(target, out var tm) && tm.GetComponent<CapsuleCollider>() is { } c ? c.radius : 0.4f;
+            var fromAttacker = attacker != null ? ModelChest(target) - ModelChest(attacker) : Vector3.right; fromAttacker.y = 0f;
+            fromAttacker = fromAttacker.sqrMagnitude > 0.01f ? fromAttacker.normalized : Vector3.right;
+            string id = skill.Id;
+            if (id.EndsWith("black_miasma")) BattleVfx.Play(key, ModelFeet(target), scale);
+            else if (id.EndsWith("suppressing_fire")) BattleVfx.Play(key, ModelFeet(target) - fromAttacker * (radius + 0.25f), scale);
+            else if (id.EndsWith("piercing_round"))
+            {
+                BattleVfx.Play(key, ModelFront(target), scale);
+                var exit = BattleVfx.Play(key + "_exit", ModelChest(target) + fromAttacker * (radius + 0.15f), scale);
+                if (exit != null) exit.transform.rotation = Quaternion.LookRotation(fromAttacker); // 불티가 쏜 방향으로 빠져나감
+            }
+            else BattleVfx.Play(key, ModelFront(target), scale);
+        }
+
+        // 11/13 이펙트 위치: 몸 가운데(맞음·방어) · 발밑(회복·부활)
+        private Vector3 ModelChest(BattleUnit unit)
+        {
+            if (unit == null || !_models.TryGetValue(unit, out var model)) return Vector3.zero;
+            var col = model.GetComponent<CapsuleCollider>();
+            return model.transform.position + Vector3.up * ((col != null ? col.height : 1.8f) * 0.55f);
+        }
+        // 11/13 이펙트 QA: 작은 적(쥐 등)에 사람 크기 효과가 나가 땅에 잘림 → 모델 키에 맞춰 줄임 (사람 1.7m = 1배, 0.5~1.4배)
+        // 11/13 다른 아군에게 쓰는 동작: 그 아군 쪽으로 몸을 돌림 (돌기 전 방향을 돌려줌 — 끝나면 되돌리기용)
+        private const float TurnTime = 0.22f;
+        private Quaternion? TurnToward(BattleUnit actor, BattleUnit target)
+        {
+            if (actor == null || target == null || !_models.TryGetValue(actor, out var model) || !_models.TryGetValue(target, out var other)) return null;
+            var dir = other.transform.position - model.transform.position; dir.y = 0f;
+            if (dir.sqrMagnitude < 0.01f) return null;
+            var from = model.transform.rotation;
+            StartCoroutine(TurnModel(model, Quaternion.LookRotation(dir)));
+            return from;
+        }
+
+        private IEnumerator TurnModel(GameObject model, Quaternion to)
+        {
+            if (model == null) yield break;
+            var from = model.transform.rotation;
+            for (float t = 0f; t < TurnTime && model != null; t += Time.deltaTime)
+            {
+                model.transform.rotation = Quaternion.Slerp(from, to, Mathf.SmoothStep(0f, 1f, t / TurnTime));
+                yield return null;
+            }
+            if (model != null) model.transform.rotation = to;
+        }
+
+        // 11/13 방어 약화: 몸 한가운데면 몸에 묻힘 → 가슴 높이에서 카메라 쪽으로 몸 반지름만큼 앞
+        private Vector3 ModelFront(BattleUnit unit)
+        {
+            var chest = ModelChest(unit);
+            if (_camera == null || !_models.TryGetValue(unit, out var model)) return chest;
+            var col = model.GetComponent<CapsuleCollider>();
+            var toCam = _camera.transform.position - chest; toCam.y = 0f;
+            return chest + toCam.normalized * ((col != null ? col.radius : 0.4f) + 0.1f);
+        }
+        private float VfxScale(BattleUnit unit) => unit != null && _models.TryGetValue(unit, out var model) && model.GetComponent<CapsuleCollider>() is { } c ? Mathf.Clamp(c.height / 1.7f, 0.5f, 1.4f) : 1f;
+        public float DevVfxScale(BattleUnit unit) => VfxScale(unit);
+        private Vector3 ModelFeet(BattleUnit unit) => unit != null && _models.TryGetValue(unit, out var model) ? model.transform.position + Vector3.up * 0.05f : Vector3.zero;
 
         private Vector3 ModelTop(BattleUnit unit)
         {

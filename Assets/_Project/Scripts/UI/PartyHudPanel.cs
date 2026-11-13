@@ -167,7 +167,7 @@ namespace Fantasia.UI
             card.JobIcon.enabled = jobIcon;
             card.JobIcon.sprite = m.Job.Icon;
             card.NameRect.anchorMin = new Vector2(jobIcon ? 0.14f : 0.04f, 0f);
-            card.Lp.text = UITheme.Current.LpIcon != null ? m.CurrentLP.ToString() : $"LP {m.CurrentLP}";
+            card.Lp.text = $"LP {m.CurrentLP}"; // 11/13 팀장: 카드 안 붉은 보석(Z04)은 빼고 글자로;
             card.Statuses.Show(StatusChipRow.EntriesFor(m.Statuses, false));
             card.BigHp.text = m.CurrentHP.ToString();
 
@@ -289,7 +289,7 @@ namespace Fantasia.UI
             card.JobIcon.enabled = false;
             card.Name = MakeText(nameFill, "Name", new Vector2(0.04f, 0f), Vector2.one, 13, TextAnchor.MiddleLeft, TextLight, bold: true);
             card.NameRect = card.Name.rectTransform;
-            bool lpIcon = UGUIKit.CreateIcon(fill, "LpIcon", new Vector2(0.81f, 0.8f), new Vector2(0.88f, 0.98f), theme.LpIcon) != null; // Z04
+            const bool lpIcon = false; // 11/13 팀장: 카드 안 보석 그림 제거 (집중 그림과 헷갈림) // Z04
             card.Lp = MakeText(fill, "LP", new Vector2(lpIcon ? 0.88f : 0.81f, 0.8f), new Vector2(0.98f, 0.98f), lpIcon ? 14 : 12, TextAnchor.MiddleCenter, HpColor, bold: true);
             card.Statuses = new StatusChipRow(fill, "Status", new Vector2(0.56f, 0.815f), new Vector2(0.8f, 0.965f), 3, 8);
 
@@ -359,7 +359,7 @@ namespace Fantasia.UI
                 rt.sizeDelta = new Vector2(11f, 11f);
                 rt.anchoredPosition = new Vector2(f * 17f, 11f);
                 bool pipArt = theme.FocusPip != null && theme.FocusPipEmpty != null; // Z29·Z30 — 칸 그림을 바꿔 끼움
-                if (pipArt) { UITheme.Apply(pip, theme.FocusPipEmpty); rt.sizeDelta = new Vector2(24f, 24f); rt.anchoredPosition = new Vector2(f * 21f, 11f); }
+                if (pipArt) { UITheme.Apply(pip, theme.FocusPipEmpty); pip.preserveAspect = true; rt.sizeDelta = new Vector2(15f, 26f); rt.anchoredPosition = new Vector2(f * 17f, 13f); } // 11/13 새 집중 그림 (세로로 긴 마름모)
                 else if (UITheme.Apply(pip, theme.FocusPip, tint: true)) rt.localRotation = Quaternion.identity;
                 else rt.localRotation = Quaternion.Euler(0f, 0f, 45f);
                 card.FocusPips.Add(pip);

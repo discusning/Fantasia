@@ -35,6 +35,10 @@ namespace Fantasia.UI
         public static readonly Color SlotFailure = new Color(0.7f, 0.25f, 0.25f);
         public static readonly Color CritColor = new Color(1f, 0.8f, 0.3f);
         public static readonly Color StatusColor = new Color(0.75f, 0.5f, 0.95f);
+        // 11/13 팀장 결정: 떠오르는 숫자 색 구분 (예전엔 피해·회복 모두 초록) — 회복 초록 · 일반 피해 주황 · 크리티컬 붉은 주황(조금 크게)
+        public static readonly Color HealColor = SlotSuccess;
+        public static readonly Color DamageColor = new Color(1f, 0.6f, 0.18f);
+        public static readonly Color CritDamageColor = new Color(1f, 0.3f, 0.14f);
 
         // 행동 메뉴 버튼 이벤트 (BattleController가 구독)
         public event Action AttackClicked;
@@ -73,14 +77,36 @@ namespace Fantasia.UI
             FocusChanged?.Invoke();
         }
 
+        private const float FocusGemW = 19f, FocusGemH = 32f, FocusGemGap = 5f;
         private void RefreshFocusPicker()
         {
             if (_focusLabel == null) return;
             int max = _actionActor != null ? _actionActor.Member.CurrentFocus : 0;
-            _focusLabel.text = $"집중 사용\n{FocusCount} / {max}";
-            _focusLabel.color = FocusCount > 0 ? CritColor : TextLight;
-            _focusMinus.interactable = FocusCount > 0;
-            _focusPlus.interactable = FocusCount < max;
+            _focusCountText.text = max > 0 ? $"{FocusCount} / {max}" : "없음";
+            _focusCountText.color = FocusCount > 0 ? CritColor : TextDim;
+            // 가진 집중만큼 보석을 보임: 쓰기로 고른 것 = 활성화, 안 고른 것 = 비활성화
+            var theme = UITheme.Current;
+            // 11/13 팀장: 보석이 칸 밖으로 삐져나옴 → 칸(줄) 크기에 맞춰 보석 크기를 정함 (창 크기·집중 개수가 달라도 안에 들어감)
+            float gemH = FocusGemH, gemW = FocusGemW, gap = FocusGemGap;
+            if (_focusRow != null && _focusRow.rect.height > 1f)
+            {
+                gemH = Mathf.Min(FocusGemH, _focusRow.rect.height * 0.86f);
+                gemW = gemH * (FocusGemW / FocusGemH); gap = gemW * 0.3f;
+                float fit = (_focusRow.rect.width * 0.9f) / Mathf.Max(1f, max * gemW + Mathf.Max(0, max - 1) * gap);
+                if (fit < 1f) { gemH *= fit; gemW *= fit; gap *= fit; }
+            }
+            float total = max * gemW + Mathf.Max(0, max - 1) * gap;
+            for (int i = 0; i < _focusGems.Count; i++)
+            {
+                var gem = _focusGems[i];
+                gem.gameObject.SetActive(i < max);
+                if (i >= max) continue;
+                gem.rectTransform.sizeDelta = new Vector2(gemW, gemH);
+                gem.rectTransform.anchoredPosition = new Vector2(-total / 2f + gemW / 2f + i * (gemW + gap), 0f);
+                bool on = i < FocusCount;
+                if (theme != null && theme.FocusPip != null && theme.FocusPipEmpty != null) { gem.sprite = on ? theme.FocusPip : theme.FocusPipEmpty; gem.color = Color.white; }
+                else gem.color = on ? CritColor : new Color(0.4f, 0.36f, 0.3f);
+            }
         }
 
         private RectTransform _canvasRect;
@@ -114,8 +140,9 @@ namespace Fantasia.UI
         private Text _actorText;
         private Text _hintText;
         private Button _attackButton, _skillButton, _itemButton, _defendButton, _reviveButton, _retreatButton;
-        private Text _focusLabel;
-        private Button _focusMinus, _focusPlus;
+        private Text _focusLabel, _focusCountText;
+        private readonly List<Image> _focusGems = new(); // 11/13 집중 보석 (눌러서 개수 고름)
+        private RectTransform _focusRow;
 
         private GameObject _rollPanel;
         private Text _rollTitle;
@@ -660,9 +687,9 @@ namespace Fantasia.UI
         }
 
         // ───────────── ⑤ 피해 숫자 ─────────────
-        public void PopText(Camera cam, Vector3 worldPos, string text, Color color)
+        public void PopText(Camera cam, Vector3 worldPos, string text, Color color, int size = 30)
         {
-            var label = UGUIKit.CreateText(_canvasRect, "Popup", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), text, 30, TextAnchor.MiddleCenter);
+            var label = UGUIKit.CreateText(_canvasRect, "Popup", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), text, size, TextAnchor.MiddleCenter);
             label.horizontalOverflow = HorizontalWrapMode.Overflow; // 11/11 긴 팝업("방어 태세 · 보호막 8")이 줄바꿈되어 잘림
             label.color = color;
             label.fontStyle = FontStyle.Bold;
@@ -743,6 +770,10 @@ namespace Fantasia.UI
             _resultCard.sizeDelta = new Vector2(470f, 260f);
             _resultCard.anchoredPosition = new Vector2(0f, -(drop.BoardBottom + 6f));
             ApplyResultItems(victory); // 11/12 얻은 아이템 그림·등급 색 띠
+            // 11/13 팀장 지적: 아이템이 있으면 칸이 화면 아래로 넘쳐 끝이 안 보임 → 화면 안(아래 여백 18)에서 끊음
+            float canvasH = _canvasRect != null && _canvasRect.rect.height > 1f ? _canvasRect.rect.height : 720f;
+            float room = canvasH - (drop.BoardBottom + 6f) - 18f;
+            if (_resultCard.sizeDelta.y > room) _resultCard.sizeDelta = new Vector2(_resultCard.sizeDelta.x, Mathf.Max(200f, room));
             _resultCard.gameObject.SetActive(false);
             _shownDrop = drop;
             drop.Play(title, summary);
@@ -1060,17 +1091,40 @@ namespace Fantasia.UI
             if (!_itemPanel.activeSelf) ToggleItems();
         }
 
-        // 집중 사용 개수 고르기 (2026-11-06 변경) — [−] 개수 [+]. 1개당 이번 판정 슬롯 1개를 확정 성공, 집중력 1 소모.
+        // 집중 사용 개수 고르기 (2026-11-06 변경) — 1개당 이번 판정 슬롯 1개를 확정 성공, 집중력 1 소모.
         // 슬롯을 전부 확정하면 크리티컬 확정. 슬롯 수보다 많이 골라도 슬롯 수만큼만 쓴다.
+        // 11/13 팀장: 집중 그림(활성화=붉은 보석·비활성화=금 테두리)을 눌러 고름 — n번째 보석을 누르면 n개, 같은 보석을 다시 누르면 하나 줄임.
+        // 11/13 팀장 2차: 버튼 그림 틀 안에 끼어 답답함 → 얇은 금 테두리 칸, 위 줄 "집중 · 개수", 아래 줄 큰 보석.
         private void BuildFocusPicker(Transform parent, Vector2 min, Vector2 max)
         {
-            var fill = UGUIKit.CreateThemedPanel(parent, "FocusPicker", min, max, Gold, new Color(0.15f, 0.13f, 0.1f), 1.5f, UITheme.Current.Button);
-            _focusMinus = UGUIKit.CreateThemedButton(fill, "FocusMinus", new Vector2(0.03f, 0.15f), new Vector2(0.27f, 0.85f), "−", ButtonFill, 18);
-            _focusPlus = UGUIKit.CreateThemedButton(fill, "FocusPlus", new Vector2(0.73f, 0.15f), new Vector2(0.97f, 0.85f), "+", ButtonFill, 18);
-            foreach (var b in new[] { _focusMinus, _focusPlus }) b.GetComponentInChildren<Text>().color = TextLight;
-            _focusMinus.onClick.AddListener(() => SetFocusCount(FocusCount - 1));
-            _focusPlus.onClick.AddListener(() => SetFocusCount(FocusCount + 1));
-            _focusLabel = Label(fill, "Label", new Vector2(0.27f, 0f), new Vector2(0.73f, 1f), 11, TextAnchor.MiddleCenter, TextLight, bold: true);
+            // 11/13 팀장 3차: 구조는 좋음, 우리 UI(나무) 느낌으로 → 바깥은 다른 판과 같은 나무 테두리 판, 위 줄은 지역 이름 칸의 나무 탭
+            var fill = UGUIKit.CreateThemedPanel(parent, "FocusPicker", min, max, Gold, new Color(0.15f, 0.13f, 0.1f), 1.5f);
+            // 11/13 팀장: 나무 탭 그림(위 장식·주황 테두리 빛)이 글자 뒤를 가려 읽기 어려움 → 어두운 나무색 띠 + 아래 얇은 금선, 글자에 그림자
+            var header = UGUIKit.CreateImage(fill, "Header", new Vector2(0.05f, 0.62f), new Vector2(0.95f, 0.94f), new Color(0.11f, 0.07f, 0.04f, 0.92f));
+            header.raycastTarget = false;
+            var underline = UGUIKit.CreateImage(header.transform, "Underline", new Vector2(0.04f, 0f), new Vector2(0.96f, 0.06f), new Color(Gold.r, Gold.g, Gold.b, 0.6f));
+            underline.raycastTarget = false;
+            _focusLabel = Label(header.transform, "Label", new Vector2(0f, 0f), new Vector2(1f, 1f), 13, TextAnchor.MiddleCenter, Gold, bold: true); // 11/13 팀장: 가운데로
+            _focusLabel.text = "집중";
+            _focusLabel.verticalOverflow = VerticalWrapMode.Overflow; _focusLabel.horizontalOverflow = HorizontalWrapMode.Overflow; // 11/13 팀장: 작은 창에서 칸이 낮아지면 글자가 통째로 숨던 문제
+            _focusCountText = Label(header.transform, "Count", new Vector2(0.5f, 0f), new Vector2(0.92f, 1f), 13, TextAnchor.MiddleRight, TextLight, bold: true);
+            _focusCountText.gameObject.SetActive(false); // 11/13 팀장: "0/3" 숫자는 필요 없음 (보석으로 보임)
+            foreach (var t in new[] { _focusLabel, _focusCountText }) { var sh = t.gameObject.AddComponent<Shadow>(); sh.effectColor = new Color(0f, 0f, 0f, 0.9f); sh.effectDistance = new Vector2(1f, -1f); }
+            var row = UGUIKit.CreateRect(fill, "Gems", new Vector2(0.06f, 0.08f), new Vector2(0.94f, 0.58f));
+            _focusRow = row;
+            _focusGems.Clear();
+            for (int i = 0; i < Fantasia.Data.PartyMember.AbsoluteMaxFocus; i++)
+            {
+                int index = i;
+                var gem = UGUIKit.CreateImage(row, $"Gem{i}", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white);
+                gem.preserveAspect = true;
+                gem.rectTransform.sizeDelta = new Vector2(FocusGemW, FocusGemH);
+                var btn = gem.gameObject.AddComponent<Button>();
+                btn.targetGraphic = gem;
+                var colors = btn.colors; colors.highlightedColor = new Color(1f, 0.92f, 0.75f); colors.pressedColor = new Color(0.8f, 0.75f, 0.7f); btn.colors = colors;
+                btn.onClick.AddListener(() => SetFocusCount(FocusCount == index + 1 ? index : index + 1));
+                _focusGems.Add(gem);
+            }
             RefreshFocusPicker();
         }
 

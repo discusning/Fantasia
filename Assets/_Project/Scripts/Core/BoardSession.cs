@@ -37,6 +37,8 @@ namespace Fantasia.Core
         public Fantasia.Data.Party Party { get; set; }
         // 조우 → 전투 씬으로 넘기는 적 구성·기습 결과. 전투 씬이 읽고 비운다.
         public Fantasia.Combat.BattleSetup PendingBattle { get; set; }
+        // 11/13 팀장 6차: 일반 전투 맵 종류 (0 시장 광장 · 1 주택가 거리 · 2 외곽 공원, -1 = 조우 칸으로 못 정함 → 무작위)
+        public int PendingBattleTheme { get; set; } = -1;
         // 조우 칸에 들어오기 직전 칸 — 전원 퇴각·전원 쓰러짐 뒤 돌아가는 "직전 안전 타일" (D21).
         public HexCoord LastSafeCoord { get; set; }
 

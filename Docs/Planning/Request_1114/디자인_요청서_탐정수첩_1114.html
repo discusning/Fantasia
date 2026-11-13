@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>디자인 요청서 — 탐정 수첩</title>
+<link rel="stylesheet" href="style.css"></head><body>
+
+<h1>디자인 요청서 — 탐정 수첩 (게임 안내 책)</h1>
+<div class="sub">2026-11-14 · 개발 최동환 → 디자인(2D) · <b>11/16(월)까지</b> 받으면 마감 안에 넣을 수 있어요</div>
+
+<div class="box">
+<b>한 줄 요약:</b> 보드 왼쪽에 떠 있는 안내 글을 <b>가죽 수첩 모양 창</b>으로 옮깁니다.<br>
+· 새 창이라 그림이 필요해요. 그림 <b>6가지</b>를 부탁드려요 (3절).<br>
+· 글자는 개발이 게임에서 넣어요. <b>그림에 글자를 넣지 마세요.</b><br>
+· 기획 확인 중인 안이에요. 바뀌면 다시 알려 드릴게요.
+</div>
+
+<div class="box">
+<b>답하는 법:</b> 번호와 날짜만. 예) "T1 11/16", "T3 못 함".
+</div>
+
+<h2>1. 왜 바꾸나요 — 지금 왼쪽 안내는 읽기 어려워요</h2>
+<figure><img src="img/지금_왼쪽안내.png" class="half"><figcaption>지금 보드 왼쪽 안내</figcaption></figure>
+<ul>
+<li>한 판에 14줄이 넘게 섞여 있어요. 주사위·칸 색·규칙·키 안내가 한곳에 있어요.</li>
+<li>글자가 작고, 게임 화면 위에 바로 떠 있어 배경과 섞여요.</li>
+<li>매 턴 바뀌는 것과 한 번만 읽으면 되는 규칙이 같이 있어요.</li>
+</ul>
+
+<h2>2. 바뀐 모습</h2>
+<h3>닫았을 때 — 상태 한 줄 + 수첩 버튼만</h3>
+<figure><img src="img/예시_수첩_닫은모습.png"><figcaption>개발이 그린 배치 예시. 색·모양은 디자인이 정해 주세요.</figcaption></figure>
+
+<h3 class="brk">열었을 때 — 화면 가운데 펼친 수첩</h3>
+<figure><img src="img/예시_수첩_연모습.png"><figcaption>개발이 그린 배치 예시 (회색 칸·글자는 자리만 보여 줌)</figcaption></figure>
+<ul>
+<li>화면의 약 70% 크기. 뒤 화면은 어둡게 가려요.</li>
+<li><b>왼쪽 쪽:</b> 그림 한 장 (게임 사진). <b>오른쪽 쪽:</b> 제목 + 3~5줄 설명.</li>
+<li>왼쪽 가장자리에 <b>책갈피 탭 6개</b>. 누르면 그 쪽으로 넘어가요.</li>
+<li>쪽이 여러 장인 탭은 아래 ◀ ▶ 로 넘겨요 (예: 스킬은 캐릭터마다 한 쪽).</li>
+<li>H 키 · Esc · X 버튼으로 닫아요. 첫 월드 라운드에는 한 번 자동으로 열려요.</li>
+</ul>
+
+<h3>탭 6개와 안에 들어갈 내용</h3>
+<table>
+<tr><th style="width:20%">탭</th><th>내용 (글은 개발이 넣음)</th><th style="width:20%">아이콘 느낌 (예)</th></tr>
+<tr><td>1. 조작</td><td>Space 주사위 · I 가방 · Q 사건 기록 · B 상점 · Esc 메뉴 · 카메라 키</td><td>열쇠 · 손</td></tr>
+<tr><td>2. 보드</td><td>칸 색 6가지(적·보스·거점·이벤트·회복·보물), 이동하는 법</td><td>지도 · 나침반</td></tr>
+<tr><td>3. 전투</td><td>판정 칸 · 치명타 · 집중력 · 방어 · 퇴각</td><td>검 · 주사위</td></tr>
+<tr><td>4. 스킬·상태</td><td>캐릭터마다 스킬 설명 + 그 스킬이 거는 상태(출혈·중독·속박·혼란·방어/공격 감소)를 함께</td><td>펜촉 · 약병</td></tr>
+<tr><td>5. 상점</td><td>거점 칸에서 B로 열기 · 탭(보급품·무기·방어구·서비스·작업대·팔기·의뢰) · 3월드 라운드마다 재고 보충 · 되팔면 40%</td><td>동전 주머니</td></tr>
+<tr><td>6. 피의 사냥·낮밤</td><td>피의 흔적 100 → 피의 사냥, 3월드 라운드 안에 사신 3마리 · 아침/낮/저녁/새벽</td><td>핏방울 + 달</td></tr>
+</table>
+
+<h2 class="brk">3. 필요한 그림 (6가지)</h2>
+<p class="small">공통: 1700년대 영국 탐정의 가죽 수첩 느낌. 지금 게임 창(나무 테두리 · 금빛 장식)과 어울리게. 투명 배경 PNG.</p>
+
+<div class="item"><h3><span class="num">T1</span>펼친 수첩 틀 <span class="tag must">꼭 필요</span> 2D</h3>
+<ul>
+<li>가죽 표지 테두리 + 펼친 종이 두 쪽 + 가운데 접힌 선.</li>
+<li><b>크기:</b> 1600×1000 (가로:세로 약 16:10).</li>
+<li><b>종이는 밝고 깨끗하게.</b> 얼룩·글씨 무늬는 가장자리에만. 가운데에 진한 글자가 잘 읽혀야 해요.</li>
+<li>종이와 표지를 따로 주시면 더 좋아요 (늘려 쓰기 쉬움).</li>
+</ul>
+<div class="ans">답: 날짜 ___</div></div>
+
+<div class="item"><h3><span class="num">T2</span>책갈피 탭 <span class="tag must">꼭 필요</span> 2D</h3>
+<ul>
+<li>수첩 왼쪽 가장자리에 꽂힌 천·가죽 책갈피.</li>
+<li><b>2가지 모양:</b> 기본 · 선택됨 (선택됨은 더 밝거나 붉게, 조금 더 튀어나오게).</li>
+<li><b>크기:</b> 각 220×90. 글자 칸은 비워 주세요 (개발이 "전투" 같은 글을 넣어요).</li>
+</ul>
+<div class="ans">답: 날짜 ___</div></div>
+
+<div class="item"><h3><span class="num">T3</span>탭 아이콘 6개 <span class="tag rec">있으면 좋음</span> 2D</h3>
+<ul>
+<li>위 표의 6개 탭 (조작 · 보드 · 전투 · 스킬·상태 · 상점 · 피의 사냥·낮밤).</li>
+<li><b>크기:</b> 각 128×128. 단색 잉크 느낌이면 충분해요.</li>
+<li>없으면 글자만으로 넣어요.</li>
+</ul>
+<div class="ans">답: 날짜 ___</div></div>
+
+<div class="item"><h3><span class="num">T4</span>그림 칸 액자 <span class="tag opt">시간 남으면</span> 2D</h3>
+<ul>
+<li>왼쪽 쪽에 게임 사진을 붙이는 틀. 사진을 핀·테이프로 붙인 느낌.</li>
+<li><b>크기:</b> 600×400, 가운데는 투명.</li>
+<li>없으면 개발이 얇은 선으로 둘러요.</li>
+</ul>
+<div class="ans">답: 날짜 ___</div></div>
+
+<div class="item"><h3><span class="num">T5</span>닫기 · 쪽 넘김 버튼 <span class="tag rec">있으면 좋음</span> 2D</h3>
+<ul>
+<li>닫기(X) 1개 + 왼쪽·오른쪽 화살표 1쌍. 밀랍 도장 · 잉크 화살표 느낌.</li>
+<li><b>크기:</b> 각 96×96.</li>
+</ul>
+<div class="ans">답: 날짜 ___</div></div>
+
+<div class="item"><h3><span class="num">T6</span>화면 수첩 버튼 아이콘 <span class="tag must">꼭 필요</span> 2D</h3>
+<ul>
+<li>보드 왼쪽에 늘 보이는 작은 버튼 속 수첩 그림 (닫은 가죽 수첩).</li>
+<li><b>크기:</b> 128×128.</li>
+</ul>
+<div class="ans">답: 날짜 ___</div></div>
+
+<h2>4. 안 오면 어떻게 하나요</h2>
+<ul>
+<li>11/16까지 안 오면 개발이 지금 나무 창 그림으로 임시 수첩을 만들어 넣어요.</li>
+<li>나중에 그림이 오면 바꿔 끼우기만 하면 돼요.</li>
+</ul>
+
+</body></html>

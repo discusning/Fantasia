@@ -257,6 +257,8 @@ namespace Fantasia.UI
             nameRt.anchorMin = new Vector2(0.05f, icon != null ? 0.58f : 0.86f);
             nameRt.anchorMax = new Vector2(0.95f, icon != null ? 0.68f : 0.98f);
             bodyRt.anchorMax = new Vector2(0.95f, icon != null ? 0.57f : 0.85f);
+            _detailName.alignment = icon != null ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft; // 11/13 정렬 기준: 그림 아래 이름은 가운데
+            _detailBody.alignment = o == null ? TextAnchor.MiddleCenter : TextAnchor.UpperLeft;      // 고른 것 없을 때 안내 문구는 정가운데
             ShowCompare(o);
             ShowTargets(o as ShopService?);
             _detailName.color = o != null ? NameColorOf(o) : TextLight; // 11/12 등급 색

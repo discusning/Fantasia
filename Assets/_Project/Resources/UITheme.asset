@@ -24,7 +24,7 @@ MonoBehaviour:
   MainLogo: {fileID: 21300000, guid: 1cbce72a9c8790144ba1deb8b4992c96, type: 3}
   MainBackground: {fileID: 21300000, guid: 2b55ca3e0d339d64daead6e9249626cf, type: 3}
   SlotIcon: {fileID: 21300000, guid: 2591a8a2106a2d346a4e2d8f76fd0988, type: 3}
-  FocusPip: {fileID: 21300000, guid: 541174e905c849345a001dc5a835c765, type: 3}
+  FocusPip: {fileID: 21300000, guid: 7c52ca386ec177043b3222dc7f73a78b, type: 3}
   PortraitFrame: {fileID: 0}
   TimelineFrame: {fileID: 21300000, guid: 0363c82d346aa194b9f7ad02ef080889, type: 3}
   TimelineSlot: {fileID: 21300000, guid: 9d0a0f34bdc28734bbf4fcf9886e2338, type: 3}
@@ -61,7 +61,7 @@ MonoBehaviour:
   IntelligenceIcon: {fileID: 21300000, guid: fdfa180451d229c4f951792e0fa2bbab, type: 3}
   LuckIcon: {fileID: 21300000, guid: c8a286dbeaa5cef48827f4656940e306, type: 3}
   PerceptionIcon: {fileID: 21300000, guid: 14148a2793bfe5549a5d4e431f074534, type: 3}
-  FocusPipEmpty: {fileID: 21300000, guid: 1f70f294ce5feeb41b6219c9b1c944f4, type: 3}
+  FocusPipEmpty: {fileID: 21300000, guid: 56d6b8c533ab247448ae0e0e545e3aff, type: 3}
   QuickSlotFrame: {fileID: 21300000, guid: 93a8f0e6e7daa0548bb655154c47d685, type: 3}
   QuickSlotSelected: {fileID: 21300000, guid: a93db8685301f694b9917fc99c013084, type: 3}
   QuestIcon: {fileID: 21300000, guid: 7fd2a313320e7f343b2034abdcee9542, type: 3}

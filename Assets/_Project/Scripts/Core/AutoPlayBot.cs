@@ -14,7 +14,7 @@ namespace Fantasia.Core
     // 자동 플레이 점검 (D29 검증 도구). 실행 파일을 `-autoplay -autoplay-out <폴더>`로 켜면 사람 대신
     // (`-autoplay-enemy <적 Id>`를 주면 전투 적 2마리를 그 적으로 강제) 보드 이동 → 조우 창(기습) → 전투(공격·집중·방어) → 결과 → 보드 복귀를 실제 게임 코드로 진행하고,
     // 단계마다 화면 스크린샷과 전투 로그(autoplay_log.txt)를 남긴 뒤 종료한다. 인자가 없으면 아무것도 안 한다.
-    public class AutoPlayBot : MonoBehaviour
+    public partial class AutoPlayBot : MonoBehaviour
     {
         private string _outDir;
         private int _shot;
@@ -121,6 +121,7 @@ namespace Fantasia.Core
             else if (args.Contains("-autoplay-qa-report")) yield return QaReportRun();
             else if (args.Contains("-autoplay-paneldrop")) yield return PanelDropRun();
             else if (args.Contains("-autoplay-uiextra")) yield return UiExtraRun();
+            else if (args.Contains("-autoplay-vfx-qa")) yield return VfxQaRun(); // 11/13 이펙트 QA
             else if (args.Contains("-autoplay-qa")) yield return QaRun();
             else if (args.Contains("-autoplay-full-resume")) yield return FullRun(resume: true);
             else if (args.Contains("-autoplay-resume")) yield return ResumeRun();
@@ -245,6 +246,7 @@ namespace Fantasia.Core
                 if (DialoguePanel.IsOpen) { DialoguePanel.DevAdvance(); yield return new WaitForSeconds(0.15f); continue; }
                 if (ConfirmPanel.IsOpen) { Note("보스 레벨 경고 → 진입"); ConfirmPanel.DevChoose(true); continue; }
                 if (EncounterPanel.IsOpen) { yield return new WaitForSeconds(0.4f); EncounterPanel.DevChoose(1); yield return new WaitForSeconds(0.8f); continue; }
+                if (TreasurePanel.IsOpen) { yield return WaitFor(() => TreasurePanel.DevButtonVisible, 4f, "보물 창 버튼"); Note($"보물 창: {TreasurePanel.DevSummary}"); if (!_treasureShot) { _treasureShot = true; yield return Shot("board_treasure_panel"); } TreasurePanel.DevClose(); continue; }
                 if (ShopPanel.IsOpen) { shopVisits++; yield return ShopVisit(); continue; }
                 if (EventPanelOpen()) { events++; yield return EventVisit(); continue; }
 
@@ -302,6 +304,7 @@ namespace Fantasia.Core
 
         // 거점 상점: 의뢰 2개 수락(처음 한 번), 영약·해독제 조금 사고, 많이 다친 1명 숙박 (숙박은 턴을 끝냄 — 결정서 B2)
         private bool _shopShots;
+        private bool _treasureShot;
         private IEnumerator ShopVisit()
         {
             var ui = ShopPanel.Instance;
@@ -542,6 +545,7 @@ namespace Fantasia.Core
                     {
                         if (DialoguePanel.IsOpen) DialoguePanel.DevAdvance();
                         if (EventPanel.IsOpen) EventPanel.DevLeave(); // 이동 QA와 상관없는 이벤트 창은 닫고 계속
+                        if (TreasurePanel.IsOpen) TreasurePanel.DevClose();
                         if (ConfirmPanel.IsOpen) ConfirmPanel.DevChoose(false);
                         if (board.DevAwaitingSelection && !board.DevMoving && !EventPanel.IsOpen) board.DevMoveTowardAvoiding(new[] { order[Math.Min(target, order.Count - 1)].Coordinate }); // 이벤트 추가 이동도 목표 쪽
                         yield return new WaitForSeconds(0.15f);
@@ -770,6 +774,43 @@ namespace Fantasia.Core
             // ── 회복·보물 칸 점검 (-autoplay-tiles): 가득 찬 파티 → 회복 칸 안 씀, 다친 뒤 [지나가기] → [이용], 보물 J06 ──
             if (args.Contains("-autoplay-tiles"))
             {
+                // 11/13 보드 장식 가까이 (거점 둘레 시장 구역)
+                var rig = Camera.main != null ? Camera.main.GetComponent<BoardCameraRig>() : null;
+                if (rig != null) { float d0 = rig.Distance; rig.Distance = rig.MinDistance + 1f; yield return new WaitForSeconds(2f); yield return Shot("board_close"); rig.Distance = d0; yield return new WaitForSeconds(1.5f); }
+                Note($"보드 장식: 가로등 장면 {HexBoard.DevLampScenes}곳 · 건물 밑동 {HexBoard.DevFoundations}곳");
+                // 11/14 기획 Q4 야영 텐트: 서고 → 다음 이동 시작에 치워짐
+                // 야영은 거점 밖 안전 칸에서 씀 → 먼저 조용한 길 칸으로 한 번 이동
+                yield return WaitFor(() => board.DevIsIdle, 10f, "굴림 대기");
+                board.DevRoll();
+                yield return WaitFor(() => board.DevAwaitingSelection || EncounterPanel.IsOpen, 6f, "칸 선택");
+                if (board.DevAwaitingSelection) board.DevMoveToQuietTile();
+                yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 15f, "이동");
+                if (EncounterPanel.IsOpen) EncounterPanel.DevChoose(3);
+                yield return new WaitForSeconds(1f);
+                // 실제 사용 경로: 가방에서 안개 야영 세트 사용 → 아군 턴 종료 신호 → 텐트
+                var campDef = Fantasia.Data.ItemCatalog.Current != null ? Fantasia.Data.ItemCatalog.Current.Consumable("consumable.fog_camp_set") : null;
+                if (campDef != null) { BoardSession.Instance.Party.Inventory.AddConsumable(campDef); Note("야영 세트 사용: " + InventoryPanel.UseWorldItem(campDef, BoardSession.Instance.Party.AliveMembers.First())); }
+                else { Note("야영 세트 데이터 없음 → 직접 텐트"); board.DevPitCampTent(); }
+                yield return new WaitForSeconds(0.5f);
+                Qa(board.DevTentVisible, "야영 텐트: 야영 성공 뒤 지금 칸에 섬");
+                if (rig != null) { float d1 = rig.Distance; rig.Distance = rig.MinDistance; yield return new WaitForSeconds(2f); yield return Shot("board_camp_tent"); rig.Distance = d1; yield return new WaitForSeconds(1f); }
+                yield return WaitFor(() => board.DevIsIdle && BoardSession.Instance.World.Phase == Fantasia.World.WorldPhase.AllyTurn, 40f, "적 턴 지나 다음 아군 턴");
+                Qa(board.DevTentVisible, "야영 텐트: 적 턴이 지나도 이동 전까지 남아 있음");
+                board.DevRoll();
+                yield return WaitFor(() => board.DevAwaitingSelection || EncounterPanel.IsOpen, 6f, "칸 선택");
+                if (board.DevAwaitingSelection) { board.DevMoveToQuietTile(); yield return new WaitForSeconds(0.3f); }
+                Qa(!board.DevTentVisible, "야영 텐트: 다음 이동이 시작되면 치워짐");
+                yield return WaitFor(() => board.DevIsIdle || EncounterPanel.IsOpen, 15f, "이동");
+                if (EncounterPanel.IsOpen) EncounterPanel.DevChoose(3); // 후퇴
+                // 11/13 보드 가로등 밤 확인: 저녁(3R)·새벽(4R) 사진 뒤 아침(5R)으로
+                var clock = BoardSession.Instance.World;
+                for (int r = clock.WorldRound; r < 3; r++) { clock.EndAllyTurn(); clock.EndEnemyTurn(); }
+                yield return new WaitForSeconds(3f); yield return Shot("board_evening");
+                clock.EndAllyTurn(); clock.EndEnemyTurn();
+                yield return new WaitForSeconds(3f); yield return Shot("board_dawn");
+                Note($"보드 가로등 장면 {HexBoard.DevLampScenes}곳 · 가로등: {Fantasia.Combat.StreetLampGlow.DevCount}개 · 켜짐 {Fantasia.Combat.StreetLampGlow.DevLitCount} · 진짜 빛 {Fantasia.Combat.StreetLampGlow.DevRealLights}");
+                clock.EndAllyTurn(); clock.EndEnemyTurn();
+                yield return new WaitForSeconds(2.5f);
                 var tp = BoardSession.Instance.Party;
                 string State() => string.Join(", ", tp.AliveMembers.Select(m => $"{m.Job.DisplayName} HP {m.CurrentHP}/{m.MaxHP} MP {m.CurrentMP}/{m.MaxMP} 집중 {m.CurrentFocus}"));
                 board.DevArriveAt("S16");
@@ -810,6 +851,10 @@ namespace Fantasia.Core
                 int cent = tp.Cent;
                 board.DevArriveAt("J06");
                 yield return new WaitForSeconds(1f);
+                yield return WaitFor(() => TreasurePanel.DevButtonVisible, 4f, "보물 창");
+                Qa(TreasurePanel.IsOpen, $"보물 칸 도착 → 보상 창 ({TreasurePanel.DevSummary})");
+                yield return Shot("treasure_panel");
+                TreasurePanel.DevClose();
                 Note($"보물 J06: {board.DevResultMessage} · Cent {cent} → {tp.Cent}");
                 yield return Shot("treasure_j06");
                 Note("자동 플레이 완료");
@@ -1806,7 +1851,9 @@ namespace Fantasia.Core
         {
             var called = SfxIds.All.Where(id => SfxPlayer.DevCalls.ContainsKey(id)).Select(id => $"{id} {SfxPlayer.DevCalls[id]}").ToArray();
             var missing = SfxIds.All.Where(id => !SfxPlayer.DevCalls.ContainsKey(id)).ToArray();
-            return $"효과음: 불린 {called.Length}/{SfxIds.All.Length}종 · 실제 재생 {SfxPlayer.DevAudible}회 · 볼륨 {SfxPlayer.VolumeScale:0.00}\n  불림: {string.Join(", ", called)}\n  안 불림: {(missing.Length == 0 ? "없음" : string.Join(", ", missing))}";
+            return $"효과음: 불린 {called.Length}/{SfxIds.All.Length}종 · 실제 재생 {SfxPlayer.DevAudible}회 · 볼륨 {SfxPlayer.VolumeScale:0.00}\n  불림: {string.Join(", ", called)}\n  안 불림: {(missing.Length == 0 ? "없음" : string.Join(", ", missing))}"
+                   + $"\n이펙트: {(Fantasia.Combat.BattleVfx.DevPlayed.Count == 0 ? "없음" : string.Join(", ", Fantasia.Combat.BattleVfx.DevPlayed.Select(p => $"{p.Key} {p.Value}")))}"
+                   + $" / 디버프 둘레 효과 켜짐 {Fantasia.Combat.StatusAura.DevShownTotal}번 (한때 최대 {Fantasia.Combat.StatusAura.DevPeak}개)"; // 11/13
         }
 
         // UI 전수 점검 보충 (-autoplay-uiextra): 다른 모드에서 안 찍히는 작은 UI — 획득 알림 · 칸 툴팁 · 랜드마크 정보 창
@@ -2235,6 +2282,19 @@ namespace Fantasia.Core
                     yield return Shot("m_heal_before");
                     battle.DevUseSkill(heal, actor, 0);
                     yield return BurstTimed("m_heal", 0.8f, 1.6f, 2.4f);
+                }
+                // 11/13 팀장 지적: 회복기를 다른 아군에게 쓸 때 모습이 이상함 → 다른 아군 회복을 촘촘히 촬영
+                else if (job == Fantasia.Data.JobId.PlagueDoctor && done.Add("heal_other")
+                         && skills.FirstOrDefault(s => s.Effect == Fantasia.Data.SkillEffect.Heal) is { } healOther
+                         && battle.DevAllies.FirstOrDefault(a => a != actor && a.IsAlive) is { } mate)
+                {
+                    step = "heal_other";
+                    mate.TakeDamage(20);
+                    actor.RestoreCooldown(healOther, 0); // 앞 회복 촬영의 재사용 대기를 풀어 바로 쓰게
+                    Note($"다른 아군 회복: {actor.DisplayName} → {mate.DisplayName}");
+                    yield return Shot("m_healother_before");
+                    battle.DevUseSkill(healOther, mate, 0);
+                    yield return BurstTimed("m_healother", 0.2f, 0.5f, 0.8f, 1.1f, 1.4f, 1.8f, 2.2f, 2.8f);
                 }
                 else if (job == Fantasia.Data.JobId.Detective && done.Add("buff")
                          && skills.FirstOrDefault(s => s.Effect == Fantasia.Data.SkillEffect.ApplyStatus) is { } buff)

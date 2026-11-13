@@ -62,11 +62,12 @@ namespace Fantasia.Board
         // Set up directly from Initialize rather than Awake — HexBoard always
         // calls this right after AddComponent, and Awake isn't guaranteed to
         // have run yet when tiles are generated outside Play mode (editor tooling).
-        public void Initialize(HexCoord coordinate, Renderer visual = null, bool artTile = false)
+        public void Initialize(HexCoord coordinate, Renderer visual = null, bool artTile = false, bool overlay = false)
         {
             Coordinate = coordinate;
             _renderer = visual != null ? visual : GetComponent<Renderer>();
             _artTile = artTile;
+            _overlay = overlay;
             // 받은 돌길 칸은 텍스처에 색을 곱하므로 일반 칸은 흰색 (도형 칸의 회갈색을 곱하면 너무 어두움)
             if (artTile) { baseColor = ArtBaseColor; usedColor = new Color(0.7f, 0.68f, 0.66f); blockedColor = new Color(0.42f, 0.4f, 0.38f); }
             _props = new MaterialPropertyBlock();
@@ -122,7 +123,7 @@ namespace Fantasia.Board
 
         // 받은 구조물 (거점 건물·보물 상자·우물·장애물 집 등, BoardArt). 칸 윗면에 세우고 카메라 쪽(-Z)을 보게.
         public static readonly Color ArtBaseColor = new Color(0.92f, 0.9f, 0.86f); // 받은 돌길 칸 기본색 = 칸 재질 색 (Editor/ArtSetup)
-        private bool _artTile;
+        private bool _artTile, _overlay; // _overlay: 11/13 ①안 — 칸은 반투명 칠만 (바닥은 HexBoard 한 장)
         private GameObject _prop;
         private Renderer[] _propRenderers;
         private float _propTopY;
@@ -310,6 +311,9 @@ namespace Fantasia.Board
         {
             // 최적화 (2026-11-06): 받은 돌길 칸이 기본색이면 색 덮어쓰기를 빼서 같은 재질끼리 한 번에 그려지게 (재질 색 = 기본색, ArtSetup)
             if (_artTile && color == baseColor) { _renderer.SetPropertyBlock(null); return; }
+            // 11/13 ①안: 일반 칸은 칠 없음(바닥만 보임), 쓴 칸은 옅게, 나머지(특수·이동 가능)는 반투명
+            if (_overlay) color.a = color == baseColor ? 0f : color == usedColor ? 0.22f : IsBlocked && MapKind != MapTileKind.Exit ? 0f : 0.5f;
+            if (_overlay) { _renderer.enabled = color.a > 0.01f; if (!_renderer.enabled) return; } // 칠할 필요 없는 칸은 판을 끔 (바닥이 그대로 보이게)
             _renderer.GetPropertyBlock(_props);
             _props.SetColor(ColorId, color);
             _renderer.SetPropertyBlock(_props);

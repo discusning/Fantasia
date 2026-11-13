@@ -63,6 +63,7 @@ namespace Fantasia.Board
         private static float Target => BoardSession.Instance != null && BoardSession.Instance.SoulHarvest >= BloodHuntRules.RedSkyThreshold ? 1f : 0f;
         private static int CurrentTimeIndex => TimeOfDayLook.IndexFor(BoardSession.Instance != null ? BoardSession.Instance.World.WorldRound : 1);
         public static int DevShownTimeIndex { get; private set; } = -1;
+        private int _lampIndex = -1;
 
         private void Update()
         {
@@ -80,6 +81,7 @@ namespace Fantasia.Board
             }
             float target = Target;
             if (!Mathf.Approximately(_t, target)) _t = Mathf.MoveTowards(_t, target, Time.deltaTime / FadeSeconds);
+            if (_lampIndex != _timeIndex) { _lampIndex = _timeIndex; Fantasia.Combat.StreetLampGlow.ApplyAll(_timeIndex, Camera.main); } // 11/13 보드 가로등도 시간대마다 (저녁·새벽 밝게)
             Apply(); // 카메라가 움직이면 안개 거리도 따라가야 해서 매 프레임 (가벼움)
         }
 

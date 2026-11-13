@@ -8,10 +8,11 @@ namespace Fantasia.Board
 {
     // 보드 생성 + 칸 질의(조회·이동 범위·경로). MapAsset(Data/Boards/WorldMap.txt)이 있으면 확정 월드맵
     // (Docs/Planning/WorldMap.md, 720칸, pointy-top), 없으면 예전 무작위 육각 보드(셀프 테스트용).
-    public class HexBoard : MonoBehaviour
+    public partial class HexBoard : MonoBehaviour
     {
         [SerializeField] private int radius = 4;
         [SerializeField] private float tileSize = 1f;
+        public float TileSize => tileSize; // 11/14 야영 텐트 크기
         [SerializeField] private float tileGap = 0.05f;
         [SerializeField] private float tileHeight = 0.4f;
         [SerializeField, Range(0f, 1f)] private float obstacleChance = 0.18f;
@@ -136,9 +137,11 @@ namespace Fantasia.Board
                 {
                     tile.SetProp(Instantiate(propPrefab), tileHeight);
                     if (mapTile.Kind != MapTileKind.Blocked) tile.FitWalkableProp(); // 11/12: 밟는 칸 구조물은 칸 안·뒤쪽으로, 말은 앞에
+                    else if (propPrefab == _art.LowStone && GroundMode) OrientWall(tile, coord); // 11/13 돌담 방향
                 }
                 else tile.SetMarker(MarkerFor(mapTile, tile), tileHeight);
             }
+            if (GroundMode && _art.HasTiles) { BuildGround(); BuildScatter(); } // 11/13 ①안: 칸 자리를 틈 없이 덮는 바닥 한 장 + 빈 칸 얼룩·소품
         }
 
         private BoardArt _art;
@@ -237,10 +240,14 @@ namespace Fantasia.Board
             go.transform.SetParent(transform, false);
             go.transform.localPosition = LocalPosition(coord);
             Renderer visual;
-            if (visualPrefab != null)
+            if (visualPrefab != null && GroundMode) visual = SpawnOverlay(go.transform, go.transform.localPosition); // 11/13 ①안: 이어진 바닥 + 칸 선
+            else if (visualPrefab != null)
             {
                 var v = Instantiate(visualPrefab, go.transform, false);
                 v.name = "Visual";
+                // 11/13 발판 질감 1단계: 같은 무늬가 같은 방향으로 반복돼 눈에 띔 → 칸마다 60° 단위로 돌림 (육각형 모양은 그대로, 칸 위치로 정해져 매번 같음)
+                int turn = Mathf.Abs(coord.GetHashCode() * 31 + 7) % 6;
+                v.transform.localRotation = Quaternion.Euler(0f, turn * 60f, 0f) * v.transform.localRotation;
                 visual = v.GetComponentInChildren<Renderer>();
             }
             else
@@ -251,7 +258,7 @@ namespace Fantasia.Board
             }
             go.AddComponent<MeshCollider>().sharedMesh = sharedMesh;
             var tile = go.AddComponent<HexTile>();
-            tile.Initialize(coord, visual, visualPrefab != null);
+            tile.Initialize(coord, visual, visualPrefab != null && !GroundMode, overlay: visualPrefab != null && GroundMode);
             _tiles[coord] = tile;
             return tile;
         }

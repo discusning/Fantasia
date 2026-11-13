@@ -89,17 +89,26 @@ namespace Fantasia.Board
             int i = System.Array.IndexOf(a, "-boardcam");
             return i >= 0 && i + 1 < a.Length && int.TryParse(a[i + 1], out var n) ? Mathf.Clamp(n, 0, 2) : 2;
         }
-        public const float Pitch2 = 40f, DistanceScale = 0.7f, Fov = 50f, MaxYawSpeed = 70f;
-        private float _pvDist = 11f, _pvYaw, _pvHeading;
+        // 11/13 팀장 지적 "시점이 확확 바뀜": 예전엔 칸 하나하나의 방향을 따라 돌아서, 육각 길이 지그재그면 카메라도 좌우로 흔들림.
+        // → 이동을 시작할 때 "출발 → 도착" 전체 방향 하나만 정하고, 그쪽으로 천천히 한 번만 돎 (가속·감속, 초당 최대 58°).
+        //   방향 차이가 작으면(25° 미만) 돌지 않음 → 짧은 이동마다 화면이 움찔하지 않게.
+        public const float Pitch2 = 40f, DistanceScale = 0.7f, Fov = 50f, MaxYawSpeed = 58f, YawSmoothTime = 0.55f, MinTurn = 25f; // 11/13 팀장: 45°·0.9초는 너무 느림 → 예전(70°)과 중간
+        private float _pvDist = 11f, _pvYaw, _pvHeading, _pvYawVel;
         private Vector3 _pvPrev;
+
+        // 이동 시작 때 BoardTestController가 부름 (출발·도착 위치)
+        public void SetTravel(Vector3 from, Vector3 to)
+        {
+            var d = to - from; d.y = 0f;
+            if (d.sqrMagnitude < 0.25f) return; // 반 칸도 안 되면 그대로
+            float heading = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
+            if (Mathf.Abs(Mathf.DeltaAngle(_pvHeading, heading)) >= MinTurn) _pvHeading = heading;
+        }
 
         private void PreviewPose()
         {
-            var step = Target.position - _pvPrev; step.y = 0f;
             _pvPrev = Target.position;
-            if (step.sqrMagnitude > 1e-6f && Preview >= 2) _pvHeading = Mathf.Atan2(step.x, step.z) * Mathf.Rad2Deg;
-            // 길이 꺾여도 한 프레임에 크게 돌지 않게: 부드럽게 + 초당 최대 70° (11/12 이동 QA: 예전엔 한 프레임 9.9°)
-            if (Preview >= 2) _pvYaw = Mathf.MoveTowardsAngle(_pvYaw, Mathf.LerpAngle(_pvYaw, _pvHeading, 1f - Mathf.Exp(-2.5f * Time.deltaTime)), MaxYawSpeed * Time.deltaTime);
+            if (Preview >= 2) _pvYaw = Mathf.SmoothDampAngle(_pvYaw, _pvHeading, ref _pvYawVel, YawSmoothTime, MaxYawSpeed);
             _pvDist = Distance * DistanceScale;
             transform.rotation = Quaternion.Euler(Pitch2, _pvYaw, 0f);
             var cam = GetComponent<Camera>();

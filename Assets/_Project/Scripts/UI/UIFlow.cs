@@ -9,7 +9,7 @@ namespace Fantasia.UI
         public static bool WindowOpen =>
             DialoguePanel.IsOpen || EventPanel.IsOpen || EncounterPanel.IsOpen || ShopPanel.IsOpen || InventoryPanel.IsOpen
             || LandmarkInfoPanel.IsOpen || ConfirmPanel.IsOpen || CaseLogPanel.IsOpen || ActClearPanel.IsOpen
-            || PauseMenu.IsOpen || SettingsPanel.IsOpen || BattleHud.ResultOpen;
+            || PauseMenu.IsOpen || SettingsPanel.IsOpen || BattleHud.ResultOpen || TreasurePanel.IsOpen;
 
         // 알림이 기다려야 함 (창 + 턴 판)
         public static bool ToastBlocked => WindowOpen || BoardTopBar.DevTurnDropVisible;

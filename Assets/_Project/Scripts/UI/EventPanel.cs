@@ -342,7 +342,7 @@ namespace Fantasia.UI
                 var nameBg = UGUIKit.CreateImage(inner, "NameBar", new Vector2(0.05f, 0.3f), new Vector2(0.95f, 0.44f), new Color(0.05f, 0.04f, 0.05f, 0.9f));
                 UGUIKit.SkinThinPlate(nameBg, 0.45f, 0.95f); // 11/11 U8
                 Label(nameBg.transform, "Name", Vector2.zero, Vector2.one, 16, Gold, true).text = EventTiles.CardName(card);
-                Label(inner, "Reward", new Vector2(0.05f, 0.03f), new Vector2(0.95f, 0.28f), 11, TextLight, false).text = EventTiles.CardReward(card).Replace("성공 시 ", "성공 시\n");
+                { var reward = Label(inner, "Reward", new Vector2(0.05f, 0.03f), new Vector2(0.95f, 0.28f), 11, TextLight, false); reward.alignment = TextAnchor.MiddleLeft; reward.text = EventTiles.CardReward(card).Replace("성공 시 ", "성공 시\n"); } // 11/13 정렬: 카드 설명 왼쪽
                 _cards.Add((b, fill, frame));
             }
 
@@ -358,7 +358,7 @@ namespace Fantasia.UI
                 b.targetGraphic = inner.parent.GetComponent<Image>();
                 b.onClick.AddListener(() => PickPrayer(index));
                 Label(inner, "Name", new Vector2(0.03f, 0.6f), new Vector2(0.97f, 0.97f), 14, Gold, true).text = PrayerRules.Name(kind);
-                var effect = Label(inner, "Effect", new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.6f), 10, TextLight, false);
+                var effect = Label(inner, "Effect", new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.6f), 10, TextLight, false); effect.alignment = TextAnchor.UpperLeft; // 11/13 정렬: 카드 설명 왼쪽 위
                 effect.text = PrayerRules.Effect(kind).Replace(" · ", "\n");
                 _prayerButtons.Add((b, inner.GetComponent<Image>()));
             }
@@ -391,7 +391,7 @@ namespace Fantasia.UI
             _confirmLabel = _confirm.GetComponentInChildren<Text>();
             _leave = UGUIKit.CreateThemedButton(win, "Leave", new Vector2(0.52f, 0.07f), new Vector2(0.8f, 0.16f), "떠나기", new Color(0.16f, 0.15f, 0.17f), 15);
             _leave.onClick.AddListener(OnLeave);
-            _footer = Label(win, "Footer", new Vector2(0.05f, 0.005f), new Vector2(0.95f, 0.065f), 11, TextDim, false);
+            _footer = Label(win, "Footer", new Vector2(0.05f, 0.005f), new Vector2(0.95f, 0.065f), 11, TextDim, false); _footer.alignment = TextAnchor.MiddleLeft; // 11/13 정렬: 창 아래 안내 왼쪽
 
             _root.SetActive(false);
         }

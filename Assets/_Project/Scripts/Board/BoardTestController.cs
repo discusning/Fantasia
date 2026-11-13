@@ -271,7 +271,7 @@ namespace Fantasia.Board
         }
 
         private const float LeaderFigureScale = 0.8f; // 11/10 기획 3-1 B: 파티장 말 0.8배 (사신 말은 0.6배 그대로)
-        private const float TurnSeconds = 0.12f;      // 이동 방향으로 몸 돌리는 시간
+        private const float TurnSeconds = 0.18f;      // 첫 칸 출발 전 몸 돌리는 시간 (11/13: 0.12 → 0.25는 느림 → 중간 0.18)
         private GameObject _tokenFigure;
         private JobDefinition _tokenFigureJob;
         private bool _tokenIsSphere;
@@ -327,7 +327,7 @@ namespace Fantasia.Board
             if (Quaternion.Angle(from, to) < 1f) yield break;
             for (float t = 0f; t < TurnSeconds; t += Time.deltaTime)
             {
-                _token.rotation = Quaternion.Slerp(from, to, t / TurnSeconds);
+                _token.rotation = Quaternion.Slerp(from, to, Mathf.SmoothStep(0f, 1f, t / TurnSeconds));
                 yield return null;
             }
             _token.rotation = to;
@@ -372,6 +372,7 @@ namespace Fantasia.Board
         {
             InventoryPanel.WorldUseAllowed = () => WorldItemUseAllowed;
             InventoryPanel.AllyTurnEndRequested += OnItemEndedAllyTurn;
+            InventoryPanel.AllyTurnEndRequested += PitCampTent; // 11/14 기획 Q4: 야영 성공 → 텐트 (가방에서 턴을 끝내는 건 야영뿐)
             Fantasia.UI.ShopPanel.AllyTurnEndRequested += OnItemEndedAllyTurn;
             PartyHudPanel.CardClicked += OnCardClicked;
             PartyHudPanel.QuickSlotClicked += OnBoardQuickSlot;
@@ -380,6 +381,7 @@ namespace Fantasia.Board
         private void OnDestroy()
         {
             InventoryPanel.AllyTurnEndRequested -= OnItemEndedAllyTurn;
+            InventoryPanel.AllyTurnEndRequested -= PitCampTent;
             Fantasia.UI.ShopPanel.AllyTurnEndRequested -= OnItemEndedAllyTurn;
             PartyHudPanel.CardClicked -= OnCardClicked;
             PartyHudPanel.QuickSlotClicked -= OnBoardQuickSlot;
@@ -396,6 +398,36 @@ namespace Fantasia.Board
             if (def == null) return;
             string message = WorldItemUseAllowed ? InventoryPanel.UseWorldItem(def, member) : "보드의 아군 턴(이동 중 아님)에만 쓸 수 있음";
             ItemAcquiredToast.Show(message);
+        }
+
+        // 11/14 기획 회신 Q4: 안개 야영 세트 성공 → 지금 칸에 텐트·모닥불 (야영 성공을 보여 주는 연출, 규칙 영향 없음).
+        // 다음 보드 이동이 시작될 때 치움. 말은 칸 앞쪽에 서 있으므로 텐트는 칸 뒤쪽(카메라 반대)에 세워 말을 가리지 않게.
+        private GameObject _campTent;
+        public static int DevTentsPitched { get; private set; }
+        public bool DevTentVisible => _campTent != null;
+        public void DevPitCampTent() => PitCampTent();
+        private void PitCampTent()
+        {
+            ClearCampTent();
+            var prefab = Resources.Load<GameObject>("BoardArt/CampTent");
+            if (prefab == null || _board == null) return;
+            // 11/14 팀장 "텐트가 너무 작음, 다른 구조물 정도" → 밟는 칸 구조물 최대 폭(1.6m)에 맞춤 (텐트 묶음 폭 약 1.45m 기준)
+            float s = HexTile.WalkablePropMaxWidth / 1.45f;
+            // 11/14 QA: 이동 시점은 카메라가 진행 방향으로 돎 → "칸 뒤쪽"은 고정 +z가 아니라 카메라에서 본 뒤쪽. 입구는 카메라를 봄
+            var cam = Camera.main;
+            var away = cam != null ? Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up).normalized : Vector3.forward;
+            if (away.sqrMagnitude < 0.01f) away = Vector3.forward;
+            var side = Vector3.Cross(Vector3.up, away);
+            var pos = _token.position + away * (0.5f * s + 0.25f) - side * 0.1f; // 텐트 앞면이 말 바로 뒤
+            _campTent = Instantiate(prefab, pos, Quaternion.LookRotation(away));
+            _campTent.transform.localScale = Vector3.one * s;
+            _campTent.name = "CampTent";
+            DevTentsPitched++;
+        }
+        private void ClearCampTent()
+        {
+            if (_campTent != null) Destroy(_campTent);
+            _campTent = null;
         }
 
         // 안개 야영 세트: 사용 후 1월드 라운드 경과 → 아군 턴 종료
@@ -521,21 +553,33 @@ namespace Fantasia.Board
         private IEnumerator WalkPath(List<HexCoord> path)
         {
             _isMoving = true;
+            ClearCampTent(); // 11/14 Q4: 다음 이동이 시작되면 텐트를 치움
             _dice.Dock(); // 11/12: 칸을 고르면 주사위는 오른쪽으로 (이번 턴 동안 눈을 보여 줌)
             var walker = Fantasia.UI.CharacterMotion.Of(_tokenFigure); // 11/13 N9 걷기 모션
             if (walker != null) walker.SetWalking(true);
+            // 11/13 팀장 지적 "시점이 확확 바뀜": 카메라는 출발→도착 전체 방향으로 한 번만 천천히 돎
+            if (path.Count > 0 && Camera.main != null && Camera.main.TryGetComponent<BoardCameraRig>(out var camRig))
+                camRig.SetTravel(_token.position, TokenSurfacePosition(path[path.Count - 1]));
 
+            bool first = true;
             foreach (var coord in path)
             {
                 var start = _token.position;
                 var end = TokenSurfacePosition(coord);
-                yield return FaceToward(end);
+                // 첫 칸만 제자리에서 돌고, 그다음부터는 걸으면서 부드럽게 방향을 바꿈 (칸마다 멈춰 휙 돌던 것)
+                if (first) { yield return FaceToward(end); first = false; }
+                var dir = end - start; dir.y = 0f;
+                var fromRot = _token.rotation;
+                var toRot = dir.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(dir, Vector3.up) : fromRot;
 
                 for (float t = 0f; t < secondsPerTile; t += Time.deltaTime)
                 {
-                    _token.position = Vector3.Lerp(start, end, t / secondsPerTile);
+                    float k = t / secondsPerTile;
+                    _token.position = Vector3.Lerp(start, end, k);
+                    _token.rotation = Quaternion.Slerp(fromRot, toRot, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(k / 0.45f))); // 칸의 앞 45% 동안 돌기
                     yield return null;
                 }
+                _token.rotation = toRot;
                 _token.position = end;
                 SfxPlayer.Play(SfxIds.Step);
                 if (!coord.Equals(_currentCoord)) _lastSafeCoord = _currentCoord;
@@ -606,7 +650,7 @@ namespace Fantasia.Board
             // 이벤트 칸 추가 이동이 생기면 한 번 더 움직이고, 아니면 아군 턴 종료.
             // 거점 도착으로 상점이 열렸으면 닫을 때까지 기다림 (서비스·제작을 쓰면 상점이 아군 턴을 끝냄)
             // 상점·이벤트·우물 창을 닫을 때까지 (우물은 확인창 → 선택 창 순서라 한 프레임 넘겨 다시 확인)
-            while (Fantasia.UI.ShopPanel.IsOpen || EventPanel.IsOpen || ConfirmPanel.IsOpen) { yield return null; if (!ConfirmPanel.IsOpen) yield return null; }
+            while (Fantasia.UI.ShopPanel.IsOpen || EventPanel.IsOpen || ConfirmPanel.IsOpen || TreasurePanel.IsOpen) { yield return null; if (!ConfirmPanel.IsOpen) yield return null; }
             if (_turnEnding || Clock.Phase != WorldPhase.AllyTurn) yield break;
             if (!TryGrantEventBonusMove(landedTile)) StartCoroutine(EndAllyTurn());
         }
@@ -692,17 +736,21 @@ namespace Fantasia.Board
             if (treasure == null) { _encounterResultMessage = $"{tile.MapLabel} — 빈 보물 칸"; return; }
             _testParty.AddCent(treasure.Cent);
             var names = new List<string> { $"{treasure.Cent} Cent" };
+            var shown = new List<(Sprite icon, string name, Color color)>(); // 11/13 보물 창에 보일 물건
+            int stored = 0;
             foreach (var id in treasure.ConsumableIds)
             {
                 var c = ItemCatalog.Current != null ? ItemCatalog.Current.Consumable(id) : null;
                 if (c == null) continue;
                 var drop = new Fantasia.Combat.LootDrop(c);
-                if (!Fantasia.Combat.LootRules.TryAdd(_testParty.Inventory, drop)) session.PendingLoot.Add(drop);
+                if (!Fantasia.Combat.LootRules.TryAdd(_testParty.Inventory, drop)) { session.PendingLoot.Add(drop); stored++; }
                 names.Add(c.DisplayName);
+                shown.Add((ItemLook.IconOf(c), c.DisplayName, ItemLook.NameColor(c)));
             }
             string list = string.Join(" + ", names);
             _encounterResultMessage = $"{tile.MapLabel} — {list}";
-            ItemAcquiredToast.Show($"보물: {list}");
+            TreasurePanel.Show($"{tile.MapLabel}", treasure.Cent, shown, stored); // 11/13: 알림 한 줄 대신 보상 창 (받았는지 바로 보이게)
+            RefreshTopBar(announce: false);
             PlaytestLog.Cent("보물 칸", treasure.Cent, _testParty.Cent, $"{tile.MapLabel}: {list}");
         }
 
@@ -883,6 +931,7 @@ namespace Fantasia.Board
                 setup.Enemies.Add(ReaperEnemy);
                 session.PendingBattle = setup;
                 session.PendingEncounterCoord = null;
+                session.PendingBattleTheme = -1;
                 session.LastSafeCoord = _lastSafeCoord;
                 session.AllyTurnEndedByBattle = true;
                 SaveBattleEntry(setup);
@@ -912,6 +961,7 @@ namespace Fantasia.Board
             if (_board.UsesWorldMap) Fantasia.Combat.LootRules.CurrentZoneWearLevel = ZoneWearLevel(_board.Map.RegionOf(_currentCoord));
             session.PendingBattle = setup;
             session.PendingEncounterCoord = _currentCoord;
+            session.PendingBattleTheme = _board.BattleThemeAt(_currentCoord);
             session.LastSafeCoord = _lastSafeCoord;
             session.AllyTurnEndedByBattle = true;
             SaveBattleEntry(setup);
@@ -1088,7 +1138,7 @@ namespace Fantasia.Board
         public static int DevForceOpening = -1; // 자동 플레이: 조우 결과 강제 (예: 기습 실패)
 
         // 새 아군 턴을 시작할 수 있는 상태 (이동·창·적 턴 연출이 모두 끝났고 아직 안 굴림).
-        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen && !CaseLogPanel.IsOpen && !ConfirmPanel.IsOpen && !EventPanel.IsOpen
+        public bool DevIsIdle => !_isMoving && !_turnEnding && !EncounterPanel.IsOpen && !LandmarkInfoPanel.IsOpen && !DialoguePanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen && !CaseLogPanel.IsOpen && !ConfirmPanel.IsOpen && !EventPanel.IsOpen && !TreasurePanel.IsOpen
                                  && Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn;
         public bool DevAwaitingSelection => _awaitingSelection;
         public int DevWorldRound => Clock.WorldRound;

@@ -182,6 +182,7 @@ namespace Fantasia.UI
             var outerRect = (RectTransform)inner.transform.parent;
             outerRect.sizeDelta = new Vector2(RowWidth, RowHeight);
             UGUIKit.ApplyThinPlate(inner, 0.5f); // 11/11 U8 작은 상자: 회색 반투명 → 받은 얇은 판
+            { var plate = inner.GetComponent<Image>(); var pc = plate.color; pc.a = 0.72f; plate.color = pc; } // 11/13 팀장: 의뢰 상자 조금 더 투명하게 (0.96 → 0.72, 뒤 보드가 비침)
 
             // Anchor point (1,1) is the canvas's top-right *corner* — without
             // matching the pivot to that same corner, anchoredPosition offsets
@@ -207,6 +208,8 @@ namespace Fantasia.UI
 
             var objective = UGUIKit.CreateText(inner, "Objective", new Vector2(0.08f, 0.08f), new Vector2(0.95f, 0.52f), "", 7, TextAnchor.UpperLeft);
             objective.color = new Color(0.92f, 0.92f, 0.92f);
+            title.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.8f);     // 판이 투명해진 만큼 글자에 그림자 (11/13)
+            objective.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.8f);
 
             outerRect.gameObject.SetActive(false);
             var row = new QuestRow { Root = outerRect.gameObject, Title = title, Objective = objective };
