@@ -779,6 +779,23 @@ namespace Fantasia.Core
                 var rig = Camera.main != null ? Camera.main.GetComponent<BoardCameraRig>() : null;
                 if (rig != null) { float d0 = rig.Distance; rig.Distance = rig.MinDistance + 1f; yield return new WaitForSeconds(2f); yield return Shot("board_close"); rig.Distance = d0; yield return new WaitForSeconds(1.5f); }
                 Note($"보드 장식: 가로등 장면 {HexBoard.DevLampScenes}곳 · 건물 밑동 {HexBoard.DevFoundations}곳");
+                // 11/14 팀장 1안 런던 안개: 멀리서 보면 안 열린 지역·지도 바깥이 안개로 가려짐
+                Note($"런던 안개: 숨긴 칸 {HexBoard.DevHiddenTiles} · 안개 층 {HexBoard.DevFogLayers} · 안개 경계 가로등 {HexBoard.DevEdgeLamps}");
+                Qa(HexBoard.DevEdgeLamps >= 3, "런던 안개: 경계 길가 가로등 3개 이상");
+                Qa(HexBoard.DevHiddenTiles > 100 && HexBoard.DevFogLayers == 3, "런던 안개: 안 열린 지역 칸 숨김 + 안개 층 3장");
+                if (rig != null) { float d2 = rig.Distance; rig.Distance = rig.MaxDistance; yield return new WaitForSeconds(2.5f); yield return Shot("board_far_fog"); rig.Distance = d2; yield return new WaitForSeconds(1.5f); }
+                var hb = FindFirstObjectByType<HexBoard>();
+                if (rig != null && hb != null)
+                {
+                    // 전체 내려다보기 (점검용 사진만 — 게임 카메라는 이렇게 못 감)
+                    var cam = Camera.main; rig.enabled = false;
+                    var vb = hb.VisibleBounds; var c = vb.center; float span = Mathf.Max(vb.size.x, vb.size.z);
+                    cam.transform.position = c + new Vector3(0f, span * 0.95f, -span * 0.55f); cam.transform.LookAt(c);
+                    yield return new WaitForSeconds(1.5f); yield return Shot("board_overview_fog");
+                    cam.transform.position = c + new Vector3(vb.extents.x * 0.9f, 9f, -vb.extents.z * 0.2f - 9f); cam.transform.LookAt(c + new Vector3(vb.extents.x * 1.1f, 0f, 0f));
+                    yield return new WaitForSeconds(1.5f); yield return Shot("board_edge_fog");
+                    rig.enabled = true; rig.SnapToTarget(); yield return new WaitForSeconds(1f);
+                }
                 // 11/14 기획 Q4 야영 텐트: 서고 → 다음 이동 시작에 치워짐
                 // 야영은 거점 밖 안전 칸에서 씀 → 먼저 조용한 길 칸으로 한 번 이동
                 yield return WaitFor(() => board.DevIsIdle, 10f, "굴림 대기");
@@ -807,6 +824,17 @@ namespace Fantasia.Core
                 var clock = BoardSession.Instance.World;
                 for (int r = clock.WorldRound; r < 3; r++) { clock.EndAllyTurn(); clock.EndEnemyTurn(); }
                 yield return new WaitForSeconds(3f); yield return Shot("board_evening");
+                // 11/14 팀장 3차: 저녁 안개 가장자리 — 경계 가로등 불빛이 안개에 번지는 모습
+                if (rig != null && hb != null)
+                {
+                    var cam2 = Camera.main; rig.enabled = false; var vb2 = hb.VisibleBounds; var c2 = vb2.center;
+                    cam2.transform.position = c2 + new Vector3(vb2.extents.x * 0.9f, 9f, -vb2.extents.z * 0.2f - 9f); cam2.transform.LookAt(c2 + new Vector3(vb2.extents.x * 1.1f, 0f, 0f));
+                    yield return new WaitForSeconds(1.5f); yield return Shot("board_evening_edge_fog");
+                    foreach (var hr in HexBoard.DevHalos.Take(3)) if (hr != null) Note($"번짐 {hr.transform.position} 켜짐 {hr.gameObject.activeInHierarchy} 보임 {hr.isVisible} 색 {hr.sharedMaterial.GetColor("_TintColor")} 크기 {hr.transform.lossyScale.x:F2} 셰이더 {hr.sharedMaterial.shader.name}");
+                    cam2.transform.position = c2 + new Vector3(0f, Mathf.Max(vb2.size.x, vb2.size.z) * 0.95f, -Mathf.Max(vb2.size.x, vb2.size.z) * 0.55f); cam2.transform.LookAt(c2);
+                    yield return new WaitForSeconds(1f); yield return Shot("board_evening_overview_fog");
+                    rig.enabled = true; rig.SnapToTarget(); yield return new WaitForSeconds(1f);
+                }
                 clock.EndAllyTurn(); clock.EndEnemyTurn();
                 yield return new WaitForSeconds(3f); yield return Shot("board_dawn");
                 Note($"보드 가로등 장면 {HexBoard.DevLampScenes}곳 · 가로등: {Fantasia.Combat.StreetLampGlow.DevCount}개 · 켜짐 {Fantasia.Combat.StreetLampGlow.DevLitCount} · 진짜 빛 {Fantasia.Combat.StreetLampGlow.DevRealLights}");

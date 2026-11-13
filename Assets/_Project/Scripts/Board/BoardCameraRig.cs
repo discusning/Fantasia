@@ -8,6 +8,8 @@ namespace Fantasia.Board
     public class BoardCameraRig : MonoBehaviour
     {
         public Transform Target;
+        private HexBoard _board; private bool _boardLooked;
+        private HexBoard Board { get { if (!_boardLooked) { _board = FindFirstObjectByType<HexBoard>(); _boardLooked = _board != null; } return _board; } } // 11/14 안개 범위
         public const float Pitch = 52f;
         public float Distance = 16f;
         public float MinDistance = 6f, MaxDistance = 28f;
@@ -72,6 +74,13 @@ namespace Fantasia.Board
             }
 
             var desired = Target.position + _lookOffset;
+            // 11/14 팀장 1안: 둘러보기는 열린 지역(안개 안쪽)까지만 — 안개 너머 빈 곳을 비추지 않게
+            if (Board != null && Board.HasVeil)
+            {
+                var vb = Board.VisibleBounds; float m = 1.5f;
+                var clamped = new Vector3(Mathf.Clamp(desired.x, vb.min.x - m, vb.max.x + m), desired.y, Mathf.Clamp(desired.z, vb.min.z - m, vb.max.z + m));
+                _lookOffset += clamped - desired; desired = clamped;
+            }
             _focus = Vector3.Lerp(_focus, desired, 1f - Mathf.Exp(-FollowSharpness * Time.deltaTime));
             if (Preview > 0) PreviewPose();
             Apply();

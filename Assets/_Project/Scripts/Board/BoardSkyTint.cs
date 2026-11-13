@@ -15,6 +15,8 @@ namespace Fantasia.Board
         private static readonly Color RedSky = new Color(0.62f, 0.12f, 0.1f);
         private static readonly Color RedLight = new Color(1f, 0.55f, 0.48f);
         private static readonly Color OutsideRed = new Color(0.3f, 0.06f, 0.05f);       // 붉은 하늘 때 판 바깥
+        private static readonly Color LondonFog = new Color(0.86f, 0.88f, 0.92f);       // 11/14 팀장 2차: 누런 잿빛은 황사 같고 어두움 → 밝은 흰 구름
+        public static Color VeilColor { get; private set; } = new Color(0.3f, 0.3f, 0.28f);
 
         private Light _sun;
         private Color _sunBase, _ambientBase;
@@ -98,8 +100,13 @@ namespace Fantasia.Board
             RenderSettings.ambientIntensity = _ambientIntensityBase * look.AmbientMul;
             RenderSettings.ambientLight = Color.Lerp(_ambientBase, RedSky * 0.8f, _t * 0.6f);
             Color outside = Color.Lerp(look.Outside, OutsideRed, _t);
+            // 11/14 팀장 1안 "런던 안개": 판 바깥 = 누런 잿빛 안개 색 (시간대 밝기를 따름). 안개 층(HexBoard.Veil)·배경·거리 안개가 같은 색이라 이음새가 없음
+            // (11/10 기획 회신 03 "1막 판 바깥 어두운 단색"을 팀장이 바꿈 — 기획 공유 필요)
+            float fogLight = Mathf.Clamp(look.AmbientMul, 0.55f, 1f); // 저녁·새벽에도 너무 어둡지 않게
+            outside = Color.Lerp(outside, LondonFog * fogLight, 0.68f * (1f - _t * 0.5f));
+            VeilColor = outside;
             var cam = Camera.main;
-            if (cam != null) cam.backgroundColor = outside;
+            if (cam != null) cam.backgroundColor = outside * 0.9f; // 구름 층보다 조금 어둡게 (구름 덩어리가 드러나게)
             if (_hasSkyTint) _sky.SetColor("_SkyTint", Color.Lerp(_skyTintBase, RedSky, _t));
 
             // 안개: 판 바깥 색으로 먼 칸을 살짝 녹임. 화면 가운데 칸까지의 거리 기준 — 가까운 칸·말은 안 가림

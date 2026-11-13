@@ -94,6 +94,7 @@ namespace Fantasia.Board
             var sharedMesh = HexMeshBuilder.BuildHexPrism(tileSize - tileGap, tileHeight, pointyTop: true);
             var session = BoardSession.Instance;
             _art = BoardArt.Load();
+            ComputeVeil(); // 11/14 팀장 1안: 안 열린 지역·지도 바깥은 런던 안개로 (HexBoard.Veil)
 
             foreach (var mapTile in Map.Tiles.Values)
             {
@@ -142,6 +143,7 @@ namespace Fantasia.Board
                 else tile.SetMarker(MarkerFor(mapTile, tile), tileHeight);
             }
             if (GroundMode && _art.HasTiles) { BuildGround(); BuildScatter(); } // 11/13 ①안: 칸 자리를 틈 없이 덮는 바닥 한 장 + 빈 칸 얼룩·소품
+            ApplyVeil();
         }
 
         private BoardArt _art;

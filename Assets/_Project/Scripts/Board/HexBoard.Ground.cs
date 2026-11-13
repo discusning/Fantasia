@@ -109,6 +109,7 @@ namespace Fantasia.Board
             var v = new List<Vector3>(); var n = new List<Vector3>(); var uv = new List<Vector2>(); var t = new List<int>();
             foreach (var c in _groundCells)
             {
+                if (!GroundCellVisible(c)) continue; // 11/14 안개로 가린 칸은 바닥도 뺌
                 int start = v.Count;
                 for (int i = 0; i < pv.Length; i++)
                 {
