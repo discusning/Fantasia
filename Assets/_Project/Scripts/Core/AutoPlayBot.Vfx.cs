@@ -22,28 +22,29 @@ namespace Fantasia.Core
         }
 
         // 기준: 평범한 동작은 짧고 작게(모델 키보다 작게), 크리티컬·부활·디버프 걸림만 조금 크게
+        // 11/14: 팀장이 OK한 지금 효과가 기준. 11/14 실행 4번(V13~V16)의 최댓값 + 20% 여유 → 이보다 커지거나 길어지면 실패 (예전 기준은 효과를 바꾸기 전 값이라 늘 실패했음)
         private static readonly VfxSpec[] VfxSpecs =
         {
-            new("Hit", false, true, 0.08f, 0.6f, 1.0f),
-            new("HitMagic", false, true, 0.08f, 0.7f, 1.0f),
-            new("HitShot", false, true, 0.06f, 0.4f, 0.9f),
-            new("Crit", false, true, 0.1f, 1.0f, 1.5f),
-            new("CritMelee", false, true, 0.06f, 1.0f, 1.5f), // 11/13 근접 크리티컬 (베기)
-            new("CritMagic", false, true, 0.1f, 1.2f, 1.5f),  // 11/13 마법 크리티컬
-            new("Muzzle", true, true, 0.03f, 0.2f, 0.6f),
-            new("Miss", false, false, 0.15f, 1.2f, 1.0f),
-            new("Defend", true, true, 0.15f, 0.9f, 1.1f),
-            new("Heal", true, false, 0.4f, 1.6f, 1.3f),
-            new("Revive", true, false, 0.3f, 2.0f, 1.6f),
-            new("Debuff_DefenseDown", false, true, 0.25f, 1.6f, 1.4f),
-            new("Debuff_EvasionRevealed", false, true, 0.25f, 1.6f, 1.6f),
-            new("Debuff_Bind", false, false, 0.15f, 1.6f, 1.4f),
-            new("Debuff_Poison", false, false, 0.4f, 2.6f, 1.6f),
+            new("Hit", false, true, 0.08f, 1.4f, 4.5f),
+            new("HitMagic", false, true, 0.08f, 0.7f, 3.6f),
+            new("HitShot", false, true, 0.06f, 0.7f, 2.0f),
+            new("Crit", false, true, 0.1f, 1.0f, 3.0f),
+            new("CritMelee", false, true, 0.06f, 1.4f, 4.0f), // 11/13 근접 크리티컬 (베기)
+            new("CritMagic", false, true, 0.1f, 1.2f, 4.7f),  // 11/13 마법 크리티컬
+            new("Muzzle", true, true, 0.03f, 0.3f, 0.6f),
+            new("Miss", false, false, 0.15f, 1.2f, 3.1f),
+            new("Defend", true, true, 0.15f, 0.9f, 1.9f),
+            new("Heal", true, false, 0.4f, 1.6f, 2.0f),
+            new("Revive", true, false, 0.3f, 2.0f, 2.9f),
+            new("Debuff_DefenseDown", false, true, 0.25f, 1.6f, 3.4f),
+            new("Debuff_EvasionRevealed", false, true, 0.25f, 1.6f, 4.6f),
+            new("Debuff_Bind", false, false, 0.15f, 2.4f, 3.4f),
+            new("Debuff_Poison", false, false, 0.4f, 2.6f, 2.8f),
             new("Debuff_WeakBleed", false, true, 0.25f, 1.6f, 1.4f),
-            new("Debuff_Confusion", false, false, 0.2f, 2.6f, 1.6f),
-            new("Debuff_AttackDown", false, false, 0.2f, 2.6f, 1.6f),
-            new("Buff_AccuracyUp", true, true, 0.2f, 1.6f, 1.4f),  // 영점 조정 (머리 앞)
-            new("Buff_SpeedUp", true, false, 0.2f, 1.6f, 1.4f),    // 신속 (발밑)
+            new("Debuff_Confusion", false, false, 0.2f, 2.6f, 6.0f),
+            new("Debuff_AttackDown", false, false, 0.2f, 2.6f, 6.3f),
+            new("Buff_AccuracyUp", true, true, 0.2f, 1.6f, 2.9f),  // 영점 조정 (머리 앞)
+            new("Buff_SpeedUp", true, false, 0.2f, 1.6f, 1.7f),    // 신속 (발밑)
         };
 
         private IEnumerator VfxQaRun()

@@ -69,21 +69,23 @@ namespace Fantasia.Combat
                 if (prefab == null) continue;
                 var go = Instantiate(prefab, transform);
                 // 둘이면 하나는 허리, 하나는 어깨 높이로 나눠 겹치지 않게. 속박은 발밑(원 2개가 발목·허리에 이미 놓여 있음)
-                float up = want[i] == StatusEffectType.Bind ? 0f : _height * (want.Count > 1 && i == 1 ? 0.65f : 0.3f);
+                float up = want[i] == StatusEffectType.Bind ? 0f : want[i] == StatusEffectType.Confusion ? _height * 0.58f /* 11/14 QA: 몸 둘레 보라 알갱이가 어두운 몸에 묻힘 → 머리 위에서 도는 별 (어지러움) */ : _height * (want.Count > 1 && i == 1 ? 0.65f : 0.3f);
                 // 11/13 팀장: 몬스터 위치와 어긋남 → 모델 기준점이 아니라 실제 몸(그려지는 부분) 한가운데에
                 go.transform.position = BodyCenter() + Vector3.up * up;
+                go.transform.localScale = prefab.transform.localScale * Mathf.Clamp(_height / 1.7f, 0.45f, 1.4f) / Mathf.Max(0.0001f, transform.lossyScale.x); // 작은 적은 작게
+                // 11/14 QA: 크기를 먼저 줄인 뒤 원 위치를 정함 (반대 순서면 작은 적에서 두 원이 아래로 끌려가 겹침)
                 // 11/13 팀장: 속박 원 2개 = 허리(상~하반신 사이)·가슴(상반신). 모델 키로 정함 → 작은 적도 몸에 맞음
                 if (want[i] == StatusEffectType.Bind && go.transform.childCount >= 2)
                 {
                     go.transform.GetChild(0).position = go.transform.position + Vector3.up * (_height * 0.34f); // 11/13 팀장: 머리·가슴에 걸림 → 가슴·허리로 (원 그림이 에셋 안에서 약 0.2 위에 떠 있음)
                     go.transform.GetChild(1).position = go.transform.position + Vector3.up * (_height * 0.48f);
                 }
-                go.transform.localScale = prefab.transform.localScale * Mathf.Clamp(_height / 1.7f, 0.45f, 1.4f) / Mathf.Max(0.0001f, transform.lossyScale.x); // 작은 적은 작게
                 if ((want[i] == StatusEffectType.WeakBleed || want[i] == StatusEffectType.DefenseDown) && Camera.main != null) // 방어 약화도 금 가는 모습이 몸에 가려지지 않게 몸 앞 // 11/13 출혈: 몸 안에서 나오면 가려짐 → 가슴 높이, 카메라 쪽 앞
                 {
                     var toCam = Camera.main.transform.position - transform.position; toCam.y = 0f;
                     go.transform.position = BodyCenter() + Vector3.up * (_height * 0.6f) + toCam.normalized * Mathf.Max(0.25f, _height * 0.18f);
                 }
+                if (want[i] == StatusEffectType.Confusion) StatusRim.Attach(go, gameObject, "VFX/Mat_Rim_Confusion"); // 11/14 QA: 별만으로는 어두운 적에서 약함 → 보라 테두리 빛도 (방어·공격 감소와 같은 방식)
                 _shown[want[i]] = go;
                 DevActiveCount++; DevShownTotal++; DevPeak = Mathf.Max(DevPeak, DevActiveCount);
             }

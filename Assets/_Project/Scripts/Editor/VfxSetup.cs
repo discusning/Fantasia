@@ -164,7 +164,7 @@ namespace Fantasia.Editor
             BuildSoftAuras(mat); // 11/13 방어 약화·공격 약화·혼란·회피 해제 동안
             // 11/13 팀장 A안: 방어 약화 동안 = 모델 테두리 강철빛 파랑 (StatusRim) — 셰이더가 빌드에 들어가게 재질을 Resources에 둠
             var rimShader = Shader.Find("Fantasia/RimPulse");
-            foreach (var (rimName, rimCol) in new[] { ("Mat_Rim_DefenseDown", new Color(0.4f, 0.6f, 1f, 1f)), ("Mat_Rim_AttackDown", new Color(1f, 0.5f, 0.15f, 1f)) })
+            foreach (var (rimName, rimCol) in new[] { ("Mat_Rim_DefenseDown", new Color(0.4f, 0.6f, 1f, 1f)), ("Mat_Rim_AttackDown", new Color(1f, 0.5f, 0.15f, 1f)), ("Mat_Rim_Confusion", new Color(0.78f, 0.45f, 1f, 1f)) /* 11/14 QA: 혼란도 테두리 */ })
             if (rimShader != null)
             {
                 string rimPath = Out + "/" + rimName + ".mat";
@@ -185,7 +185,7 @@ namespace Fantasia.Editor
         {
             // 11/13 팀장 6차: 공격력 감소 남는 알갱이가 걸리는 순간 효과와 안 맞음 → 주황 테두리 + 부러진 칼 아이콘 (StatusRim)
 //            SoftAura("Aura_AttackDown", mat, new Color(0.95f, 0.5f, 0.15f), new Color(1f, 0.7f, 0.3f), vy: -0.2f, orbit: 0f, gravity: 0f, size: (0.11f, 0.16f));   // 주황 알갱이가 가라앉음
-            SoftAura("Aura_Confusion", mat, new Color(0.72f, 0.45f, 0.98f), new Color(0.88f, 0.7f, 1f), vy: 0f, orbit: 1.4f, gravity: 0f, size: (0.11f, 0.16f));      // 보라 알갱이가 몸 둘레를 돎
+            SoftAura("Aura_Confusion", mat, new Color(1f, 0.88f, 0.45f), new Color(0.92f, 0.75f, 1f), vy: 0f, orbit: 2.2f, gravity: 0f, size: (0.4f, 0.55f));      // 11/14 QA (작은 적에서 6cm라 안 보여 크게): 머리 위를 도는 금빛·연보라 별 (어지러움). 위치는 StatusAura
             SoftAura("Aura_EvasionRevealed", mat, new Color(0.72f, 0.72f, 0.76f), new Color(0.92f, 0.92f, 0.95f), vy: 0.25f, orbit: 0f, gravity: 0f, size: (0.1f, 0.15f)); // 흰 회색이 위로 흩어짐
         }
 
@@ -283,7 +283,7 @@ namespace Fantasia.Editor
         {
             ("WeakBleed", new Color(0.62f, 0.06f, 0.06f)),
             ("Poison", new Color(0.5f, 0.62f, 0.14f)),
-            ("Confusion", new Color(0.62f, 0.32f, 0.88f)),
+            ("Confusion", new Color(0.85f, 0.6f, 1f)), // 11/14 QA: 어두워 안 보임 → 밝은 보라
             ("Bind", new Color(0.48f, 0.53f, 0.64f)),
             ("AttackDown", new Color(0.8f, 0.38f, 0.1f)),
             ("DefenseDown", new Color(0.32f, 0.48f, 0.8f)),

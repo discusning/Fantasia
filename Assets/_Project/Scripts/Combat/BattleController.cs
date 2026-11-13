@@ -980,7 +980,7 @@ namespace Fantasia.Combat
                 if (applied == null) continue;
                 string stacks = applied.Stacks > 1 ? $" ×{applied.Stacks}" : "";
                 _hud.PopText(_camera, ModelTop(target) + Vector3.up * (0.45f * line++), def.DisplayName + stacks, BattleHud.StatusColor);
-                if (StatusAura.IsDebuff(def.Effect)) BattleVfx.Play("Debuff_" + def.Effect, def.Effect is StatusEffectType.DefenseDown or StatusEffectType.WeakBleed ? ModelFront(target) : def.Effect is StatusEffectType.EvasionRevealed ? ModelChest(target) : ModelFeet(target), VfxScale(target)); // 11/13 디버프가 걸리는 순간 (조준·장막·출혈은 가슴, 나머지 발밑)
+                if (StatusAura.IsDebuff(def.Effect)) BattleVfx.Play("Debuff_" + def.Effect, def.Effect is StatusEffectType.DefenseDown or StatusEffectType.WeakBleed ? ModelFront(target) : def.Effect is StatusEffectType.EvasionRevealed ? ModelChest(target) : def.Effect == StatusEffectType.Confusion ? ModelTop(target) /* 11/14 QA: 발밑은 안 보임 → 머리 위 */ : ModelFeet(target), VfxScale(target)); // 11/13 디버프가 걸리는 순간 (조준·장막·출혈은 가슴, 나머지 발밑)
                 else if (def.Effect is StatusEffectType.AccuracyUp) BattleVfx.Play("Buff_AccuracyUp", ModelTop(target) + Vector3.down * 0.25f, VfxScale(target)); // 11/13 강화: 영점 조정 = 머리 앞 조준선
                 else if (def.Effect is StatusEffectType.SpeedUp) BattleVfx.Play("Buff_SpeedUp", ModelFeet(target), VfxScale(target)); // 신속 = 발밑 빛줄기
                 Log($"  → {target.DisplayName}에게 [{def.DisplayName}{stacks}] (남은 {(applied.RemainingTurns < 0 ? "정화 전까지" : applied.RemainingTurns + "턴")})");

@@ -291,6 +291,7 @@ namespace Fantasia.UI
             card.NameRect = card.Name.rectTransform;
             const bool lpIcon = false; // 11/13 팀장: 카드 안 보석 그림 제거 (집중 그림과 헷갈림) // Z04
             card.Lp = MakeText(fill, "LP", new Vector2(lpIcon ? 0.88f : 0.81f, 0.8f), new Vector2(0.98f, 0.98f), lpIcon ? 14 : 12, TextAnchor.MiddleCenter, HpColor, bold: true);
+            card.Lp.gameObject.SetActive(false); // 11/14 팀장: 카드의 "LP" 글자는 빼도 됨 (LP 규칙은 그대로, 분수대·가방 등에서는 보임)
             card.Statuses = new StatusChipRow(fill, "Status", new Vector2(0.56f, 0.815f), new Vector2(0.8f, 0.965f), 3, 8);
 
             // 큰 HP 숫자 + 퀵 슬롯 4칸 (가운데)

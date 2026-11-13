@@ -122,6 +122,7 @@ namespace Fantasia.Core
             else if (args.Contains("-autoplay-paneldrop")) yield return PanelDropRun();
             else if (args.Contains("-autoplay-uiextra")) yield return UiExtraRun();
             else if (args.Contains("-autoplay-vfx-qa")) yield return VfxQaRun(); // 11/13 이펙트 QA
+            else if (args.Contains("-autoplay-defend-clip")) yield return DefendClipRun(); // 11/14 팀원 공유 방어 영상
             else if (args.Contains("-autoplay-qa")) yield return QaRun();
             else if (args.Contains("-autoplay-full-resume")) yield return FullRun(resume: true);
             else if (args.Contains("-autoplay-resume")) yield return ResumeRun();
