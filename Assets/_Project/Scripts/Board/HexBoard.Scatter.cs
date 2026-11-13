@@ -121,6 +121,7 @@ namespace Fantasia.Board
             foreach (var t in Map.Tiles.Values) if (t.Kind == MapTileKind.Hub) _hubs.Add(t.Coord);
             if (_hubs.Count == 0) _hubs.Add(new HexCoord(0, 0));
 
+            BuildStoneWalls(root); // 11/14 팀장: 돌담을 길 쪽 모서리를 따라 이어서
             var lampTiles = BuildLampScenes(root);
             BuildFoundations(root, lampTiles);
 
@@ -202,7 +203,7 @@ namespace Fantasia.Board
                 float frontZ = Mathf.Max(bmin.z, center.z - tileSize * 0.8f) - tileSize * 0.03f; // 벽 바로 앞
                 float x0 = Mathf.Max(bmin.x, center.x - tileSize * 0.6f) + tileSize * 0.08f, x1 = Mathf.Min(bmax.x, center.x + tileSize * 0.6f) - tileSize * 0.08f;
                 // 나무 칸 앞에 상자·통은 어색 (QA) → 나무는 자연물만
-                var src = HidesTileBehind(mapTile.Coord) ? _art.LowBlockFor(mapTile) ?? _art.PropFor(mapTile) : _art.PropFor(mapTile); // 실제로 세운 구조물 (앞줄은 낮은 나무·돌담)
+                var src = HidesTileBehind(mapTile.Coord) ? FrontRowProp(mapTile) ?? _art.PropFor(mapTile) : _art.PropFor(mapTile); // 실제로 세운 구조물 (앞줄은 낮은 나무·돌담)
                 bool trees = src == _art.BlockTrees || src == _art.LowTrees;
                 var list = Foundation[trees ? Zone.Outskirts : ZoneOf(mapTile.Coord)];
                 int n = 2 + (int)((h >> 8) % 2);

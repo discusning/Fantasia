@@ -36,6 +36,22 @@ namespace Fantasia.Board
                     if (Map.Tiles.ContainsKey(n) && Map.RegionOf(n) < 0) visible.Add(n); // 둘레 장애물·출구
                 }
             }
+            // 11/14 QA "칸이 뚫려 보임": 런던 안쪽에 막힌 칸이 2겹 이상 뭉친 곳은 가운데 칸이 런던 칸과 안 맞닿아 숨겨졌음
+            // → 지역 없는 칸(막힌 칸·출구)은 가장 가까운 지역을 따라감 (여러 출발점 너비 우선 탐색). 그 지역이 열려 있으면 보임
+            var nearest = new Dictionary<HexCoord, int>();
+            var q = new Queue<HexCoord>();
+            foreach (var t in Map.Tiles.Values) { int r = Map.RegionOf(t.Coord); if (r >= 0) { nearest[t.Coord] = r; q.Enqueue(t.Coord); } }
+            while (q.Count > 0)
+            {
+                var c = q.Dequeue();
+                for (int d = 0; d < 6; d++)
+                {
+                    var n = c.Neighbor(d);
+                    if (!Map.Tiles.ContainsKey(n) || nearest.ContainsKey(n)) continue;
+                    nearest[n] = nearest[c]; q.Enqueue(n);
+                }
+            }
+            foreach (var kv in nearest) if (open.Contains(kv.Value)) visible.Add(kv.Key);
             _veilHidden = new HashSet<HexCoord>();
             foreach (var c in Map.Tiles.Keys) if (!visible.Contains(c)) _veilHidden.Add(c);
             DevHiddenTiles = _veilHidden.Count;
