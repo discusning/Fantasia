@@ -1279,6 +1279,8 @@ namespace Fantasia.Core
             var wasDowned = new System.Collections.Generic.HashSet<BattleUnit>();
             int focusBefore = battle.DevAllies.Sum(a => a.Member.CurrentFocus);
             float deadline = Time.time + 180f;
+            // 11/14 팀장 확인 요청: 순서 띠에서 아벨 초상이 맨 앞으로 올 때 움직임 (0.42초 미끄러짐) 연속 촬영
+            if (shots && args.Contains("-autoplay-abel-slide") && battle.DevEnemies.Any(e => e.Boss != null)) StartCoroutine(WatchAbelSlide(battle));
 
             while (!battle.DevFinished && Time.time < deadline)
             {
@@ -2483,6 +2485,26 @@ namespace Fantasia.Core
             var home = model.transform.position;
             yield return WaitFor(() => (model.transform.position - home).sqrMagnitude > 0.0025f, 8f, "공격 시작");
             yield return BurstTimed(name, 0.05f, 0.3f, 0.55f);
+        }
+
+        // 11/14: 아벨이 맨 앞이 되는 순간의 순서 띠 움직임 — 처음 두 번 (예고·행동), 0.42초 동안 촘촘히
+        private IEnumerator WatchAbelSlide(BattleController battle)
+        {
+            int taken = 0;
+            bool wasSliding = false;
+            while (battle != null && !battle.DevFinished && taken < 2)
+            {
+                bool sliding = battle.DevHud != null && battle.DevHud.DevTimelineSliding;
+                if (sliding && !wasSliding && battle.DevHud.DevTimelineFirst?.Boss != null)
+                {
+                    taken++;
+                    Note($"아벨 차례 — 순서 띠 움직임 촬영 {taken}");
+                    yield return BurstTimed($"abel_slide{taken}", 0f, 0.1f, 0.2f, 0.3f, 0.45f, 0.7f);
+                }
+                wasSliding = sliding;
+                yield return null;
+            }
+            Note($"아벨 순서 띠 움직임 촬영 {taken}번");
         }
 
         private IEnumerator BurstTimed(string name, params float[] times)

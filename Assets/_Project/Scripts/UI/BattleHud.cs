@@ -222,6 +222,7 @@ namespace Fantasia.UI
         private Coroutine _slide;
         private GameObject _leaving;
         public bool DevTimelineSliding => _slide != null;
+        public BattleUnit DevTimelineFirst => _shownUnits.Count > 0 ? _shownUnits[0] : null;
 
         private IEnumerator SlideTimeline(GameObject leaving)
         {

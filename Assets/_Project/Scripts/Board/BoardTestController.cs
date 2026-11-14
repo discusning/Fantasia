@@ -941,7 +941,7 @@ namespace Fantasia.Board
                 return;
             }
             var pool = _board.EncounterEnemyPool;
-            var forced = System.Array.Find(pool.Concat(_board.RegionBosses).ToArray(), e => e != null && e.Id == DevForcedEnemyId);
+            var forced = System.Array.Find(pool.Concat(_board.RegionBosses).Append(ReaperEnemy).ToArray(), e => e != null && e.Id == DevForcedEnemyId);
             var first = forced != null ? forced : _pendingEnemy;
             // 지도 적 칸 확정 조합·보상 (MapTileRules) — 런던 10곳
             var fixedEncounter = forced == null && _board.UsesWorldMap ? Fantasia.World.MapTileRules.EncounterAt(CoordLabel(_currentCoord)) : null;
