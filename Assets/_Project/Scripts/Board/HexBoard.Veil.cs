@@ -63,6 +63,41 @@ namespace Fantasia.Board
                 if (!any) { b = new Bounds(p, Vector3.zero); any = true; } else b.Encapsulate(p);
             }
             VisibleBounds = b;
+            // 11/14 팀장 "맵 끝이 블록처럼 끊겨 보임": 카메라 둘러보기 제한용 — 열린 지역 밟는 칸 중심 (월드 좌표) + 가장자리에서 몇 칸 안쪽인지
+            _openCenters.Clear();
+            var openSet = new HashSet<HexCoord>();
+            foreach (var c in visible) if (Map.RegionOf(c) >= 0) openSet.Add(c);
+            var depth = new Dictionary<HexCoord, int>(); var bq = new Queue<HexCoord>();
+            foreach (var c in openSet)
+            {
+                bool edge = false;
+                for (int d = 0; d < 6 && !edge; d++) { var n = c.Neighbor(d); if (!openSet.Contains(n) && (!Map.Tiles.ContainsKey(n) || _veilHidden.Contains(n) || Map.RegionOf(n) < 0 && IsOuterRim(n, openSet))) edge = true; }
+                if (edge) { depth[c] = 0; bq.Enqueue(c); }
+            }
+            while (bq.Count > 0) { var c = bq.Dequeue(); for (int d = 0; d < 6; d++) { var n = c.Neighbor(d); if (openSet.Contains(n) && !depth.ContainsKey(n)) { depth[n] = depth[c] + 1; bq.Enqueue(n); } } }
+            foreach (var c in openSet) _openCenters.Add((transform.TransformPoint(LocalPosition(c)), depth.TryGetValue(c, out var dv) ? dv : 99));
+        }
+
+        // 둘레 막힌 칸이 지도 바깥(숨긴 칸·지도 끝)과 닿아 있으면 바깥 테두리 (런던 안쪽 막힌 칸 뭉치는 아님)
+        private bool IsOuterRim(HexCoord c, HashSet<HexCoord> openSet)
+        {
+            for (int d = 0; d < 6; d++) { var n = c.Neighbor(d); if (!Map.Tiles.ContainsKey(n) || _veilHidden.Contains(n)) return true; }
+            return false;
+        }
+
+        private readonly List<(Vector3 pos, int depth)> _openCenters = new();
+        // 둘러보기 중심을 "가장자리에서 minDepth칸 이상 안쪽인 밟는 칸, 그 칸에서 maxDist 안"으로 당김
+        // — 네모 범위와 달리 지역 모양(울퉁불퉁)을 따라가고, 멀리 볼수록(카메라 거리) 더 안쪽까지만 → 화면에 안개 너머 빈 곳이 크게 안 들어옴
+        public Vector3 ClampToOpen(Vector3 world, float maxDist, int minDepth)
+        {
+            if (_openCenters.Count == 0) return world;
+            Vector3 best = world; float bd = float.MaxValue;
+            for (int pass = 0; pass < 2 && bd == float.MaxValue; pass++, minDepth = 0) // 그만큼 안쪽 칸이 없으면 기준을 풀어 다시
+                foreach (var (c, dep) in _openCenters) { if (dep < minDepth) continue; float dx = c.x - world.x, dz = c.z - world.z, d = dx * dx + dz * dz; if (d < bd) { bd = d; best = c; } }
+            float dist = Mathf.Sqrt(bd);
+            if (dist <= maxDist) return world;
+            var dir = new Vector3(world.x - best.x, 0f, world.z - best.z) / dist;
+            return new Vector3(best.x + dir.x * maxDist, world.y, best.z + dir.z * maxDist);
         }
 
         // 바닥 한 장에서 숨긴 칸 자리는 뺌 (BuildGround 전에)

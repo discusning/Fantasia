@@ -801,16 +801,8 @@ namespace Fantasia.Board
             var go = new GameObject("ExitNotice_K12");
             go.transform.SetParent(transform, false);
             go.transform.position = _board.CoordToWorld(coord) + Vector3.up * 1.6f;
-            var text = go.AddComponent<TextMesh>();
-            text.text = "2막 베르사유\n추후 공개";
-            text.anchor = TextAnchor.MiddleCenter;
-            text.alignment = TextAlignment.Center;
-            text.characterSize = 0.12f;
-            text.fontSize = 48;
-            text.color = new Color(0.95f, 0.85f, 0.55f);
-            text.font = Fantasia.UI.UGUIKit.UIFont;
-            go.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
-            go.AddComponent<FaceCamera>();
+            // 11/14 팀장 "2막 글자가 안개에 끊겨 보임": 3D 글자는 안개·앞 집에 가려짐 → 화면 UI 글자가 이 자리를 따라다님 (늘 다 보임)
+            go.AddComponent<WorldNoticeLabel>().Init("2막 베르사유\n추후 공개");
         }
 
         private class FaceCamera : MonoBehaviour

@@ -43,6 +43,25 @@ namespace Fantasia.Board
             ["Fern"] = new("BoardArt/Deco/Fern_1", 0.22f, false),
             ["Plant"] = new("BoardArt/Deco/Plant_1", 0.2f, false),
             ["Pebble"] = new("BoardArt/Deco/Pebble_Round_2", 0.1f, false),
+            // 11/14 팀장 "돌담 안쪽이 휑함": 담 두른 정원 소품 (낮고 밝은 것 — 꽃·화분·텃밭·디딤돌)
+            ["Flowers"] = new("BoardArt/Deco/Flower_3_Group", 0.36f, false), // 11/14 QA: 0.2는 담 안에서 점처럼 보임 → 크게
+            ["GrassTall"] = new("BoardArt/Deco/Grass_Common_Tall", 0.36f, false),
+            ["PlantBig"] = new("BoardArt/Deco/Plant_7_Big", 0.42f, false),
+            ["Pot"] = new("BoardArt/Deco/Pot_1", 0.2f, false),
+            ["Vase"] = new("BoardArt/Deco/Vase_2", 0.18f, false),
+            ["Mushroom"] = new("BoardArt/Deco/Mushroom_Common", 0.16f, false),
+            ["StepStones"] = new("BoardArt/Deco/RockPath_Round_Wide", 0.4f, false, true),
+            ["CarrotCrate"] = new("BoardArt/Deco/FarmCrate_Carrot", 0.34f, false, true),
+            ["Stool"] = new("BoardArt/Deco/Stool", 0.18f, false),
+            ["SmallTree"] = new("BoardArt/Deco/CommonTree_3", 0.62f, true),
+            ["GardenBush"] = new("BattleArt/Trees_B", 0.48f, false), // 담 안 덤불 덩어리 (부피감)
+            ["GardenGrass"] = new("BoardArt/Deco/Grass_Common_Short", 0.34f, false),
+            ["GardenWispy"] = new("BoardArt/Deco/Grass_Wispy_Short", 0.34f, false),
+            ["GardenFern"] = new("BoardArt/Deco/Fern_1", 0.36f, false),
+            ["GardenApples"] = new("BoardArt/Deco/FarmCrate_Apple", 0.34f, false, true),
+            ["GardenBucket"] = new("BoardArt/Deco/Bucket_Wooden_1", 0.18f, false),
+            ["GardenPlant"] = new("BoardArt/Deco/Plant_1", 0.34f, false),
+            ["GardenPebble"] = new("BoardArt/Deco/Pebble_Round_2", 0.16f, false),
         };
 
         private enum Zone { Market, Residential, Outskirts }

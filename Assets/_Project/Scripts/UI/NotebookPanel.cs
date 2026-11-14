@@ -225,9 +225,10 @@ namespace Fantasia.UI
             var open = ImgButton(canvasGO.transform, "NotebookButton", "Book", new Vector2(0f, 1f), new Vector2(0f, 1f), Toggle);
             var orect = (RectTransform)open.transform;
             orect.pivot = new Vector2(0f, 1f);
-            orect.sizeDelta = new Vector2(46f, 46f);
+            orect.sizeDelta = new Vector2(64f, 64f); // 11/14 팀장: 작음 → 키움 (46 → 64)
             orect.anchoredPosition = new Vector2(8f, -92f);
-            var key = Txt(open.transform, "Key", new Vector2(0.55f, -0.05f), new Vector2(1.15f, 0.3f), 10, TextAnchor.MiddleCenter, Cream, bold: true);
+            var key = Txt(open.transform, "Key", new Vector2(0.6f, -0.05f), new Vector2(1.15f, 0.28f), 13, TextAnchor.MiddleCenter, Cream, bold: true);
+            var keyShadow = key.gameObject.AddComponent<Shadow>(); keyShadow.effectColor = new Color(0f, 0f, 0f, 0.8f); keyShadow.effectDistance = new Vector2(1f, -1f);
             key.text = "H";
             _button = open.gameObject;
 

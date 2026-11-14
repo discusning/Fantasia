@@ -13,6 +13,7 @@ namespace Fantasia.Board
         public const float Pitch = 52f;
         public float Distance = 16f;
         public float MinDistance = 6f, MaxDistance = 28f;
+        public const float VeilMaxDistance = 21f; // 11/14: 안개가 있을 때 휠로 뺄 수 있는 최대 (28이면 지도 바깥이 화면 대부분)
         public float PanSpeed = 14f;
         public float FollowSharpness = 6f;
 
@@ -77,8 +78,12 @@ namespace Fantasia.Board
             // 11/14 팀장 1안: 둘러보기는 열린 지역(안개 안쪽)까지만 — 안개 너머 빈 곳을 비추지 않게
             if (Board != null && Board.HasVeil)
             {
-                var vb = Board.VisibleBounds; float m = 1.5f;
-                var clamped = new Vector3(Mathf.Clamp(desired.x, vb.min.x - m, vb.max.x + m), desired.y, Mathf.Clamp(desired.z, vb.min.z - m, vb.max.z + m));
+                // 11/14 팀장 "WASD로 끝까지 가면 맵 끝이 블록처럼 끊겨 보임": 네모 범위 → 지역 모양을 따라가는 제한.
+                // 멀리 볼수록(휠로 뺄수록) 가장자리에서 더 안쪽 칸까지만 → 화면에 안개 너머가 크게 안 들어옴. 멀리 보기도 조금 줄임
+                Distance = Mathf.Min(Distance, VeilMaxDistance);
+                float tile = Board.TileSize * Board.transform.lossyScale.x;
+                int minDepth = Mathf.Clamp(Mathf.FloorToInt((Distance - 9f) / 4f), 0, 3);
+                var clamped = Board.ClampToOpen(desired, tile * 0.5f, minDepth);
                 _lookOffset += clamped - desired; desired = clamped;
             }
             _focus = Vector3.Lerp(_focus, desired, 1f - Mathf.Exp(-FollowSharpness * Time.deltaTime));
@@ -86,6 +91,7 @@ namespace Fantasia.Board
             Apply();
         }
 
+        public void DevLook(Vector3 offset) { _lookOffset = offset; } // 자동 점검: WASD로 멀리 민 것과 같음
         private void Apply() => transform.position = _focus - transform.forward * (Preview > 0 ? _pvDist : Distance);
 
         // ── 11/12 팀장 결정: 이동 시점 A+B (Docs/Planning/플레이어시점_연구_1112.md 6절) ──

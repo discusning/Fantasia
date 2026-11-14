@@ -850,7 +850,7 @@ namespace Fantasia.Core
                     cam.transform.position = c + new Vector3(vb.extents.x * 0.9f, 9f, -vb.extents.z * 0.2f - 9f); cam.transform.LookAt(c + new Vector3(vb.extents.x * 1.1f, 0f, 0f));
                     yield return new WaitForSeconds(1.5f); yield return Shot("board_edge_fog");
                     // 11/14 팀장: 돌담 — 게임 시점(지금 카메라 각도·11m)으로 파티에서 가까운 돌담 2곳
-                    Note($"돌담 조각 {HexBoard.DevWallSegments} · 돌담 칸 {HexBoard.DevWallSpots.Count}");
+                    Note($"돌담 조각 {HexBoard.DevWallSegments} · 돌담 칸 {HexBoard.DevWallSpots.Count} · 담 안 정원 {HexBoard.DevGardens}곳 소품 {HexBoard.DevGardenProps}개");
                     Qa(HexBoard.DevWallSegments > 0, "돌담: 길 쪽 모서리를 따라 세움");
                     var tokenPos = board.transform.position; var tk = GameObject.Find("PartyToken"); if (tk != null) tokenPos = tk.transform.position;
                     var spots = HexBoard.DevWallSpots.OrderBy(p => (p - (rig.Target != null ? rig.Target.position : tokenPos)).sqrMagnitude).Take(3).ToList();
@@ -860,6 +860,26 @@ namespace Fantasia.Core
                         yield return new WaitForSeconds(0.8f); yield return Shot("board_wall_" + wi);
                     }
                     rig.enabled = true; rig.SnapToTarget(); yield return new WaitForSeconds(1f);
+                    // 11/14 팀장: WASD로 맵 끝까지 밀어도 끊긴 가장자리가 크게 안 보이는지 — 기본 거리·최대 거리로 네 방향 끝까지
+                    var panDirs = new[] { ("N", new Vector3(0f, 0f, 60f)), ("E", new Vector3(60f, 0f, 0f)), ("S", new Vector3(0f, 0f, -60f)), ("W", new Vector3(-60f, 0f, 0f)) };
+                    foreach (var dist in new[] { 16f, 28f })
+                        foreach (var (dn, off) in panDirs)
+                        {
+                            rig.Distance = dist; rig.DevLook(off);
+                            yield return new WaitForSeconds(1.6f);
+                            yield return Shot($"board_pan_{dn}_{dist:0}");
+                        }
+                    Note($"둘러보기 끝 촬영: 최대 거리 {rig.Distance:0.0} (안개 있을 때 {BoardCameraRig.VeilMaxDistance})");
+                    rig.DevLook(Vector3.zero); rig.Distance = 16f; yield return new WaitForSeconds(1f);
+                    // 11/14 팀장: 2막 입구(K12) 안내 글이 안개에 끊기지 않는지
+                    var notice = GameObject.Find("ExitNotice_K12");
+                    if (notice != null)
+                    {
+                        rig.enabled = false;
+                        cam.transform.rotation = Quaternion.Euler(BoardCameraRig.Pitch, 0f, 0f); cam.transform.position = notice.transform.position - cam.transform.forward * 12f;
+                        yield return new WaitForSeconds(1f); yield return Shot("board_exit_notice");
+                        rig.enabled = true; rig.SnapToTarget(); yield return new WaitForSeconds(1f);
+                    }
                 }
                 // 11/14 기획 Q4 야영 텐트: 서고 → 다음 이동 시작에 치워짐
                 // 야영은 거점 밖 안전 칸에서 씀 → 먼저 조용한 길 칸으로 한 번 이동

@@ -52,7 +52,7 @@ namespace Fantasia.Board
 
         private void BuildStoneWalls(Transform root)
         {
-            DevWallSegments = 0; DevWallSpots.Clear();
+            DevWallSegments = 0; DevWallSpots.Clear(); DevGardens = 0; DevGardenProps = 0; DevGardens = 0; DevGardenProps = 0;
             if (_art.LowStone == null) return;
             BuildFrontGroups();
             foreach (var kv in _frontGroup)
@@ -74,16 +74,50 @@ namespace Fantasia.Board
                 }
                 if (placed == 0) continue;
                 DevWallSpots.Add(transform.TransformPoint(center));
-                // 담 안쪽 마당: 덤불 1 + 풀 1~2 (칸 가운데 근처, 담에 붙지 않게)
-                uint h = Hash(mapTile.Row, mapTile.Col, 41);
-                string[] yard = { "Bush", "BushFlowers", "Grass", "Fern", "GrassWispy" };
-                int count = 2 + (int)(h % 2);
-                for (int i = 0; i < count; i++)
-                {
-                    float ang = ((h >> (i * 4)) % 360) * Mathf.Deg2Rad, r = tileSize * (i == 0 ? 0.08f : 0.32f);
-                    var p = center + new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang)) * r + Vector3.up * tileHeight;
-                    PlaceDeco(i == 0 ? "Bush" : yard[1 + (h >> (i * 3 + 8)) % 4], root, p, h >> (i * 5));
-                }
+                BuildWalledGarden(root, center, mapTile);
+            }
+        }
+
+        // 11/14 팀장 "돌담 안쪽이 휑함 — 더 풍성하게, 튀지 않게, 칙칙하지 않게":
+        // 칸마다 정원 3종 중 하나(좌표로 고정 추첨) — 가운데 주인공 1 + 둘레 소품 + 풀밭(풀 여러 포기)으로 빈 바닥을 덮음.
+        //  꽃밭: 꽃 무더기·큰 잎 화초·디딤돌 / 텃밭: 당근·사과 상자·양동이 / 쉼터: 작은 나무·화분·의자
+        // 높이는 모두 낮게(작은 나무만 0.62) — 앞줄 칸이라 뒤 칸·말을 가리면 안 됨. 큰 것은 뒤(+Z), 작은 것은 앞.
+        public static int DevGardens { get; private set; }
+        public static int DevGardenProps { get; private set; }
+        private static readonly string[][] GardenThemes =
+        {
+            new[] { "GardenBush", "PlantBig", "Flowers", "Flowers", "StepStones", "GardenFern", "Mushroom" },          // 꽃밭 (11/14 QA: 크기 키우고 덤불로 부피)
+            new[] { "GardenBush", "CarrotCrate", "GardenApples", "Flowers", "GardenBucket", "GrassTall", "GardenPebble" }, // 텃밭
+            new[] { "SmallTree", "GardenBush", "Pot", "Flowers", "Stool", "Vase", "Flowers" },                   // 쉼터
+        };
+
+        private void BuildWalledGarden(Transform root, Vector3 center, MapTile mapTile)
+        {
+            uint h = Hash(mapTile.Row, mapTile.Col, 41);
+            var theme = GardenThemes[h % (uint)GardenThemes.Length];
+            DevGardens++;
+            // 자리: 가운데 뒤쪽 1(주인공) + 둘레 6 (뒤 3 = 큰 것, 앞 3 = 작은 것). 담(반지름 약 0.39)에 닿지 않게 0.28 안쪽
+            var slots = new (float ang, float r)[]
+            {
+                (90f, 0.06f),
+                (40f, 0.25f), (140f, 0.25f), (90f, 0.28f),
+                (-30f, 0.24f), (-150f, 0.24f), (-90f, 0.2f),
+            };
+            float spin = (h >> 8) % 40 - 20f; // 칸마다 조금씩 돌려 똑같아 보이지 않게
+            for (int i = 0; i < theme.Length && i < slots.Length; i++)
+            {
+                float a = (slots[i].ang + spin) * Mathf.Deg2Rad;
+                var p = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (tileSize * slots[i].r) + Vector3.up * tileHeight;
+                PlaceDeco(theme[i], root, p, h >> (i * 3));
+                DevGardenProps++;
+            }
+            // 풀밭: 빈 바닥이 안 보이게 풀 8포기를 고리 두 겹으로
+            for (int i = 0; i < 8; i++)
+            {
+                float a = (i * 45f + spin + ((h >> (i + 3)) % 18)) * Mathf.Deg2Rad, r = tileSize * (i % 2 == 0 ? 0.15f : 0.33f);
+                var p = center + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r + Vector3.up * tileHeight;
+                PlaceDeco(i % 3 == 0 ? "GardenWispy" : "GardenGrass", root, p, h >> i);
+                DevGardenProps++;
             }
         }
 
