@@ -97,25 +97,52 @@ namespace Fantasia.Combat
         // → 실제 몸 메시의 화면 가로 폭(카메라 오른쪽 축으로 잰 끝)에서 아이콘 반 폭 + 여유만큼 바깥. 카메라 쪽으로 조금 당겨 몸에 묻히지 않게
         // 원 에셋은 그림이 기준점보다 위에 떠 있고, 그 떠 있는 거리가 크기에 따라 달라짐 → 고정 보정(0.2)이 모델마다 어긋났음.
         // 몇 프레임 뒤 실제로 그려진 원(알갱이 렌더러 범위)의 높이를 재서 허리(키 0.5)·가슴(키 0.7)에 오도록 옮김
+        // 11/14 팀장 QA "속박 위치가 캐릭터마다 애매": 키 비율(0.5·0.7)은 모자·무기·자세에 따라 캐릭터마다 몸과 어긋났고,
+        // 가로 가운데도 그려지는 범위 가운데라 무기(지팡이·장총) 쪽으로 쏠렸음 → 사람 뼈대가 있으면 실제 뼈에 맞춤.
+        // 아래 원 = 골반(허리보다 약간 아래, 중·하반신), 위 원 = 가슴(상반신). 뼈가 없는 짐승 적은 예전처럼 키 비율.
+        private bool BindTargets(out Vector3 low, out Vector3 high)
+        {
+            low = high = Vector3.zero;
+            var anim = GetComponentInChildren<Animator>();
+            if (anim == null || !anim.isHuman) return false;
+            var hips = anim.GetBoneTransform(HumanBodyBones.Hips);
+            var chest = anim.GetBoneTransform(HumanBodyBones.UpperChest); if (chest == null) chest = anim.GetBoneTransform(HumanBodyBones.Chest); // Unity 객체는 ?? 대신 == null
+            if (hips == null || chest == null) return false;
+            var lowerChest = anim.GetBoneTransform(HumanBodyBones.Chest); if (lowerChest == null) lowerChest = chest;
+            low = hips.position;
+            high = (chest.position + lowerChest.position) * 0.5f; // 가슴 한가운데
+            return true;
+        }
+
         private System.Collections.IEnumerator FitBindRings(Transform root)
         {
             float feet = transform.position.y;
-            float[] want = { feet + _height * 0.5f, feet + _height * 0.7f };
             for (int frame = 0; frame < 4; frame++) yield return null;
-            for (int i = 0; i < 2 && root != null && i < root.childCount; i++)
+            if (root == null) yield break;
+            var c = BodyCenter();
+            bool bones = BindTargets(out var low, out var high);
+            Vector3[] want = bones
+                ? new[] { low, high }
+                : new[] { c + Vector3.up * (_height * 0.5f), c + Vector3.up * (_height * 0.7f) };
+            for (int i = 0; i < 2 && i < root.childCount; i++)
             {
                 var ring = root.GetChild(i);
-                bool any = false; float y = 0f;
+                bool any = false; float y = 0f; var mid = Vector3.zero;
                 foreach (var r in ring.GetComponentsInChildren<ParticleSystemRenderer>())
                 {
                     if (!r.enabled || r.bounds.size.sqrMagnitude < 1e-6f) continue;
-                    y = any ? Mathf.Min(y, r.bounds.center.y) : r.bounds.center.y; any = true; // 가장 낮은 판 = 원 그림
+                    if (!any || r.bounds.center.y < y) { y = r.bounds.center.y; mid = r.bounds.center; } // 가장 낮은 판 = 원 그림
+                    any = true;
                 }
-                if (any) ring.position += Vector3.up * (want[i] - y);
+                if (!any) continue;
+                var move = new Vector3(bones ? want[i].x - mid.x : 0f, want[i].y - y, bones ? want[i].z - mid.z : 0f);
+                ring.position += move;
             }
-            if (root != null) DevBindRingY = (root.childCount > 0 ? root.GetChild(0).position.y - feet : 0f) / Mathf.Max(0.01f, _height);
+            DevBindRingY = (root.childCount > 0 ? root.GetChild(0).position.y - feet : 0f) / Mathf.Max(0.01f, _height);
+            DevBindInfo = bones ? $"뼈 기준 · 골반 {(low.y - feet) / _height:F2} · 가슴 {(high.y - feet) / _height:F2}" : "키 비율 (뼈 없음)";
         }
         public static float DevBindRingY;
+        public static string DevBindInfo = "";
         public static string DevIconInfo = "";
 
         private Vector3 IconSpot(Vector3 camRight, float side, float iconSize)

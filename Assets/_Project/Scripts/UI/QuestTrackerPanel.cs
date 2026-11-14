@@ -142,7 +142,7 @@ namespace Fantasia.UI
             if (_group != null)
             {
                 bool dim = UIFlow.WindowOpen;
-                _group.alpha = Mathf.MoveTowards(_group.alpha, dim ? DimAlpha : 1f, Time.unscaledDeltaTime / 0.2f);
+                _group.alpha = Mathf.MoveTowards(_group.alpha, NotebookPanel.IsOpen ? 0f : dim ? DimAlpha : 1f, Time.unscaledDeltaTime / 0.2f); // 11/14 수첩이 열리면 책 오른쪽 가장자리에 겹쳐 아예 숨김
                 _group.interactable = _group.blocksRaycasts = !dim;
             }
             float glow = (Mathf.Sin(Time.unscaledTime * ShimmerSpeed) + 1f) * 0.5f;

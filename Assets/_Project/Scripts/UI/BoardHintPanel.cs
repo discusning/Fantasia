@@ -36,7 +36,9 @@ namespace Fantasia.UI
         {
             if (_instance == null) return;
             bool show = !AnyModalOpen;
-            if (_instance._root.activeSelf != show) _instance._root.SetActive(show);
+            // 11/14 팀장: 수첩 버튼 옆 안내 글 상자는 난잡함 → 숨김 (글은 점검용으로만 채워 둠, 안내는 탐정 수첩으로)
+            if (_instance._root.activeSelf) _instance._root.SetActive(false);
+            NotebookPanel.SetButtonVisible(show); // 수첩 버튼도 다른 창이 열리면 숨김
             if (!show) return;
             _instance._text.text = string.Join("\n", lines.Where(l => !string.IsNullOrEmpty(l)));
         }
@@ -59,7 +61,7 @@ namespace Fantasia.UI
             bg.raycastTarget = false;
             var rect = (RectTransform)bg.transform;
             rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(8f, -92f); // 상단 바·지역 배너 아래
+            rect.anchoredPosition = new Vector2(60f, -92f); // 상단 바·지역 배너 아래 (11/14 왼쪽 옆에 탐정 수첩 버튼)
             var fitter = bg.gameObject.AddComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;

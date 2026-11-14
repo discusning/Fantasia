@@ -305,6 +305,45 @@ namespace Fantasia.Core
 
         // 거점 상점: 의뢰 2개 수락(처음 한 번), 영약·해독제 조금 사고, 많이 다친 1명 숙박 (숙박은 턴을 끝냄 — 결정서 B2)
         private bool _shopShots;
+        private bool _quickProbed;
+
+        // 행동 중인 캐릭터 카드의 1번 빠른 칸 가운데를 실제 클릭처럼: 그 화면 자리의 UI를 위에서부터 찾고 맨 위에 클릭을 보냄
+        private IEnumerator ProbeQuickSlot(BattleUnit actor)
+        {
+            var party = BoardSession.Instance.Party.Members.ToList();
+            int idx = party.IndexOf(actor.Member);
+            var card = GameObject.Find($"PartyCard{idx}");
+            var slot = card != null ? card.GetComponentsInChildren<RectTransform>(true).FirstOrDefault(t => t.name == "QuickSlot0") : null;
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (slot == null || es == null) { Note($"빠른 칸 점검: 칸 못 찾음 (카드 {idx}, 이벤트 시스템 {(es != null)})"); yield break; }
+            var screen = RectTransformUtility.WorldToScreenPoint(null, slot.TransformPoint(slot.rect.center));
+            var ped = new UnityEngine.EventSystems.PointerEventData(es) { position = screen, button = UnityEngine.EventSystems.PointerEventData.InputButton.Left };
+            var hits = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+            es.RaycastAll(ped, hits);
+            Note($"빠른 칸 점검: {actor.DisplayName} 1번 칸 ({screen.x:0},{screen.y:0}) 위 UI = " + string.Join(" > ", hits.Take(5).Select(h => $"{h.gameObject.name}[{h.gameObject.GetComponentInParent<Canvas>()?.rootCanvas.name}]")));
+            var item = actor.Member.QuickSlots[0];
+            int before = item != null ? BoardSession.Instance.Party.Inventory.CountOf(item) : -1;
+            if (hits.Count > 0)
+            {
+                ped.pointerPressRaycast = ped.pointerCurrentRaycast = hits[0];
+                var handler = UnityEngine.EventSystems.ExecuteEvents.GetEventHandler<UnityEngine.EventSystems.IPointerClickHandler>(hits[0].gameObject);
+                Note($"빠른 칸 점검: 클릭 받는 것 = {(handler != null ? handler.name : "없음")}");
+                if (handler != null) UnityEngine.EventSystems.ExecuteEvents.Execute(handler, ped, UnityEngine.EventSystems.ExecuteEvents.pointerClickHandler);
+            }
+            yield return new WaitForSeconds(0.6f);
+            // 아군 대상 아이템이면 사람처럼 자기 카드를 눌러 대상까지 고름
+            if (item != null && BoardSession.Instance.Party.Inventory.CountOf(item) == before)
+            {
+                var cardRt = (RectTransform)card.transform;
+                ped.position = RectTransformUtility.WorldToScreenPoint(null, cardRt.TransformPoint(cardRt.rect.center));
+                hits.Clear(); es.RaycastAll(ped, hits);
+                var h2 = hits.Count > 0 ? UnityEngine.EventSystems.ExecuteEvents.GetEventHandler<UnityEngine.EventSystems.IPointerClickHandler>(hits[0].gameObject) : null;
+                Note($"빠른 칸 점검: 대상 고르기 — 카드 클릭 받는 것 = {(h2 != null ? h2.name : "없음")}");
+                if (h2 != null) { ped.pointerPressRaycast = ped.pointerCurrentRaycast = hits[0]; UnityEngine.EventSystems.ExecuteEvents.Execute(h2, ped, UnityEngine.EventSystems.ExecuteEvents.pointerClickHandler); }
+                yield return new WaitForSeconds(2.5f);
+            }
+            Note($"빠른 칸 점검: {item?.DisplayName ?? "빈 칸"} 개수 {before} → {(item != null ? BoardSession.Instance.Party.Inventory.CountOf(item) : -1)}");
+        }
         private bool _treasureShot;
         private IEnumerator ShopVisit()
         {
@@ -459,6 +498,14 @@ namespace Fantasia.Core
             yield return SkipIntro();
             var board = FindFirstObjectByType<BoardTestController>();
             yield return Shot("board_start");
+            // 11/14 탐정 수첩: 모든 쪽을 열어 찍음 (책갈피·사진·글 정렬 확인), 닫힘 확인
+            if (Environment.GetCommandLineArgs().Contains("-autoplay-notebook") && NotebookPanel.Instance != null)
+            {
+                for (int i = 0; i < NotebookPanel.PageCount; i++) { NotebookPanel.DevOpenPage(i); yield return new WaitForSeconds(0.35f); yield return Shot($"notebook_{i:00}"); }
+                Qa(NotebookPanel.IsOpen, $"탐정 수첩: {NotebookPanel.PageCount}쪽 열림");
+                NotebookPanel.Toggle(); yield return new WaitForSeconds(0.3f);
+                Qa(!NotebookPanel.IsOpen, "탐정 수첩: 닫힘");
+            }
             // 11/12 팀장 결정 1번: 구조물 있는 밟는 칸 — 말이 서는 자리가 구조물 밖인지, 구조물이 칸 폭(1.6m) 안인지
             {
                 var walk = Fantasia.Board.HexTile.WithProps.Where(t => t != null && t.StandFront > 0f).ToList();
@@ -1260,6 +1307,14 @@ namespace Fantasia.Core
                     }
 
                     var actor = battle.DevCurrent;
+                    // 11/14 팀장 QA "카드 1~4번 칸을 눌러도 아이템이 안 써짐": 실제 클릭처럼 그 자리의 맨 위 UI를 찾아 누름
+                    if (Environment.GetCommandLineArgs().Contains("-autoplay-quickslot") && !_quickProbed)
+                    {
+                        _quickProbed = true;
+                        yield return ProbeQuickSlot(actor);
+                        if (shots) yield return Shot("battle_quickslot_click");
+                        if (!battle.DevAwaitingPlayer) continue;
+                    }
                     // 스킬을 쓸 상황이면 스킬(D11), 아니면 기본 공격 — 집중력이 남으면 추가 집중을 켠다.
                     var (skill, target) = ChooseSkill(battle, actor);
                     var downed = battle.DevAllies.FirstOrDefault(a => a.Member.IsDowned && a.Member.CurrentLP > 0);

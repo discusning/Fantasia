@@ -325,7 +325,7 @@ namespace Fantasia.UI
             // HP / MP 바
             // 11/11 팀장 결정: 받은 바 틀(N21)로 HP·MP 따로 2개. 왼쪽 칸 = HP 하트(Z07) / "MP" 글자. 틀이 두꺼워서 조금 높게
             bool framed = UITheme.Current.HpMpFrame != null;
-            (card.HpFill, card.HpText) = BuildBar(fill, "HpBar", new Vector2(0.26f, framed ? 0.248f : 0.25f), new Vector2(0.98f, framed ? 0.378f : 0.36f), HpColor, "HP");
+            (card.HpFill, card.HpText) = BuildBar(fill, "HpBar", new Vector2(0.26f, framed ? 0.278f : 0.28f), new Vector2(0.97f, framed ? 0.4f : 0.39f), HpColor, "HP");
             {
                 var hpFillImage = card.HpFill.GetComponent<Image>();
                 var sh = UGUIKit.CreateImage(card.HpFill.parent, "Shield", Vector2.zero, Vector2.one, new Color(0.96f, 0.96f, 0.98f));
@@ -336,7 +336,7 @@ namespace Fantasia.UI
                 card.ShieldFill = shRect;
                 foreach (var img in fill.GetComponentsInChildren<Image>(true)) if (img.name == "Icon" && img.transform.parent.name.Contains("Slot") && img.transform.IsChildOf(fill.Find("HpBar") ?? fill)) card.HpSlotIcon = img;
             }
-            (card.MpFill, card.MpText) = BuildBar(fill, "MpBar", new Vector2(0.26f, framed ? 0.118f : 0.13f), new Vector2(0.98f, framed ? 0.248f : 0.24f), MpColor, "MP");
+            (card.MpFill, card.MpText) = BuildBar(fill, "MpBar", new Vector2(0.26f, framed ? 0.158f : 0.17f), new Vector2(0.97f, framed ? 0.278f : 0.27f), MpColor, "MP");
 
             // 6대 스탯 (아래)
             // 능력치 아이콘(Z05~Z10)이 다 있으면 아이콘 + 숫자 6칸, 아니면 한 줄 글자
@@ -345,9 +345,9 @@ namespace Fantasia.UI
                 card.StatValues = new Text[StatOrder.Length];
                 for (int k = 0; k < StatOrder.Length; k++)
                 {
-                    float x0 = 0.26f + k * 0.122f;
-                    UGUIKit.CreateIcon(fill, $"StatIcon{k}", new Vector2(x0, 0.005f), new Vector2(x0 + 0.04f, 0.125f), theme.StatIcon(StatOrder[k]));
-                    card.StatValues[k] = MakeText(fill, $"Stat{k}", new Vector2(x0 + 0.043f, 0f), new Vector2(x0 + 0.12f, 0.13f), 11, TextAnchor.MiddleLeft, TextLight, bold: false);
+                    float x0 = 0.27f + k * 0.117f; // 11/14 팀장 "능력치가 카드 밖으로": 바닥 틀 위로 올리고 오른쪽 끝을 틀 안으로
+                    UGUIKit.CreateIcon(fill, $"StatIcon{k}", new Vector2(x0, 0.045f), new Vector2(x0 + 0.036f, 0.15f), theme.StatIcon(StatOrder[k]));
+                    card.StatValues[k] = MakeText(fill, $"Stat{k}", new Vector2(x0 + 0.04f, 0.04f), new Vector2(x0 + 0.112f, 0.155f), 11, TextAnchor.MiddleLeft, TextLight, bold: false);
                 }
             }
             else card.Stats = MakeText(fill, "Stats", new Vector2(0.26f, 0f), new Vector2(0.99f, 0.12f), 9, TextAnchor.MiddleLeft, TextDim, bold: false);

@@ -565,7 +565,7 @@ namespace Fantasia.UI
         public void SetInterrupt(string label)
         {
             _interruptButton.gameObject.SetActive(!string.IsNullOrEmpty(label));
-            if (!string.IsNullOrEmpty(label)) _interruptButton.GetComponentInChildren<Text>().text = $"{label} (집중력 0)";
+            if (!string.IsNullOrEmpty(label)) { var it = _interruptButton.GetComponentInChildren<Text>(); it.text = $"{label} · 판정"; it.resizeTextForBestFit = true; it.resizeTextMinSize = 8; it.resizeTextMaxSize = 11; it.horizontalOverflow = HorizontalWrapMode.Wrap; } // 11/14 팀장 QA: 글자가 버튼 밖으로 → 짧게 ("집중 1이면 확정"은 예고 줄에 있음)
         }
 
         // HP 바 아래 예고 — null이면 해제. 시간으로 사라지지 않는다 (잠깐 띄운 "저지 성공"은 끝까지 보여준 뒤 반영).
@@ -581,19 +581,21 @@ namespace Fantasia.UI
         {
             var bar = _enemyBars.Find(b => b.Unit == boss);
             if (bar == null) return;
+            string before = bar.Telegraph.activeSelf ? bar.TelegraphText.text : ""; // 저지 실패 뒤 예고 글 되돌리기용
             bar.FlashUntil = 0f;
             SetBossTelegraph(boss, text);
             bar.FlashUntil = Time.time + seconds;
-            StartCoroutine(EndFlash(bar, seconds));
+            StartCoroutine(EndFlash(bar, seconds, before));
         }
 
-        private IEnumerator EndFlash(EnemyBar bar, float seconds)
+        private IEnumerator EndFlash(EnemyBar bar, float seconds, string before = "")
         {
             yield return new WaitForSeconds(seconds);
             if (Time.time + 0.01f < bar.FlashUntil) yield break; // 그새 다른 표시가 덮음
             bar.FlashUntil = 0f;
             var p = bar.Unit != null && bar.Unit.Boss != null ? bar.Unit.Boss : null;
             if (p == null || !p.HasPending || !bar.Unit.IsAlive) { bar.Telegraph.SetActive(false); bar.TelegraphText.text = ""; }
+            else if (!p.PendingCancelled && !string.IsNullOrEmpty(before)) { bar.Telegraph.SetActive(true); bar.TelegraphText.text = before; } // 저지 실패: 예고 그대로
         }
 
         // 하단 알림 (예고·결과 각 2초) — HP 바 아래 예고의 보조
@@ -1001,8 +1003,9 @@ namespace Fantasia.UI
             var panel = UGUIKit.CreateThemedPanel(parent, "ActionPanel", new Vector2(0.26f, 0.255f), new Vector2(0.74f, 0.39f), Gold, PanelFill, 2f);
             _actionPanel = panel.parent.gameObject;
 
-            _actorText = Label(panel, "Actor", new Vector2(0.02f, 0.68f), new Vector2(0.2f, 0.98f), 13, TextAnchor.MiddleLeft, Gold, bold: true);
-            _hintText = Label(panel, "Hint", new Vector2(0.45f, 0.68f), new Vector2(0.99f, 0.98f), 10, TextAnchor.MiddleRight, TextLight, bold: false);
+            _actorText = Label(panel, "Actor", new Vector2(0.025f, 0.68f), new Vector2(0.2f, 0.96f), 13, TextAnchor.MiddleLeft, Gold, bold: true);
+            _hintText = Label(panel, "Hint", new Vector2(0.45f, 0.68f), new Vector2(0.975f, 0.96f), 10, TextAnchor.MiddleRight, TextLight, bold: false);
+            _hintText.resizeTextForBestFit = true; _hintText.resizeTextMinSize = 8; _hintText.resizeTextMaxSize = 10; // 11/14 팀장 QA: 긴 안내가 판 테두리 밖으로 → 판 안쪽에서 끝내고 길면 줄임
             // 보스 예고 중에만 보이는 전용 행동 (봉합 방해 — 집중력 0, 행동 1회)
             _interruptButton = UGUIKit.CreateThemedButton(panel, "InterruptButton", new Vector2(0.2f, 0.67f), new Vector2(0.44f, 0.97f), "", new Color(0.55f, 0.35f, 0.12f), 11);
             _interruptButton.onClick.AddListener(() => InterruptClicked?.Invoke());
@@ -1017,8 +1020,18 @@ namespace Fantasia.UI
             for (int i = 0; i < defs.Length; i++)
             {
                 float x0 = 0.02f + i * 0.128f;
-                buttons[i] = UGUIKit.CreateThemedButton(panel, $"{defs[i].label}Button", new Vector2(x0, 0.08f), new Vector2(x0 + 0.12f, 0.62f), defs[i].label, ButtonFill, 13, defs[i].icon);
-                buttons[i].GetComponentInChildren<Text>().color = TextLight;
+                var u13 = Resources.Load<Sprite>("UI/ActionIcons/" + defs[i].label); // 11/14 디자인 U13 행동 아이콘 (없으면 예전 테마 아이콘)
+                buttons[i] = UGUIKit.CreateThemedButton(panel, $"{defs[i].label}Button", new Vector2(x0, 0.08f), new Vector2(x0 + 0.12f, 0.62f), defs[i].label, ButtonFill, 13, u13 != null ? u13 : defs[i].icon);
+                var btnLabel = buttons[i].GetComponentInChildren<Text>();
+                btnLabel.color = TextLight;
+                // 11/14 팀장 QA "선택지 글자가 튀어나옴": 글자가 버튼 아래 틀에 걸림 → 아이콘·글자를 틀 안쪽으로
+                var iconT = btnLabel.transform.parent.Find("Icon") as RectTransform;
+                if (iconT != null) { iconT.anchorMin = new Vector2(0.22f, 0.4f); iconT.anchorMax = new Vector2(0.78f, 0.9f); }
+                var lr = btnLabel.rectTransform;
+                lr.anchorMin = new Vector2(0.05f, 0.1f); lr.anchorMax = new Vector2(0.95f, 0.4f);
+                lr.offsetMin = lr.offsetMax = Vector2.zero;
+                btnLabel.fontSize = 12;
+                btnLabel.alignment = TextAnchor.MiddleCenter;
             }
             (_attackButton, _skillButton, _itemButton, _defendButton, _reviveButton, _retreatButton) = (buttons[0], buttons[1], buttons[2], buttons[3], buttons[4], buttons[5]);
             _attackButton.onClick.AddListener(() => AttackClicked?.Invoke());

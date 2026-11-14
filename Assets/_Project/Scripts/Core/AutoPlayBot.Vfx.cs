@@ -167,13 +167,14 @@ namespace Fantasia.Core
                 Qa(on == 1 && (parts > 0 || rimOn), $"둘레 효과 {type}: 걸려 있는 동안 보임 (켜짐 {on} · 알갱이 {parts}{(rimOn ? " · 테두리 빛" : "")})");
                 yield return Shot("vfx_aura_" + type);
                 if (type == StatusEffectType.DefenseDown) Note("방어 감소 아이콘: " + StatusAura.DevIconInfo);
-                if (type == StatusEffectType.Bind) Note($"속박 원(적) 아래 원 높이 = 키의 {StatusAura.DevBindRingY:F2} (목표 0.50)");
+                if (type == StatusEffectType.Bind) Note($"속박 원(적) {StatusAura.DevBindInfo} · 아래 원 키의 {StatusAura.DevBindRingY:F2}");
                 if (type == StatusEffectType.DefenseDown) { yield return new WaitForSeconds(0.3f); yield return Shot("vfx_aura_DefenseDown_b"); yield return new WaitForSeconds(0.3f); yield return Shot("vfx_aura_DefenseDown_c"); } // 1.5초마다라 시간 바꿔 더 찍음
             }
 
             // 11/13 팀장: 속박 원 위치(가슴·허리)는 사람 모델에서도 확인
             ClearDebuffs(enemy);
-            if (ally.Statuses.Apply(Def(StatusEffectType.Bind)) != null) { yield return new WaitForSeconds(1.6f); yield return Shot("vfx_aura_Bind_ally"); Note($"속박 원(아군) 아래 원 높이 = 키의 {StatusAura.DevBindRingY:F2} (목표 0.50)"); ClearDebuffs(ally); yield return new WaitForSeconds(0.3f); }
+            foreach (var a in battle.DevAllies.Where(u => u.IsAlive).ToList()) // 11/14 팀장 QA: 캐릭터마다 위치 확인 → 아군 3명 모두 (가슴·골반 뼈)
+                if (a.Statuses.Apply(Def(StatusEffectType.Bind)) != null) { yield return new WaitForSeconds(1.6f); yield return Shot("vfx_aura_Bind_ally_" + a.DisplayName); Note($"속박 원({a.DisplayName}) {StatusAura.DevBindInfo}"); ClearDebuffs(a); yield return new WaitForSeconds(0.3f); }
             if (ally.Statuses.Apply(Def(StatusEffectType.DefenseDown)) != null) { yield return new WaitForSeconds(0.8f); yield return Shot("vfx_aura_DefenseDown_ally"); yield return new WaitForSeconds(0.8f); yield return Shot("vfx_aura_DefenseDown_ally2"); ClearDebuffs(ally); yield return new WaitForSeconds(1.2f); yield return Shot("vfx_aura_DefenseDown_ally_off"); } // A안 테두리 빛 (켜짐·깜빡임·꺼짐)
             // 한 모델 최대 2개 · 강화는 표시 안 함
             ClearDebuffs(enemy);

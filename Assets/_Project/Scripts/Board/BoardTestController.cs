@@ -75,6 +75,7 @@ namespace Fantasia.Board
             EncounterPanel.EnsureExists();
             CaseLogPanel.EnsureExists(new Vector2(-10f, -74f)); // 상단 바 바로 아래 오른쪽
             BoardHintPanel.EnsureExists();
+            NotebookPanel.EnsureExists(); // 11/14 탐정 수첩 (H)
             _board = GetComponent<HexBoard>();
             _hasSave = SaveGame.HasSave;
             if (_board.UsesWorldMap) MusicPlayer.Play(MusicIds.FieldLondon); // 월드 복귀 시 지역 음악 (☆ 지역별 곡은 런던만 정의)
@@ -442,6 +443,10 @@ namespace Fantasia.Board
             UpdateTileTooltip();
             Fantasia.UI.ShopPanel.SetReopenButton(OnHubTile && !_isMoving && !_turnEnding && Clock.Phase == WorldPhase.AllyTurn && !BoardHintPanel.AnyModalOpen && !PauseMenu.IsOpen, OpenShopHere);
             if (PauseMenu.IsOpen) return; // 게임 중 메뉴 — 진행 일시정지
+            // 11/14 탐정 수첩: H로 열기 · 첫 월드 라운드(도입 대화 뒤) 한 번 자동으로 열림. 열려 있는 동안 보드 입력 멈춤
+            if (!NotebookPanel.AutoOpened && _board.UsesWorldMap && Clock.WorldRound <= 1 && Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn && !BoardHintPanel.AnyModalOpen && !NotebookPanel.SuppressAutoOpen && Time.timeSinceLevelLoad > 1.5f && BoardSession.Instance.StoryFlags.Contains(ActOneStory.FlagIntroDone)) { NotebookPanel.AutoOpened = true; NotebookPanel.OpenTab(0); }
+            if (Input.GetKeyDown(KeyCode.H) && !NotebookPanel.IsOpen && NotebookPanel.CanOpenThisFrame && !BoardHintPanel.AnyModalOpen) NotebookPanel.Toggle();
+            if (NotebookPanel.IsOpen) return;
             if (Input.GetKeyDown(KeyCode.Q) && !EncounterPanel.IsOpen && !InventoryPanel.IsOpen && !Fantasia.UI.ShopPanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen || ConfirmPanel.IsOpen || ActClearPanel.IsOpen || EventPanel.IsOpen) return;
             if (Input.GetKeyDown(KeyCode.I) && !EncounterPanel.IsOpen) InventoryPanel.Toggle(_testParty, Leader);
@@ -1286,14 +1291,8 @@ namespace Fantasia.Board
                 $"<b>{rollHint}</b>   <color=#CFC8BC>파티장 {Leader?.Job.DisplayName ?? "-"}</color>",
                 _awaitingSelection ? "밝은 칸 클릭: 이동" : _isMoving ? "이동 중..." : null,
                 _lastEventBonus >= 0 ? $"이벤트 칸 추가 이동 +{_lastEventBonus}칸 (이번 턴 1회)" : null,
-                "<color=#CFC8BC>주황 적 · 자주 보스 · 파랑 거점 · 보라 이벤트 · 초록 회복 · 노랑 보물</color>",
-                // 11/10 기획 회신 07: 첫 플레이 안내 문구 (기획 문구 그대로)
-                "<color=#D9B26A>판정 칸</color> 기본 공격은 판정 칸이 모두 성공하면 치명타가 됩니다.",
-                "<color=#D9B26A>피의 흔적</color> 100이 되면 피의 사냥이 시작됩니다.",
-                "      3월드 라운드 안에 사신 3마리를 모두 쓰러뜨리세요.",
-                "<color=#D9B26A>집중력</color> 집중력 1을 사용하면 판정 칸 1개를 확정 성공시킬 수 있습니다.",
-                "<color=#CFC8BC>I·초상 클릭: 인벤토리 · Q: 사건 기록 · Esc: 메뉴" + (OnHubTile ? " · B: 상점" : "") + (_hasSave && DevLoadAllowed ? " · F9: 불러오기(개발)" : "") + "</color>",
-                _board != null && _board.UsesWorldMap ? "<color=#CFC8BC>카메라: WASD·방향키, 휠 줌, F 파티로</color>" : null,
+                // 11/14 탐정 수첩: 칸 색·판정 칸·피의 흔적·집중력·키·카메라 안내(기획 회신 07 문구 포함)는 수첩으로 옮김 → 여기는 이번 턴 상태만
+                "<color=#CFC8BC>H: 탐정 수첩 (조작·규칙)" + (OnHubTile ? " · B: 상점" : "") + (_hasSave && DevLoadAllowed ? " · F9: 불러오기(개발)" : "") + "</color>",
                 SaveGame.LastError != null ? "<color=#E0675A>저장 실패</color>" : null,
                 !EncounterPanel.IsOpen && !string.IsNullOrEmpty(_encounterResultMessage) ? _encounterResultMessage : null,
                 !string.IsNullOrEmpty(_worldMessage) ? "턴 시작: " + _worldMessage : null);

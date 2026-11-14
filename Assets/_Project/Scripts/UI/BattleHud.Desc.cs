@@ -9,14 +9,31 @@ namespace Fantasia.UI
     // 11/14 팀장: 스킬·소모품 설명이 행동 창 오른쪽 위 10pt 한 줄이라 읽기 어려움 → 고르는 칸 바로 위에 설명 카드.
     // 다른 게임 조사 (Docs/진행일지 11/14): 툴팁은 고르는 버튼 가까이, 이름·종류·대상·비용을 첫 줄에 모아 한눈에,
     // 본문은 쉬운 말 한두 문장 + 지금 수치(계산식 대신), 긴 규칙 원문은 작게 아래로 (Slay the Spire 카드·BG3 툴팁처럼 요약 → 자세히).
+    // 11/14 팀장 플레이 QA "카드가 너무 크고 안쪽 글이 정렬 안 됨": 글 한 덩어리(크기 섞인 서식 글) → 줄마다 따로 칸.
+    //  윗줄 이름(왼쪽)·종류·비용(오른쪽) / 가는 선 / 본문 / 규칙 원문. 모든 줄 왼쪽 끝 같은 여백, 높이는 고정(작게), 글이 넘치면 글씨만 줄임.
     public partial class BattleHud
     {
         private GameObject _descCard;
         private RectTransform _descRoot;
-        private Text _descText;
+        private Text _descName, _descTag, _descBody, _descFoot;
         public static string DevLastDesc = ""; // 점검용
 
         private static readonly Color DescTag = new Color(0.62f, 0.8f, 0.95f);
+        private static readonly Color DescName = new Color(0.95f, 0.8f, 0.5f);
+        private static readonly Color DescRule = new Color(0.66f, 0.63f, 0.58f);
+        private static readonly Color DescWarn = new Color(0.95f, 0.45f, 0.4f);
+        private static readonly Color DescNow = new Color(1f, 0.78f, 0.45f);
+
+        private const float DescHeight = 0.1f;  // 화면 높이 비율 (1080에서 약 108px)
+        private const float DescGap = 0.006f;   // 고르는 칸과 띄움
+        private const float PadX = 0.022f;      // 카드 안 왼쪽·오른쪽 여백 (모든 줄 같음)
+
+        private readonly struct DescParts
+        {
+            public readonly string Name, Tag, Body, Foot; public readonly bool Warn;
+            public DescParts(string name, string tag, string body, string foot, bool warn) { Name = name; Tag = tag; Body = body; Foot = foot; Warn = warn; }
+            public override string ToString() => $"{Name} [{Tag}]\n{Body}\n{Foot}";
+        }
 
         // 스킬 쉬운 말 요약 (기획 원문 System.md는 맨 아래 작게 그대로). id 끝 → (종류, 요약)
         private static readonly Dictionary<string, (string kind, string text)> SkillPlain = new()
@@ -51,31 +68,51 @@ namespace Fantasia.UI
             _ => "",
         };
 
+        private Text DescLine(Transform panel, string name, float yMin, float yMax, int size, TextAnchor align, Color color, bool bold, float xMin = PadX, float xMax = 1f - PadX)
+        {
+            var t = Label(panel, name, new Vector2(xMin, yMin), new Vector2(xMax, yMax), size, align, color, bold);
+            t.supportRichText = true;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            t.verticalOverflow = VerticalWrapMode.Truncate;
+            t.resizeTextForBestFit = true; // 넘치면 잘리지 않고 글씨만 조금 작게
+            t.resizeTextMinSize = Mathf.Max(9, size - 3);
+            t.resizeTextMaxSize = size;
+            t.lineSpacing = 1.05f;
+            return t;
+        }
+
         private void BuildDescCard(Transform canvas)
         {
-            var panel = UGUIKit.CreateThemedPanel(canvas, "DescCard", new Vector2(0.26f, 0.505f), new Vector2(0.74f, 0.635f), Gold, PanelFill, 2f);
+            var panel = UGUIKit.CreateThemedPanel(canvas, "DescCard", new Vector2(0.26f, 0.505f), new Vector2(0.74f, 0.505f + DescHeight), Gold, PanelFill, 2f);
             _descCard = panel.parent.gameObject;
             _descRoot = _descCard.GetComponent<RectTransform>();
-            _descText = Label(panel, "Text", new Vector2(0.025f, 0.06f), new Vector2(0.975f, 0.94f), 16, TextAnchor.UpperLeft, TextLight, bold: false);
-            _descText.supportRichText = true;
-            _descText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _descText.verticalOverflow = VerticalWrapMode.Truncate;
-            _descText.lineSpacing = 1.1f;
+            // 윗줄: 이름(왼쪽) · 종류·대상·비용(오른쪽) — 같은 줄, 같은 가운데 높이
+            _descName = DescLine(panel, "Name", 0.68f, 0.94f, 15, TextAnchor.MiddleLeft, DescName, bold: true, xMax: 0.5f);
+            _descTag = DescLine(panel, "Tag", 0.68f, 0.94f, 12, TextAnchor.MiddleRight, DescTag, bold: false, xMin: 0.4f);
+            var line = UGUIKit.CreateImage(panel, "Line", new Vector2(PadX, 0.655f), new Vector2(1f - PadX, 0.665f), new Color(Gold.r, Gold.g, Gold.b, 0.35f));
+            line.raycastTarget = false;
+            _descBody = DescLine(panel, "Body", 0.27f, 0.64f, 13, TextAnchor.UpperLeft, TextLight, bold: false);
+            _descFoot = DescLine(panel, "Foot", 0.05f, 0.27f, 11, TextAnchor.LowerLeft, DescRule, bold: false);
             var group = _descCard.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false; group.interactable = false; // 뒤의 적 클릭을 막지 않음
             _descCard.SetActive(false);
         }
 
-        // 설명 카드는 고르는 칸(스킬 / 소모품) 바로 위. 칸이 닫히거나, 고른 뒤 대상을 고르는 동안은 숨김 (적이 가려지지 않게)
-        private void ShowDesc(string text, bool overItems)
+        // 설명 카드는 고르는 칸(스킬 / 소모품) 바로 위, 칸과 같은 너비. 칸이 닫히거나, 고른 뒤 대상을 고르는 동안은 숨김 (적이 가려지지 않게)
+        private void ShowDesc(DescParts d, bool overItems)
         {
             if (_descCard == null || _chosen != ChosenKind.None) return;
-            float y0 = overItems ? 0.59f : 0.505f;
+            float y0 = (overItems ? 0.585f : 0.5f) + DescGap;
             _descRoot.anchorMin = new Vector2(0.26f, y0);
-            _descRoot.anchorMax = new Vector2(0.74f, y0 + 0.18f); // 이름 줄 + 설명 2줄 + 규칙 원문 1~2줄
+            _descRoot.anchorMax = new Vector2(0.74f, y0 + DescHeight);
             _descCard.transform.SetAsLastSibling(); // 보호막 표시·떠오르는 숫자보다 위에
-            _descText.text = text;
-            DevLastDesc = text;
+            _descName.text = d.Name;
+            _descTag.text = d.Tag;
+            _descBody.text = d.Body;
+            _descFoot.text = d.Foot;
+            _descFoot.color = d.Warn ? DescWarn : DescRule;
+            _descFoot.fontStyle = d.Warn ? FontStyle.Bold : FontStyle.Normal;
+            DevLastDesc = d.ToString();
             _descCard.SetActive(true);
         }
 
@@ -89,23 +126,18 @@ namespace Fantasia.UI
 
         private static string Hex(Color c) => ColorUtility.ToHtmlStringRGB(c);
 
-        private string SkillDescText(SkillDefinition skill, string reason)
+        private DescParts SkillDescText(SkillDefinition skill, string reason)
         {
             string id = string.IsNullOrEmpty(skill.Id) ? "" : skill.Id.Substring(skill.Id.LastIndexOf('.') + 1);
             SkillPlain.TryGetValue(id, out var plain);
             string kind = plain.kind ?? KindOf(skill);
             string target = TargetText(skill.Target);
-            string tag = string.Join(" · ", new[] { kind, target }.Where(s => !string.IsNullOrEmpty(s)));
-            var sb = new System.Text.StringBuilder();
-            sb.Append($"<size=19><b><color=#{Hex(new Color(0.95f, 0.8f, 0.5f))}>{skill.DisplayName}</color></b></size>");
-            if (tag.Length > 0) sb.Append($"   <color=#{Hex(DescTag)}>[{tag}]</color>");
-            sb.Append($"   <color=#{Hex(TextDim)}>{SkillCostText(skill)}</color>\n");
-            sb.Append(plain.text ?? skill.EffectDescription);
+            string tag = string.Join(" · ", new[] { kind, target, SkillCostText(skill) }.Where(s => !string.IsNullOrEmpty(s)));
+            string body = plain.text ?? skill.EffectDescription;
             string now = NowNumbers(skill);
-            if (now != null) sb.Append($"  <color=#{Hex(new Color(1f, 0.78f, 0.45f))}><b>{now}</b></color>");
-            if (reason != null) sb.Append($"\n<color=#{Hex(new Color(0.95f, 0.45f, 0.4f))}><b>지금 못 씀: {reason}</b></color>");
-            else if (plain.text != null) sb.Append($"\n<size=12><color=#{Hex(new Color(0.66f, 0.63f, 0.58f))}>규칙: {skill.EffectDescription}</color></size>");
-            return sb.ToString();
+            if (now != null) body += $"  <color=#{Hex(DescNow)}><b>{now}</b></color>";
+            string foot = reason != null ? $"지금 못 씀: {reason}" : plain.text != null ? $"규칙: {skill.EffectDescription}" : "";
+            return new DescParts(skill.DisplayName, tag, body, foot, reason != null);
         }
 
         // 계산식(1.3A·floor(0.5M)) 대신 지금 이 캐릭터의 수치
@@ -123,12 +155,7 @@ namespace Fantasia.UI
             return null;
         }
 
-        private string ItemDescText(ConsumableDefinition item)
-        {
-            var sb = new System.Text.StringBuilder();
-            sb.Append($"<size=19><b><color=#{Hex(new Color(0.95f, 0.8f, 0.5f))}>{item.DisplayName}</color></b></size>   <color=#{Hex(DescTag)}>[소모품 · 개인 행동 1회]</color>\n");
-            sb.Append($"<size=18>{item.EffectDescription}</size>");
-            return sb.ToString();
-        }
+        private DescParts ItemDescText(ConsumableDefinition item) =>
+            new DescParts(item.DisplayName, "소모품 · 개인 행동 1회", item.EffectDescription, "", false);
     }
 }

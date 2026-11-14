@@ -8,10 +8,11 @@ namespace Fantasia.Editor
     public class UISpriteImport : AssetPostprocessor
     {
         private const string Folder = "Assets/_Project/UI/Sprites/";
+        private const string NotebookFolder = "Assets/_Project/Resources/UI/"; // 11/14 탐정 수첩·U13 행동 아이콘 (Resources.Load)
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(Folder)) return;
+            if (!assetPath.StartsWith(Folder) && !assetPath.StartsWith(NotebookFolder)) return;
             var importer = (TextureImporter)assetImporter;
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;

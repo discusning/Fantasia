@@ -357,7 +357,7 @@ namespace Fantasia.Combat
             AnnounceSealStopped(target, pending);
         }
 
-        // 「봉합 방해」 전용 행동: 예고 중 아군 개인 턴에만, 행동 1회·집중력 0·MP 0, 판정 없이 취소, 피해 0.
+        // 「봉합 방해」 전용 행동: 예고 중 아군 개인 턴에만, 행동 1회·MP 0, 피해 0. 11/14부터 인지 판정 2칸 (PlayerInterrupt).
         private BattleUnit InterruptibleBoss => _enemies.FirstOrDefault(e => e.IsAlive && e.Boss != null && BossBrain.CanInterrupt(e.Boss));
 
         private void OnInterruptClicked()
@@ -366,22 +366,46 @@ namespace Fantasia.Combat
             if (_phase != Phase.ChoosingAction) return; // 두 번 눌러도 한 번만 (행동하면 페이즈가 바뀜)
             var boss = InterruptibleBoss;
             if (boss == null) return;
-            var pending = boss.Boss.Pending;
             SaveBattle("전투 행동 확정 — 봉합 방해", CommandFor(BattleSnapshot.CommandKind.Interrupt));
-            if (!BossBrain.TryInterrupt(boss.Boss)) return;
-            if (_playLog != null) _playLog.Interrupts++;
-            _phase = Phase.Resolving;
+            _phase = Phase.Resolving; // 두 번 눌러도 한 번만
             _hud.HideActions();
-            Log($"{_current.DisplayName} [{pending.InterruptName}] → {boss.DisplayName}의 [{pending.FollowUp.Name}] 저지 (집중력 0)");
-            AnnounceSealStopped(boss, pending);
-            StartCoroutine(FinishInterrupt());
+            StartCoroutine(PlayerInterrupt(boss));
         }
 
-        private IEnumerator FinishInterrupt()
+        // 11/14 팀장 결정: 봉합 방해에 성공·실패 (판정 없이 확정 → 판정 2칸).
+        //  인지로 2칸 판정, 1칸 이상 성공 = 저지 성공. 집중 1을 걸면 1칸 확정 = 반드시 성공 (집중력 0이어도 버튼은 그대로, 확률로 시도).
+        //  실패 = 행동 1회 소모, 봉합 예고는 그대로 → 다음 아군이 다시 봉합 방해 또는 1.2배 이상 공격 기술로 끊을 수 있음.
+        //  판정 화면은 퇴각·공격과 같은 판정 칸(PlayRoll)을 그대로 씀.
+        public const int InterruptSlots = 2;
+        private IEnumerator PlayerInterrupt(BattleUnit boss)
         {
+            var pending = boss.Boss.Pending;
+            int stat = _current.Member.FinalStats.Perception;
+            int focus = Mathf.Clamp(_hud.FocusCount, 0, Mathf.Min(_current.Member.CurrentFocus, 1));
+            if (focus > 0) _current.Member.TrySpendFocus(focus);
+            var slots = SlotCheck.Roll(InterruptSlots, stat, focus);
+            bool ok = slots.SuccessCount >= 1;
+            yield return _hud.PlayRoll($"{_current.DisplayName} [{pending.InterruptName}] → {boss.DisplayName} (인지 {stat})", slots, focus,
+                ok ? $"저지 성공 — {pending.FollowUp.Name} 취소" : "저지 실패 — 봉합 예고 그대로",
+                ok ? BattleHud.SlotSuccess : BattleHud.SlotFailure);
+            if (ok && BossBrain.TryInterrupt(boss.Boss))
+            {
+                if (_playLog != null) _playLog.Interrupts++;
+                Log($"{_current.DisplayName} [{pending.InterruptName}] 판정 {slots.SuccessCount}/{slots.SlotCount}{(focus > 0 ? " (집중 1)" : "")} → {boss.DisplayName}의 [{pending.FollowUp.Name}] 저지 성공");
+                AnnounceSealStopped(boss, pending);
+            }
+            else
+            {
+                DevInterruptFails++;
+                Log($"{_current.DisplayName} [{pending.InterruptName}] 판정 {slots.SuccessCount}/{slots.SlotCount} → 저지 실패 (예고 유지)");
+                _hud.PopText(_camera, ModelTop(boss) + Vector3.up * 0.9f, "저지 실패", BattleHud.SlotFailure);
+                _hud.FlashBossTelegraph(boss, $"{pending.Announce.Name} 저지 실패", 1.5f);
+                _hud.ShowNotice($"저지 실패 — {boss.DisplayName}의 {pending.Announce.Name} 예고가 남아 있다. 다른 아군이 다시 막을 수 있다", 2f);
+            }
             yield return new WaitForSeconds(0.8f);
             NextTurn();
         }
+        public static int DevInterruptFails;
 
         private void AnnounceSealStopped(BattleUnit boss, EnemyThresholdAction pending)
         {
@@ -400,7 +424,7 @@ namespace Fantasia.Combat
                 if (!e.IsAlive || _phase == Phase.Finished || p == null || e.Boss.PendingCancelled) { _hud.SetBossTelegraph(e, null); continue; }
                 string counter = string.Join("\n", new[]
                 {
-                    !string.IsNullOrEmpty(p.InterruptName) ? $"대응: {p.InterruptName}(행동 1회·집중력 0)" : null,
+                    !string.IsNullOrEmpty(p.InterruptName) ? $"대응: {p.InterruptName}(행동 1회 · 판정 2칸 중 1칸 성공 · 집중 1이면 확정)" : null,
                     p.CancelMinCoefficient > 0f ? $"또는 {p.CancelMinCoefficient:0.#}배 이상 공격 기술 — {p.CounterHint}" : null,
                 }.Where(s => s != null));
                 _hud.SetBossTelegraph(e, $"{p.Announce.Name} 예고 중 | 다음 보스 행동: {p.FollowUp.Description}\n{counter}");
@@ -487,8 +511,17 @@ namespace Fantasia.Combat
 
         private void OnQuickSlotClicked(PartyMember member, int slot)
         {
-            if (_phase != Phase.ChoosingAction || _current == null || _current.Member != member) return;
-            OnItemChosen(member.QuickSlots[slot]);
+            Debug.Log($"[QuickSlot] {member?.Job.DisplayName} {slot + 1}번 칸 클릭 · 단계 {_phase} · 차례 {_current?.DisplayName}");
+            if (_phase != Phase.ChoosingAction || _current == null) return;
+            if (_current.Member != member)
+            {
+                // 11/14 팀장 QA "1~4번 칸이 안 됨": 다른 사람 카드의 칸은 조용히 무시되던 것 → 안내
+                if (member.QuickSlots[slot] != null) _hud.SetHint($"지금은 {_current.DisplayName}의 차례 — {_current.DisplayName} 카드의 칸이나 숫자키 1~4로 씁니다");
+                return;
+            }
+            var def = member.QuickSlots[slot];
+            if (def == null) { _hud.SetHint($"{slot + 1}번 칸이 비어 있음 (가방에서 소모품을 칸에 넣을 수 있음)"); return; }
+            OnItemChosen(def);
         }
 
         private void OnItemChosen(ConsumableDefinition item)
@@ -551,12 +584,13 @@ namespace Fantasia.Combat
         }
 
         // 11/11 팀장 결정: 안내 줄은 크게 "약점 간파 → 대상 적 선택" + 취소 방법
-        private const string CancelHelp = "   (취소: 다시 누르기 · 우클릭 · Esc)";
+        private const string CancelHelp = " (취소: 우클릭·Esc)";
         private string TargetingHint()
         {
             if (_reviving) return "부활 → 쓰러진 아군 선택 (LP 1, HP 30%)" + CancelHelp;
             string what = _pendingItem != null ? _pendingItem.DisplayName : _pendingSkill != null ? _pendingSkill.DisplayName : "공격";
-            return $"{what} → 대상 {(_targetAllies ? "아군" : "적")} 선택" + CancelHelp;
+            if (_targetAllies) return $"{what} → 쓸 아군의 카드나 캐릭터를 누르세요" + CancelHelp; // 11/14 팀장 QA: 빠른 칸을 누른 뒤 무엇을 해야 할지 몰랐음
+            return $"{what} → 대상 적 선택" + CancelHelp;
         }
 
         // 대상 고르기 취소 — 고른 칸 표시·대상 표시·적 카드 강조를 모두 지우고 행동 고르기로. quiet: 다른 행동으로 바로 넘어갈 때
@@ -1514,6 +1548,10 @@ namespace Fantasia.Combat
             if (Input.GetKeyDown(KeyCode.Q) && !DialoguePanel.IsOpen) CaseLogPanel.Toggle();
             if (CaseLogPanel.IsOpen) return;
             ConsumesEscape = _phase == Phase.ChoosingTarget || _escConsumedFrame == Time.frameCount;
+            // 11/14 팀장 QA: 카드 1~4번 칸은 숫자키로도 (행동 중인 캐릭터의 칸)
+            if (_phase == Phase.ChoosingAction && _current != null && _current.IsAlly && !DialoguePanel.IsOpen)
+                for (int k = 0; k < PartyMember.QuickSlotCount; k++)
+                    if (Input.GetKeyDown(KeyCode.Alpha1 + k) || Input.GetKeyDown(KeyCode.Keypad1 + k)) { OnQuickSlotClicked(_current.Member, k); break; }
             if (_phase != Phase.ChoosingTarget) return;
 
             // 11/11 취소: 우클릭 또는 Esc. 예전엔 우클릭만, 적 카드 강조가 남아 취소됐는지 헷갈렸음

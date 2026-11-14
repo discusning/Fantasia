@@ -86,7 +86,7 @@ namespace Fantasia.UI
             _hintText.fontSize = big ? 15 : 10;
             _hintText.fontStyle = big ? FontStyle.Bold : FontStyle.Normal;
             _hintText.color = big ? HintBig : TextLight;
-            _hintText.resizeTextForBestFit = big; _hintText.resizeTextMinSize = 10; _hintText.resizeTextMaxSize = 15;
+            _hintText.resizeTextForBestFit = true; _hintText.resizeTextMinSize = 8; _hintText.resizeTextMaxSize = big ? 15 : 10; // 11/14: 긴 안내도 판 안에서 줄여 맞춤
         }
 
         // ── 방어 보호막 표시 (캐릭터 발밑 방패 + 남은 양) ──
@@ -110,7 +110,7 @@ namespace Fantasia.UI
             if (mark == null)
             {
                 var icon = UGUIKit.CreateImage(_canvasRect, "ShieldMark", Vector2.zero, Vector2.zero, Color.white);
-                icon.sprite = UITheme.Current != null ? UITheme.Current.ShieldIcon : null;
+                icon.sprite = UITheme.Current != null ? UITheme.Current.ShieldIcon : null; // 11/14 디자인 D4 방패 그림도 받았지만 팀장 결정으로 예전 그림 유지
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
                 if (icon.sprite == null) icon.color = new Color(0.95f, 0.95f, 0.98f, 0.9f);

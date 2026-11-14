@@ -125,8 +125,10 @@ namespace Fantasia.UI
             bool statue = _kind == EventKind.Statue;
             _title.text = EventTiles.Label(_kind);
             _cardsRow.SetActive(witch);
-            _witchArt.sprite = UITheme.Current.PortraitForSpeaker("점술마녀");
-            _witchArt.enabled = witch && _witchArt.sprite != null;
+            // 11/14 디자인 분수대 그림: 점술마녀 그림과 같은 자리(창 왼쪽 바깥)
+            bool fountain = _kind == EventKind.Fountain;
+            _witchArt.sprite = fountain ? Resources.Load<Sprite>("UI/EventArt/Fountain") : UITheme.Current.PortraitForSpeaker("점술마녀");
+            _witchArt.enabled = (witch || fountain) && _witchArt.sprite != null;
             _prayerRow.SetActive(statue);
             if (statue)
             {

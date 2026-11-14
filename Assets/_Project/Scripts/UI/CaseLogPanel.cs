@@ -63,6 +63,7 @@ namespace Fantasia.UI
 
         private void Update()
         {
+            if (_openButton != null && _openButton.gameObject.activeSelf == NotebookPanel.IsOpen) _openButton.gameObject.SetActive(!NotebookPanel.IsOpen); // 11/14 수첩 열린 동안 숨김
             if (IsOpen && Input.GetKeyDown(KeyCode.Escape)) { _root.SetActive(false); Fantasia.Core.SfxPlayer.Play(Fantasia.Core.SfxIds.UiClose); }
         }
 
