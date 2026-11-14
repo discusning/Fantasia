@@ -63,7 +63,7 @@ namespace Fantasia.Editor
         {
             int errors = 0;
             var member = new PartyMember(job); // 명탐정 힘 71 + 단검 2 = 73
-            var poison = Make(StatusEffectType.Poison, -1, 3, 3, statPenalty: 5, clearedByVictory: false);
+            var poison = Make(StatusEffectType.Poison, -1, 3, 3, statPenalty: 5, clearedByVictory: true);
             for (int i = 0; i < 4; i++) member.Statuses.Apply(poison);
 
             errors += Expect("중독 최대 3스택", member.Statuses.All[0].Stacks, 3);
@@ -73,8 +73,8 @@ namespace Fantasia.Editor
 
             member.Statuses.Apply(Make(StatusEffectType.WeakBleed, 3, 1, 2));
             member.Statuses.ClearOnBattleEnd();
-            errors += Expect("전투 뒤 중독만 남음", member.Statuses.All.Count, 1);
-            errors += ExpectBool("남은 것은 중독", member.Statuses.Has(StatusEffectType.Poison), true);
+            errors += Expect("전투 뒤 중독도 풀림 (11/14)", member.Statuses.All.Count, 0);
+            errors += ExpectBool("중독 없음", member.Statuses.Has(StatusEffectType.Poison), false);
             return errors;
         }
 

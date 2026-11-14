@@ -19,7 +19,7 @@ namespace Fantasia.Data
     {
         None,
         WeakBleed,  // 약한 출혈 — 턴 시작 방어 무시 피해, HP 1 하한
-        Poison,     // 중독 — 스택×피해, HP 1 하한, 모든 스탯 감소, 정화 전까지
+        Poison,     // 중독 — 스택×피해, HP 1 하한, 모든 스탯 감소, 전투 동안 (11/14: 전투 끝에 풀림)
         Confusion,  // 혼란 — 다음 개인 턴 행동 강제 (회복약 없으면 임의의 적 기본 공격)
         Bind,       // 속박 — 속도 감소
         AttackDown, // 공격력(·마력) 감소

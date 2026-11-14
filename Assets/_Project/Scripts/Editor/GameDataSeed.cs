@@ -53,8 +53,8 @@ namespace Fantasia.Editor
                 "잭 더 리퍼를 숭배하는 정보원. 판정 성공 시 아군의 공격력 감쇠 디버프 부여 [공격력 -3]");
             var bleed = EnsureWeakBleed();
             var poison = EnsureStatus("Status_중독", "status.poison", "중독", "중독", StatusEffectType.Poison, StatusEffectKind.DamageOverTime,
-                duration: -1, maxStacks: 3, magnitude: 3, statPenalty: 5, clearedByVictory: false,
-                "최대 3스택. 개인 턴 시작마다 스택 × 3 피해, HP 1 미만으로 낮추지 않음. 1스택 이상이면 모든 능력 스탯 −5를 한 번 적용. 전투 밖에서는 월드 개인 턴에 적용.");
+                duration: -1, maxStacks: 3, magnitude: 3, statPenalty: 5, clearedByVictory: true, // 11/14 팀장: 전투가 끝나면 풀림 (예전: 정화 전까지)
+                "최대 3스택. 개인 턴 시작마다 스택 × 3 피해, HP 1 미만으로 낮추지 않음. 1스택 이상이면 모든 능력 스탯 −5를 한 번 적용. 전투가 끝나면 풀림 (11/14).");
             var confusion = EnsureStatus("Status_혼란", "status.confusion", "혼란", "혼란", StatusEffectType.Confusion, StatusEffectKind.ControlAction,
                 duration: 1, maxStacks: 1, magnitude: 0, statPenalty: 0, clearedByVictory: true,
                 "다음 개인 턴에 50% 확률로 소지한 일반 HP 회복약 1개를 자신에게 사용, 아니면 임의의 적을 기본 공격. 약이 없으면 기본 공격.");

@@ -505,6 +505,13 @@ namespace Fantasia.Core
                 Qa(NotebookPanel.IsOpen, $"탐정 수첩: {NotebookPanel.PageCount}쪽 열림");
                 NotebookPanel.Toggle(); yield return new WaitForSeconds(0.3f);
                 Qa(!NotebookPanel.IsOpen, "탐정 수첩: 닫힘");
+                // 11/14 B안 주사위 버튼: 수첩을 닫으면 보이고, 누르면 굴러가고 사라짐
+                yield return new WaitForSeconds(0.5f);
+                Qa(BoardDiceButton.Visible, "주사위 버튼: 굴리기 전 보임");
+                yield return Shot("dice_button");
+                BoardDiceButton.DevPress(); yield return new WaitForSeconds(0.6f);
+                Qa(!BoardDiceButton.Visible && BoardDiceButton.DevClicks == 1, "주사위 버튼: 누르면 굴리고 사라짐");
+                yield return Shot("dice_button_rolled");
             }
             // 11/12 팀장 결정 1번: 구조물 있는 밟는 칸 — 말이 서는 자리가 구조물 밖인지, 구조물이 칸 폭(1.6m) 안인지
             {

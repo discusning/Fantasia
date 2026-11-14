@@ -1236,7 +1236,7 @@ namespace Fantasia.Combat
             _phase = Phase.Finished;
             BoardSession.Instance.BattleSnapshotJson = null; // 전투 끝 — 이어하기는 보드에서
             RefreshBossTelegraph(); // 전투 종료 → 예고 해제
-            foreach (var ally in _allies) ally.Statuses.ClearOnBattleEnd(); // 중독처럼 남는 것만 유지
+            foreach (var ally in _allies) ally.Statuses.ClearOnBattleEnd(); // 11/14 팀장: 중독도 전투 끝에 풀림 (전투 밖 저주 등 ClearedByCombatVictory=false만 유지)
             _hud.SetTimeline(_queue.Preview(BattleHud.TimelineMax), _queue.Round, _queue.OrderChangeOf);
             bool wiped = enemiesLeft && !_allies.Any(a => a.IsAlive);
             Log($"전투 종료 — {(!enemiesLeft ? "승리" : wiped ? "패배(전원 쓰러짐)" : "퇴각")} · 라운드 {_queue.Round} · 아군 HP {string.Join(", ", _allies.Select(u => $"{u.DisplayName} {u.CurrentHP}/{u.MaxHP} LP {u.Member.CurrentLP}"))}");

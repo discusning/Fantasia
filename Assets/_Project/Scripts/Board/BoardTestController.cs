@@ -76,6 +76,7 @@ namespace Fantasia.Board
             CaseLogPanel.EnsureExists(new Vector2(-10f, -74f)); // 상단 바 바로 아래 오른쪽
             BoardHintPanel.EnsureExists();
             NotebookPanel.EnsureExists(); // 11/14 탐정 수첩 (H)
+            BoardDiceButton.EnsureExists(); // 11/14 B안 주사위 버튼
             _board = GetComponent<HexBoard>();
             _hasSave = SaveGame.HasSave;
             if (_board.UsesWorldMap) MusicPlayer.Play(MusicIds.FieldLondon); // 월드 복귀 시 지역 음악 (☆ 지역별 곡은 런던만 정의)
@@ -364,6 +365,7 @@ namespace Fantasia.Board
         {
             if (BoardTopBar.Instance != null) RefreshTopBar(announce: false);
             RefreshHint();
+            ToastBoardEvents();
             RefreshLeaderFigure();
         }
 
@@ -442,6 +444,8 @@ namespace Fantasia.Board
         {
             UpdateTileTooltip();
             Fantasia.UI.ShopPanel.SetReopenButton(OnHubTile && !_isMoving && !_turnEnding && Clock.Phase == WorldPhase.AllyTurn && !BoardHintPanel.AnyModalOpen && !PauseMenu.IsOpen, OpenShopHere);
+            // 11/14 팀장 B안: 굴릴 수 있을 때만 주사위 버튼 (보이는 것 = 지금 굴릴 차례). 눌러도 Space와 같음
+            BoardDiceButton.Set(Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn && !_isMoving && !_turnEnding && !BoardHintPanel.AnyModalOpen && !PauseMenu.IsOpen && !NotebookPanel.IsOpen && !BoardTopBar.TurnDropBusy && !DialoguePanel.IsOpen && !EncounterPanel.IsOpen, TryRoll);
             if (PauseMenu.IsOpen) return; // 게임 중 메뉴 — 진행 일시정지
             // 11/14 탐정 수첩: H로 열기 · 첫 월드 라운드(도입 대화 뒤) 한 번 자동으로 열림. 열려 있는 동안 보드 입력 멈춤
             if (!NotebookPanel.AutoOpened && _board.UsesWorldMap && Clock.WorldRound <= 1 && Clock.Phase == WorldPhase.AllyTurn && !Clock.HasRolledThisTurn && !BoardHintPanel.AnyModalOpen && !NotebookPanel.SuppressAutoOpen && Time.timeSinceLevelLoad > 1.5f && BoardSession.Instance.StoryFlags.Contains(ActOneStory.FlagIntroDone)) { NotebookPanel.AutoOpened = true; NotebookPanel.OpenTab(0); }
@@ -535,7 +539,7 @@ namespace Fantasia.Board
         private void TrySelectTile()
         {
             var cam = Camera.main;
-            if (cam == null) return;
+            if (cam == null || BattleHud.PointerOverUI) return; // 11/14: 주사위 버튼·카드 등 UI 위 클릭이 칸 선택으로 새지 않게
 
             var ray = cam.ScreenPointToRay(Input.mousePosition);
             if (!Physics.Raycast(ray, out var hit)) return;
@@ -1282,6 +1286,22 @@ namespace Fantasia.Board
             MoveTo(best);
         }
 
+
+        // 11/14 팀장: 안내 상자를 없앤 뒤 "방금 일어난 일"은 아이템 알림(2초 토스트)으로 — 추가 이동·전투/칸 결과, 저장 실패는 빨간 글자.
+        private int _toastedBonus = -1;
+        private string _toastedResult;
+        private string _toastedSaveError;
+        private void ToastBoardEvents()
+        {
+            if (EncounterPanel.IsOpen || BoardHintPanel.AnyModalOpen) return; // 창이 닫힌 뒤에 보여 줌
+            if (_lastEventBonus >= 0 && _lastEventBonus != _toastedBonus) ItemAcquiredToast.Show($"이벤트 칸 추가 이동 +{_lastEventBonus}칸");
+            _toastedBonus = _lastEventBonus;
+            if (!string.IsNullOrEmpty(_encounterResultMessage) && _encounterResultMessage != _toastedResult) ItemAcquiredToast.Show(_encounterResultMessage);
+            _toastedResult = _encounterResultMessage;
+            var err = SaveGame.LastError;
+            if (err != null && err != _toastedSaveError) ItemAcquiredToast.Show("저장 실패", textColor: new Color(0.88f, 0.4f, 0.35f));
+            _toastedSaveError = err;
+        }
         // 보드 왼쪽 안내 (BoardHintPanel — 예전 개발용 화면 글자를 대신, 다른 창이 열리면 숨김)
         private void RefreshHint()
         {
