@@ -164,7 +164,7 @@ namespace Fantasia.Editor
                 model.transform.localPosition -= new Vector3(b.center.x, b.min.y, b.center.z);
 
                 UseNormalMap(model, name);
-                if (name == "Model_ShadowReaper") AttachScythe(model, report);
+                if (name == "Model_ShadowReaper" && AssetDatabase.LoadAssetAtPath<GameObject>($"{WeaponRoot}/Prop_Weapon_Scythe/Prop_Weapon_Scythe.fbx") == null) AttachScythe(model, report); // 새 낫 파일이 있으면 AttachWeapons가 붙임
                 AttachWeapons(model, name, report);
 
                 string prefabPath = $"{PrefabDir}/{name}.prefab";

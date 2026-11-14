@@ -25,7 +25,8 @@ namespace Fantasia.Editor
             ["RustDagger"] = (Axis.Z, (Fwd - Up * 0.35f).normalized, Axis.X, Up),
             ["Staff"] = (Axis.Z, Up, Axis.Y, Fwd),                                    // 지팡이 머리가 위, 아래로 바닥 쪽
             ["Pistol"] = (Axis.Z, Fwd, Axis.Y, Up),                                   // 총구 앞, 손잡이 아래
-            ["Musket"] = (Axis.X, Fwd, Axis.Y, Up),
+            ["Musket"] = (Axis.Z, Fwd, Axis.Y, Up),                                   // 11/14 디자인 수정본: 총구 +Z, 기준점 = 개머리 손목
+            ["Scythe"] = (Axis.Z, Up, Axis.Y, Fwd),                                   // 11/14 디자인 새 파일: 자루 +Z(날끝 위), 날 +Y, 기준점 = 오른손 자루 띠
             ["MercuryFlask"] = (Axis.Y, Up, Axis.Z, Fwd),                             // 병 똑바로
             ["Grimoire"] = (Axis.Y, Up, Axis.Z, Right),                               // 책을 세워 옆구리에
         };
@@ -37,6 +38,7 @@ namespace Fantasia.Editor
             ["Model_PlagueDoctor"] = new[] { ("Staff", true, true, 1f), ("Grimoire", true, false, 1f) },
             ["Model_Sniper"] = new[] { ("Pistol", true, true, 1f), ("Musket", true, false, 1f) },
             ["Model_AbelMoreau"] = new[] { ("Scalpel", true, true, 1.5f), ("MercuryFlask", false, true, 1.3f) },
+            ["Model_ShadowReaper"] = new[] { ("Scythe", true, true, 1f) },                     // 11/14 새 낫 (m 단위 2.2m). 파일이 없으면 예전 Props/Prop_Scythe (ArtSetup.AttachScythe)
         };
 
         private static void AttachWeapons(GameObject model, string name, List<string> report)

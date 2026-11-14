@@ -1527,6 +1527,7 @@ namespace Fantasia.Combat
             model.transform.rotation = Quaternion.LookRotation(facing);
             BlobShadow.Attach(model, height); // 발밑 흐린 그림자 (11/10 기획 1A)
             HeldWeapon.Show(model, unit.Member); // 11/13 아군: 장착 무기 종류에 맞는 소품만 손에
+            Fantasia.UI.HandGrip.Attach(model); // 11/14 손가락으로 무기 쥐기 (손가락 뼈 있는 모델만)
             StatusAura.Attach(model, unit, height); // 11/13 디버프가 걸려 있는 동안 은은한 둘레 효과
             var col = model.AddComponent<CapsuleCollider>();
             col.height = height;

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>판타지아 손가락 쥐기 적용 결과</title>
+<style>
+@page{size:A4;margin:12mm}
+body{font-family:"Malgun Gothic",sans-serif;font-size:12.5px;line-height:1.55;color:#222;background:#fff;margin:0}
+.head{background:#2f2420;color:#fff;padding:14px 18px;border-top:4px solid #b8925a}
+.head .t{font-size:24px;font-weight:bold}.head .s{color:#d8c7a8;font-size:12px}
+h2{break-after:avoid;page-break-after:avoid;font-size:16px;border-bottom:2px solid #6b1e1e;padding-bottom:3px;margin:18px 0 8px;color:#6b1e1e}
+h3{font-size:14px;margin:12px 0 4px}
+table{border-collapse:collapse;width:100%;margin:6px 0}
+th,td{border:1px solid #bbb;padding:5px 8px;text-align:left;vertical-align:top}
+th{background:#f1e9e4}
+img{width:100%;box-sizing:border-box;border:1px solid #999;display:block}
+.game img{width:78%}
+figure{margin:6px 0 10px;page-break-inside:avoid}figcaption{font-size:11.5px;color:#444;margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.must{color:#b42318;font-weight:bold}.opt{color:#b5651d;font-weight:bold}.ok{color:#14803a;font-weight:bold}
+.box{border-left:5px solid #b8925a;background:#f7f1ea;padding:9px 12px;margin:10px 0}
+.small{font-size:11.5px;color:#555}
+.brk{page-break-before:always}
+</style></head><body>
+<div class="head"><div class="s">FANTASIA / LONDON ACT 1 · 2026.11.14 · 개발 → 디자인 (3D 신지성 · 송재원)</div>
+<div class="t">손가락 쥐기 적용 결과 + 사신 대기 동작 요청</div>
+<div class="s">요청 마감: 사신 대기 동작 11/16 · 게임 완성 11/18</div></div>
+
+<p>보내 주신 손가락 본(테스트 버전)을 게임에 넣어 봤습니다. 손가락을 굽히는 일은 <b>개발이 코드로</b> 했습니다. 디자인이 쥐는 동작을 따로 만들 필요는 없습니다. 이 문서는 두 가지입니다.</p>
+<table>
+<tr><th style="width:8%">번호</th><th style="width:30%">내용</th><th style="width:16%">디자인 할 일</th><th>한 줄 설명</th></tr>
+<tr><td>1~3</td><td>손가락 본 적용 결과</td><td class="ok">없음 (보기만)</td><td>개발이 고친 것과 전/후 사진</td></tr>
+<tr><td>4</td><td>사신 대기 동작</td><td class="must">요청 (11/16)</td><td>기본 자세에서 낫을 세워 쥘 수 있게 팔을 굽힌 대기 동작 1개</td></tr>
+<tr><td>5</td><td>지켜 줄 것</td><td class="must">꼭</td><td>손가락 본 이름을 바꾸지 않기</td></tr>
+</table>
+
+<div class="box"><b>11/14 오후에 올려 주신 무기 3개(장총·지팡이·새 낫)도 바로 넣었습니다.</b> 기준점이 쥐는 곳에 있어서 잘 맞습니다 (오류 없음). 11/13 요청서의 "2. 무기 쥔 손으로 동작 다시"는 <b>개발이 코드로 대신하므로 안 하셔도 됩니다</b>. 남은 것은 아래 4번 사신 대기 동작 하나입니다.</div>
+<h2>1. 개발이 한 것 — 한눈에 보기</h2>
+<table>
+<tr><th style="width:24%">무엇</th><th style="width:38%">전</th><th>후</th></tr>
+<tr><td>손가락</td><td>항상 펴져 있음. 무기를 쥐지 않고 손에 붙어만 있음</td><td>무기 모양에 맞게 굽혀 쥠 (단검·권총·지팡이·메스·수은 병·낫)</td></tr>
+<tr><td>무기 손잡이 자리</td><td>손목 관절에 붙어 있었음. 실제 주먹과 <b>14~22cm</b> 떨어짐</td><td>굽힌 손가락 안쪽(주먹 가운데)으로 옮김</td></tr>
+<tr><td>권총 방향</td><td>몸 기준으로 고정. 팔을 내리면 총구가 허공을 향함</td><td>손 기준. 평소엔 총구가 앞아래, 쏠 때만 앞을 향함 (2번)</td></tr>
+<tr><td>사신 낫 방향</td><td>자루가 손가락과 나란히 붙어 쥘 수 없었음</td><td>자루가 주먹을 비스듬히 지나고 날은 위. 공격 때 왼손도 같이 쥠 (4번)</td></tr>
+<tr><td>11/14 받은 무기 3개</td><td>장총 누움 · 지팡이 기준점 벗어남 · 낫 cm 단위로 누움</td><td>장총은 개머리 손목, 지팡이는 손잡이 띠, 새 낫은 오른손 자루 띠를 쥠. 낫은 새 파일로 바꿈</td></tr>
+<tr><td>동작 클립</td><td colspan="2">그대로 씀. 손가락 본은 동작 연결(휴머노이드)에 안 들어가 있어서, 코드가 굽혀도 동작과 부딪히지 않음</td></tr>
+</table>
+
+<h3>동작마다 손 모양이 다름</h3>
+<p class="small">동작을 재 보니 공격·스킬·아이템 손짓은 모두 오른손(무기 손)이 합니다. 그래서 무기 손은 무기를 놓지 않게 했습니다.</p>
+<table>
+<tr><th style="width:18%">동작</th><th style="width:41%">무기 든 손</th><th>빈손</th></tr>
+<tr><td>서 있기</td><td>편하게 쥠</td><td>살짝 굽힌 쉼</td></tr>
+<tr><td>공격</td><td>휘두르는 순간 꽉 쥠. 권총은 쏘는 순간 방아쇠를 당김</td><td>힘이 들어감. 두 손 무기(사신 낫)는 같이 쥠</td></tr>
+<tr><td>맞음</td><td>놓치지 않게 꽉</td><td>놀라서 펴짐</td></tr>
+<tr><td>방어</td><td>꽉 쥠</td><td>막는 손 (손가락을 모아 폄)</td></tr>
+<tr><td>스킬</td><td>쥔 채로 (권총은 가리키는 때 조준)</td><td>쉼</td></tr>
+<tr><td>아이템·회복</td><td>쥔 채로</td><td>약병 쥐는 손 → 내밀며 폄</td></tr>
+<tr><td>쓰러짐</td><td colspan="2">힘이 빠지며 풀림</td></tr>
+</table>
+
+<h2>2. 권총은 현실·게임 기준으로 맞춤</h2>
+<table>
+<tr><th style="width:26%">조사한 것</th><th>내용</th><th style="width:30%">게임에 적용</th></tr>
+<tr><td>현실 사격 교본 (로우 레디)</td><td>총을 내릴 때 총구는 바로 아래가 아니라 약 45° 앞아래. 검지는 방아쇠에 걸지 않고 총 몸통 옆에 곧게 폄. 쏠 때만 방아쇠로</td><td>평소 총구 앞아래, 검지는 곧게. 쏘는 동안만 검지가 방아쇠로</td></tr>
+<tr><td>수발총(1700년대 권총)</td><td>손잡이가 총신에서 크게 꺾여 있어서, 주먹으로 쥐면 총구가 손등보다 위쪽으로 들림</td><td>평소 38° 들림</td></tr>
+<tr><td>3D 게임 권총 대기 동작</td><td>"무기 내린 대기"는 총을 몸 옆에 낮게 들고 총구는 앞아래. 조준 대기는 따로 있음</td><td>조준할 때는 12°로 줄여 총구가 팔과 거의 나란히</td></tr>
+</table>
+<p class="small">출처: americanrifleman.org(수발 권총), outdoorlife.com·usconcealedcarry.com(검지 위치·로우 레디), mocaponline.com·fab.com(게임 권총 동작 묶음).</p>
+<figure><img src="img/sniper.png"><figcaption>저격수. 왼쪽부터 ① 전: 총이 손목에 붙고 손은 폄 ② 후: 서 있기 — 주먹으로 쥐고 총구 앞아래 ③ 후: 쏘기 — 검지가 방아쇠, 총구 앞 ④ 후: 맞음 ⑤ 전신 서 있기</figcaption></figure>
+<figure><img src="img/musket.png"><figcaption>저격수 장총 (11/14 수정본, 평소엔 꺼져 있고 장총을 장착하면 보임). ① 전 ② 후: 서 있기 — 개머리 손목을 쥠 ③ 후: 쏘기 ④ 앞에서 본 쏘기</figcaption></figure>
+
+<h2 class="brk">3. 모델별 전/후</h2>
+<figure><img src="img/detective.png"><figcaption>명탐정 (단검). ① 전 ② 후: 서 있기 ③ 후: 공격 ④ 후: 방어 — 왼손 막는 손 ⑤ 전신</figcaption></figure>
+<figure><img src="img/doctor.png"><figcaption>역병 의사 (지팡이). ① 전: 지팡이가 손 옆에 떠 있음 ② 후: 서 있기 ③ 후: 공격 ④ 후: 회복 — 왼손 ⑤ 전신</figcaption></figure>
+<figure><img src="img/abel.png"><figcaption>아벨 모로 (메스 · 왼손 수은 병). ① 전: 오른손 ② 후: 오른손 메스 ③ 전: 왼손 병 ④ 후: 왼손 병 ⑤ 전신</figcaption></figure>
+<figure class="game"><img src="img/game.png"><figcaption>실제 게임 화면 (전투 시작). 저격수 총 · 의사 지팡이 · 탐정 단검 · 사신 낫을 모두 쥐고 있음</figcaption></figure>
+
+<h2 class="brk">4. 요청 — 사신 대기 동작 <span class="must">(11/16까지)</span></h2>
+<div class="box"><b>한 줄 요약:</b> 사신 기본(대기) 동작이 팔을 쭉 내린 자세라, 2.2m 낫을 세워 쥘 수 없습니다. <b>오른팔을 굽혀 낫을 세워 짚는 대기 동작 1개</b>를 부탁합니다.</div>
+<h3>지금 상황</h3>
+<figure><img src="img/reaper.png"><figcaption>① 전: 낫이 손에 붙어만 있고 손가락과 나란함 (쥘 수 없음) ② 후: 새 낫(11/14 수정본)의 자루 띠를 주먹에 끼움 ③ 후: 공격 — 왼손도 같이 쥠 ④ 전신 전 ⑤ 전신 후: 낫이 몸 앞을 비스듬히 가로지름</figcaption></figure>
+<table>
+<tr><th style="width:24%">문제</th><th>이유</th></tr>
+<tr><td>낫이 세워지지 않음</td><td>팔을 똑바로 내리면 주먹 구멍이 앞뒤(수평)를 향합니다. 세운 막대는 그 구멍을 지날 수 없습니다. 현실에서도 막대를 세워 쥐려면 팔꿈치를 굽혀야 합니다.</td></tr>
+<tr><td>개발이 할 수 있는 최선</td><td>지금처럼 비스듬히 쥐게 함 (⑤). 공격 동작은 지금 그대로 괜찮습니다.</td></tr>
+</table>
+<h3>부탁하는 동작 (사신 Idle 1개만)</h3>
+<table>
+<tr><th style="width:24%">부위</th><th>모양</th></tr>
+<tr><td>오른팔</td><td>팔꿈치를 약 90° 굽힘. 주먹이 허리~가슴 사이 높이, 몸 옆 약간 앞</td></tr>
+<tr><td>오른손</td><td>주먹 구멍이 위아래를 향하게 (엄지가 위). 손가락은 펴 둔 채로 두세요 — 굽히는 건 개발이 함</td></tr>
+<tr><td>낫</td><td>자루 끝이 바닥 근처, 날은 머리 위. 지팡이를 짚고 선 느낌</td></tr>
+<tr><td>왼팔</td><td>자유 (내려도 됨)</td></tr>
+<tr><td>길이·반복</td><td>지금 Idle과 같게 (숨쉬기 정도의 작은 움직임, 반복)</td></tr>
+<tr><td>이름·형식</td><td>지금 사신 FBX와 같은 뼈대, 클립 이름 Idle (바꿔 끼우기만 하면 됨)</td></tr>
+</table>
+<p class="small">못 만들면 지금 모습(비스듬히 쥠)으로 출시합니다. 만들 수 있는지만 11/15까지 알려 주세요.</p>
+
+<h2>5. 지켜 줄 것 <span class="must">(꼭)</span></h2>
+<table>
+<tr><th style="width:30%">항목</th><th>이유</th></tr>
+<tr><td>손가락 본 이름 그대로<br><span class="small">Hand.R/L · Thumb1/2 · Index1/2 · Middle1/2 · Socket_R/L (.R/.L)</span></td><td>개발 코드는 이 이름으로 손가락을 찾습니다. 이름이 바뀌면 손이 예전처럼 펴진 상태로 돌아갑니다 (오류는 안 남).</td></tr>
+<tr><td>새 모델도 같은 이름이면 자동 적용</td><td>같은 이름이면 개발이 따로 할 일이 없습니다.</td></tr>
+<tr><td>무기 모델 원점·방향을 바꾸면 알려 주기</td><td>개발이 무기 모양을 보고 손잡이 자리를 계산합니다. 원점이 바뀌면 다시 확인해야 합니다.</td></tr>
+</table>
+</body></html>

@@ -283,7 +283,7 @@ namespace Fantasia.Board
             if (_token == null) return;
             var job = Leader?.Job;
             if (_tokenFigure != null && job == _tokenFigureJob && (job != null || _tokenIsSphere))
-            { Fantasia.UI.HeldWeapon.Show(_tokenFigure, Leader); return; } // 같은 사람이어도 무기는 바뀌었을 수 있음
+            { Fantasia.UI.HeldWeapon.Show(_tokenFigure, Leader); Fantasia.UI.HandGrip.Attach(_tokenFigure); return; } // 같은 사람이어도 무기는 바뀌었을 수 있음
             if (_tokenFigure != null) DestroySafe(_tokenFigure);
 
             _tokenFigureJob = job;
@@ -308,6 +308,7 @@ namespace Fantasia.Board
             foreach (var col in _tokenFigure.GetComponentsInChildren<Collider>(true)) DestroySafe(col);
             if (!_tokenIsSphere) Fantasia.UI.BlobShadow.Attach(_tokenFigure, _tokenFigureHeight); // 발밑 흐린 그림자 (11/10 기획 1A)
             Fantasia.UI.HeldWeapon.Show(_tokenFigure, Leader); // 11/13 장착 무기 종류에 맞는 소품만
+            Fantasia.UI.HandGrip.Attach(_tokenFigure);
         }
 
         private static void DestroySafe(Object o)
