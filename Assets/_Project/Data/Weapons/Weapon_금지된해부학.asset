@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: weapon.grimoire.forbidden_anatomy
   DisplayName: "\uAE08\uC9C0\uB41C \uD574\uBD80\uD559"
   Category: 8
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 05f0cd357d54fe74fad55c004dd4333a, type: 3}
   SlotCount: 4
   BaseBonusB: 8
   BaseAttackMPCost: 6

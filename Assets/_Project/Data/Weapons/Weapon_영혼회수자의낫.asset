@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: weapon.greatsword.soul_reaper
   DisplayName: "\uC601\uD63C\uD68C\uC218\uC790\uC758 \uB0AB"
   Category: 2
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: a14f582dde5327349b10c811dc2569ab, type: 3}
   SlotCount: 4
   BaseBonusB: 10
   BaseAttackMPCost: 0

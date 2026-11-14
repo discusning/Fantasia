@@ -35,6 +35,10 @@ namespace Fantasia.Board
             ["Rock2"] = new("BoardArt/Deco/Rock_Medium_2", 0.28f, false),
             ["Rock3"] = new("BoardArt/Deco/Rock_Medium_3", 0.22f, false),
             ["Grass"] = new("BoardArt/Deco/Grass_Common_Short", 0.2f, false),
+            ["Tree"] = new("BattleArt/Trees_A", 0.62f, true),        // 11/14 외딴 집 마당: 집 옆·뒤 나무
+            ["Fence"] = new("BattleArt/WoodFence", 0.45f, false, true), // 마당 울타리 한 토막 (긴 면이 카메라)
+            ["YardTree"] = new("BattleArt/Trees_A", 0.95f, true),   // 마당 나무: 11/14 QA 0.62는 전체 화면에서 안 보일 만큼 작았음
+            ["YardBush"] = new("BattleArt/Trees_B", 0.5f, false),
             ["GrassWispy"] = new("BoardArt/Deco/Grass_Wispy_Short", 0.2f, false),
             ["Fern"] = new("BoardArt/Deco/Fern_1", 0.22f, false),
             ["Plant"] = new("BoardArt/Deco/Plant_1", 0.2f, false),
@@ -124,6 +128,7 @@ namespace Fantasia.Board
             BuildStoneWalls(root); // 11/14 팀장: 돌담을 길 쪽 모서리를 따라 이어서
             var lampTiles = BuildLampScenes(root);
             BuildFoundations(root, lampTiles);
+            BuildYards(root, lampTiles); // 11/14 팀장: 막힌 칸에 집이 덩그러니 → 외딴 집에 마당(나무·울타리·풀)
 
             foreach (var mapTile in Map.Tiles.Values)
             {
@@ -187,6 +192,62 @@ namespace Fantasia.Board
             return used;
         }
 
+        private int BlockedNeighbors(HexCoord c)
+        {
+            int n = 0;
+            // 눈에 보이는 높은 구조물(집 등)이 선 막힌 이웃만 셈 — 구조물이 없거나 낮은 덤불·돌담인 막힌 칸은 화면에선 빈 땅 (11/14 QA: 외딴 집이 "이웃 있음"으로 빠졌음)
+            for (int d = 0; d < 6; d++)
+                if (Map.Tiles.TryGetValue(c.Neighbor(d), out var nb) && nb.Kind == MapTileKind.Blocked && TryGetTile(nb.Coord, out var t) && t.PropVisible
+                    && t.PropBounds().size.y >= tileSize * 0.5f * transform.lossyScale.y) n++;
+            return n;
+        }
+        public static string DevYardInfo = "";
+        public static readonly List<Vector3> DevYardTiles = new(); // 점검용: 마당 붙은 집 칸 (월드)
+
+        // 11/14 팀장: 막힌 칸에 집 한 채만 덩그러니 → 외딴 집(막힌 이웃 1개 이하)에 마당.
+        //  집 양옆(벽 바깥): 뒤쪽 나무·덤불, 앞쪽 울타리 한 토막·풀 / 집 뒤: 지붕 위로 보이는 나무 1그루. 칸 밖으로 안 나감, 칸 앞쪽 가운데(집 정면)는 비움.
+        public static int DevYards { get; private set; }
+        private static readonly string[] YardBack = { "YardTree", "YardBush", "YardTree" };
+        private static readonly string[] YardFront = { "Fence", "Grass", "BushFlowers", "Fence", "Barrel" };
+        private void BuildYards(Transform root, HashSet<HexCoord> skip)
+        {
+            DevYardTiles.Clear();
+            int count = 0, nLamp = 0, nNear = 0, nLow = 0, nTree = 0;
+            foreach (var mapTile in Map.Tiles.Values)
+            {
+                if (mapTile.Kind != MapTileKind.Blocked || !TryGetTile(mapTile.Coord, out var tile) || !tile.PropVisible) continue;
+                var wb = tile.PropBounds();
+                if (wb.size.y < tileSize * 0.5f * transform.lossyScale.y) { nLow++; continue; } // 낮은 돌담·덤불 칸은 그대로
+                if (skip.Contains(mapTile.Coord)) { nLamp++; continue; } // 가로등 장면이 이미 있음
+                if (BlockedNeighbors(mapTile.Coord) > 2) { nNear++; continue; } // 집 2~3채가 빈 땅에 모인 곳도 (11/14 QA: 1채 기준은 5곳뿐)
+                var src = HidesTileBehind(mapTile.Coord) ? FrontRowProp(mapTile) ?? _art.PropFor(mapTile) : _art.PropFor(mapTile);
+                if (src == _art.BlockTrees || src == _art.LowTrees) { nTree++; continue; } // 나무 칸은 이미 자연물
+                uint h = Hash(mapTile.Row, mapTile.Col, 71);
+                var center = LocalPosition(mapTile.Coord);
+                float y = center.y + tileHeight;
+                // 집 칸은 집이 거의 꽉 채움 → 옆·뒤 빈 칸의 집 쪽 가장자리에 (칸 가운데 = 말 자리는 비움). 앞(카메라 쪽) 이웃은 집 정면·길이라 비움
+                int placed = 0;
+                for (int d = 0; d < 6; d++)
+                {
+                    if (!Map.Tiles.TryGetValue(mapTile.Coord.Neighbor(d), out var nb) || nb.Kind != MapTileKind.Walkable) continue;
+                    var v = LocalPosition(nb.Coord) - center; v.y = 0f;
+                    var dir = v.normalized;
+                    if (dir.z < -0.3f) continue;
+                    uint hd = h >> (d * 4);
+                    bool back = dir.z > 0.3f;
+                    var basePos = center + v * 0.57f; basePos.y = y;
+                    var along = new Vector3(-dir.z, 0f, dir.x);
+                    PlaceDeco(back ? "YardTree" : YardBack[hd % (uint)YardBack.Length], root, basePos + along * (tileSize * 0.2f), hd);
+                    PlaceDeco(((hd >> 9) & 1) == 0 ? "Grass" : "GrassWispy", root, basePos + dir * (tileSize * 0.06f), hd >> 11);
+                    PlaceDeco(YardFront[(hd >> 3) % (uint)YardFront.Length], root, basePos - along * (tileSize * 0.22f) - dir * (tileSize * 0.05f), hd >> 5);
+                    placed++;
+                }
+                if (placed > 0) { count++; if (DevYardTiles.Count < 30) DevYardTiles.Add(transform.TransformPoint(center)); }
+            }
+            DevYards = count;
+            DevYardInfo = $"마당 {count} · 가로등 칸 {nLamp} · 집 이웃 많음 {nNear} · 낮은 칸 {nLow} · 나무 칸 {nTree}";
+        }
+
         // A. 집이 선 막힌 칸: 카메라 쪽 벽 밑에 낮은 소품 2~3개 (벽에 붙여 땅에 자리 잡은 느낌)
         private void BuildFoundations(Transform root, HashSet<HexCoord> skip)
         {
@@ -195,7 +256,7 @@ namespace Fantasia.Board
             {
                 if (mapTile.Kind != MapTileKind.Blocked || skip.Contains(mapTile.Coord) || !TryGetTile(mapTile.Coord, out var tile) || !tile.PropVisible) continue;
                 uint h = Hash(mapTile.Row, mapTile.Col, 29);
-                if ((h % 100) >= 65) continue; // 모든 집에 붙이면 반복이 보임
+                if ((h % 100) >= 65 && BlockedNeighbors(mapTile.Coord) > 1) continue; // 모든 집에 붙이면 반복이 보임. 외딴 집(11/14)은 항상
                 var wb = tile.PropBounds();
                 if (wb.size.y < tileSize * 0.5f * transform.lossyScale.y) continue; // 낮은 돌담·나무 덤불은 건너뜀
                 var center = LocalPosition(mapTile.Coord);

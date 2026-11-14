@@ -494,7 +494,8 @@ namespace Fantasia.UI
                 slot.sub.color = reason == null ? TextDim : SlotFailure;
             }
             _skillPanel.SetActive(true);
-            SetHint("스킬을 고르세요. 마우스를 올리면 설명이 나옵니다.");
+            SetHint("스킬을 고르세요. 마우스를 올리면 설명이 바뀝니다.");
+            if (_shownSkills.Count > 0) DescribeSkill(0); // 칸을 열면 첫 스킬 설명부터 보임
         }
 
         // ── 소모품 (D17): 파티 인벤토리 중 전투에서 쓸 수 있는 것, 최대 8종 ──
@@ -530,7 +531,8 @@ namespace Fantasia.UI
                 slot.sub.text = $"×{stacks[i].Count}";
             }
             _itemPanel.SetActive(true);
-            SetHint("소모품을 고르세요 (개인 행동 1회). 마우스를 올리면 효과가 나옵니다.");
+            SetHint("소모품을 고르세요 (개인 행동 1회). 마우스를 올리면 설명이 바뀝니다.");
+            if (_shownItems.Count > 0) ShowDesc(ItemDescText(_shownItems[0]), overItems: true);
         }
 
         public static string SkillCostText(Fantasia.Data.SkillDefinition skill)
@@ -548,7 +550,7 @@ namespace Fantasia.UI
             if (index >= _shownSkills.Count || _actionActor == null) return;
             var skill = _shownSkills[index];
             string reason = _actionActor.CannotUseReason(skill);
-            SetHint($"{skill.DisplayName} — {skill.EffectDescription}{(reason != null ? $" ({reason})" : "")}");
+            ShowDesc(SkillDescText(skill, reason), overItems: false); // 11/14 설명은 칸 위 카드로 (BattleHud.Desc)
         }
 
         public void SetHint(string text) { _hintText.text = text; ApplyHintStyle(); }
@@ -605,6 +607,7 @@ namespace Fantasia.UI
         private void Update()
         {
             if (_notice != null && _notice.activeSelf && Time.time >= _noticeUntil) _notice.SetActive(false);
+            HideDescIfClosed();
         }
 
         // ── 보스 이름 배너 (등장 연출) + [연출 건너뛰기] ──
@@ -850,6 +853,7 @@ namespace Fantasia.UI
             BuildActionPanel(canvasGO.transform);
             BuildSkillPanel(canvasGO.transform);
             BuildItemPanel(canvasGO.transform);
+            BuildDescCard(canvasGO.transform);
             BuildRollPanel(canvasGO.transform);
             BuildResultPanel(canvasGO.transform);
             BuildNotice(canvasGO.transform);
@@ -1079,7 +1083,7 @@ namespace Fantasia.UI
                 });
                 var trigger = button.gameObject.AddComponent<EventTrigger>();
                 var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
-                entry.callback.AddListener(_ => { if (index < _shownItems.Count) SetHint($"{_shownItems[index].DisplayName} — {_shownItems[index].EffectDescription}"); });
+                entry.callback.AddListener(_ => { if (index < _shownItems.Count) ShowDesc(ItemDescText(_shownItems[index]), overItems: true); });
                 trigger.triggers.Add(entry);
                 _itemSlots.Add((button, icon, name, sub));
             }

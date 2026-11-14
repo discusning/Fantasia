@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: weapon.staff.castle_core
   DisplayName: "\uACE0\uC131 \uCF54\uC5B4 \uC2A4\uD0DC\uD504"
   Category: 7
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: d49f09d918c1f674082cbadb255bb090, type: 3}
   SlotCount: 3
   BaseBonusB: 6
   BaseAttackMPCost: 4

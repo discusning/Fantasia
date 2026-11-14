@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: weapon.musket.noble_hunter
   DisplayName: "\uADC0\uC871 \uC0AC\uB0E5 \uC7A5\uCD1D"
   Category: 6
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: b97d4e0f0a8dbbd4f9342774c960779c, type: 3}
   SlotCount: 4
   BaseBonusB: 10
   BaseAttackMPCost: 0

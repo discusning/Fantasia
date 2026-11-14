@@ -832,7 +832,7 @@ namespace Fantasia.Combat
             Color color = ResultColor(outcome);
             string title = skill != null ? $"{attacker.DisplayName} [{skill.DisplayName}] → {target.DisplayName}" : $"{attacker.DisplayName} → {target.DisplayName}";
             yield return _hud.PlayRoll(title, outcome.Slots, useFocus, result, color);
-            yield return PlayAttackMotion(attacker);
+            yield return PlayAttackMotion(attacker, IsMelee(attacker, request) ? target : null);
 
             ApplyHit(attacker, target, request, outcome, useFocus, onCritStatuses, onCritShift, skill);
             _hud.RefreshEnemies(null);
@@ -1036,15 +1036,107 @@ namespace Fantasia.Combat
         }
 
         // 공격·스킬 움직임 (11/6 받은 Attack) — 주사위 판정이 끝난 뒤 휘두르고, 팔이 나오는 때에 맞음 처리
-        private IEnumerator PlayAttackMotion(BattleUnit attacker)
+        // 11/14 팀장: 근접(아군·적 모두)이 제자리에서 허공을 휘두르는 느낌 → 근접은 대상 앞까지 달려가서 치고 돌아옴. 원거리·광역은 예전처럼 반 걸음 (11/10 기획 4A)
+        private IEnumerator PlayAttackMotion(BattleUnit attacker, BattleUnit meleeTarget = null)
         {
             if (attacker == null || !_models.TryGetValue(attacker, out var model)) yield break;
             var motion = CharacterMotion.Of(model);
             if (motion != null && motion.IsDown) yield break;
-            StartCoroutine(HalfStep(model)); // 11/10 기획 4A: 근접·원거리 모두 반 걸음 나갔다가 원위치 (맞음 처리와 동시에 진행)
+            if (meleeTarget != null && _models.TryGetValue(meleeTarget, out var targetModel) && targetModel != null)
+            {
+                var rush = new RushState();
+                yield return RushIn(model, targetModel, motion, rush);
+                if (motion != null) { motion.Attack(); yield return new WaitForSeconds(CharacterMotion.AttackLead); }
+                _rushBack[model] = StartCoroutine(RushOut(model, motion, rush));
+                yield break;
+            }
+            StartCoroutine(HalfStep(model)); // 11/10 기획 4A: 반 걸음 나갔다가 원위치 (맞음 처리와 동시에 진행)
             if (motion == null) yield break;
             motion.Attack();
             yield return new WaitForSeconds(CharacterMotion.AttackLead);
+        }
+
+        // 근접 판단: 마법 피해 = 원거리. 아군은 총·활이면 원거리. 적의 물리 공격은 모두 근접 (짐승·사신·아벨 메스)
+        private static bool IsMelee(BattleUnit attacker, AttackRequest request)
+        {
+            if (request.Type == DamageType.Magic) return false;
+            var category = attacker.Member != null && attacker.Member.EquippedWeapon != null ? attacker.Member.EquippedWeapon.Category : (WeaponCategory?)null;
+            return !(category is WeaponCategory.Pistol or WeaponCategory.Musket or WeaponCategory.Bow);
+        }
+
+        // 달려가기: 0.45초에 대상 몸 앞(두 몸 반지름 + 여유)까지. 끝나면 맞힌 뒤 돌아서 걸어 제자리로
+        private const float RushTime = 0.45f, RushAfterHit = 0.35f, RushBackTime = 0.5f, RushGap = 0.2f;
+        private class RushState { public Vector3 Home, Dest; public Quaternion HomeRot; }
+        private readonly Dictionary<GameObject, Coroutine> _rushBack = new();
+        public static int DevRushCount; public static float DevLastRushGap = -1f; // 점검용: 달려간 횟수, 마지막으로 멈춘 두 몸 사이 거리
+
+        private IEnumerator RushIn(GameObject model, GameObject target, CharacterMotion motion, RushState rush)
+        {
+            if (!_homePositions.TryGetValue(model, out var home)) _homePositions[model] = home = model.transform.position;
+            if (_rushBack.TryGetValue(model, out var running) && running != null) StopCoroutine(running); // 돌아오는 도중이면 제자리에서 다시 시작
+            _rushBack.Remove(model);
+            if (!_homeRotations.TryGetValue(model, out var homeRot)) _homeRotations[model] = homeRot = model.transform.rotation;
+            model.transform.SetPositionAndRotation(home, homeRot);
+            rush.Home = home; rush.HomeRot = homeRot;
+            var to = target.transform.position - home; to.y = 0f;
+            if (to.sqrMagnitude < 0.01f) { rush.Dest = home; yield break; }
+            var dir = to.normalized;
+            float stop = BodyRadius(model, dir) + BodyRadius(target, dir) + RushGap;
+            rush.Dest = home + dir * Mathf.Max(0f, to.magnitude - stop);
+            // 카메라가 아군 뒤에 있어서 적이 아군 바로 앞에 서면 아군 몸에 가려 안 보임 (11/14 QA: 쥐가 저격수 뒤로 숨음) → 화면 오른쪽(적 쪽)으로 비켜 섬
+            if (_camera != null && Vector3.Dot(dir, _camera.transform.right) < 0f)
+            {
+                var side = Vector3.ProjectOnPlane(_camera.transform.right, Vector3.up).normalized;
+                rush.Dest += side * (stop * 0.6f);
+                var face = target.transform.position - rush.Dest; face.y = 0f;
+                if (face.sqrMagnitude > 0.01f) dir = face.normalized;
+            }
+            DevRushCount++; DevLastRushGap = stop;
+            model.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            motion?.SetWalking(true);
+            for (float t = 0f; t < RushTime && model != null; t += Time.deltaTime)
+            {
+                model.transform.position = Vector3.Lerp(home, rush.Dest, Mathf.SmoothStep(0f, 1f, t / RushTime));
+                yield return null;
+            }
+            motion?.SetWalking(false);
+            if (model != null) model.transform.position = rush.Dest;
+        }
+
+        private IEnumerator RushOut(GameObject model, CharacterMotion motion, RushState rush)
+        {
+            yield return new WaitForSeconds(RushAfterHit); // 공격 동작이 끝날 때까지 그 자리
+            if (model == null) yield break;
+            var back = rush.Home - model.transform.position; back.y = 0f;
+            bool down = motion != null && motion.IsDown;
+            if (back.sqrMagnitude > 0.01f && !down) { model.transform.rotation = Quaternion.LookRotation(back.normalized, Vector3.up); motion?.SetWalking(true); }
+            var from = model.transform.position;
+            for (float t = 0f; t < RushBackTime && model != null; t += Time.deltaTime)
+            {
+                model.transform.position = Vector3.Lerp(from, rush.Home, Mathf.SmoothStep(0f, 1f, t / RushBackTime));
+                yield return null;
+            }
+            motion?.SetWalking(false);
+            if (model != null && !(motion != null && motion.IsDown)) model.transform.SetPositionAndRotation(rush.Home, rush.HomeRot);
+            else if (model != null) model.transform.position = rush.Home;
+            _rushBack.Remove(model);
+        }
+
+        // 몸 반지름 (다가가는 방향 기준): 몸 메시 상자의 그 방향 폭 절반. 무기·효과는 빼고, 0.25~1.1m
+        private readonly Dictionary<GameObject, Quaternion> _homeRotations = new();
+        private static float BodyRadius(GameObject model, Vector3 dir)
+        {
+            bool skinned = model.GetComponentInChildren<SkinnedMeshRenderer>() != null;
+            bool any = false; var b = new Bounds();
+            foreach (var r in model.GetComponentsInChildren<Renderer>())
+            {
+                if (!r.enabled || !(r is SkinnedMeshRenderer || r is MeshRenderer) || r.GetComponentInParent<ParticleSystem>() != null) continue;
+                if (skinned && !(r is SkinnedMeshRenderer)) continue; // 들고 있는 무기(MeshRenderer)는 빼기
+                if (!any) { b = r.bounds; any = true; } else b.Encapsulate(r.bounds);
+            }
+            if (!any) return 0.4f;
+            float along = Mathf.Abs(dir.x) * b.extents.x + Mathf.Abs(dir.z) * b.extents.z;
+            return Mathf.Clamp(along * 0.8f, 0.25f, 1.1f);
         }
 
         // 공격 반 걸음: 바라보는 쪽으로 0.15초 나감 → 공격 동작 동안 머묾 → 0.25초 돌아옴. 제자리는 처음 놓인 자리로 고정 (겹쳐 불려도 밀리지 않게).
@@ -1504,7 +1596,7 @@ namespace Fantasia.Combat
                 var unit = new BattleUnit(living[i], i);
                 _allies.Add(unit);
                 // 쓰러진 채로 들어온 아군(HP 0)은 행동 큐에서 빠지고, 다른 아군이 부활시킬 수 있다.
-                SpawnModel(unit, new Vector3(-LineX, 0f, allyPositions[i].z), Vector3.right);
+                SpawnModel(unit, new Vector3(-LineX, 0f, -allyPositions[i].z), Vector3.right); // 11/14 팀장: 카드 순서(왼→오)와 화면 자리를 맞춤 — 카메라에서 z가 클수록 왼쪽 뒤라 뒤집음
                 if (!unit.IsAlive) KnockDown(unit, instant: true);
             }
 
@@ -1514,7 +1606,7 @@ namespace Fantasia.Combat
                 var unit = new BattleUnit(_setup.Enemies[i], i);
                 if (_setup.Enemies.Count(e => e == _setup.Enemies[i]) > 1) unit.DisplayName += $" {(char)('A' + i)}";
                 _enemies.Add(unit);
-                SpawnModel(unit, new Vector3(LineX, 0f, enemyPositions[i].z), Vector3.left);
+                SpawnModel(unit, new Vector3(LineX, 0f, -enemyPositions[i].z), Vector3.left); // 몬스터 A(왼쪽 카드)가 화면 왼쪽
             }
         }
 

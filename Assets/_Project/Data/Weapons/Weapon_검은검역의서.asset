@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: weapon.grimoire.black_quarantine
   DisplayName: "\uAC80\uC740 \uAC80\uC5ED\uC758 \uC11C"
   Category: 8
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 05f0cd357d54fe74fad55c004dd4333a, type: 3}
   SlotCount: 4
   BaseBonusB: 8
   BaseAttackMPCost: 6

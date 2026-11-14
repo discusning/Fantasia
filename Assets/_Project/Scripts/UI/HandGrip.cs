@@ -11,7 +11,7 @@ namespace Fantasia.UI
     //  - 빈손도 굳은 판자처럼 펴지지 않게 살짝 굽힘. 동작이 바뀔 때는 부드럽게 넘어감
     public class HandGrip : MonoBehaviour
     {
-        public enum Hold { None, Fist, Trigger, Rod, Bottle, Book }
+        public enum Hold { None, Fist, Trigger, Rod, Cane, Bottle, Book }
 
         // 손 모양: 엄지·검지·중지묶음 각각 (첫 마디, 둘째 마디) 굽힘 각도(도). 음수 = 살짝 젖힘(펼침)
         public struct Shape
@@ -27,7 +27,8 @@ namespace Fantasia.UI
         {
             [Hold.Fist] = new(new(38f, 32f), new(78f, 82f), new(84f, 88f)),     // 단검·수술칼: 주먹 꽉
             [Hold.Trigger] = new(new(34f, 26f), new(6f, 4f), new(84f, 88f)),     // 권총·장총: 검지는 방아쇠 밖, 총 몸통 옆에 곧게 (11/14 사격 교본: 쏠 때만 방아쇠에)
-            [Hold.Rod] = new(new(30f, 22f), new(62f, 58f), new(66f, 62f)),      // 지팡이·낫 자루: 굵은 막대를 감쌈
+            [Hold.Rod] = new(new(30f, 22f), new(62f, 58f), new(66f, 62f)),      // 낫 자루: 굵은 막대를 감쌈
+            [Hold.Cane] = new(new(22f, 14f), new(48f, 40f), new(58f, 50f)),     // 11/14 역병 의사 지팡이: 현실 지팡이 쥐기 = 단단하되 꽉 움켜쥐지 않음. 낫보다 느슨, 검지가 가장 덜 굽음
             [Hold.Bottle] = new(new(26f, 18f), new(52f, 46f), new(56f, 50f)),   // 수은 병: 둥글게 감쌈
             [Hold.Book] = new(new(8f, 4f), new(30f, 26f), new(34f, 30f)),       // 마법서: 책을 받쳐 듦 (엄지는 책 위)
         };
@@ -230,16 +231,32 @@ namespace Fantasia.UI
         }
 
         // 자루 방향·날 옆·쥐는 자리(무기 로컬)를 받아, 자루가 주먹을 비스듬히 지나고 날은 위로 서게
-        private static void OrientShaft(Transform c, Vector3 F, Vector3 S, Vector3 center, Vector3 bladeAxis, Vector3 bladeSide, Vector3 gripLocal)
+        private static void OrientShaft(Transform c, Vector3 F, Vector3 S, Vector3 center, Vector3 bladeAxis, Vector3 bladeSide, Vector3 gripLocal, Vector3? head = null)
         {
-            // 새 방향: 날 쪽 = S를 손목 쪽으로 40° 기울임, 날이 향하는 옆은 지금과 최대한 같게
+            // 새 방향: 날 쪽 = S를 손목 쪽으로 55° 기울임 (head를 주면 그 방향), 날이 향하는 옆은 지금과 최대한 같게
             float a = 55f * Mathf.Deg2Rad; // 팔을 내린 자세에서 자루가 더 서도록
-            var D = (S * Mathf.Cos(a) - F * Mathf.Sin(a)).normalized;
+            var D = head ?? (S * Mathf.Cos(a) - F * Mathf.Sin(a)).normalized;
             var curSide = c.localRotation * bladeSide;
             var newSide = curSide - D * Vector3.Dot(curSide, D);
             if (newSide.sqrMagnitude < 1e-4f) newSide = Vector3.Cross(D, F);
             c.localRotation = Quaternion.LookRotation(D, newSide.normalized) * Quaternion.Inverse(Quaternion.LookRotation(bladeAxis, bladeSide - bladeAxis * Vector3.Dot(bladeSide, bladeAxis)));
             c.position = center - (c.TransformPoint(gripLocal) - c.position);
+        }
+
+        // 11/14 지팡이: 팔을 내린 채 곧게 매달면 자루가 손가락과 나란해 주먹으로 못 쥐고 할퀴듯 보였음 (팀장 "너무 힘들게 잡는 느낌").
+        // 현실 지팡이·게임 지팡이 대기처럼 끝을 앞아래로 짚듯 기울여 자루가 주먹을 지나게 함. 디자인 축: +Z = 머리(위), 기준점 = 손잡이 띠
+        public static float CaneTilt = 30f; // 손가락 방향(아래)에서 엄지 쪽(앞)으로 끝이 기운 각도
+        public static float CaneOut = -0.45f; // 손등 쪽(몸 바깥)으로 끝을 벌림
+        private static void SeatCane(Hand hand, Transform c, Vector3 center)
+        {
+            HandFrame(hand, out var F, out var S);
+            float b = CaneTilt * Mathf.Deg2Rad;
+            // 손바닥 쪽 = 굽힌 고리 가운데가 손가락 뿌리에서 F·S 밖으로 벗어난 방향. 끝은 손등 쪽(몸 바깥)으로 — 현실 지팡이는 다리에서 10~15cm 옆을 짚음
+            var r = hand.Root;
+            var palm = r.InverseTransformPoint(center) - r.InverseTransformPoint(hand.Middle.A.position);
+            palm = (palm - F * Vector3.Dot(palm, F) - S * Vector3.Dot(palm, S)).normalized;
+            var tip = (F * Mathf.Cos(b) + S * Mathf.Sin(b) - palm * CaneOut).normalized; // 손 로컬 (무기는 손 바로 아래 자식)
+            OrientShaft(c, F, S, center, Vector3.forward, Vector3.up, Vector3.zero, -tip);
         }
 
         private void SeatWeapons(System.Func<string, Transform> f)
@@ -260,6 +277,7 @@ namespace Fantasia.UI
                     Pose(hand, null, 0f);
                     var axis = c.TransformDirection(LongAxis(c)).normalized;
                     if (c.name is "Scythe" or "Weapon_Scythe") SeatShaft(hand, c, center);
+                    else if (c.name == "Weapon_Staff") SeatCane(hand, c, center);
                     else if (c.name is "Weapon_Pistol" or "Weapon_Musket") SeatGun(hand, c, center);
                     else c.position = center + axis * along;
                     _seats.Add((c, orig, c.localPosition, origRot, c.localRotation));
@@ -325,7 +343,8 @@ namespace Fantasia.UI
                 {
                     "Dagger" or "Scalpel" or "RustDagger" => Hold.Fist,
                     "Pistol" or "Musket" => Hold.Trigger,
-                    "Staff" or "Scythe" => Hold.Rod,
+                    "Staff" => Hold.Cane,
+                    "Scythe" => Hold.Rod,
                     "MercuryFlask" => Hold.Bottle,
                     "Grimoire" => Hold.Book,
                     _ => Hold.Fist,
@@ -344,7 +363,7 @@ namespace Fantasia.UI
             bool gestureHand = hand.Right;
             if (!held && !gestureHand && state is "Skill" or "Item" or "Heal" or "Announce") return Relaxed;
             // 두 손 공격(역병 의사 지팡이·사신 낫: 측정상 두 손이 같이 크게 움직임) → 빈손도 자루를 감싸 쥠
-            if (!held && state == "Attack" && other != null && other.Hold == Hold.Rod) return Shape.Lerp(Relaxed, Held[Hold.Rod], Mathf.InverseLerp(0.05f, 0.25f, t) * (1f - Mathf.InverseLerp(0.75f, 0.95f, t)));
+            if (!held && state == "Attack" && other != null && other.Hold is Hold.Rod or Hold.Cane) return Shape.Lerp(Relaxed, Held[other.Hold], Mathf.InverseLerp(0.05f, 0.25f, t) * (1f - Mathf.InverseLerp(0.75f, 0.95f, t)));
             Shape grip = held ? Held[hand.Hold] : Relaxed;
             // 총: 조준하는 동안만 검지가 방아쇠로 들어감 (평소엔 총 몸통 옆에 곧게)
             if (hand.Hold == Hold.Trigger) grip = new Shape(grip.Thumb, Vector2.Lerp(grip.Index, TriggerOn, AimOf(state, t)), grip.Middle);

@@ -778,7 +778,7 @@ namespace Fantasia.Core
                 // 11/13 보드 장식 가까이 (거점 둘레 시장 구역)
                 var rig = Camera.main != null ? Camera.main.GetComponent<BoardCameraRig>() : null;
                 if (rig != null) { float d0 = rig.Distance; rig.Distance = rig.MinDistance + 1f; yield return new WaitForSeconds(2f); yield return Shot("board_close"); rig.Distance = d0; yield return new WaitForSeconds(1.5f); }
-                Note($"보드 장식: 가로등 장면 {HexBoard.DevLampScenes}곳 · 건물 밑동 {HexBoard.DevFoundations}곳");
+                Note($"보드 장식: 가로등 장면 {HexBoard.DevLampScenes}곳 · 건물 밑동 {HexBoard.DevFoundations}곳 · {HexBoard.DevYardInfo}");
                 // 11/14 팀장 1안 런던 안개: 멀리서 보면 안 열린 지역·지도 바깥이 안개로 가려짐
                 Note($"런던 안개: 숨긴 칸 {HexBoard.DevHiddenTiles} · 안개 층 {HexBoard.DevFogLayers} · 안개 경계 가로등 {HexBoard.DevEdgeLamps}");
                 Qa(HexBoard.DevEdgeLamps >= 3, "런던 안개: 경계 길가 가로등 3개 이상");
@@ -792,6 +792,7 @@ namespace Fantasia.Core
                     var vb = hb.VisibleBounds; var c = vb.center; float span = Mathf.Max(vb.size.x, vb.size.z);
                     cam.transform.position = c + new Vector3(0f, span * 0.95f, -span * 0.55f); cam.transform.LookAt(c);
                     yield return new WaitForSeconds(1.5f); yield return Shot("board_overview_fog");
+                    if (Camera.main != null) Note("마당 집 화면 자리(전체 사진): " + string.Join(" ", HexBoard.DevYardTiles.Take(30).Select(p => { var s = Camera.main.WorldToScreenPoint(p); return $"({s.x:0},{Screen.height - s.y:0})"; })));
                     cam.transform.position = c + new Vector3(vb.extents.x * 0.9f, 9f, -vb.extents.z * 0.2f - 9f); cam.transform.LookAt(c + new Vector3(vb.extents.x * 1.1f, 0f, 0f));
                     yield return new WaitForSeconds(1.5f); yield return Shot("board_edge_fog");
                     // 11/14 팀장: 돌담 — 게임 시점(지금 카메라 각도·11m)으로 파티에서 가까운 돌담 2곳

@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: weapon.dagger.black_rose
   DisplayName: "\uAC80\uC740 \uC7A5\uBBF8 \uB2E8\uAC80"
   Category: 0
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 5cbbde6e0f03fc24a9fb58ebd467148e, type: 3}
   SlotCount: 2
   BaseBonusB: 5
   BaseAttackMPCost: 0
