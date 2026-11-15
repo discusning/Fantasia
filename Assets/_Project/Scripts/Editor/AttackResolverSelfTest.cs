@@ -98,11 +98,11 @@ namespace Fantasia.Editor
             o = AttackResolver.Compute(magic, new DefenseProfile { PhysicalDefense = 99, MagicDefense = 3, CurrentHP = 100 }, partial, false);
             errors += Expect("마법 공격은 마법 방어 참조", o.Damage, 17);
 
-            // 회피 상태 적: 비크리티컬 회피, 크리티컬 명중.
+            // 회피 상태 적: 비크리티컬은 스침(피해 절반, 11/15 팀장), 크리티컬 명중.
             var evasive = defense;
             evasive.HasEvasionState = true;
             o = AttackResolver.Compute(attack, evasive, partial, false);
-            errors += ExpectBool("회피 상태 — 비크리티컬 회피", o.Evaded && o.EvadedByState, true);
+            errors += ExpectBool("회피 상태 — 비크리티컬 스침(절반)", !o.Evaded && o.Grazed && o.Damage == Mathf.Max(1, AttackResolver.NormalDamage(attack.Coefficient, attack.AttackValue, evasive.DefenseAgainst(attack.Type), attack.PierceRatio) / 2), true);
             o = AttackResolver.Compute(attack, evasive, full, false);
             errors += ExpectBool("회피 상태 — 크리티컬 명중", !o.Evaded && o.Damage == 40, true);
 

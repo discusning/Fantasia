@@ -126,6 +126,7 @@ namespace Fantasia.UI
             public GameObject Root; public Image Border; public RawImage Portrait; public Text Name; public Text Badge;
             public Text Hp; public RectTransform HpFill; public StatusChipRow Statuses; public BattleUnit Unit; public Transform Plate;
             public GameObject Telegraph; public Text TelegraphText; public float FlashUntil;
+            public GameObject Trait; public Text TraitText; // 11/15 팀장: 특성(회피 상태 등)을 카드에 짧게
         }
         private readonly List<EnemyBar> _enemyBars = new();
 
@@ -418,6 +419,7 @@ namespace Fantasia.UI
                 bar.Portrait.texture = PortraitStudio.FaceFor(e);
                 bar.Name.text = bar.Unit.DisplayName;
                 bar.Badge.text = $"{SizeLabel(e.Size)} · {e.SlotCount}슬롯";
+                bar.Trait.SetActive(e.HasEvasionState);
 
             }
             RefreshEnemies(null);
@@ -434,6 +436,8 @@ namespace Fantasia.UI
                 bar.Border.color = bar.Unit == highlighted ? CritColor : Gold;
                 UGUIKit.SetPlateTint(bar.Plate, bar.Unit == highlighted ? new Color(1f, 0.62f, 0.55f) : UGUIKit.PlateNormal); // 11/11 U12: 판 그림이면 대상은 붉게
                 bar.Statuses.Show(StatusChipRow.EntriesFor(bar.Unit.Statuses, bar.Unit.HasEvasionState));
+                bar.Trait.SetActive(bar.Unit.Enemy.HasEvasionState && bar.Unit.IsAlive);
+                if (bar.Trait.activeSelf) bar.TraitText.text = bar.Unit.HasEvasionState ? "<b>회피</b> · 크리티컬 아니면 피해 절반" : "<b>회피 풀림</b> · 모든 공격 정상 피해";
                 bar.Root.GetComponent<CanvasGroup>().alpha = bar.Unit.IsAlive ? 1f : 0.35f;
             }
         }
@@ -442,6 +446,7 @@ namespace Fantasia.UI
         // canRevive: 쓰러진 아군 중 LP가 남은 사람이 있으면 "부활" 활성 (D21).
         public void ShowActions(BattleUnit actor, bool canRevive = false)
         {
+            var swA = System.Diagnostics.Stopwatch.StartNew(); try {
             _actionPanel.SetActive(true);
             ClearChosen();
             _actorText.text = $"{actor.DisplayName}의 차례";
@@ -454,13 +459,67 @@ namespace Fantasia.UI
             _skillPanel.SetActive(false);
             _itemPanel.SetActive(false);
             _itemButton.interactable = BattleItems().Count > 0;
+            // 11/15 팀장 "버튼 몇 개가 눌리지 않음": 못 쓰는 버튼(부활·소모품·퇴각 등)이 쓸 수 있는 버튼과 똑같이 보였음
+            // → 흐리게 + 마우스를 올리거나 누르면 아래 안내 줄에 이유
+            SetActionState(_attackButton, actor.CanBasicAttack, $"MP 부족 — 기본 공격에 MP {actor.BasicAttackMPCost} 필요");
+            SetActionState(_skillButton, _skillButton.interactable, "쓸 수 있는 스킬이 없습니다");
+            SetActionState(_itemButton, _itemButton.interactable, "전투에서 쓸 소모품이 없습니다 (가방·빠른 칸 확인)");
+            SetActionState(_defendButton, true, null);
+            SetActionState(_reviveButton, canRevive, "부활: 쓰러진 아군이 없거나 LP가 남지 않았습니다");
+            SetActionState(_retreatButton, !RetreatBlocked, "이 전투에서는 퇴각할 수 없습니다");
             FocusCount = 0; // 행동마다 0에서 시작
             RefreshFocusPicker();
             SetHint(actor.CanBasicAttack
                 ? "행동을 고르세요. 공격은 대상 적을 클릭합니다."
                 : $"MP 부족 — 기본 공격에 MP {actor.BasicAttackMPCost} 필요");
+            } finally { if (swA.ElapsedMilliseconds > 30) Debug.Log($"[행동 메뉴 켜기 시간] {swA.ElapsedMilliseconds}ms"); }
         }
 
+
+        private readonly Dictionary<Button, string> _disabledReason = new();
+        private readonly Dictionary<Graphic, Color> _origColor = new();
+        private void SetActionState(Button b, bool on, string reason)
+        {
+            b.interactable = on;
+            var cg = b.GetComponent<CanvasGroup>(); if (cg == null) cg = b.gameObject.AddComponent<CanvasGroup>();
+            cg.alpha = on ? 1f : 0.75f;
+            // 11/15 팀장 "못 쓰는 버튼은 회색빛으로": 버튼 안 그림·글자를 회색으로 (원래 색은 기억해 두고 쓸 수 있게 되면 되돌림)
+            foreach (var g in b.GetComponentsInChildren<Graphic>(true))
+            {
+                if (!_origColor.TryGetValue(g, out var orig)) _origColor[g] = orig = g.color;
+                float lum = orig.r * 0.3f + orig.g * 0.59f + orig.b * 0.11f;
+                g.color = on ? orig : new Color(lum * 0.75f, lum * 0.75f, lum * 0.78f, orig.a);
+            }
+            cg.blocksRaycasts = true; // 못 써도 마우스는 받아서 이유를 보여 줌
+            _disabledReason[b] = on ? null : reason;
+            if (b.GetComponent<DisabledReasonHover>() == null)
+                b.gameObject.AddComponent<DisabledReasonHover>().Init(() => _disabledReason.TryGetValue(b, out var r) ? r : null, SetHintTemp);
+        }
+
+        private string _hintBeforeTemp;
+        private void SetHintTemp(string text)
+        {
+            if (text != null) { if (_hintBeforeTemp == null) _hintBeforeTemp = _hintText.text; SetHint(text); }
+            else if (_hintBeforeTemp != null) { SetHint(_hintBeforeTemp); _hintBeforeTemp = null; }
+        }
+
+        // 11/15 자동 점검: 행동 버튼 가운데를 눌렀을 때 맨 위에 맞는 것이 그 버튼인지 (다른 UI가 덮고 있지 않은지)
+        public string DevActionButtonCover()
+        {
+            var es = EventSystem.current; if (es == null) return "EventSystem 없음";
+            var sb = new System.Text.StringBuilder();
+            foreach (var b in new[] { _attackButton, _skillButton, _itemButton, _defendButton, _reviveButton, _retreatButton })
+            {
+                var rt = (RectTransform)b.transform; var corners = new Vector3[4]; rt.GetWorldCorners(corners);
+                var canvas = b.GetComponentInParent<Canvas>().rootCanvas;
+                Vector2 center = (corners[0] + corners[2]) * 0.5f;
+                if (canvas.renderMode != RenderMode.ScreenSpaceOverlay) center = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, center);
+                var hits = new List<RaycastResult>(); es.RaycastAll(new PointerEventData(es) { position = center }, hits);
+                bool ok = hits.Count > 0 && hits[0].gameObject.transform.IsChildOf(b.transform);
+                sb.Append($"{b.name}:{(ok ? "O" : "덮임(" + (hits.Count > 0 ? hits[0].gameObject.name : "없음") + ")")}{(b.interactable ? "" : "·못씀")} ");
+            }
+            return sb.ToString();
+        }
         public void HideActions()
         {
             _actionPanel.SetActive(false);
@@ -697,12 +756,13 @@ namespace Fantasia.UI
         {
             var label = UGUIKit.CreateText(_canvasRect, "Popup", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), text, size, TextAnchor.MiddleCenter);
             label.horizontalOverflow = HorizontalWrapMode.Overflow; // 11/11 긴 팝업("방어 태세 · 보호막 8")이 줄바꿈되어 잘림
+            label.verticalOverflow = VerticalWrapMode.Overflow; // 11/15 팀장 "크리티컬 피해 숫자가 안 나옴": 크리티컬(38)은 칸 높이(44)보다 글꼴 줄 높이가 커서 Unity가 줄을 통째로 숨겼음
             label.color = color;
             label.fontStyle = FontStyle.Bold;
             var outline = label.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
             var rect = (RectTransform)label.transform;
-            rect.sizeDelta = new Vector2(220f, 44f);
+            rect.sizeDelta = new Vector2(220f, Mathf.Max(44f, size * 1.8f)); // 11/15: 큰 글자도 칸 안에
             rect.anchorMin = rect.anchorMax = Vector2.zero;
 
             Vector2 screen = cam.WorldToScreenPoint(worldPos);
@@ -980,8 +1040,15 @@ namespace Fantasia.UI
                 // 상태 칸 — 상시 특성(회피 상태) + 걸린 상태 효과. 그림은 StatusEffectDefinition.Icon.
                 bar.Statuses = new StatusChipRow(fill, "Status", new Vector2(0.57f, 0.05f), new Vector2(0.99f, 0.33f), StatusIconSlots);
 
+                // 11/15 팀장 "그런 특성이면 몬스터 카드에 간단히 적어 줘" — 카드 바로 아래 한 줄 (회피 상태 적만)
+                var traitPanel = UGUIKit.CreateThemedPanel(parent, $"EnemyTrait{i}", new Vector2(x0, 0.742f), new Vector2(x0 + 0.29f, 0.772f), new Color(0.62f, 0.8f, 0.95f, 0.8f), new Color(0.08f, 0.1f, 0.14f, 0.92f), 1f);
+                bar.Trait = traitPanel.parent.gameObject;
+                bar.TraitText = Label(traitPanel, "Text", new Vector2(0.03f, 0f), new Vector2(0.97f, 1f), 11, TextAnchor.MiddleLeft, new Color(0.75f, 0.88f, 1f), bold: false);
+                bar.TraitText.supportRichText = true;
+                bar.Trait.SetActive(false);
+
                 // 보스 예고 — HP 바 바로 아래, 실행·저지·사망·전투 종료까지 유지 (Boss_Abel_v1.0 예고 UI)
-                var tele = UGUIKit.CreateThemedPanel(parent, $"EnemyTelegraph{i}", new Vector2(x0, 0.64f), new Vector2(x0 + 0.29f, 0.76f), CritColor, new Color(0.18f, 0.08f, 0.08f, 0.95f), 1.5f);
+                var tele = UGUIKit.CreateThemedPanel(parent, $"EnemyTelegraph{i}", new Vector2(x0, 0.615f), new Vector2(x0 + 0.29f, 0.735f), CritColor, new Color(0.18f, 0.08f, 0.08f, 0.95f), 1.5f);
                 bar.Telegraph = tele.parent.gameObject;
                 bar.TelegraphText = Label(tele, "Text", new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.96f), 10, TextAnchor.MiddleLeft, TextLight, bold: false);
                 bar.TelegraphText.resizeTextForBestFit = true;

@@ -100,7 +100,7 @@ namespace Fantasia.Editor
                 "물리·마법 방어력 −4. 대상의 2개 개인 턴 동안 (약점 간파). 중첩되지 않는다.");
             var revealed = EnsureStatus("Status_장막걷힘", "status.evasion_revealed", "장막 걷힘", "장막", StatusEffectType.EvasionRevealed, StatusEffectKind.Special,
                 duration: 2, maxStacks: 1, magnitude: 0, statPenalty: 0, clearedByVictory: true,
-                "[회피 상태]를 대상의 2개 개인 턴 동안 해제 (장막 걷기). 해제 중엔 비크리티컬 공격도 명중.");
+                "[회피 상태]를 대상의 2개 개인 턴 동안 해제 (장막 걷기). 해제 중엔 비크리티컬 공격도 온전한 피해.");
             // "자신의 다음 2턴 안에 공격하지 않으면 사라진다" — 기간은 개인 턴 시작에 줄어서 3으로 둬야 다음 2턴 동안 남는다.
             var zeroIn = EnsureStatus("Status_영점조정", "status.accuracy_up", "영점 조정", "영점", StatusEffectType.AccuracyUp, StatusEffectKind.StatModifier,
                 duration: 3, maxStacks: 1, magnitude: 15, statPenalty: 0, clearedByVictory: true,
@@ -136,7 +136,7 @@ namespace Fantasia.Editor
                     "자신이 사용하는 HP 회복 소모품의 회복량 +25%. 본인의 치료 스킬에는 적용하지 않고, 초과 회복은 버린다.",
                     s => { s.Type = SkillType.Passive; s.Passive = PassiveType.ConsumableHealBonus; s.PassiveValue = 0.25f; }),
                 Skill("Skill_PlagueDoctor_응급봉합", "skill.plague_doctor.emergency_suture", "응급 봉합", JobId.PlagueDoctor, SkillTarget.SingleAlly, focus: 0, mp: 12, cooldown: 1,
-                    "HP를 30 + floor(0.5M) 회복. 2슬롯 지력 판정을 전부 성공하면 출혈도 제거한다. 기본 회복은 확정.",
+                    "HP를 30 + floor(0.5M) 회복. 2슬롯 지력 판정을 전부 성공하면 회복량 1.5배 + 출혈 제거 (크리티컬). 기본 회복은 확정.",
                     s => { s.Effect = SkillEffect.Heal; s.HealFlat = 30; s.HealMagicRatio = 0.5f; s.SlotCount = 2; s.RollStat = StatKind.Intelligence;
                            s.CleansedStatuses = new[] { StatusEffectType.WeakBleed }; s.CleanseNeedsFullSuccess = true; }),
                 // 저주는 아직 상태가 없어 목록에서 빠짐 — 저주 추가 시 함께 넣는다.
@@ -408,11 +408,11 @@ namespace Fantasia.Editor
             e.DisplayName = "검시관 아벨 모로";
             e.Size = EnemySize.Boss;
             e.TypeTag = "인간형";
-            e.MaxHP = 300;
+            e.MaxHP = 520; // 11/15 팀장 "1레벨로도 이김" → 레벨 성장과 같이 올림 (예전 300·24·30·6)
             e.Speed = 58;
-            e.PhysicalAttack = 24;
-            e.MagicAttack = 30;
-            e.PhysicalDefense = 6;
+            e.PhysicalAttack = 34;
+            e.MagicAttack = 40;
+            e.PhysicalDefense = 8;
             e.MagicDefense = 10;
             e.SlotCount = 4;
             e.SlotSuccessRate = 0.32f;
@@ -463,7 +463,7 @@ namespace Fantasia.Editor
             e.SlotCount = 2;
             e.SlotSuccessRate = 0.45f;
             e.HasEvasionState = true;
-            e.TraitDescription = "[회피 상태] 패시브 보유. 공격 판정 성공 시 대상에게 [혼란]을 부여하며 타임라인을 [방해함] 위치로 밀어냄.";
+            e.TraitDescription = "[회피 상태] 패시브 보유 (크리티컬이 아니면 피해 절반). 공격 판정 성공 시 대상에게 [혼란]을 부여하며 타임라인을 [방해함] 위치로 밀어냄.";
             e.DeploymentAct = "1막";
             EditorUtility.SetDirty(e);
             return e;

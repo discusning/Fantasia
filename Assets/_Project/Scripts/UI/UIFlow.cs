@@ -13,5 +13,26 @@ namespace Fantasia.UI
 
         // 알림이 기다려야 함 (창 + 턴 판)
         public static bool ToastBlocked => WindowOpen || BoardTopBar.DevTurnDropVisible;
+        // ③ 보이지 않는 UI(투명 판·글자 칸)가 마우스를 막지 않게: 실제로 눌리는 UI(버튼·카드 등 Selectable, 스크롤)만 막는 것으로 침.
+        private static readonly System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult> _uiHits = new();
+        public static bool PointerBlockedByUI()
+        {
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es == null) return false;
+            var data = new UnityEngine.EventSystems.PointerEventData(es) { position = UnityEngine.Input.mousePosition };
+            _uiHits.Clear();
+            es.RaycastAll(data, _uiHits);
+            foreach (var r in _uiHits)
+            {
+                if (r.gameObject == null) continue;
+                var cg = r.gameObject.GetComponentInParent<UnityEngine.CanvasGroup>();
+                if (cg != null && (!cg.blocksRaycasts || cg.alpha < 0.05f)) continue;
+                if (r.gameObject.GetComponentInParent<UnityEngine.UI.Selectable>() != null) return true;
+                if (r.gameObject.GetComponentInParent<UnityEngine.UI.ScrollRect>() != null) return true;
+                var img = r.gameObject.GetComponent<UnityEngine.UI.Graphic>();
+                if (img != null && img.color.a > 0.5f && !(img is UnityEngine.UI.Text)) return true; // 불투명한 판(카드·창 배경)은 막음
+            }
+            return false;
+        }
     }
 }

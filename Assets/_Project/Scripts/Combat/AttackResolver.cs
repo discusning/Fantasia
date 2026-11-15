@@ -44,8 +44,9 @@ namespace Fantasia.Combat
         public readonly bool EvadedByState; // 회피 상태로 빗나감 (일반 회피와 UI 문구 구분용)
         public readonly int Damage;         // 계산된 피해
         public readonly int AppliedDamage;  // 현재 HP를 넘는 부분을 뺀 실제 차감량 — 흡수·회복 계산은 이 값
+        public readonly bool Grazed;        // 11/15: 회피 상태 적에게 크리티컬이 아니라 스침 (피해 절반)
 
-        public AttackOutcome(SlotCheck.Result slots, bool isCritical, bool evaded, bool evadedByState, int damage, int appliedDamage)
+        public AttackOutcome(SlotCheck.Result slots, bool isCritical, bool evaded, bool evadedByState, int damage, int appliedDamage, bool grazed = false)
         {
             Slots = slots;
             IsCritical = isCritical;
@@ -53,6 +54,7 @@ namespace Fantasia.Combat
             EvadedByState = evadedByState;
             Damage = damage;
             AppliedDamage = appliedDamage;
+            Grazed = grazed;
         }
     }
 
@@ -182,13 +184,20 @@ namespace Fantasia.Combat
 
         // 판정 결과가 이미 정해졌을 때의 순수 계산 (셀프테스트에서 결정적으로 검증하려고 분리).
         // 처리 순서: 회피 → 크리티컬/일반 피해 → 방어 → HP 차감량 (상태 효과·파손은 D12/D18).
+        public const float EvasionStateGrazeRatio = 0.5f; // 11/15 팀장: 회피 상태 적에게 크리티컬이 아니면 피해 절반
         public static AttackOutcome Compute(AttackRequest attack, DefenseProfile defense, SlotCheck.Result slots, bool generalEvasionRolled)
         {
             bool critical = slots.AllSucceeded;
 
-            // 회피 상태 적: 비크리티컬은 무조건 회피, 크리티컬은 명중.
+            // 회피 상태 적: 크리티컬은 그대로 명중.
+            // 11/15 팀장 "그림자 사냥개 전투가 너무 늘어짐": 예전엔 크리티컬이 아니면 무조건 빗나감 → 이제 스침 = 일반 피해의 절반 (피해가 있으면 최소 1). 일반 회피 판정은 그대로.
             if (defense.HasEvasionState && !critical)
-                return new AttackOutcome(slots, false, true, true, 0, 0);
+            {
+                if (generalEvasionRolled) return new AttackOutcome(slots, false, true, false, 0, 0);
+                int full = NormalDamage(attack.Coefficient, attack.AttackValue, defense.DefenseAgainst(attack.Type), attack.PierceRatio);
+                int graze = full > 0 ? Mathf.Max(1, Mathf.FloorToInt(full * EvasionStateGrazeRatio + 0.0001f)) : 0;
+                return new AttackOutcome(slots, false, false, false, graze, Mathf.Min(graze, Mathf.Max(0, defense.CurrentHP)), grazed: true);
+            }
 
             // 일반 회피는 크리티컬에도 적용한다.
             if (generalEvasionRolled)

@@ -76,3 +76,6 @@ Thumbs.db
 # 받은 아이템 3D 모델 (2026-11-12): 아이콘 촬영용(ItemIconStudio)만 씀. 게임엔 아이콘 그림만 들어감. 원본은 ArtSource 2026-11-11_디자인_ 폴더들
 /Assets/_Project/Art/Models/Items/
 /Assets/_Project/Art/Models/Items.meta
+
+# 팀원 공유 문서 (요청서·회신 PDF·영상, 2026-11-14 바탕화면에서 옮김) — 로컬 보관만, 공개 저장소에 올리지 않음
+/팀원공유/

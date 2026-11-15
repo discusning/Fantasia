@@ -127,7 +127,7 @@ namespace Fantasia.Board
         {
             var lamp = DecoPrefab("Lamp");
             var haloSrc = Resources.Load<Material>("BoardArt/Mat_FogLampHalo");
-            DevHalos.Clear();
+            DevHalos.Clear(); DevLampsSkipped = 0; _structureBounds = null;
             if (lamp == null) return;
             var picks = new List<HexCoord>();
             var cands = new List<(uint h, HexCoord ring, Vector3 inDir)>();
@@ -157,7 +157,16 @@ namespace Fantasia.Board
                 if (!far) continue;
                 picks.Add(ring);
                 var basePos = LocalPosition(ring) + Vector3.up * tileHeight;
-                var lampPos = basePos + inDir * (tileSize * 0.62f); // 길과 맞닿은 칸 끝
+                // 11/15 팀장 "가로등·불빛이 구조물을 뚫고 나옴": 둘레 칸에는 집·담이 있어 칸 끝(0.62)에 세우면 건물 안에 박힘
+                // → 건물(키 큰 장식) 바닥 범위와 겹치면 길 쪽으로 더 밀어 보고, 그래도 겹치면 이 자리는 세우지 않음
+                Vector3? okPos = null;
+                foreach (float push in new[] { 0.62f, 0.85f, 1.05f })
+                {
+                    var p = basePos + inDir * (tileSize * push);
+                    if (!InsideStructure(root.TransformPoint(p), tileSize * 0.22f)) { okPos = p; break; }
+                }
+                if (okPos == null) { DevLampsSkipped++; picks.RemoveAt(picks.Count - 1); continue; }
+                var lampPos = okPos.Value;
                 float yaw = -Mathf.Atan2(inDir.z, inDir.x) * Mathf.Rad2Deg + 90f;
                 Place(lamp, Deco["Lamp"], root, lampPos, yaw);
                 if (haloSrc != null)
@@ -167,8 +176,8 @@ namespace Fantasia.Board
                     Destroy(halo.GetComponent<Collider>());
                     halo.name = "FogLampHalo";
                     halo.transform.SetParent(root, false);
-                    halo.transform.localPosition = lampPos - inDir * (tileSize * 0.35f) + Vector3.up * (tileSize * 1.25f);
-                    halo.transform.localScale = Vector3.one * (tileSize * 4.2f);
+                    halo.transform.localPosition = lampPos + inDir * (tileSize * 0.15f) + Vector3.up * (tileSize * 1.05f); // 11/15: 안개(건물) 쪽으로 밀면 지붕을 뚫고 비침 → 길 쪽
+                    halo.transform.localScale = Vector3.one * (tileSize * 2.6f); // 11/15: 4.2는 옆 집 지붕까지 덮음
                     var m = new Material(haloSrc);
                     var r = halo.GetComponent<MeshRenderer>(); r.sharedMaterial = m;
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false;
@@ -180,6 +189,34 @@ namespace Fantasia.Board
             DevEdgeLamps = picks.Count;
         }
 
+
+        public static int DevLampsSkipped { get; private set; }
+        private List<Bounds> _structureBounds;
+        // 건물·담·나무 등 키 큰 장식의 바닥 범위 (가로등·번짐·바닥 판·안개는 뺌). 처음 한 번 모아 둠.
+        private bool InsideStructure(Vector3 world, float radius)
+        {
+            if (_structureBounds == null)
+            {
+                _structureBounds = new List<Bounds>();
+                foreach (var r in GetComponentsInChildren<Renderer>(false))
+                {
+                    var n = r.gameObject.name; var root = r.transform;
+                    while (root.parent != null && root.parent != transform && !root.name.StartsWith("Scatter_")) root = root.parent;
+                    if (n.Contains("Lamp") || n.Contains("Halo") || root.name.Contains("StreetLamp") || n.Contains("Fog") || n.Contains("Veil")) continue;
+                    if (r.GetComponentInParent<HexTile>() != null && r.transform == r.GetComponentInParent<HexTile>().transform) continue; // 칸 바닥
+                    var b = r.bounds;
+                    if (b.size.y < tileSize * 0.7f) continue;                          // 낮은 것(바닥·풀·작은 소품)
+                    if (b.size.x > tileSize * 6f || b.size.z > tileSize * 6f) continue; // 바닥 한 장·안개 판
+                    _structureBounds.Add(b);
+                }
+            }
+            foreach (var b in _structureBounds)
+            {
+                var c = b.center; var e = b.extents * 0.85f; // 모델 테두리 여유 (지붕 처마 등)
+                if (Mathf.Abs(world.x - c.x) < e.x + radius && Mathf.Abs(world.z - c.z) < e.z + radius) return true;
+            }
+            return false;
+        }
         // 그 방향으로 4칸 가는 동안 칸이 하나도 없으면 지도 바깥
         private bool OpensToOutside(HexCoord from, int d)
         {

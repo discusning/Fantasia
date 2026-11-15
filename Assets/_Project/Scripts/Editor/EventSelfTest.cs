@@ -61,7 +61,10 @@ namespace Fantasia.Editor
             var m = party.Members[0];
             e += Check(EventTiles.CanUseFountain(m), "분수대: LP 5 미만이면 가능");
             while (m.GainLP()) { }
-            e += Check(!EventTiles.CanUseFountain(m) && m.CurrentLP == PartyMember.MaxLP, "LP 최대 5에서 불가");
+            m.RestoreFocus(m.MaxFocus);
+            e += Check(!EventTiles.CanUseFountain(m) && m.CurrentLP == PartyMember.MaxLP, "LP 최대 5 + 집중 가득이면 불가");
+            m.TrySpendFocus(1);
+            e += Check(EventTiles.CanUseFountain(m), "LP 최대여도 집중을 썼으면 가능 (11/15)");
 
             e += CheckPrayers(detective, doctor);
 

@@ -59,11 +59,17 @@ namespace Fantasia.Data
 
         private int LevelBonusSteps => Level - 1;
 
-        // 최대 HP = 활력×2 + 레벨당 +8. 레벨 1에서는 System.md 직업별 초기 HP 표와 같은 값이 나온다
-        // (예: 명탐정 활력54 → 108, 표의 초기 HP 108과 일치).
-        // + 방어구·장신구 최대 HP 보정 (예: 인부의 두꺼운 코트 +10).
-        // + 생명의 기도 활력 +5 → HP +10 (활력으로만, 따로 더하지 않음)
-        public int MaxHP => (Job.Stats.Vitality + PrayerRules.StatBonus(Prayer).Vitality) * 2 + LevelBonusSteps * 8 + GearSum(g => g.MaxHPBonus);
+        // 11/15 팀장 "1레벨로도 보스를 이김 — 레벨마다 체력·스탯이 오르게": 1레벨은 약하게, 레벨당 성장은 크게.
+        //  최대 HP = 활력×2×0.8 (1레벨) + 레벨당 (활력×2×0.13 + 1). 명탐정 활력54: 1레벨 86 → 4레벨 131 → 10레벨 221.
+        //  (예전: 활력×2 + 레벨당 8 → 1레벨 108, 4레벨 132.) + 방어구·장신구 최대 HP, 생명의 기도 활력 +5는 활력으로.
+        public const float StartHpRatio = 0.8f;
+        public const float HpGrowthRatio = 0.13f;
+        public int HpPerLevel => Mathf.RoundToInt(Job.Stats.Vitality * 2 * HpGrowthRatio) + 1;
+        public int MaxHP => Mathf.RoundToInt(Job.Stats.Vitality * 2 * StartHpRatio) + PrayerRules.StatBonus(Prayer).Vitality * 2 /* 생명의 기도 HP +10 그대로 */ + LevelBonusSteps * HpPerLevel + GearSum(g => g.MaxHPBonus);
+        // 레벨당 스탯: 힘·속도·지력·행운·인지 +1 (활력은 HP 성장에 이미 반영), 물리·마법 방어 +1, 공격 +2 (예전부터)
+        public const int StatPerLevel = 1;
+        public const int DefensePerLevel = 1;
+        public StatBlock LevelStatBonus => new StatBlock(LevelBonusSteps * StatPerLevel, LevelBonusSteps * StatPerLevel, 0, LevelBonusSteps * StatPerLevel, LevelBonusSteps * StatPerLevel, LevelBonusSteps * StatPerLevel);
 
         // MP를 쓰는 직업(역병 의사·연금술사·지휘자·도박가)만 활력×2 + 레벨당 +6 (+ 장신구 최대 MP), 나머지는 0 고정.
         public int MaxMP => Job.UsesMP ? Job.Stats.Vitality * 2 + LevelBonusSteps * 6 + GearSum(g => g.MaxMPBonus) : 0;
@@ -87,6 +93,7 @@ namespace Fantasia.Data
                 var stats = Job.Stats;
                 foreach (var g in _equipped) if (g != null) stats += g.StatBonus;
                 stats += PrayerRules.StatBonus(Prayer); // 석상 기도
+                stats += LevelStatBonus; // 11/15 레벨당 스탯
                 int all = Statuses.AllStatPenalty;
                 stats += new StatBlock(-all, -all - Statuses.SpeedPenalty + Statuses.SpeedBonus, -all, -all, -all, -all);
                 return stats.ClampToCap();
@@ -114,8 +121,8 @@ namespace Fantasia.Data
         }
 
         // 직업 기본 + 방어구·장신구 − 상태 효과
-        public int FinalPhysicalDefense => Mathf.Max(0, Job.BasePhysicalDefense + GearSum(g => g.PhysicalDefense) - Statuses.DefensePenalty);
-        public int FinalMagicDefense => Mathf.Max(0, Job.BaseMagicDefense + GearSum(g => g.MagicDefense) - Statuses.DefensePenalty);
+        public int FinalPhysicalDefense => Mathf.Max(0, Job.BasePhysicalDefense + LevelBonusSteps * DefensePerLevel + GearSum(g => g.PhysicalDefense) - Statuses.DefensePenalty);
+        public int FinalMagicDefense => Mathf.Max(0, Job.BaseMagicDefense + LevelBonusSteps * DefensePerLevel + GearSum(g => g.MagicDefense) - Statuses.DefensePenalty);
 
         // 이 직업이 가진 패시브 값 합 (없으면 0) — 예: 현장 검증 기습 +0.1.
         public float PassiveValue(PassiveType type)

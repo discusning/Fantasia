@@ -929,7 +929,7 @@ namespace Fantasia.Combat
             string result = ResultText(outcome);
             Log($"{attacker.DisplayName}{(skill != null ? $" [{skill.DisplayName}]" : "")} → {target.DisplayName}: 슬롯 {outcome.Slots.SuccessCount}/{outcome.Slots.SlotCount} (슬롯당 {request.SlotChance * 100f:0.0}%{(useFocus > 0 ? $", 집중 {useFocus}" : "")}) · 공격 {request.AttackValue}×{request.Coefficient:0.##}{(request.PierceRatio > 0f ? $" 관통 {request.PierceRatio * 100f:0}%" : "")} vs 방어 {target.Defense().DefenseAgainst(request.Type)} → {result} · {target.DisplayName} HP {target.CurrentHP}/{target.MaxHP}");
             SfxPlayer.Play(outcome.Evaded ? SfxIds.Miss : outcome.IsCritical ? SfxIds.Crit : SfxIds.Hit);
-            _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? "MISS" : Mathf.Max(0, outcome.Damage - absorbed).ToString(), ResultColor(outcome), outcome.IsCritical && !outcome.Evaded ? 38 : 30);
+            _hud.PopText(_camera, ModelTop(target), outcome.Evaded ? (outcome.EvadedByState ? "회피 상태" : "MISS") : outcome.Grazed ? $"스침 {Mathf.Max(0, outcome.Damage - absorbed)}" /* 11/15 팀장: 회피 상태 적 = 크리티컬 아니면 절반 */ : Mathf.Max(0, outcome.Damage - absorbed).ToString(), ResultColor(outcome), outcome.IsCritical && !outcome.Evaded ? 38 : 30);
             if (outcome.Evaded) MotionOf(target)?.Dodge(); // 11/12 N7 회피: 몸을 옆으로 비킴 (동작 있는 아군만)
             PlayHitVfx(attacker, target, request, outcome, skill); // 11/13 이펙트 1차 (무기 종류별) · 6차 스킬별
             if (!target.IsAlive) KnockDown(target);
@@ -956,6 +956,8 @@ namespace Fantasia.Combat
         }
 
         // 회복 (응급 봉합): 기본 회복은 확정, 판정 전부 성공 시에만 지정 상태 제거 (System.md).
+        public const float CritHealMultiplier = 1.5f; // 11/15 팀장: 회복 크리티컬(모든 칸 성공) = 회복량 1.5배
+        public static int DevCritHeals;
         private IEnumerator ResolveHeal(BattleUnit healer, BattleUnit target, SkillDefinition skill, int useFocus)
         {
             int amount = skill.HealFlat + Mathf.FloorToInt(skill.HealMagicRatio * healer.Member.FinalMagicAttack + 0.0001f);
@@ -968,13 +970,29 @@ namespace Fantasia.Combat
             _hud.PopText(_camera, ModelTop(target), $"+{healed}", BattleHud.HealColor);
             var healKey = SkillVfxKey(skill); BattleVfx.Play(healKey != null && BattleVfx.Has(healKey) ? healKey : BattleVfx.Heal, ModelFeet(target), VfxScale(target)); // 6차: 응급 봉합 = 봉합 원
 
-            if (skill.CleanseNeedsFullSuccess && skill.SlotCount > 0)
+            if (skill.SlotCount > 0)
             {
                 var slots = SlotCheck.Roll(skill.SlotCount, healer.Member.FinalStats.Get(skill.RollStat), useFocus);
+                // 11/15 팀장: 회복도 판정이 크리티컬(모든 칸 성공)이면 회복량 1.5배 — 기본 회복은 이미 들어갔으니 0.5배를 더함
+                int bonus = slots.AllSucceeded ? Mathf.FloorToInt(amount * (CritHealMultiplier - 1f) + 0.0001f) : 0;
+                string rollText = slots.AllSucceeded
+                    ? $"크리티컬! 회복 {healed} + {bonus}{(skill.CleanseNeedsFullSuccess ? " · 정화" : "")}"
+                    : $"회복 {healed}";
                 yield return _hud.PlayRoll($"{healer.DisplayName} [{skill.DisplayName}] → {target.DisplayName}", slots, useFocus,
-                    slots.AllSucceeded ? $"회복 {healed} + 정화" : $"회복 {healed}", BattleHud.SlotSuccess);
-                Log($"{healer.DisplayName} [{skill.DisplayName}] → {target.DisplayName}: 회복 {healed} (고정 {skill.HealFlat} + {skill.HealMagicRatio:0.##}M = {amount}) · 추가 판정 {slots.SuccessCount}/{slots.SlotCount} · HP {target.CurrentHP}/{target.MaxHP}");
-                if (slots.AllSucceeded) Cleanse(target, skill.CleansedStatuses, skill.DisplayName);
+                    rollText, slots.AllSucceeded ? BattleHud.CritColor : BattleHud.SlotSuccess);
+                if (bonus > 0)
+                {
+                    int beforeBonus = target.CurrentHP;
+                    target.Member.Heal(bonus);
+                    int bonusHealed = target.CurrentHP - beforeBonus;
+                    healed += bonusHealed;
+                    DevCritHeals++;
+                    if (bonusHealed > 0) _hud.PopText(_camera, ModelTop(target) + Vector3.up * 0.45f, $"크리티컬 +{bonusHealed}", BattleHud.CritColor, 34);
+                    BattleVfx.Play(healKey != null && BattleVfx.Has(healKey) ? healKey : BattleVfx.Heal, ModelFeet(target), VfxScale(target) * 1.2f);
+                    SfxPlayer.Play(SfxIds.Heal);
+                }
+                Log($"{healer.DisplayName} [{skill.DisplayName}] → {target.DisplayName}: 회복 {healed}{(bonus > 0 ? $" (크리티컬 +{bonus})" : "")} (고정 {skill.HealFlat} + {skill.HealMagicRatio:0.##}M = {amount}) · 추가 판정 {slots.SuccessCount}/{slots.SlotCount} · HP {target.CurrentHP}/{target.MaxHP}");
+                if (slots.AllSucceeded && skill.CleanseNeedsFullSuccess) Cleanse(target, skill.CleansedStatuses, skill.DisplayName);
             }
             else
             {
@@ -1038,7 +1056,7 @@ namespace Fantasia.Combat
 
         private static string ResultText(AttackOutcome outcome) => outcome.Evaded
             ? (outcome.EvadedByState ? "회피 상태 — 빗나감" : "회피!")
-            : outcome.IsCritical ? $"크리티컬! {outcome.Damage}" : $"명중 {outcome.Damage}";
+            : outcome.IsCritical ? $"크리티컬! {outcome.Damage}" : outcome.Grazed ? $"스침 {outcome.Damage} (회피 상태 · 절반)" : $"명중 {outcome.Damage}";
 
         private static Color ResultColor(AttackOutcome outcome) =>
             outcome.Evaded ? BattleHud.SlotFailure : outcome.IsCritical ? BattleHud.CritDamageColor : BattleHud.DamageColor; // 11/13 피해 주황 · 크리티컬 붉은 주황
@@ -1567,12 +1585,8 @@ namespace Fantasia.Combat
             BattleUnit hovered = null;
             var cardHover = PartyHudPanel.HoveredTargetCard != null ? _allies.FirstOrDefault(a => a.Member == PartyHudPanel.HoveredTargetCard) : null;
             if (cardHover != null && IsValidTarget(cardHover)) hovered = cardHover; // 11/12 아래 카드에 마우스 → 전장 표시·미리보기도 같이
-            else if (!BattleHud.PointerOverUI && _camera != null &&
-                Physics.Raycast(_camera.ScreenPointToRay(Input.mousePosition), out var hit) &&
-                _targets.TryGetValue(hit.collider, out var unit) && IsValidTarget(unit))
-            {
-                hovered = unit;
-            }
+            else if (!UIFlow.PointerBlockedByUI() && _camera != null)
+                hovered = TargetUnderPointer(Input.mousePosition);
 
             if (hovered != _hovered)
             {
@@ -1583,6 +1597,55 @@ namespace Fantasia.Combat
             }
 
             if (hovered != null && Input.GetMouseButtonDown(0)) OnUnitPicked(hovered);
+        }
+
+        // 11/15 팀장 "캐릭터 차례에 마우스로 대상을 지정해도 안 됨":
+        // ① 예전엔 광선이 처음 맞은 것만 봄 → 앞에 선 아군·소품(관·탁자·수레 콜라이더)에 막히면 뒤의 적이 안 잡힘.
+        //    이제 광선이 지나는 모든 것 중 가장 가까운 "고를 수 있는 대상".
+        // ② 모델이 작으면(사냥개·쥐) 콜라이더가 작아 빗맞음 → 화면에서 모델 가까이(60px)면 가장 가까운 대상.
+        private BattleUnit TargetUnderPointer(Vector2 screen)
+        {
+            var hits = Physics.RaycastAll(_camera.ScreenPointToRay(screen), 200f, ~0, QueryTriggerInteraction.Collide);
+            foreach (var h in hits.OrderBy(h => h.distance))
+                if (_targets.TryGetValue(h.collider, out var u) && IsValidTarget(u)) return u;
+            BattleUnit best = null; float bestD = PickSlackPx * (Screen.height / 1080f);
+            foreach (var kv in _targets)
+            {
+                var u = kv.Value; if (kv.Key == null || !IsValidTarget(u)) continue;
+                var c = (CapsuleCollider)kv.Key;
+                var center = kv.Key.transform.TransformPoint(c.center);
+                var sp = _camera.WorldToScreenPoint(center);
+                if (sp.z <= 0f) continue;
+                // 콜라이더 화면 세로 범위 안의 가장 가까운 점까지 거리
+                var top = _camera.WorldToScreenPoint(center + Vector3.up * c.height * 0.5f);
+                var bottom = _camera.WorldToScreenPoint(center - Vector3.up * c.height * 0.5f);
+                float y = Mathf.Clamp(screen.y, Mathf.Min(top.y, bottom.y), Mathf.Max(top.y, bottom.y));
+                float d = Vector2.Distance(screen, new Vector2(sp.x, y));
+                if (d < bestD) { bestD = d; best = u; }
+            }
+            return best;
+        }
+        private const float PickSlackPx = 60f;
+
+
+        public string DevTargetPickReport()
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var kv in _targets)
+            {
+                var u = kv.Value; if (kv.Key == null || !IsValidTarget(u)) continue;
+                var c = (CapsuleCollider)kv.Key;
+                var sp = _camera.WorldToScreenPoint(kv.Key.transform.TransformPoint(c.center));
+                var es = EventSystem.current; string ui = "";
+                if (es != null)
+                {
+                    var hits = new List<RaycastResult>(); es.RaycastAll(new PointerEventData(es) { position = sp }, hits);
+                    ui = string.Join(",", hits.Take(3).Select(h => h.gameObject.name));
+                }
+                var first = Physics.Raycast(_camera.ScreenPointToRay(sp), out var hit, 200f) ? hit.collider.name : "-";
+                sb.Append($"{u.DisplayName}@({sp.x:0},{sp.y:0}) 광선첫={first}{(hit.collider == kv.Key ? "" : "(막힘)")} UI=[{ui}] 고름={(TargetUnderPointer(sp) == u ? "O" : "X")}; ");
+            }
+            return sb.ToString();
         }
 
         // 에디터 미리보기용 — 공격 대상 선택 중 첫 번째 적에 마우스를 올린 상태를 재현.
@@ -1617,7 +1680,7 @@ namespace Fantasia.Combat
             float crit = SlotCheck.AllSuccessProbability(req.SlotCount, req.SlotChance, focus);
             int normal = AttackResolver.NormalDamage(req.Coefficient, req.AttackValue, target.Defense().DefenseAgainst(req.Type), req.PierceRatio);
             int critDmg = AttackResolver.CriticalDamage(req.Coefficient, req.AttackValue);
-            string evasion = target.HasEvasionState ? " · 회피 상태: 크리티컬만 명중" : "";
+            string evasion = target.HasEvasionState ? $" · 회피 상태: 크리티컬이 아니면 스침 {Mathf.Max(normal > 0 ? 1 : 0, normal / 2)}" : "";
             string name = skill != null ? $"[{skill.DisplayName}] " : "";
             string focusText = focus > 0 ? $" (집중 {focus}개 확정)" : "";
             return $"{name}{target.DisplayName} — 슬롯 {req.SlotCount}개 × {req.SlotChance * 100f:0.0}%{focusText} · 크리티컬 {crit * 100f:0.0}% · 피해 {normal} / 크리 {critDmg}{evasion}";

@@ -40,7 +40,22 @@ namespace Fantasia.Core
             if (Environment.GetCommandLineArgs().Contains("-autoplay-spikes")) go.AddComponent<FrameSpikeLog>(); // 11/12 느린 프레임 기록
         }
 
-        private IEnumerator Start()
+        // 11/15 멈춤 찾기: 자동 플레이 자체가 한 프레임에 오래 걸리는지 (50ms 넘으면 [자동 플레이 시간])
+        private IEnumerator Start() => Timed(StartInner(), "Start");
+        private static IEnumerator Timed(IEnumerator e, string name)
+        {
+            var sw = new System.Diagnostics.Stopwatch();
+            while (true)
+            {
+                sw.Restart();
+                bool more = e.MoveNext();
+                if (sw.ElapsedMilliseconds > 50) Debug.Log($"[자동 플레이 시간] {name} {sw.ElapsedMilliseconds}ms");
+                if (!more) yield break;
+                var cur = e.Current;
+                if (cur is IEnumerator sub) yield return Timed(sub, sub.GetType().Name); else yield return cur;
+            }
+        }
+        private IEnumerator StartInner()
         {
             var args = Environment.GetCommandLineArgs();
             int i = Array.IndexOf(args, "-autoplay-out");
@@ -430,11 +445,13 @@ namespace Fantasia.Core
             yield return new WaitForSecondsRealtime(0.4f);
             Note($"Esc 메뉴 {(PauseMenu.IsOpen ? "열림" : "안 열림")} · timeScale {Time.timeScale}");
             yield return Shot("pause_menu");
+            Qa(!QuestTrackerPanel.DevVisible, "일시정지 메뉴에서 의뢰 칸 숨김");
             PauseMenu.DevToMainMenu();
             yield return WaitFor(() => FindFirstObjectByType<MainMenuController>() != null, 10f, "메인 메뉴");
             yield return new WaitForSeconds(1f);
             Note($"메인 메뉴로 나감 → {FindFirstObjectByType<MainMenuController>()?.DevContinueInfo.Replace("\n", " / ")} · timeScale {Time.timeScale}");
             yield return Shot("menu_after_pause");
+            Qa(!QuestTrackerPanel.DevVisible, "메인 메뉴로 나가면 오른쪽 의뢰 칸 안 보임 (11/15 팀장)");
             Note("자동 플레이 완료");
         }
 
@@ -757,7 +774,8 @@ namespace Fantasia.Core
                 saveParty.AddCent(100);
                 int saveRound = board.DevWorldRound;
                 ShopPanel.Instance.DevSelectTab(3); ShopPanel.Instance.DevSelectRow(0);
-                ShopPanel.Instance.DevAct(); // 숙박 → 아군 턴 종료 → 적 턴 → 다음 아군 턴 시작에 자동 저장
+                ShopPanel.Instance.DevAct(); // 숙박 (11/15: 턴 안 넘어감) → 상점 닫고 턴 끝내기 → 다음 아군 턴 시작에 자동 저장
+                ShopPanel.Close(); yield return new WaitForSeconds(0.3f); board.DevEndTurn();
                 yield return WaitFor(() => board.DevWorldRound > saveRound && board.DevIsIdle, 10f, "숙박 후 턴 진행");
                 yield return new WaitForSeconds(0.5f);
                 var s = BoardSession.Instance;
@@ -834,7 +852,7 @@ namespace Fantasia.Core
                 if (rig != null) { float d0 = rig.Distance; rig.Distance = rig.MinDistance + 1f; yield return new WaitForSeconds(2f); yield return Shot("board_close"); rig.Distance = d0; yield return new WaitForSeconds(1.5f); }
                 Note($"보드 장식: 가로등 장면 {HexBoard.DevLampScenes}곳 · 건물 밑동 {HexBoard.DevFoundations}곳 · {HexBoard.DevYardInfo}");
                 // 11/14 팀장 1안 런던 안개: 멀리서 보면 안 열린 지역·지도 바깥이 안개로 가려짐
-                Note($"런던 안개: 숨긴 칸 {HexBoard.DevHiddenTiles} · 안개 층 {HexBoard.DevFogLayers} · 안개 경계 가로등 {HexBoard.DevEdgeLamps}");
+                Note($"런던 안개: 숨긴 칸 {HexBoard.DevHiddenTiles} · 안개 층 {HexBoard.DevFogLayers} · 안개 경계 가로등 {HexBoard.DevEdgeLamps} (건물과 겹쳐 뺀 자리 {HexBoard.DevLampsSkipped})");
                 Qa(HexBoard.DevEdgeLamps >= 3, "런던 안개: 경계 길가 가로등 3개 이상");
                 Qa(HexBoard.DevHiddenTiles > 100 && HexBoard.DevFogLayers == 3, "런던 안개: 안 열린 지역 칸 숨김 + 안개 층 3장");
                 if (rig != null) { float d2 = rig.Distance; rig.Distance = rig.MaxDistance; yield return new WaitForSeconds(2.5f); yield return Shot("board_far_fog"); rig.Distance = d2; yield return new WaitForSeconds(1.5f); }
@@ -1007,8 +1025,10 @@ namespace Fantasia.Core
                 yield return Shot("shop_services");
                 shopParty.AddCent(100); // 점검용: 숙박비(30×3) 확보
                 int shopRound = board.DevWorldRound;
-                shopUi.DevAct(); // 숙박 → 아군 턴 종료
-                yield return WaitFor(() => board.DevWorldRound > shopRound && board.DevIsIdle, 10f, "숙박 후 턴 진행");
+                shopUi.DevAct(); // 숙박 — 11/15 팀장: 턴은 그대로여야 함
+                yield return new WaitForSeconds(0.6f);
+                Qa(ShopPanel.IsOpen && board.DevWorldRound == shopRound, $"숙박 이용해도 상점 그대로·턴 그대로 (라운드 {shopRound} → {board.DevWorldRound})");
+                // (11/15) 예전: 숙박 → 턴 진행 기다림
                 Note($"상점: 숙박 이용 → 상점 닫힘 {!ShopPanel.IsOpen}, 월드 라운드 {shopRound} → {board.DevWorldRound}, Cent {shopParty.Cent}");
                 yield return Shot("shop_after_inn");
                 Note("자동 플레이 완료");
@@ -1444,6 +1464,8 @@ namespace Fantasia.Core
                                 battle.DevPressSkill(skill);
                                 yield return new WaitForSeconds(0.2f);
                                 yield return Shot("battle_skill_chosen");
+                                { var cov = battle.DevHud.DevActionButtonCover(); Note($"행동 버튼 점검: {cov}"); Qa(!cov.Contains("덮임"), "행동 버튼 6개 모두 맨 위에서 눌림 (11/15 팀장)"); }
+                                { var rep = battle.DevTargetPickReport(); Note($"대상 지정 점검: {rep}"); Qa(!rep.Contains("고름=X"), "모든 대상을 마우스로 고를 수 있음 (11/15 팀장)"); }
                                 Qa(battle.DevChoosingTarget, "스킬 고르면 대상 고르기");
                                 battle.DevPressSkill(skill);
                                 yield return new WaitForSeconds(0.2f);

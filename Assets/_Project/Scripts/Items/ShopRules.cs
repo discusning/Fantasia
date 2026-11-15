@@ -25,7 +25,7 @@ namespace Fantasia.Items
     {
         public readonly bool Ok;
         public readonly string Message;
-        public readonly bool EndsAllyTurn; // 서비스·제작은 월드 행동 종료
+        public readonly bool EndsAllyTurn; // 11/15: 상점은 이제 턴을 안 끝냄 (항상 false)
         public ShopResult(bool ok, string message, bool endsAllyTurn = false) { Ok = ok; Message = message; EndsAllyTurn = endsAllyTurn; }
     }
 
@@ -136,7 +136,7 @@ namespace Fantasia.Items
             return new ShopResult(true, $"{gear.DisplayName} 판매 +{price} Cent{(price == 0 ? " (최초 지급 장비)" : "")}");
         }
 
-        // ── 서비스 (City.md §4) — 1막 기획 결정서 B2: 생존 1명씩 선택, 1인 가격, 이용하면 아군 턴 종료 ──
+        // ── 서비스 (City.md §4) — 1막 기획 결정서 B2: 생존 1명씩 선택, 1인 가격, (11/15 팀장: 이용해도 턴은 안 넘어감) ──
         public static int ServicePrice(ShopService s) => s switch { ShopService.Inn => 30, ShopService.Treatment => 50, _ => 45 };
 
         public static string ServiceLabel(ShopService s) => s switch
@@ -165,7 +165,7 @@ namespace Fantasia.Items
             };
         }
 
-        // 1막 기획 결정서 02 (B2): 생존 캐릭터 1명을 골라 1인 가격. 성공하면 월드 행동(아군 턴) 종료.
+        // 1막 기획 결정서 02 (B2): 생존 캐릭터 1명을 골라 1인 가격. 11/15 팀장: 턴은 안 넘어감.
         // 취소·돈 부족·적용할 효과 없음은 비용·행동을 쓰지 않는다. 비율 회복은 올림, 최대치 제한.
         public static ShopResult UseService(Party party, ShopService s, PartyMember m)
         {
@@ -190,10 +190,10 @@ namespace Fantasia.Items
                     m.RestoreFocus(m.MaxFocus);
                     break;
             }
-            return new ShopResult(true, $"{ServiceLabel(s)} — {m.Job.DisplayName} −{cost} Cent · 아군 턴 종료", endsAllyTurn: true);
+            return new ShopResult(true, $"{ServiceLabel(s)} — {m.Job.DisplayName} −{cost} Cent"); // 11/15 팀장: 상점 이용으로 턴이 넘어가면 안 됨
         }
 
-        // ── 작업대 제작 (System.md "연금술 제작·상점 서비스") — 시약 + 제작비, 1개 확정, 월드 행동 종료 ──
+        // ── 작업대 제작 (System.md "연금술 제작·상점 서비스") — 시약 + 제작비, 1개 확정 (11/15 팀장: 턴은 안 넘어감) ──
         public static readonly (string resultId, int reagents, int fee)[] Recipes =
         {
             (ConsumableIds.Bandage, 2, 10),
@@ -215,7 +215,7 @@ namespace Fantasia.Items
             party.Inventory.RemoveConsumable(reagent, reagents);
             party.SpendCent(fee);
             party.Inventory.AddConsumable(result);
-            return new ShopResult(true, $"{result.DisplayName} 제작 (시약 {reagents} · {fee} Cent) · 아군 턴 종료", endsAllyTurn: true);
+            return new ShopResult(true, $"{result.DisplayName} 제작 (시약 {reagents} · {fee} Cent)"); // 11/15 팀장: 턴 안 넘어감
         }
 
         public static string StageLabel(ShopStage s) => s switch

@@ -65,8 +65,10 @@ namespace Fantasia.UI
         {
             Title.text = title;
             Summary.text = summary;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             Root.SetActive(true);
             Drop.Play();
+            if (sw.ElapsedMilliseconds > 30) Debug.Log($"[판 켜기 시간] {sw.ElapsedMilliseconds}ms");
         }
 
         public void Hide() => Root.SetActive(false);

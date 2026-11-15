@@ -170,9 +170,9 @@ namespace Fantasia.UI
             else
             {
                 bool well = _kind == EventKind.Well;
-                _chip.text = well ? "생존 동료 1명의 집중력 1 회복 · 이 우물에서 1회" : "선택한 캐릭터 LP +1 · 칸마다 1회";
+                _chip.text = well ? "생존 동료 1명의 집중력 1 회복 · 이 우물에서 1회" : "선택한 캐릭터 집중력 모두 회복 + LP +1 · 칸마다 1회";
                 _odds.text = well ? "차가운 우물물이 정신을 맑게 한다." : "맑은 물에 손을 담그면 생명의 기운이 깃든다.";
-                _note.text = well ? "HP·MP·LP·상태 이상은 회복되지 않습니다" : _fountainUsed ? "<color=#E0675A>이미 기운을 받은 분수대입니다</color>" : $"LP 최대 {PartyMember.MaxLP}";
+                _note.text = well ? "HP·MP·LP·상태 이상은 회복되지 않습니다" : _fountainUsed ? "<color=#E0675A>이미 기운을 받은 분수대입니다</color>" : $"LP 최대 {PartyMember.MaxLP} · 집중력이 가득하고 LP도 최대면 고를 수 없습니다";
                 _footer.text = well ? "집중력이 가득 찬 동료는 고를 수 없습니다 · 떠나면 횟수를 쓰지 않음" : "캐릭터를 고르고 확정하세요";
             }
 
@@ -187,7 +187,7 @@ namespace Fantasia.UI
                 if (!has) continue;
                 var m = members[i];
                 bool usable = witch ? m.IsAlive : _kind == EventKind.Well ? Fantasia.World.MapTileRules.CanUseWell(m) : EventTiles.CanUseFountain(m);
-                string state = witch ? (_card == FortuneCard.Recovery ? $"HP {m.CurrentHP}/{m.MaxHP}" : $"집중 {m.CurrentFocus}/{m.MaxFocus}") : _kind == EventKind.Well ? $"집중 {m.CurrentFocus}/{m.MaxFocus}" : $"LP {m.CurrentLP}/{PartyMember.MaxLP}";
+                string state = witch ? (_card == FortuneCard.Recovery ? $"HP {m.CurrentHP}/{m.MaxHP}" : $"집중 {m.CurrentFocus}/{m.MaxFocus}") : _kind == EventKind.Well ? $"집중 {m.CurrentFocus}/{m.MaxFocus}" : $"집중 {m.CurrentFocus}/{m.MaxFocus} · LP {m.CurrentLP}";
                 _targets[i].label.text = $"{(m == _target ? "▶ " : "")}{m.Job.DisplayName}\n<size=10>{state}</size>";
                 _targets[i].button.interactable = usable;
             }
@@ -344,7 +344,7 @@ namespace Fantasia.UI
                 var nameBg = UGUIKit.CreateImage(inner, "NameBar", new Vector2(0.05f, 0.3f), new Vector2(0.95f, 0.44f), new Color(0.05f, 0.04f, 0.05f, 0.9f));
                 UGUIKit.SkinThinPlate(nameBg, 0.45f, 0.95f); // 11/11 U8
                 Label(nameBg.transform, "Name", Vector2.zero, Vector2.one, 16, Gold, true).text = EventTiles.CardName(card);
-                { var reward = Label(inner, "Reward", new Vector2(0.05f, 0.03f), new Vector2(0.95f, 0.28f), 11, TextLight, false); reward.alignment = TextAnchor.MiddleLeft; reward.text = EventTiles.CardReward(card).Replace("성공 시 ", "성공 시\n"); } // 11/13 정렬: 카드 설명 왼쪽
+                { var reward = Label(inner, "Reward", new Vector2(0.05f, 0.03f), new Vector2(0.95f, 0.28f), 11, TextLight, false); reward.alignment = TextAnchor.MiddleCenter; /* 11/15 팀장: 카드 이름·기호가 가운데라 설명도 가운데 */ reward.text = EventTiles.CardReward(card).Replace("성공 시 ", "성공 시\n"); } // 11/13 정렬: 카드 설명 왼쪽
                 _cards.Add((b, fill, frame));
             }
 
@@ -360,7 +360,7 @@ namespace Fantasia.UI
                 b.targetGraphic = inner.parent.GetComponent<Image>();
                 b.onClick.AddListener(() => PickPrayer(index));
                 Label(inner, "Name", new Vector2(0.03f, 0.6f), new Vector2(0.97f, 0.97f), 14, Gold, true).text = PrayerRules.Name(kind);
-                var effect = Label(inner, "Effect", new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.6f), 10, TextLight, false); effect.alignment = TextAnchor.UpperLeft; // 11/13 정렬: 카드 설명 왼쪽 위
+                var effect = Label(inner, "Effect", new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.6f), 10, TextLight, false); effect.alignment = TextAnchor.UpperCenter; /* 11/15: 점술 카드와 같이 가운데 */ // 11/13 정렬: 카드 설명 왼쪽 위
                 effect.text = PrayerRules.Effect(kind).Replace(" · ", "\n");
                 _prayerButtons.Add((b, inner.GetComponent<Image>()));
             }
@@ -393,7 +393,7 @@ namespace Fantasia.UI
             _confirmLabel = _confirm.GetComponentInChildren<Text>();
             _leave = UGUIKit.CreateThemedButton(win, "Leave", new Vector2(0.52f, 0.07f), new Vector2(0.8f, 0.16f), "떠나기", new Color(0.16f, 0.15f, 0.17f), 15);
             _leave.onClick.AddListener(OnLeave);
-            _footer = Label(win, "Footer", new Vector2(0.05f, 0.005f), new Vector2(0.95f, 0.065f), 11, TextDim, false); _footer.alignment = TextAnchor.MiddleLeft; // 11/13 정렬: 창 아래 안내 왼쪽
+            _footer = Label(win, "Footer", new Vector2(0.05f, 0.005f), new Vector2(0.95f, 0.065f), 11, TextDim, false); _footer.alignment = TextAnchor.MiddleCenter; /* 11/15 팀장: 정렬 안 맞음 → 가운데 */ // 11/13 정렬: 창 아래 안내 왼쪽
 
             _root.SetActive(false);
         }

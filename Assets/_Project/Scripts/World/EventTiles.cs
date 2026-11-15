@@ -85,7 +85,7 @@ namespace Fantasia.World
             }
         }
 
-        // ── 분수대: 선택한 생존 캐릭터 LP +1, 칸마다 플레이 전체 1회, LP 최대 5 ──
-        public static bool CanUseFountain(PartyMember m) => m != null && m.IsAlive && m.CurrentLP < PartyMember.MaxLP;
+        // ── 분수대: 선택한 생존 캐릭터 LP +1 + 쓴 집중력 모두 회복 (11/15 팀장: 집중이 안 차서 효과가 안 보임), 칸마다 플레이 전체 1회, LP 최대 5 ──
+        public static bool CanUseFountain(PartyMember m) => m != null && m.IsAlive && (m.CurrentLP < PartyMember.MaxLP || m.CurrentFocus < m.MaxFocus);
     }
 }

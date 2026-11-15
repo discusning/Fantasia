@@ -35,7 +35,7 @@ namespace Fantasia.Data
         [Range(0f, 1f)] public float SlotSuccessRate; // System.md 보완 스탯 표 (예: 45%)
 
         [Header("특성")]
-        // [회피 상태] 패시브 — 크리티컬이 아니면 모든 공격을 회피 (그림자 사냥개 등, System.md 확률표).
+        // [회피 상태] 패시브 — 크리티컬이 아니면 피해 절반(스침, 11/15 팀장 완화. 예전엔 전부 회피). 그림자 사냥개.
         public bool HasEvasionState;
         // 공격 판정 성공(크리티컬) 시 대상에게 거는 상태 (D13 특성 — 기획자가 데이터로 조정).
         public StatusEffectDefinition[] OnCritStatuses = System.Array.Empty<StatusEffectDefinition>();

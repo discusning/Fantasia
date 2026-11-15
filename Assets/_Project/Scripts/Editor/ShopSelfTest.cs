@@ -96,7 +96,7 @@ namespace Fantasia.Editor
             var full = ShopRules.UseService(svc, ShopService.Inn, svc.Members[1]);
             e += Check(!full.Ok && svc.Cent == cent, "숙박: 회복할 것 없는 동료 → 비용 없음");
             var inn = ShopRules.UseService(svc, ShopService.Inn, svc.Members[0]);
-            e += Check(inn.Ok && inn.EndsAllyTurn, "숙박 이용 → 아군 턴 종료");
+            e += Check(inn.Ok && !inn.EndsAllyTurn, "숙박 이용 → 턴은 그대로 (11/15 팀장)");
             e += Expect("숙박 1명 30 Cent", cent - svc.Cent, 30);
             e += Expect("숙박 HP 50% 회복 (올림)", svc.Members[0].CurrentHP, Mathf.Min(svc.Members[0].MaxHP, svc.Members[0].MaxHP - 61 + (svc.Members[0].MaxHP + 1) / 2));
             e += Check(ShopRules.UseService(svc, ShopService.Treatment, svc.Members[2]).Ok == false, "정밀 치료: 상태 이상 없으면 이용 안 됨");

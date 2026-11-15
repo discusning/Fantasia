@@ -91,8 +91,9 @@ namespace Fantasia.Editor
             yield return new Recipe { Key = "Debuff_EvasionRevealed", Note = "장막 걷기: 흰 빛 + 옆으로 퍼지는 고리",
                 Parts = new[] { P(Quick + "vfx_Shockwave_01.prefab", 0.5f), P(Hovl + "Sparks/Sparks explode white.prefab", 0.9f, null, 0.8f) } };
             // 저격수 [저지 사격] = 속박(느려짐) → 발밑에 총알 튀는 흙 + 짧은 잿빛 묶는 원 (발이 묶임)
-            yield return new Recipe { Key = "Debuff_Bind", Note = "저지 사격: 발밑 흙 튐 + 짧은 잿빛 원",
-                Parts = new[] { P(Hovl + "Hits and explosions/Stones hit.prefab", 0.5f), P(Hovl + "Magic circles/Magic circle.prefab", 0.3f, BindGrey, 0.8f) },
+            // 11/15 팀장: 처음 걸릴 때 발밑 마법진은 없앰 → 흙 튐만 (묶는 원은 Aura_Bind 허리·가슴 2개)
+            yield return new Recipe { Key = "Debuff_Bind", Note = "저지 사격: 발밑 흙 튐",
+                Parts = new[] { P(Hovl + "Hits and explosions/Stones hit.prefab", 0.5f) },
                 DurationCap = 0.4f, LifeMul = 0.5f };
             // 11/13 팀장: 속박 동안 흰 알갱이가 튀는 건 안 맞음·위치도 어긋남 → "걸릴 때 뜨는 동그란 원을 2개 만들어 묶는 느낌" (팀장 제안)
             // 11/13 팀장: 상반신에 하나, 상~하반신 사이에 하나 → 허리(키 0.45)·가슴(키 0.68) 높이에 같은 잿빛 원 2개 (흩날리는 불꽃·조명은 뺌), 모델 발밑 중심을 따라다님

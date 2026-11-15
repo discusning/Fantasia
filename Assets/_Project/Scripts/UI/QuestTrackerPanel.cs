@@ -136,14 +136,21 @@ namespace Fantasia.UI
         // 11/11 팀장 결정 규칙 4: 대화창·창이 떠 있으면 오른쪽 의뢰 칸을 흐리게 (시선이 창에 모이게). 0.2초에 걸쳐 바뀜
         private CanvasGroup _group;
         private const float DimAlpha = 0.3f;
+        public static bool DevVisible => Instance != null && Instance._group != null && Instance._group.alpha > 0.01f && Instance._rows.Any(r => r.Root.activeSelf);
 
         private void Update()
         {
             if (_group != null)
             {
+                // 11/15 팀장 "의뢰 칸이 뜨면 안 될 때 뜨거나, 가려지면 안 될 때 가려짐":
+                // 장면을 넘어 살아 있어서 메인 메뉴·전투·결과 창에도 남았음 → 보드 장면에서만, 수첩·1막 클리어·결과 창이면 숨김.
+                // 창(대화·상점 등)이 뜨면 예전처럼 흐리게 (11/11 규칙 4) — 창은 이 칸보다 높은 층이라 위에 그려짐.
+                bool onBoard = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "BoardTest";
+                bool show = onBoard && !NotebookPanel.IsOpen && !ActClearPanel.IsOpen && !BattleHud.ResultOpen && !PauseMenu.IsOpen;
                 bool dim = UIFlow.WindowOpen;
-                _group.alpha = Mathf.MoveTowards(_group.alpha, NotebookPanel.IsOpen ? 0f : dim ? DimAlpha : 1f, Time.unscaledDeltaTime / 0.2f); // 11/14 수첩이 열리면 책 오른쪽 가장자리에 겹쳐 아예 숨김
-                _group.interactable = _group.blocksRaycasts = !dim;
+                float target = !show ? 0f : dim ? DimAlpha : 1f;
+                _group.alpha = !show ? 0f : Mathf.MoveTowards(_group.alpha, target, Time.unscaledDeltaTime / 0.2f); // 숨길 땐 바로 (메뉴·결과 창 위로 잠깐 비치지 않게)
+                _group.interactable = _group.blocksRaycasts = show && !dim;
             }
             float glow = (Mathf.Sin(Time.unscaledTime * ShimmerSpeed) + 1f) * 0.5f;
             for (int i = 0; i < _rows.Length; i++)
@@ -160,6 +167,7 @@ namespace Fantasia.UI
             canvasGO.transform.SetParent(transform, false);
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 6; // 11/15 팀장: 0이면 파티 카드·보드 안내(1~5) 아래로 가려짐 → 보드 HUD 위, 상단 바(7)·창(8~) 아래
             canvasGO.AddComponent<GraphicRaycaster>(); // needed for the "달성!" button clicks
             _group = canvasGO.AddComponent<CanvasGroup>(); // 11/11 규칙 4: 창이 뜨면 흐리게
 

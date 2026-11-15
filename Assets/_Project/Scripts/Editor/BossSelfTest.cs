@@ -19,11 +19,11 @@ namespace Fantasia.Editor
             int e = 0;
 
             // 수치 (Boss_Abel_v1.0 기획 확정: HP 300 · 공격 24 · 마력 30, 나머지는 System.md 그대로)
-            e += Expect("HP", boss.MaxHP, 300);
+            e += Expect("HP", boss.MaxHP, 520);
             e += Expect("속도", boss.Speed, 58);
-            e += Expect("공격", boss.PhysicalAttack, 24);
-            e += Expect("마력", boss.MagicAttack, 30);
-            e += Expect("물리 방어", boss.PhysicalDefense, 6);
+            e += Expect("공격", boss.PhysicalAttack, 34);
+            e += Expect("마력", boss.MagicAttack, 40);
+            e += Expect("물리 방어", boss.PhysicalDefense, 8);
             e += Expect("마법 방어", boss.MagicDefense, 10);
             e += Expect("슬롯 4", boss.SlotCount, 4);
             e += Check(Mathf.Approximately(boss.SlotSuccessRate, 0.32f), "슬롯 성공률 32%");

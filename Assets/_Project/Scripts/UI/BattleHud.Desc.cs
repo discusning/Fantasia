@@ -20,11 +20,11 @@ namespace Fantasia.UI
 
         private static readonly Color DescTag = new Color(0.62f, 0.8f, 0.95f);
         private static readonly Color DescName = new Color(0.95f, 0.8f, 0.5f);
-        private static readonly Color DescRule = new Color(0.66f, 0.63f, 0.58f);
+        private static readonly Color DescRule = new Color(0.74f, 0.71f, 0.66f); // 11/15: 규칙 줄이 너무 흐려 안 읽힘 → 조금 밝게
         private static readonly Color DescWarn = new Color(0.95f, 0.45f, 0.4f);
         private static readonly Color DescNow = new Color(1f, 0.78f, 0.45f);
 
-        private const float DescHeight = 0.1f;  // 화면 높이 비율 (1080에서 약 108px)
+        private const float DescHeight = 0.12f;  // 화면 높이 비율 (1080에서 약 130px). 11/15 팀장 "글자가 어떤 건 크고 어떤 건 작음" → 설명 2줄이 줄이지 않고 들어가게 높임
         private const float DescGap = 0.006f;   // 고르는 칸과 띄움
         private const float PadX = 0.022f;      // 카드 안 왼쪽·오른쪽 여백 (모든 줄 같음)
 
@@ -43,7 +43,7 @@ namespace Fantasia.UI
             ["lift_the_veil"] = ("약화", "적의 <b>회피 상태</b>를 적이 <b>2번</b> 행동할 동안 없앱니다. 그림자 적·인공 사신에게 쓰세요."),
             ["black_miasma"] = ("공격", "<b>모든 적</b>에게 독기 마법 피해. 판정 3칸이 모두 성공하면 각 적에게 <b>중독 1</b>."),
             ["purge_plague"] = ("정화", "<b>중독·저주·혼란</b>을 모두 없앱니다. 죽음의 표식·영혼 수확은 못 없앱니다."),
-            ["emergency_suture"] = ("회복", "HP를 회복합니다 (반드시). 판정 2칸이 모두 성공하면 <b>출혈</b>도 없앱니다."),
+            ["emergency_suture"] = ("회복", "HP를 회복합니다 (반드시). 판정 2칸이 모두 성공(크리티컬)하면 회복 <b>1.5배</b> + <b>출혈</b> 제거."),
             ["piercing_round"] = ("공격", "적 방어를 <b>절반만</b> 받는 관통탄."),
             ["zero_in"] = ("강화", "다음 무기 공격의 판정 칸 성공률 <b>+15%p</b>. 내 다음 2턴 안에 공격하지 않으면 사라집니다."),
             ["suppressing_fire"] = ("공격", "견제 사격. 크리티컬이면 적 <b>속도 −15</b>(2턴)."),
@@ -75,7 +75,7 @@ namespace Fantasia.UI
             t.horizontalOverflow = HorizontalWrapMode.Wrap;
             t.verticalOverflow = VerticalWrapMode.Truncate;
             t.resizeTextForBestFit = true; // 넘치면 잘리지 않고 글씨만 조금 작게
-            t.resizeTextMinSize = Mathf.Max(9, size - 3);
+            t.resizeTextMinSize = Mathf.Max(10, size - 1); // 11/15 팀장: −3까지 줄이면 스킬마다 글씨 크기가 들쭉날쭉 → 1단계만
             t.resizeTextMaxSize = size;
             t.lineSpacing = 1.05f;
             return t;
@@ -87,12 +87,12 @@ namespace Fantasia.UI
             _descCard = panel.parent.gameObject;
             _descRoot = _descCard.GetComponent<RectTransform>();
             // 윗줄: 이름(왼쪽) · 종류·대상·비용(오른쪽) — 같은 줄, 같은 가운데 높이
-            _descName = DescLine(panel, "Name", 0.68f, 0.94f, 15, TextAnchor.MiddleLeft, DescName, bold: true, xMax: 0.5f);
-            _descTag = DescLine(panel, "Tag", 0.68f, 0.94f, 12, TextAnchor.MiddleRight, DescTag, bold: false, xMin: 0.4f);
-            var line = UGUIKit.CreateImage(panel, "Line", new Vector2(PadX, 0.655f), new Vector2(1f - PadX, 0.665f), new Color(Gold.r, Gold.g, Gold.b, 0.35f));
+            _descName = DescLine(panel, "Name", 0.72f, 0.95f, 14, TextAnchor.MiddleLeft, DescName, bold: true, xMax: 0.5f);
+            _descTag = DescLine(panel, "Tag", 0.72f, 0.95f, 12, TextAnchor.MiddleRight, DescTag, bold: false, xMin: 0.4f);
+            var line = UGUIKit.CreateImage(panel, "Line", new Vector2(PadX, 0.695f), new Vector2(1f - PadX, 0.705f), new Color(Gold.r, Gold.g, Gold.b, 0.35f));
             line.raycastTarget = false;
-            _descBody = DescLine(panel, "Body", 0.27f, 0.64f, 13, TextAnchor.UpperLeft, TextLight, bold: false);
-            _descFoot = DescLine(panel, "Foot", 0.05f, 0.27f, 11, TextAnchor.LowerLeft, DescRule, bold: false);
+            _descBody = DescLine(panel, "Body", 0.27f, 0.68f, 12, TextAnchor.UpperLeft, TextLight, bold: false);
+            _descFoot = DescLine(panel, "Foot", 0.04f, 0.26f, 11, TextAnchor.LowerLeft, DescRule, bold: false);
             var group = _descCard.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false; group.interactable = false; // 뒤의 적 클릭을 막지 않음
             _descCard.SetActive(false);

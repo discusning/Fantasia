@@ -46,7 +46,7 @@ namespace Fantasia.Editor
         {
             var m = new PartyMember(job);
             int errors = 0;
-            errors += Expect("명탐정 MaxHP", m.MaxHP, 108);
+            errors += Expect("명탐정 MaxHP (11/15 활력×2×0.8)", m.MaxHP, 86);
             errors += Expect("명탐정 MaxMP", m.MaxMP, 0);
             errors += Expect("명탐정 FinalPhysicalAttack(기본8+단검보너스5)", m.FinalPhysicalAttack, 13);
             errors += Expect("명탐정 FinalMagicAttack", m.FinalMagicAttack, 0);
@@ -59,7 +59,7 @@ namespace Fantasia.Editor
         {
             var m = new PartyMember(job);
             int errors = 0;
-            errors += Expect("역병 의사 MaxHP", m.MaxHP, 132);
+            errors += Expect("역병 의사 MaxHP (11/15)", m.MaxHP, 106);
             errors += Expect("역병 의사 MaxMP (132 + 지팡이 +8, 결정서 T15)", m.MaxMP, 140);
             errors += Expect("역병 의사 시작 MP = 최대치", m.CurrentMP, 140);
             errors += Expect("역병 의사 FinalMagicAttack(기본8+스태프보너스6)", m.FinalMagicAttack, 14);
@@ -71,7 +71,7 @@ namespace Fantasia.Editor
         {
             var m = new PartyMember(job);
             int errors = 0;
-            errors += Expect("저격수 MaxHP", m.MaxHP, 76);
+            errors += Expect("저격수 MaxHP (11/15)", m.MaxHP, 61);
             errors += Expect("저격수 MaxMP", m.MaxMP, 0);
             errors += Expect("저격수 FinalPhysicalAttack(기본11+권총보너스7)", m.FinalPhysicalAttack, 18);
             errors += Expect("저격수 시작 LP", m.CurrentLP, 2);
@@ -88,8 +88,8 @@ namespace Fantasia.Editor
             m.GrantExperience(xpNeeded);
 
             errors += Expect("레벨업 후 Level", m.Level, 2);
-            errors += Expect("레벨업 후 MaxHP(108+8)", m.MaxHP, 116);
-            errors += Expect("레벨업 후 CurrentHP(증가분만 회복, 108+8)", m.CurrentHP, hpBefore + 8);
+            errors += Expect("레벨업 후 MaxHP(86+15, 11/15)", m.MaxHP, 101);
+            errors += Expect("레벨업 후 CurrentHP(증가분만 회복, +15)", m.CurrentHP, hpBefore + 15);
             errors += Expect("레벨업 후 집중력(상한 3 유지)", m.CurrentFocus, 3);
             errors += Expect("레벨업으로 LP는 안 바뀜", m.CurrentLP, job.StartingLP);
             return errors;

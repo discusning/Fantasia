@@ -16,7 +16,7 @@ namespace Fantasia.UI
     {
         public static ShopPanel Instance { get; private set; }
         public static bool IsOpen => Instance != null && Instance._root.activeSelf;
-        // 서비스·제작은 월드 행동 종료 → 보드가 아군 턴을 끝낸다
+        // 예전: 서비스·제작은 아군 턴 종료 (11/15 팀장: 상점 이용으로 턴이 넘어가면 안 됨 → 지금은 안 씀, 남겨 둠)
         public static event Action AllyTurnEndRequested;
 
         private enum Tab { Supplies, Weapons, Gear, Services, Workbench, Sell, Quests }
@@ -265,9 +265,9 @@ namespace Fantasia.UI
             if (o == null)
             {
                 _detailName.text = "";
-                _detailBody.text = _tab == Tab.Services ? "서비스는 고른 동료 1명에게 적용되고, 이용하면 아군 턴이 끝납니다."
+                _detailBody.text = _tab == Tab.Services ? "서비스는 고른 동료 1명에게 적용됩니다."
                     : _tab == Tab.Quests ? (_shown.Count > 0 ? "의뢰는 선택입니다. 하지 않아도 보스에 갈 수 있습니다." : "이 도시의 의뢰는 아직 없습니다.")
-                    : _tab == Tab.Workbench ? "시약과 제작비로 1개를 확정 제작합니다. 제작하면 아군 턴이 끝납니다."
+                    : _tab == Tab.Workbench ? "시약과 제작비로 1개를 확정 제작합니다."
                     : _tab == Tab.Sell ? "되팔기는 정상 가격의 40% (최초 지급 장비는 0). 판 물건은 상점 재고에 더해지지 않습니다."
                     : "목록에서 상품을 고르세요.";
                 return;
@@ -285,7 +285,7 @@ namespace Fantasia.UI
                     break;
                 case ShopService s:
                     _detailName.text = ShopRules.ServiceLabel(s);
-                    _detailBody.text = $"{ShopRules.ServiceDescription(s)}\n고른 동료 1명 · {ShopRules.ServicePrice(s)} Cent\n이용하면 아군 턴 종료\n\n오른쪽에서 받을 동료를 고르세요.";
+                    _detailBody.text = $"{ShopRules.ServiceDescription(s)}\n고른 동료 1명 · {ShopRules.ServicePrice(s)} Cent\n\n오른쪽에서 받을 동료를 고르세요.";
                     _actionLabel.text = _serviceTarget != null ? $"{_serviceTarget.Job.DisplayName} 이용" : "이용";
                     break;
                 case SideQuests.Def q:
@@ -304,7 +304,7 @@ namespace Fantasia.UI
                     var result = ItemCatalog.Current.Consumable(id);
                     var reagent = ItemCatalog.Current.Consumable(ConsumableIds.Reagent);
                     _detailName.text = result != null ? result.DisplayName : id;
-                    _detailBody.text = $"{(result != null ? result.EffectDescription : "")}\n재료: 연금술 시약 {reagents} (보유 {(reagent != null ? _party.Inventory.CountOf(reagent) : 0)}) · 제작비 {fee} Cent\n제작하면 아군 턴 종료";
+                    _detailBody.text = $"{(result != null ? result.EffectDescription : "")}\n재료: 연금술 시약 {reagents} (보유 {(reagent != null ? _party.Inventory.CountOf(reagent) : 0)}) · 제작비 {fee} Cent";
                     _actionLabel.text = "제작";
                     break;
                 case PartyInventory.Stack st:

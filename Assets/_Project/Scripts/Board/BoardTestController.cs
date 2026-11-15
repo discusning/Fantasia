@@ -410,6 +410,7 @@ namespace Fantasia.Board
         public static int DevTentsPitched { get; private set; }
         public bool DevTentVisible => _campTent != null;
         public void DevPitCampTent() => PitCampTent();
+        public void DevEndTurn() => OnItemEndedAllyTurn(); // 자동 점검: 아군 턴 끝내기 (11/15 숙박이 턴을 안 끝내게 된 뒤 저장 점검용)
         private void PitCampTent()
         {
             ClearCampTent();
@@ -539,15 +540,18 @@ namespace Fantasia.Board
         private void TrySelectTile()
         {
             var cam = Camera.main;
-            if (cam == null || BattleHud.PointerOverUI) return; // 11/14: 주사위 버튼·카드 등 UI 위 클릭이 칸 선택으로 새지 않게
+            if (cam == null || UIFlow.PointerBlockedByUI()) return; // 11/14: 주사위 버튼·카드 등 UI 위 클릭이 칸 선택으로 새지 않게 (11/15: 투명한 판·글자는 막지 않음)
 
+            // 11/15 팀장 "마우스로 지정해도 안 됨": 예전엔 광선이 처음 맞은 것만 봄 → 칸 위 건물·장식·말 콜라이더에 막히면 칸이 안 골라짐.
+            // 이제 광선이 지나는 것 중 가장 가까운 "갈 수 있는 칸".
             var ray = cam.ScreenPointToRay(Input.mousePosition);
-            if (!Physics.Raycast(ray, out var hit)) return;
-
-            var tile = hit.collider.GetComponent<HexTile>();
-            if (tile == null || !_reachability.Contains(tile.Coordinate)) return;
-
-            MoveTo(tile.Coordinate);
+            foreach (var hit in Physics.RaycastAll(ray, 500f, ~0, QueryTriggerInteraction.Collide).OrderBy(h => h.distance))
+            {
+                var tile = hit.collider.GetComponentInParent<HexTile>();
+                if (tile == null || !_reachability.Contains(tile.Coordinate)) continue;
+                MoveTo(tile.Coordinate);
+                return;
+            }
         }
 
         private void MoveTo(HexCoord target)
@@ -692,9 +696,9 @@ namespace Fantasia.Board
         private void UpdateTileTooltip()
         {
             var cam = Camera.main;
-            bool blocked = cam == null || PauseMenu.IsOpen || BoardTopBar.TurnDropBusy || BoardHintPanel.AnyModalOpen || BattleHud.PointerOverUI;
+            bool blocked = cam == null || PauseMenu.IsOpen || BoardTopBar.TurnDropBusy || BoardHintPanel.AnyModalOpen || UIFlow.PointerBlockedByUI();
             HexTile tile = null;
-            if (!blocked && Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out var hit)) tile = hit.collider.GetComponent<HexTile>();
+            if (!blocked) tile = Physics.RaycastAll(cam.ScreenPointToRay(Input.mousePosition), 500f, ~0, QueryTriggerInteraction.Collide).OrderBy(h => h.distance).Select(h => h.collider.GetComponentInParent<HexTile>()).FirstOrDefault(t => t != null); // 11/15 건물·장식에 막히지 않게
             var enemies = tile != null && !tile.IsCleared ? TileEnemies(tile) : null;
             if (enemies == null) { TileTooltip.Hide(); return; }
             TileTooltip.Show($"<b>{tile.MapLabel}</b>\n{Fantasia.World.MapTileRules.CompositionText(enemies)}", Input.mousePosition);
@@ -877,12 +881,13 @@ namespace Fantasia.Board
                     EventPanel.OpenFountain(_testParty, session.UsedMapTiles.Contains(coord), member =>
                     {
                         if (!EventTiles.CanUseFountain(member) || session.UsedMapTiles.Contains(coord)) return "기운을 받을 수 없다";
-                        member.GainLP();
+                        bool lp = member.GainLP();
+                        int focus = member.RestoreFocus(member.MaxFocus);
                         session.UsedMapTiles.Add(coord);
                         tile.SetUsed(true);
-                        SaveGame.Checkpoint($"분수대 — {member.Job.DisplayName} LP +1");
-                        Debug.Log($"[Event] 분수대 {member.Job.DisplayName} LP {member.CurrentLP}");
-                        return $"{member.Job.DisplayName} LP +1 (LP {member.CurrentLP})";
+                        SaveGame.Checkpoint($"분수대 — {member.Job.DisplayName} LP {(lp ? "+1" : "그대로")} · 집중 +{focus}");
+                        Debug.Log($"[Event] 분수대 {member.Job.DisplayName} LP {member.CurrentLP} · 집중 {member.CurrentFocus}/{member.MaxFocus} (+{focus})");
+                        return $"{member.Job.DisplayName} 집중 {member.CurrentFocus}/{member.MaxFocus}{(focus > 0 ? $" (+{focus})" : "")}{(lp ? $" · LP +1 (LP {member.CurrentLP})" : "")}";
                     }, Closed);
                     break;
                 case EventKind.Statue:
@@ -1049,11 +1054,20 @@ namespace Fantasia.Board
             Clock.EndAllyTurn();
             BoardSession.Instance.PendingMovePoints = -1;
             BoardSession.Instance.PendingBonusMove = -1;
+            // 11/15 팀장 "멈췄다가 한꺼번에 진행": 턴 끝 프레임에 300ms 멈춤 → 단계별 시간 기록 (30ms 넘는 단계만)
+            var sw = System.Diagnostics.Stopwatch.StartNew(); var lap = new System.Text.StringBuilder();
+            void Lap(string name) { if (sw.Elapsed.TotalMilliseconds > 30) lap.Append($"{name} {sw.Elapsed.TotalMilliseconds:0}ms · "); sw.Restart(); }
             SaveGame.Checkpoint("아군 턴 종료"); // 적 턴 처리 전 — 이어하면 적 턴부터 한 번만 처리
+            Lap("저장");
             RefreshTopBar(announce: true);
+            Lap("상단 바");
             var enemyLog = WorldTurnRules.RunEnemyTurn(Clock);
+            Lap("적 턴 규칙");
             enemyLog.AddRange(RunBloodHuntEnemyTurn());
+            Lap("피의 사냥");
             RefreshReaperFigures();
+            Lap("사신 말");
+            if (lap.Length > 0) Debug.Log("[턴 끝 시간] " + lap);
             yield return new WaitForSeconds(EnemyTurnSeconds);
 
             Clock.EndEnemyTurn();
