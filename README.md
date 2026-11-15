@@ -10,7 +10,7 @@
 
 | 메인 메뉴 | 파티 구성 |
 |---|---|
-| ![메인 메뉴](Docs/Images/README/main_menu.png) | ![파티 구성](Docs/Images/README/party_select.png) |
+| ![메인 메뉴](Docs/Images/README/main_menu.jpg) | ![파티 구성](Docs/Images/README/party_select.jpg) |
 
 | 보드 (지도 이동) | 전투 |
 |---|---|
@@ -28,7 +28,7 @@
 
 | 상점 (거점) | 회복 칸 | 십자가 석상 (기도) |
 |---|---|---|
-| ![상점](Docs/Images/README/shop.png) | ![회복 칸](Docs/Images/README/recovery_tile.jpg) | ![석상](Docs/Images/README/statue.jpg) |
+| ![상점](Docs/Images/README/shop.jpg) | ![회복 칸](Docs/Images/README/recovery_tile.jpg) | ![석상](Docs/Images/README/statue.jpg) |
 
 ## 지금 상태 (2026-11-15)
 

@@ -1,6 +1,6 @@
 # 문서 안내 (Docs)
 
-> 2026-11-06 정리. 무엇이 어디 있는지, **지금 기준이 되는 문서**가 무엇인지 한 곳에 모음.
+> 2026-11-15 갱신 (처음 정리 11/06). 무엇이 어디 있는지, **지금 기준이 되는 문서**가 무엇인지 한 곳에 모음.
 > 새 문서를 만들면 여기에 한 줄 추가.
 
 ## 1. 먼저 볼 것 (지금 기준)
@@ -21,7 +21,7 @@
 | 원문 | `System.md` (시스템) · `Story.md` (스토리) · `GDD/GDD.md` (개요) |
 | 주제별 | `Boss_Abel_v1.0.md` 보스 · `City.md`·`City_Shop.md` 거점·상점 · `EventTiles.md` 이벤트 칸 · `MapTiles.md` 지도 칸 · `WorldMap.md` 지도 · `Save.md` 저장 · `Speed.md` 속도 · `MainMenu_Proposal.md` 메뉴 |
 | 기획 → 개발 (받은 것) | `UI_Solutions_Q1-Q9_2026-10-27.pdf` · `Fantasia_1막_기획_결정서_2026-11-01.pdf` · `판타지아_1막_게임기획_보고서_2026-11-03.pdf` · `Boss/…수정요청서.pdf` |
-| 개발 → 기획 (보낸 것) | `PlannerRequests_2026-10-24.md` · `Fantasia_기획_리소스_대기목록_2026-10-25` · `Request_1030/` · `Request_1103/` · `Report_1103/` · `Request_1107/` (보강 제안 8항목, 답 대기) |
+| 개발 → 기획 (보낸 것) | `PlannerRequests_2026-10-24.md` · `Fantasia_기획_리소스_대기목록_2026-10-25` · `Request_1030/` · `Request_1103/` · `Request_1107/` · `Request_1112/` · `Request_1114/` · `Report_1103/` · `Request_1107/` (보강 제안 8항목, 답 대기) |
 
 ## 3. 아트·사운드 요청 (`Art/`, `Audio/`)
 
@@ -29,13 +29,18 @@
 |---|---|---|
 | 10/25 | `Art/Fantasia_에셋_UI_요청목록_2026-10-25` | 지난 요청 |
 | 10/27 | `Art/Fantasia_UI_요청서_2026-10-27` | 지난 요청 |
-| 10/28 | `Art/Design_Request_1028/` UI 그림 요청 | 일부 대기 (창·버튼 N08·N14~N17) |
+| 10/28 | `Art/Design_Request_1028/` UI 그림 요청 | 적용 완료 (11/10 수정본) |
 | 11/3 | `Art/PanelDrop_1028/` 턴·승패 판 애니메이션 | 적용 완료 |
 | 11/4 | `Audio/Fantasia_사운드_요청서_2026-11-04` | 받음 (11/7, 22종) · 적용 — 출처·라이선스 `Audio/Sound_1107/` |
-| 11/5 | `Art/Model_Request_1105/` 3D 에셋 요청 | 받음 · 적용 완료 (거미 대기) |
-| 11/6 | `Art/Animation_Request_1106/` 움직임 요청 | 받음 (Idle·Attack·Hit·Death) · 전투 연결 |
+| 11/5 | `Art/Model_Request_1105/` 3D 에셋 요청 | 받음 · 적용 완료 |
+| 11/6 | `Art/Animation_Request_1106/` 움직임 요청 | 받음 · 전투·보드 연결 (방어·회복·아이템·부활·걷기 등 포함) |
 | 11/6 | `Art/InGame_Report_1106/` 에셋 적용 화면 보고서 | 공유함 |
-| 11/7 | `Art/Design_Decision_1107/` 디자인 결정 요청 (그림자·앞줄 건물·판 위 말·반 걸음·흐림) | 기획 답변 대기 |
+| 11/7 | `Art/Design_Decision_1107/` 디자인 결정 요청 (그림자·앞줄 건물·판 위 말·반 걸음·흐림) | 기획 답변 받음 (11/10) · 적용 |
+| 11/10 | `Art/Design_Request_1110/` · `Art/Design_Request_UI_1110/` · `Art/UI_Revision_1110/` UI 수정본 | 받음 · 적용 완료 |
+| 11/11 | `Art/Motion_Request_1111/` · `Art/3D_Task_1111/` 동작·3D 요청 | 받음 · 적용 (부활·방어·회복·아이템 등) |
+| 11/12 | `Art/Received_1112/` · `Art/ItemIcons_1112/` · `Art/MainMenu_1112/` 받은 그림·아이콘·메인 메뉴 | 적용 완료 |
+| 11/13 | `Art/Morgue_1113/` 폐검시소 · `Art/VFX_연구_1113/` 전투 이펙트 · `Art/Weapons_Walk_1113/` 무기·걷기 | 적용 완료 |
+| 11/14 | `Art/Grip_Request_1114/` 손가락 쥐기 | 개발이 코드로 처리 (11/15 역병 의사 지팡이 고침) |
 
 - `Art/AssetList.md` — 필요한 에셋 전체 목록
 - `Art/UI_Reference/` — 받은 UI 참고 그림 · `Art/Fantasia_Icon_Usage_Guide.pdf` — 아이콘 사용법
@@ -45,7 +50,7 @@
 | 폴더 | 내용 |
 |---|---|
 | `Images/README/` | 저장소 첫 화면(README) 스크린샷 |
-| `Images/UI/` | 화면별 UI 스크린샷 모음 (메뉴·보드·전투·상점 등 10개 묶음) |
+| `Images/UI/` | 화면별 UI 스크린샷 모음 (메뉴·보드·전투·상점·탐정 수첩 등 11개 묶음, 11/15 다시 찍음) |
 | `Concept_Image/` | 초기 콘셉트 그림 · 참고 게임 스크린샷 |
 
 ## 5. 참고 조사 (`References/`)

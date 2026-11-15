@@ -31,7 +31,7 @@
 규칙: 컴파일·셀프테스트 통과만으로 커밋하지 않는다. **에디터에서 직접 확인 후 커밋.**
 
 에디터 확인 체크리스트
-- [ ] `Fantasia > Data > Seed Sample Game Data` → `Data/` 아래 에셋 생성 확인 (인스펙터에서 명탐정 HP 108 등 값 확인)
+- [ ] `Fantasia > Data > Seed Sample Game Data` → `Data/` 아래 에셋 생성 확인 (인스펙터에서 명탐정 HP 86(Lv.1) 등 값 확인)
 - [ ] `Fantasia > Data > Validate Game Data` → 콘솔 "통과"
 - [ ] `Fantasia > Data > Run Party Member / World Clock & Movement / Encounter Self-Test` → 각 "전부 통과"
 - [ ] `Setup Board Test Scene` → Play → 주황 타일 도착 시 **전투/기습/몰래 회피/퇴각** 선택창 → 각각 결과 메시지와 씬 전환이 의도대로인지

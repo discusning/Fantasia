@@ -25,7 +25,7 @@
 | 라운드 시작 시 최종 속도 내림차순 (동률: 아군 → 편성 순) | 기존 구현과 같음 | BattleQueue.ComputeOrder |
 | 속도 버프·디버프는 다음 라운드부터 | 기존 구현과 같음 (라운드 중 재정렬 없음) | BattleQueue.StartNextRound |
 | 밀기(방해함·초기화)는 속도 감소와 별개 | 기존 구현과 같음 | BattleQueue.Shift |
-| 타임라인: 현재 + 다음 라운드 예상 | **수정** — 다음 라운드까지만 표시(전에는 R3까지), 다음 라운드 칸은 흐리게 + "R2 예상" 표시 | BattleQueue.Preview, UI/BattleHud.SetTimeline |
+| 타임라인: 현재 + 다음 라운드 예상 | **수정** — 늘 10칸을 채워 표시 (모자라면 R3·R4 예상까지, 11/11 변경), 예상 칸은 흐리게 + "R2 예상" 표시 | BattleQueue.Preview, UI/BattleHud.SetTimeline |
 | 보스·버프 수치 | 변경 없음 | — |
 | 기습 실패: 1라운드 적 전원 먼저, 추가 공격 없음 | 기존 구현과 같음 | BattleQueue.ComputeOrder |
 | 회피·도망·몰래 지나가기·주사위 이동 | 변경 없음 | — |
