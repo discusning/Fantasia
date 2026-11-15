@@ -62,6 +62,8 @@ namespace Fantasia.Core
             _outDir = i >= 0 && i + 1 < args.Length ? args[i + 1] : Path.Combine(Application.persistentDataPath, "autoplay");
             Directory.CreateDirectory(_outDir);
             BattleController.Logged += line => Note("  " + line);
+            if (args.Contains("-autoplay-force-heal-crit")) BattleController.DevForceHealCrit = true;
+            int critHealShots = 0; BattleController.DevOnCritHeal += () => { if (critHealShots++ < 2) StartCoroutine(Shot("battle_crit_heal")); }; // 11/15: 회복 크리티컬 연출 눈 확인
             int forceIndex = Array.IndexOf(args, "-autoplay-enemy");
             if (forceIndex >= 0 && forceIndex + 1 < args.Length) BoardTestController.DevForcedEnemyId = args[forceIndex + 1];
             int seedIndex = Array.IndexOf(args, "-autoplay-seed");

@@ -117,7 +117,7 @@ namespace Fantasia.UI
                 return;
             }
             // 전투 진행 중 저장이면 전투 씬에서 마지막 확정 상태로 재개 (Save.md 5)
-            SceneManager.LoadScene(BoardSession.Instance.BattleSnapshotJson != null ? "CombatTest" : BoardSceneName);
+            Fantasia.Core.SceneFader.Load(BoardSession.Instance.BattleSnapshotJson != null ? "CombatTest" : BoardSceneName);
         }
 
         // ───────────── 파티 구성 ─────────────
@@ -171,7 +171,7 @@ namespace Fantasia.UI
             session.Party = party;
             // 새 회차를 바로 저장 — 성공해야 기존 회차 파일이 교체된다 (임시 파일에 쓰고 바꿔치기, Save.md 6)
             if (!SaveGame.Checkpoint("새 게임")) Debug.LogWarning("[SaveGame] 새 게임 저장 실패 — 기존 파일 유지");
-            SceneManager.LoadScene(BoardSceneName);
+            Fantasia.Core.SceneFader.Load(BoardSceneName);
         }
 
         // ───────────── 구성 ─────────────

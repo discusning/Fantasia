@@ -99,7 +99,7 @@ namespace Fantasia.UI
             Fantasia.Core.SaveGame.RetryIfFailed("메인 메뉴로 나가기 전");
             Close();
             Time.timeScale = 1f;
-            SceneManager.LoadScene(MainMenuController.SceneName);
+            Fantasia.Core.SceneFader.Load(MainMenuController.SceneName);
         }
 
         private PauseMenu Build()
