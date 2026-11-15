@@ -14,7 +14,7 @@
 
 | 보드 (지도 이동) | 전투 |
 |---|---|
-| ![보드](Docs/Images/README/board.png) | ![전투](Docs/Images/README/battle.png) |
+| ![보드](Docs/Images/README/board.jpg) | ![전투](Docs/Images/README/battle.jpg) |
 
 | 항목 | 내용 |
 |---|---|
@@ -28,14 +28,15 @@
 
 | 상점 (거점) | 회복 칸 | 십자가 석상 (기도) |
 |---|---|---|
-| ![상점](Docs/Images/README/shop.png) | ![회복 칸](Docs/Images/README/recovery_tile.png) | ![석상](Docs/Images/README/statue.png) |
+| ![상점](Docs/Images/README/shop.png) | ![회복 칸](Docs/Images/README/recovery_tile.jpg) | ![석상](Docs/Images/README/statue.jpg) |
 
-## 지금 상태 (2026-11-06)
+## 지금 상태 (2026-11-15)
 
-- **1막(런던)은 처음부터 끝까지 플레이 가능** — 새 게임 → 런던 탐험 → 보스 → 1막 클리어
-- 들어간 것: 메인 메뉴·설정, 자동 저장·이어하기, 상점·의뢰, 적 칸, 회복·보물 칸, 점술마녀·분수대, 십자가 석상 기도, 피의 사냥, 턴·결과 판, Esc 메뉴
-- 11/6: 받은 3D 에셋 적용 (인물 8 · 돌길 칸 · 건물·구조물), 퇴각 = 파티 전원, 집중 개수 선택
-- 아직 임시: 인물 움직임(대기 중), 독거미 모델, 음악·효과음, 대사 일부 — 자료가 오면 바꿈
+- **1막(런던)은 처음부터 끝까지 플레이 가능** — 새 게임 → 런던 탐험 → 보스 **검시관 아벨 모로** → 1막 클리어
+- 들어간 것: 메인 메뉴·설정, 자동 저장·이어하기, 상점·의뢰, 적 칸, 회복·보물 칸, 점술마녀·분수대, 십자가 석상 기도, 피의 사냥(사신 3마리 · 5라운드), 턴·결과 판, 사건 기록·수첩, Esc 메뉴
+- 그림·소리: 디자인 UI 그림·아이콘, 3D 인물·보드 구조물, 인물 동작, 손가락 쥐기(무기를 쥔 손), 음악·효과음
+- 전투: 근접 공격은 달려가서 때림, 스킬·소모품 설명 카드, 집중 개수 선택, 회복 크리티컬
+- 11/15: 통합 플레이 테스트 — 버그·UI 잘림·맵 구조물 점검, 보스 수치 조정(HP 420), 화면 전환 페이드, 긴 코드 파일 정리
 - 날짜별 진행: [`Docs/진행일지/`](Docs/진행일지/) · 남은 일: [작업 계획](Docs/DevPlan/WorkPlan_M0-M1.md)
 
 ## 문서
@@ -52,12 +53,16 @@
 
 ## 게임 실행
 
+**바로 해 보기**: [Release](https://github.com/discusning/Fantasia/releases/tag/v1.0-act1-1114)에서 `Fantasia_Release_1115.zip`을 받아 풀고 `Fantasia.exe` 실행
+
+**Unity로 열기**
+
 1. Unity **6000.5.9f1** 설치 → Unity Hub → Add → `fantasia` 폴더
 2. **글꼴 넣기 (필수 아님, 권장)**: 팀 글꼴 `ZEN-SERIF-TTF-Regular.ttf`를 `Assets/_Project/Resources/Fonts/`에 넣는다
    - 글꼴 라이선스가 재배포 금지라 저장소에는 없음 (팀 공유 폴더에서 받기). 없으면 기본 글꼴로 실행됨
 3. `Scenes/MainMenu/MainMenu` 씬에서 Play, 또는 메뉴 `Fantasia > Build > Windows Test Build`로 만든 `Builds/Windows/Fantasia.exe` 실행
 
-**조작**: Space 주사위 → 밝은 칸 클릭으로 이동 · I 인벤토리 · Q 사건 기록 · B 상점(거점에서) · Esc 메뉴 · WASD·마우스 휠 카메라
+**조작**: Space 주사위 → 밝은 칸 클릭으로 이동 · I 인벤토리 · Q 사건 기록 · H 수첩 · B 상점(거점에서) · Esc 메뉴 · WASD·마우스 휠 카메라
 
 ## 아트 넣는 곳 (코드 수정 없이 교체)
 
