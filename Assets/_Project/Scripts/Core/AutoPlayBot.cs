@@ -1070,7 +1070,7 @@ namespace Fantasia.Core
                     // D24 점검: 피의 사냥 전에는 적 칸을 피해 다니고, 시작되면 사신 쪽으로
                     if (BoardSession.Instance.Hunt.Active)
                     {
-                        if (!shotHunt) { shotHunt = true; yield return Shot("board_blood_hunt"); }
+                        if (!shotHunt) { shotHunt = true; yield return Shot("board_blood_hunt"); if (Fantasia.Board.WorldNoticeLabel.Last != null) Note($"  (점검) 2막 안내 글: 화면 {Fantasia.Board.WorldNoticeLabel.Last.DevOnScreen} · HUD와 겹쳐 숨김 {Fantasia.Board.WorldNoticeLabel.Last.DevHiddenByHud}"); }
                         board.DevMoveTowardReaper();
                     }
                     else board.DevMoveAvoidingEncounters();
