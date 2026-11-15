@@ -245,7 +245,7 @@ namespace Fantasia.UI
 
         // 11/14 지팡이: 팔을 내린 채 곧게 매달면 자루가 손가락과 나란해 주먹으로 못 쥐고 할퀴듯 보였음 (팀장 "너무 힘들게 잡는 느낌").
         // 현실 지팡이·게임 지팡이 대기처럼 끝을 앞아래로 짚듯 기울여 자루가 주먹을 지나게 함. 디자인 축: +Z = 머리(위), 기준점 = 손잡이 띠
-        public static float CaneTilt = 30f; // 손가락 방향(아래)에서 엄지 쪽(앞)으로 끝이 기운 각도
+        public static float CaneTilt = 60f; // 손가락 방향(아래)에서 엄지 쪽(앞)으로 끝이 기운 각도. 11/15 팀장 "무기가 손을 뚫음": 30°는 자루가 손가락과 거의 나란해 손바닥·손가락을 뚫음 → 60° (자루가 손바닥을 가로질러 굽힌 손가락이 감쌈, 80°는 서 있을 때 수평이라 어색)
         public static float CaneOut = -0.45f; // 손등 쪽(몸 바깥)으로 끝을 벌림
         private static void SeatCane(Hand hand, Transform c, Vector3 center)
         {

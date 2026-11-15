@@ -20,11 +20,13 @@ namespace Fantasia.Board
                 var rs = c.GetComponentsInChildren<Renderer>(false).Where(r => !(r is ParticleSystemRenderer) && !r.name.Contains("Halo")).ToArray();
                 if (rs.Length == 0) continue;
                 var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
+                // 11/15: 가로등은 모델 하나에 팔·등이 붙어 바닥 범위가 1칸 넘게 잡힘 → 기둥(기준점) 둘레만 바닥으로 봄
+                if (c.name.Contains("Lamp")) { var foot = new Bounds(new Vector3(c.position.x, b.center.y, c.position.z), new Vector3(tileSize * 0.16f, b.size.y, tileSize * 0.16f)); b = foot; }
                 items.Add((c.name, b));
             }
             float s = tileSize;
             var walk = _tiles.Values.Where(t => !t.IsBlocked).ToList();
-            var tallOnes = items.Where(i => i.b.size.y > s * 0.6f && Mathf.Min(i.b.size.x, i.b.size.z) > s * 0.25f).ToList();
+            var tallOnes = items.Where(i => !i.name.Contains("Grass") && i.b.size.y > s * 0.6f && (Mathf.Min(i.b.size.x, i.b.size.z) > s * 0.25f || i.name.Contains("Lamp"))).ToList();
             // (1) 길 칸 가운데 (반지름 0.28칸)를 덮는 키 큰 장식
             foreach (var t in walk)
             {

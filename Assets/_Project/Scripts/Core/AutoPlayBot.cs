@@ -685,7 +685,9 @@ namespace Fantasia.Core
 
                 // 같은 칸 재방문 → 3라운드 대기 표시
                 yield return WaitFor(() => board.DevIsIdle, 15f, "턴 진행");
-                yield return WaitFor(() => board.DevIsIdle && !board.DevAwaitingSelection, 15f, "대기");
+                if (board.DevAwaitingSelection) { Note("점술 추가 이동 → 조용한 칸으로"); board.DevMoveToQuietTile(); } // 11/15: 추가 이동이 나오면 칸을 골라야 진행 (예전엔 시간 초과)
+                yield return WaitFor(() => (board.DevIsIdle && !board.DevAwaitingSelection) || EventPanel.IsOpen, 15f, "대기");
+                if (EventPanel.IsOpen) { EventPanel.DevLeave(); yield return WaitFor(() => !EventPanel.IsOpen && board.DevIsIdle, 5f, "이벤트 닫기"); }
                 board.DevArriveAt("M02");
                 yield return WaitFor(() => EventPanel.IsOpen, 5f, "점술마녀 재방문");
                 yield return new WaitForSeconds(0.3f);

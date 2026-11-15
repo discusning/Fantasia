@@ -111,6 +111,8 @@ namespace Fantasia.Editor
         {
             string outDir = Arg("-outdir") ?? Path.Combine(Application.dataPath, "../Logs/grip");
             Directory.CreateDirectory(outDir);
+            if (float.TryParse(Arg("-canetilt"), out float ct)) HandGrip.CaneTilt = ct; // 11/15 지팡이 각도 비교용
+            if (float.TryParse(Arg("-caneout"), out float co)) HandGrip.CaneOut = co;
             const int Cell = 220; const int Cols = 5;
             var rt = new RenderTexture(Cell, Cell, 24) { antiAliasing = 4, hideFlags = HideFlags.HideAndDontSave }; // 새 장면을 열 때 지워지지 않게
             foreach (var m in Arg("-only")?.Split(',') ?? Models)
