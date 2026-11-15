@@ -80,7 +80,9 @@
 
 - 음악·효과음 22종: 팀 사운드 담당 직접 작곡·합성 (2026-11-07)
 - **Instrument sounds: GeneralUser GS by S. Christian Collins** — 악기 음색 (GeneralUser GS License v2.0). 받은 안내문 기준 표기 필수, CC0 아님. 라이선스 사본 `Docs/Audio/Sound_1107/GeneralUser_GS_LICENSE.txt`
-- 게임 안 크레딧 화면 위치·형식은 기획 확인 중 (`Docs/Planning/Request_1107` 1번)
+- 글꼴: ZEN SERIF · ODDATELIER (OA 엔터테인먼트 주식회사)
+- 소품·자연물 일부: Quaternius (CC0)
+- 게임 안 크레딧: 메인 메뉴 크레딧 화면 (순서 기획 → 개발 → 디자인)
 
 ## 협업 규칙
 
