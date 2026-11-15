@@ -43,6 +43,36 @@ namespace Fantasia.Core
                 if (glyph.xMin < -1f || glyph.yMin < -1f || glyph.xMax > Screen.width + 1f || glyph.yMax > Screen.height + 1f)
                     Add(found, $"화면 밖 · {who}");
 
+                // 11/15 통합 플레이 테스트 추가 점검 (4)~(7)
+                var box = WorldRect(t.rectTransform);
+                // (4) 가로 넘침: 줄바꿈 없이 칸 밖으로 삐져나감
+                if (t.horizontalOverflow == HorizontalWrapMode.Overflow && glyph.width > box.width + 4f)
+                    Add(found, $"가로 넘침 · {who} (글자 {glyph.width:0} > 칸 {box.width:0}px)");
+                // (5) 너무 작음: 1080 화면 기준 줄 높이 14px 미만 (자동 크기로 줄어든 것 포함)
+                var gen = t.cachedTextGenerator;
+                if (gen.lineCount > 0)
+                {
+                    float px = gen.lines[0].height * 1080f / Mathf.Max(1f, Screen.height);
+                    if (px < 14f) Add(found, $"작음 · {who} (줄 높이 {px:0}px@1080)");
+                    // (6) 한 줄이 너무 김 (읽기 힘듦): 줄바꿈 없는 한 줄 48자 넘음
+                    for (int li = 0; li < gen.lineCount; li++)
+                    {
+                        int start = gen.lines[li].startCharIdx, end = li + 1 < gen.lineCount ? gen.lines[li + 1].startCharIdx : gen.characterCountVisible;
+                        if (end - start > 48 && !t.supportRichText) { Add(found, $"긴 줄 · {who} ({end - start}자)"); break; }
+                        if (end - start > 60) { Add(found, $"긴 줄 · {who} (약 {end - start}자)"); break; }
+                    }
+                }
+                // (8) 글자 사라짐: 칸이 좁아 일부 글자가 아예 안 그려짐 (자동 크기 포함)
+                if (gen.characterCountVisible > 0 || gen.characterCount > 0)
+                {
+                    int plainLen = System.Text.RegularExpressions.Regex.Replace(t.text, "<[^>]+>", "").Replace("\n", "").Length;
+                    if (t.verticalOverflow == VerticalWrapMode.Truncate && gen.characterCountVisible < plainLen * 0.9f - 1)
+                        Add(found, $"글자 사라짐 · {who} ({gen.characterCountVisible}/{plainLen}자만 보임)");
+                }
+                // (7) 글자 많음: 한 칸에 180자 넘음
+                string plain = System.Text.RegularExpressions.Regex.Replace(t.text, "<[^>]+>", "");
+                if (plain.Length > 180) Add(found, $"글자 많음 · {who} ({plain.Length}자)");
+
                 // (2) 덮임
                 int sortT = SortOf(t.canvas);
                 var rootT = t.canvas.rootCanvas;

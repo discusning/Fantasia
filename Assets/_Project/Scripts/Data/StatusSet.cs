@@ -83,6 +83,16 @@ namespace Fantasia.Data
         }
 
         // 전투가 끝날 때 — 승리로 지워지는 것만 지우고 중독처럼 남는 건 유지.
+        // 11/15 팀장 "전투가 끝나도 디버프는 남는 게 맞음 (상점에 치료 서비스가 있으니) — 다만 다음 전투에서 순서마다 줄어 없어지게":
+        // 전투 끝 = 버프(속도 증가·영점 조정·장막 걷힘)만 지움, 디버프는 남은 개인 턴 그대로 다음 전투로.
+        // 정화 전까지(-1)인 중독은 다음 전투에서 개인 턴 CarriedPoisonTurns 동안만 남게 바꿈.
+        public const int CarriedPoisonTurns = 3;
+        public static bool IsBuff(StatusEffectType e) => e is StatusEffectType.SpeedUp or StatusEffectType.AccuracyUp or StatusEffectType.EvasionRevealed;
+        public void CarryOverAfterBattle()
+        {
+            _active.RemoveAll(a => IsBuff(a.Effect));
+            foreach (var a in _active) if (a.RemainingTurns < 0 && a.Definition.ClearedByGeneralCleanse) a.RemainingTurns = CarriedPoisonTurns;
+        }
         public void ClearOnBattleEnd() => _active.RemoveAll(a => a.Definition.ClearedByCombatVictory);
         public void ClearAll() => _active.Clear(); // 전투 저장 복원용
 

@@ -69,11 +69,30 @@ namespace Fantasia.UI
         // 자동 플레이 점검용·이어하기 — 집중 −/+ 버튼으로 개수를 맞춘 것과 같다.
         public void DevSetFocus(int count) => SetFocusCount(count);
 
+        // 11/15: 확정용 집중은 "스킬 비용을 내고 남는 만큼"까지만. 고른 스킬이 있으면 그 비용을 빼고 셈.
+        private int FocusPickMax => _actionActor == null ? 0 : Mathf.Max(0, _actionActor.Member.CurrentFocus - (_chosen == ChosenKind.Skill && ChosenSkill != null ? ChosenSkill.FocusCost : 0));
+        private void ClampFocusToChosen() { if (FocusCount > FocusPickMax) SetFocusCount(FocusPickMax); }
+        private void RefreshSkillReasons()
+        {
+            if (_actionActor == null || !_skillPanel.activeSelf) return;
+            for (int i = 0; i < _skillSlots.Count && i < _shownSkills.Count; i++)
+            {
+                var slot = _skillSlots[i]; var skill = _shownSkills[i];
+                bool picked = _chosen == ChosenKind.Skill && ChosenSkill == skill;
+                string reason = _actionActor.CannotUseReason(skill, picked ? 0 : FocusCount);
+                slot.button.interactable = reason == null || picked;
+                slot.sub.text = reason ?? SkillCostText(skill);
+                slot.sub.color = reason == null ? TextDim : SlotFailure;
+            }
+        }
         private void SetFocusCount(int count)
         {
-            int max = _actionActor != null ? _actionActor.Member.CurrentFocus : 0;
+            int max = FocusPickMax;
+            if (count > max && _actionActor != null && count <= _actionActor.Member.CurrentFocus && _chosen == ChosenKind.Skill && ChosenSkill != null)
+                SetHint($"집중력 부족 — {ChosenSkill.DisplayName} 비용 {ChosenSkill.FocusCost}을 내면 확정 집중은 {max}개까지");
             FocusCount = Mathf.Clamp(count, 0, max);
             RefreshFocusPicker();
+            RefreshSkillReasons();
             FocusChanged?.Invoke();
         }
 
@@ -545,7 +564,7 @@ namespace Fantasia.UI
                 if (!has) continue;
 
                 var skill = _shownSkills[i];
-                string reason = _actionActor.CannotUseReason(skill);
+                string reason = _actionActor.CannotUseReason(skill, FocusCount);
                 slot.button.interactable = reason == null;
                 slot.icon.enabled = skill.Icon != null;
                 slot.icon.sprite = skill.Icon;
@@ -609,7 +628,7 @@ namespace Fantasia.UI
         {
             if (index >= _shownSkills.Count || _actionActor == null) return;
             var skill = _shownSkills[index];
-            string reason = _actionActor.CannotUseReason(skill);
+            string reason = _actionActor.CannotUseReason(skill, FocusCount);
             ShowDesc(SkillDescText(skill, reason), overItems: false); // 11/14 설명은 칸 위 카드로 (BattleHud.Desc)
         }
 
@@ -762,7 +781,7 @@ namespace Fantasia.UI
             var outline = label.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
             var rect = (RectTransform)label.transform;
-            rect.sizeDelta = new Vector2(220f, Mathf.Max(44f, size * 1.8f)); // 11/15: 큰 글자도 칸 안에
+            rect.sizeDelta = new Vector2(Mathf.Max(220f, label.preferredWidth + 12f), Mathf.Max(44f, size * 1.8f)); // 11/15: 큰 글자도 칸 안에, 긴 팝업은 칸을 글자만큼 넓힘 (통합 QA 가로 넘침)
             rect.anchorMin = rect.anchorMax = Vector2.zero;
 
             Vector2 screen = cam.WorldToScreenPoint(worldPos);
@@ -770,6 +789,7 @@ namespace Fantasia.UI
             var pos = local + _canvasRect.rect.size * 0.5f;
             // 11/11 UI 점검: 키 큰 보스 머리 위 글자("저지!" 등)가 위쪽 순서 띠와 겹침 → 떠오른 끝(+50)까지 띠(화면 높이 0.915) 아래에 머물게
             pos.y = Mathf.Min(pos.y, _canvasRect.rect.height * 0.9f - 22f - 50f);
+            pos.x = Mathf.Clamp(pos.x, rect.sizeDelta.x * 0.5f + 8f, _canvasRect.rect.width - rect.sizeDelta.x * 0.5f - 8f); // 화면 가장자리 적의 팝업이 밖으로 나가지 않게
             rect.anchoredPosition = pos;
             StartCoroutine(FloatAndFade(label, rect));
         }

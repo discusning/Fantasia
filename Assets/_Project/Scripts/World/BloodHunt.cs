@@ -34,7 +34,7 @@ namespace Fantasia.World
         public const int TrailPerRound = 10;   // 적 턴마다 G +10
         public const int TrailMax = 100;
         public const int ReaperCount = 3;
-        public const int RoundLimit = 3;        // 보고서 권고 (결정서 2라운드 → 1턴 1전투라 3라운드)
+        public const int RoundLimit = 5;        // 11/15 팀장 "피의 사냥 실패가 사실상 확정": 3라운드(1턴 1전투라 여유 0)면 자동 플레이 4번 모두 실패 → 5라운드 (예전: 보고서 권고 3)
         public const int ReaperStepsPerRound = 1;
         public const int GraceRoundsAfter = 2;
         public const int SpawnMinDistance = 1;  // 파티 근처 1~2칸 (모자라면 더 먼 칸)

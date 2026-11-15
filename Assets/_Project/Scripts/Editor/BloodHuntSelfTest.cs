@@ -39,7 +39,7 @@ namespace Fantasia.Editor
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
             e += Check(hunt.Active, "10라운드 G 100 → 피의 사냥 시작");
             e += Expect("사신 3마리", hunt.Reapers.Count, 3);
-            e += Expect("남은 라운드 3", hunt.AllyTurnsLeft, 3);
+            e += Expect("남은 라운드 = 제한", hunt.AllyTurnsLeft, BloodHuntRules.RoundLimit);
             int london = map.RegionOf(start);
             e += Check(hunt.Reapers.All(c => map.RegionOf(c) == london), "사신은 파티가 있는 지역(런던)에만");
             e += Check(hunt.Reapers.All(c => map.Tiles[c].Kind == MapTileKind.Walkable), "사신은 빈 이동 칸에만 (특수 칸 X)");
@@ -56,18 +56,17 @@ namespace Fantasia.Editor
             BloodHuntRules.MoveReapers(far, map, start);
             e += Expect("사신 1칸 접근", map.Distance(far.Reapers[0], start), d0 - 1);
 
-            // 3라운드 동안 다 못 잡으면 실패: 1명 HP 1 (MP 유지), S +5, G 0, 사냥 끝
+            // 제한 라운드 동안 다 못 잡으면 실패: 1명 HP 1 (MP 유지), S +5, G 0, 사냥 끝
             int sBefore = s;
             int mpBefore = party.Members.Sum(m => m.CurrentMP);
-            BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
-            BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
-            e += Check(hunt.Active && hunt.AllyTurnsLeft == 1, "2라운드 지나도 진행 중 (남은 1)");
+            for (int r = 0; r < BloodHuntRules.RoundLimit - 1; r++) BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out _);
+            e += Check(hunt.Active && hunt.AllyTurnsLeft == 1, "제한-1 라운드 지나도 진행 중 (남은 1)");
             BloodHuntRules.OnEnemyTurn(hunt, ref g, ref s, party, map, start, rng, out var victim);
-            e += Check(!hunt.Active, "3라운드 뒤 실패로 종료");
+            e += Check(!hunt.Active, "제한 라운드 뒤 실패로 종료");
             e += Check(victim != null && victim.CurrentHP == 1, "치명적 공격: 1명 HP 1");
             e += Expect("실패해도 MP 유지", party.Members.Sum(m => m.CurrentMP), mpBefore);
             e += Expect("실패 후 G 0", g, 0);
-            e += Expect("실패 S = 라운드 +2 ×3 + 실패 +5", s, sBefore + 6 + 5);
+            e += Expect("실패 S = 라운드 +2 ×제한 + 실패 +5", s, sBefore + BloodHuntRules.SoulPerRound * BloodHuntRules.RoundLimit + BloodHuntRules.FailSoulPenalty);
 
             // 유예 2라운드 동안 G 안 오름 (S는 오름)
             int sGrace = s;

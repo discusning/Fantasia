@@ -19,7 +19,8 @@ namespace Fantasia.UI
         public event Action CancelRequested;
 
         public void MarkChosenAttack() => Mark(ChosenKind.Attack, -1);
-        public void MarkChosenSkill(Fantasia.Data.SkillDefinition skill) => Mark(ChosenKind.Skill, _shownSkills.IndexOf(skill));
+        public void MarkChosenSkill(Fantasia.Data.SkillDefinition skill) { ChosenSkill = skill; Mark(ChosenKind.Skill, _shownSkills.IndexOf(skill)); ClampFocusToChosen(); }
+        public Fantasia.Data.SkillDefinition ChosenSkill { get; private set; }
         public void MarkChosenItem(Fantasia.Data.ConsumableDefinition item) => Mark(ChosenKind.Item, _shownItems.IndexOf(item));
 
         public void ClearChosen()
@@ -110,6 +111,7 @@ namespace Fantasia.UI
             if (mark == null)
             {
                 var icon = UGUIKit.CreateImage(_canvasRect, "ShieldMark", Vector2.zero, Vector2.zero, Color.white);
+                icon.transform.SetAsFirstSibling(); // 11/15 통합 QA: 방패 "8"이 소모품·스킬 창 위에 그려짐 → HUD 창들 뒤로 (캐릭터 머리 위 표시라 맨 뒤가 맞음)
                 icon.sprite = UITheme.Current != null ? UITheme.Current.ShieldIcon : null; // 11/14 디자인 D4 방패 그림도 받았지만 팀장 결정으로 예전 그림 유지
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;

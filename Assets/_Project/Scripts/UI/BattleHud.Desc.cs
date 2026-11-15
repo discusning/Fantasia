@@ -20,11 +20,11 @@ namespace Fantasia.UI
 
         private static readonly Color DescTag = new Color(0.62f, 0.8f, 0.95f);
         private static readonly Color DescName = new Color(0.95f, 0.8f, 0.5f);
-        private static readonly Color DescRule = new Color(0.74f, 0.71f, 0.66f); // 11/15: 규칙 줄이 너무 흐려 안 읽힘 → 조금 밝게
+        private static readonly Color DescRule = new Color(0.86f, 0.82f, 0.74f); // 11/15 2차: 규칙 줄이 아래에 붙고 흐림 → 띄우고 더 밝게 // 11/15: 규칙 줄이 너무 흐려 안 읽힘 → 조금 밝게
         private static readonly Color DescWarn = new Color(0.95f, 0.45f, 0.4f);
         private static readonly Color DescNow = new Color(1f, 0.78f, 0.45f);
 
-        private const float DescHeight = 0.12f;  // 화면 높이 비율 (1080에서 약 130px). 11/15 팀장 "글자가 어떤 건 크고 어떤 건 작음" → 설명 2줄이 줄이지 않고 들어가게 높임
+        private const float DescHeight = 0.13f;  // 화면 높이 비율 (1080에서 약 130px). 11/15 팀장 "글자가 어떤 건 크고 어떤 건 작음" → 설명 2줄이 줄이지 않고 들어가게 높임
         private const float DescGap = 0.006f;   // 고르는 칸과 띄움
         private const float PadX = 0.022f;      // 카드 안 왼쪽·오른쪽 여백 (모든 줄 같음)
 
@@ -87,12 +87,12 @@ namespace Fantasia.UI
             _descCard = panel.parent.gameObject;
             _descRoot = _descCard.GetComponent<RectTransform>();
             // 윗줄: 이름(왼쪽) · 종류·대상·비용(오른쪽) — 같은 줄, 같은 가운데 높이
-            _descName = DescLine(panel, "Name", 0.72f, 0.95f, 14, TextAnchor.MiddleLeft, DescName, bold: true, xMax: 0.5f);
-            _descTag = DescLine(panel, "Tag", 0.72f, 0.95f, 12, TextAnchor.MiddleRight, DescTag, bold: false, xMin: 0.4f);
-            var line = UGUIKit.CreateImage(panel, "Line", new Vector2(PadX, 0.695f), new Vector2(1f - PadX, 0.705f), new Color(Gold.r, Gold.g, Gold.b, 0.35f));
+            _descName = DescLine(panel, "Name", 0.74f, 0.95f, 14, TextAnchor.MiddleLeft, DescName, bold: true, xMax: 0.5f);
+            _descTag = DescLine(panel, "Tag", 0.74f, 0.95f, 12, TextAnchor.MiddleRight, DescTag, bold: false, xMin: 0.4f);
+            var line = UGUIKit.CreateImage(panel, "Line", new Vector2(PadX, 0.715f), new Vector2(1f - PadX, 0.725f), new Color(Gold.r, Gold.g, Gold.b, 0.35f));
             line.raycastTarget = false;
-            _descBody = DescLine(panel, "Body", 0.27f, 0.68f, 12, TextAnchor.UpperLeft, TextLight, bold: false);
-            _descFoot = DescLine(panel, "Foot", 0.04f, 0.26f, 11, TextAnchor.LowerLeft, DescRule, bold: false);
+            _descBody = DescLine(panel, "Body", 0.40f, 0.70f, 13, TextAnchor.MiddleLeft, TextLight, bold: false);
+            _descFoot = DescLine(panel, "Foot", 0.09f, 0.38f, 12, TextAnchor.MiddleLeft, DescRule, bold: false);
             var group = _descCard.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false; group.interactable = false; // 뒤의 적 클릭을 막지 않음
             _descCard.SetActive(false);

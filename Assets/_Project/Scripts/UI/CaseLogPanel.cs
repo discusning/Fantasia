@@ -115,7 +115,7 @@ namespace Fantasia.UI
             _openButton = (RectTransform)open.transform;
             _openButton.pivot = new Vector2(1f, 1f);
             _openButton.sizeDelta = new Vector2(120f, 22f);
-            open.onClick.AddListener(Toggle);
+            open.onClick.AddListener(() => { if (IsOpen || !(EncounterPanel.IsOpen || InventoryPanel.IsOpen || ShopPanel.IsOpen || DialoguePanel.IsOpen || ConfirmPanel.IsOpen)) Toggle(); }); // 11/15 통합 QA: Q 키는 다른 창이 열려 있으면 막는데 버튼은 그대로 열려 창끼리 겹침 → 키와 같게
 
             var dim = UGUIKit.CreateImage(canvasGO.transform, "Dim", Vector2.zero, Vector2.one, new Color(0f, 0f, 0f, 0.5f));
             _root = dim.gameObject;

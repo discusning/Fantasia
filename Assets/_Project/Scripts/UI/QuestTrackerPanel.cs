@@ -54,7 +54,7 @@ namespace Fantasia.UI
         private const float RowWidth = 170f; // 189 * 0.9 — 10% smaller, per feedback
         private const float RowHeight = 63f; // 70 * 0.9
         private const float RowGap = 6f;
-        private const float TopMargin = 96f; // 보드 상단 바(BoardTopBar, 화면 위 약 10.5%) 바로 아래
+        private const float TopMargin = 122f; // 11/15 팀장 "퀘스트 창이 너무 위" → 사건 기록(Q) 버튼과 띄움 (예전 96: 상단 바 바로 아래)
         private const float RightMargin = 10f;
 
         private class QuestRow

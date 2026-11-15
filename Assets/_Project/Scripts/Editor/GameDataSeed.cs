@@ -394,7 +394,7 @@ namespace Fantasia.Editor
             e.FixedRewardCent = 35;
             e.FixedRewardExp = 40;
             e.DeploymentAct = "피의 사냥";
-            e.TraitDescription = "피의 흔적이 가득 차면 나타나는 사신 3마리. 3라운드 안에 모두 잡아야 한다.";
+            e.TraitDescription = "피의 흔적이 가득 차면 나타나는 사신 3마리. 5라운드 안에 모두 잡아야 한다.";
             EditorUtility.SetDirty(e);
             return e;
         }
@@ -408,10 +408,10 @@ namespace Fantasia.Editor
             e.DisplayName = "검시관 아벨 모로";
             e.Size = EnemySize.Boss;
             e.TypeTag = "인간형";
-            e.MaxHP = 520; // 11/15 팀장 "1레벨로도 이김" → 레벨 성장과 같이 올림 (예전 300·24·30·6)
+            e.MaxHP = 420; // 11/15 팀장: 1레벨로도 이김 → 520, 그 뒤 "HP 너무 많아 오래 걸림, 공격 올려" → 420 (처음 300·24·30·6)
             e.Speed = 58;
-            e.PhysicalAttack = 34;
-            e.MagicAttack = 40;
+            e.PhysicalAttack = 38;
+            e.MagicAttack = 45;
             e.PhysicalDefense = 8;
             e.MagicDefense = 10;
             e.SlotCount = 4;

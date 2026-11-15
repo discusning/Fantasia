@@ -19,10 +19,10 @@ MonoBehaviour:
   Model: {fileID: 7279083587621027413, guid: 3eae5e7749ecb8a40a7ce984dfe66752, type: 3}
   Portrait: {fileID: 0}
   Face: {fileID: 21300000, guid: 41139df3449eb654b8ab615fd07911ed, type: 3}
-  MaxHP: 520
+  MaxHP: 420
   Speed: 58
-  PhysicalAttack: 34
-  MagicAttack: 40
+  PhysicalAttack: 38
+  MagicAttack: 45
   PhysicalDefense: 8
   MagicDefense: 10
   SlotCount: 4

@@ -485,7 +485,7 @@ namespace Fantasia.Combat
         {
             if (_phase == Phase.ChoosingTarget && skill != null) { bool same = _pendingSkill == skill; CancelTargeting(quiet: !same); if (same) return; } // 11/11 같은 스킬 다시 누르면 취소
             if (_phase != Phase.ChoosingAction || skill == null) return;
-            string reason = _current.CannotUseReason(skill);
+            string reason = _current.CannotUseReason(skill, _hud.FocusCount);
             if (reason != null) { _hud.SetHint($"{skill.DisplayName}: {reason}"); return; }
 
             _hud.MarkChosenSkill(skill); // 고른 칸 빨간 테두리
@@ -1254,7 +1254,7 @@ namespace Fantasia.Combat
             _phase = Phase.Finished;
             BoardSession.Instance.BattleSnapshotJson = null; // 전투 끝 — 이어하기는 보드에서
             RefreshBossTelegraph(); // 전투 종료 → 예고 해제
-            foreach (var ally in _allies) ally.Statuses.ClearOnBattleEnd(); // 11/14 팀장: 중독도 전투 끝에 풀림 (전투 밖 저주 등 ClearedByCombatVictory=false만 유지)
+            foreach (var ally in _allies) ally.Statuses.CarryOverAfterBattle(); // 11/15 팀장: 디버프는 다음 전투로 (버프만 지움). 예전 11/14: 전투 끝에 모두 풀림
             _hud.SetTimeline(_queue.Preview(BattleHud.TimelineMax), _queue.Round, _queue.OrderChangeOf);
             bool wiped = enemiesLeft && !_allies.Any(a => a.IsAlive);
             Log($"전투 종료 — {(!enemiesLeft ? "승리" : wiped ? "패배(전원 쓰러짐)" : "퇴각")} · 라운드 {_queue.Round} · 아군 HP {string.Join(", ", _allies.Select(u => $"{u.DisplayName} {u.CurrentHP}/{u.MaxHP} LP {u.Member.CurrentLP}"))}");

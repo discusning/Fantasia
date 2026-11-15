@@ -42,7 +42,7 @@ namespace Fantasia.Editor
         private static int CheckLpAndRevive(JobDefinition job)
         {
             int errors = 0;
-            var m = new PartyMember(job); // 명탐정 HP 108, LP 3
+            var m = new PartyMember(job); // 명탐정 LP 3 (최대 HP는 11/15 레벨 성장 뒤 86 — 기대값은 MaxHP로 계산)
             while (m.TrySpendLP()) { }
             errors += ExpectBool("LP 0이어도 HP가 남으면 생존", m.IsAlive && !m.IsDowned, true);
             errors += ExpectBool("LP 0이면 더 쓸 수 없음", m.TrySpendLP(), false);
@@ -56,14 +56,14 @@ namespace Fantasia.Editor
 
             errors += ExpectBool("LP 1 소모", r.TrySpendLP() && r.CurrentLP == 2, true);
             r.Revive(DefeatRules.InBattleReviveHpRatio);
-            errors += Expect("전투 중 부활 HP 30% (108 → 32)", r.CurrentHP, 32);
+            errors += Expect($"전투 중 부활 HP 30% ({r.MaxHP} → {r.MaxHP * 3 / 10})", r.CurrentHP, r.MaxHP * 3 / 10);
             errors += ExpectBool("부활 시 출혈 제거", r.Statuses.Has(StatusEffectType.WeakBleed), false);
             errors += ExpectBool("부활 시 중독 제거", r.Statuses.Has(StatusEffectType.Poison), false);
             errors += ExpectBool("다른 상태는 유지", r.Statuses.Has(StatusEffectType.AttackDown), true);
 
             r.TakeDamage(999);
             r.Revive(DefeatRules.WipeReturnHpRatio);
-            errors += Expect("전원 쓰러짐 복귀 HP 50% (108 → 54)", r.CurrentHP, 54);
+            errors += Expect($"전원 쓰러짐 복귀 HP 50% ({r.MaxHP} → {r.MaxHP / 2})", r.CurrentHP, r.MaxHP / 2);
             return errors;
         }
 

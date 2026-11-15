@@ -256,7 +256,7 @@ namespace Fantasia.UI
             if (fontSize < MinReadableSize)
             {
                 text.resizeTextForBestFit = true;
-                text.resizeTextMinSize = fontSize;
+                text.resizeTextMinSize = Mathf.Max(9, fontSize - 2); // 11/15 통합 QA: 칸보다 길면 글자가 잘려 사라짐 ("연성 독거미(유체)" → "연성") → 조금 줄여서라도 다 보이게
                 text.resizeTextMaxSize = MinReadableSize;
             }
             // ④: 가는 세리프(ZEN SERIF)가 작은 크기에서 뭉개짐 → 13 이하는 굵게 (부르는 쪽이 따로 정하면 그대로)

@@ -477,6 +477,7 @@ namespace Fantasia.UI
                 var portrait = UGUIKit.CreateRect(frame, "Image", Vector2.zero, Vector2.one).gameObject.AddComponent<RawImage>();
                 if (UGUIKit.AddPortraitFrame((RectTransform)frame.parent, 2f) != null) frame.parent.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f); // 11/11 U4 얼굴 액자
                 var name = UGUIKit.CreateText(row, "Name", new Vector2(0.34f, 0f), new Vector2(1f, 1f), "", 13, TextAnchor.MiddleLeft);
+                name.resizeTextForBestFit = true; name.resizeTextMinSize = 10; name.resizeTextMaxSize = 13; // 11/15 통합 QA: "연성 독거미(유체) ×1"이 두 줄로 넘어가 "연성"만 보임
                 name.color = TextLight;
                 name.supportRichText = true;
                 _compositionRows.Add((row.gameObject, portrait, name));

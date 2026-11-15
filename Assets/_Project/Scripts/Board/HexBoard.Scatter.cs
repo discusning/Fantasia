@@ -254,7 +254,7 @@ namespace Fantasia.Board
                     if (dir.z < -0.3f) continue;
                     uint hd = h >> (d * 4);
                     bool back = dir.z > 0.3f;
-                    var basePos = center + v * 0.57f; basePos.y = y;
+                    var basePos = center + v * 0.45f; basePos.y = y; // 11/15 통합 QA: 0.57은 길 칸 쪽으로 넘어가 큰 나무가 말 서는 자리를 덮음 → 막힌 칸 안쪽 (칸 경계 0.5)
                     var along = new Vector3(-dir.z, 0f, dir.x);
                     PlaceDeco(back ? "YardTree" : YardBack[hd % (uint)YardBack.Length], root, basePos + along * (tileSize * 0.2f), hd);
                     PlaceDeco(((hd >> 9) & 1) == 0 ? "Grass" : "GrassWispy", root, basePos + dir * (tileSize * 0.06f), hd >> 11);

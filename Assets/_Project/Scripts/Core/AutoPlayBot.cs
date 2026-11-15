@@ -850,6 +850,7 @@ namespace Fantasia.Core
                 // 11/13 보드 장식 가까이 (거점 둘레 시장 구역)
                 var rig = Camera.main != null ? Camera.main.GetComponent<BoardCameraRig>() : null;
                 if (rig != null) { float d0 = rig.Distance; rig.Distance = rig.MinDistance + 1f; yield return new WaitForSeconds(2f); yield return Shot("board_close"); rig.Distance = d0; yield return new WaitForSeconds(1.5f); }
+                { var audit = board.DevBoard.DevStructureAudit(); Note($"구조물 점검: 문제 {audit.Count}건"); foreach (var a in audit.Take(40)) Note("[구조물] " + a); }
                 Note($"보드 장식: 가로등 장면 {HexBoard.DevLampScenes}곳 · 건물 밑동 {HexBoard.DevFoundations}곳 · {HexBoard.DevYardInfo}");
                 // 11/14 팀장 1안 런던 안개: 멀리서 보면 안 열린 지역·지도 바깥이 안개로 가려짐
                 Note($"런던 안개: 숨긴 칸 {HexBoard.DevHiddenTiles} · 안개 층 {HexBoard.DevFogLayers} · 안개 경계 가로등 {HexBoard.DevEdgeLamps} (건물과 겹쳐 뺀 자리 {HexBoard.DevLampsSkipped})");
@@ -1174,7 +1175,7 @@ namespace Fantasia.Core
                     Note($"클리어 뒤 메뉴: {clearMenu.DevContinueInfo.Replace("\n", " / ")}");
                     yield return Shot("menu_after_clear");
                     clearMenu.OnContinue();
-                    yield return new WaitForSeconds(0.5f);
+                    yield return new WaitForSeconds(2.2f); // 11/15: 0.5초면 판이 내려오는 중이라 빈 판으로 찍힘
                     Note($"클리어 뒤 이어하기 → 결과 화면 {(ActClearPanel.IsOpen ? "열림" : "안 열림")} · Cent {BoardSession.Instance.Party?.Cent}");
                     yield return Shot("continue_after_clear");
                     Note("자동 플레이 완료");
@@ -1458,6 +1459,7 @@ namespace Fantasia.Core
                             battle.DevHud.DevOpenSkills();
                             yield return new WaitForSeconds(0.2f);
                             if (shots) yield return Shot("battle_skill_menu");
+                            if (skill.FocusCost > 0 && battle.DevCurrent != null) { var mem = battle.DevCurrent.Member; battle.DevHud.DevSetFocus(mem.CurrentFocus); string why = battle.DevCurrent.CannotUseReason(skill, battle.DevHud.FocusCount); Note($"집중 점검: 집중 {mem.CurrentFocus} · 확정 {battle.DevHud.FocusCount} 골라 둠 → {skill.DisplayName} {(why ?? "쓸 수 있음")}"); Qa(mem.CurrentFocus >= skill.FocusCost + battle.DevHud.FocusCount || why != null, "집중 스킬 + 확정 집중이 가진 집중을 넘으면 못 씀 (11/15 팀장)"); battle.DevHud.DevSetFocus(0); }
                             // 11/11 고른 스킬 빨간 테두리 → 같은 스킬 다시 눌러 취소 (대상 고르는 스킬일 때만)
                             if (shots && (skill.Target == Fantasia.Data.SkillTarget.SingleEnemy || skill.Target == Fantasia.Data.SkillTarget.SingleAlly))
                             {

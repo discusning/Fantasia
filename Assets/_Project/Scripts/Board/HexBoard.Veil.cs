@@ -163,6 +163,8 @@ namespace Fantasia.Board
                 foreach (float push in new[] { 0.62f, 0.85f, 1.05f })
                 {
                     var p = basePos + inDir * (tileSize * push);
+                    float stepLen = (LocalPosition(ring.Neighbor(0)) - LocalPosition(ring)).magnitude; // 이웃 칸 가운데까지 거리
+                    if (stepLen - push * tileSize < tileSize * 0.45f) continue; // 11/15 통합 QA: 길 칸 가운데(말이 서는 자리)에 너무 가까우면 안 됨
                     if (!InsideStructure(root.TransformPoint(p), tileSize * 0.22f)) { okPos = p; break; }
                 }
                 if (okPos == null) { DevLampsSkipped++; picks.RemoveAt(picks.Count - 1); continue; }

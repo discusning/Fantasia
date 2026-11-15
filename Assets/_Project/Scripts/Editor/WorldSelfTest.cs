@@ -52,7 +52,7 @@ namespace Fantasia.Editor
             for (int i = 0; i < Trials; i++)
             {
                 int roll = MovementRules.RollMovePoints(pursuedByReaper: true);
-                if (roll < 0 || roll > 4) // 1~6 - 2, 최소 0
+                if (roll < 1 || roll > 4) // 1~6 - 2, 최소 1 (11/15)
                 {
                     Debug.LogError($"[WorldSelfTest] RollMovePoints(true, 사신 추격)가 범위 밖 값 {roll}을 냈다.");
                     errors++;

@@ -114,12 +114,14 @@ namespace Fantasia.Combat
         public int CooldownLeft(SkillDefinition skill) => _cooldowns.TryGetValue(skill, out var left) ? left : 0;
 
         // 쓸 수 없으면 이유 (UI·로그 표시), 쓸 수 있으면 null.
-        public string CannotUseReason(SkillDefinition skill)
+        // 11/15 팀장 "집중 1뿐인데 집중 스킬 + 확정 집중이 같이 됨": 확정용으로 고른 집중(extraFocus)까지 더해 검사
+        public string CannotUseReason(SkillDefinition skill, int extraFocus = 0)
         {
             if (!IsAlly || skill == null) return "사용 불가";
             int cd = CooldownLeft(skill);
             if (cd > 0) return $"재사용 대기 {cd}턴";
             if (Member.CurrentFocus < skill.FocusCost) return $"집중력 부족 ({skill.FocusCost} 필요)";
+            if (skill.FocusCost > 0 && extraFocus > 0 && Member.CurrentFocus < skill.FocusCost + extraFocus) return $"집중력 부족 (스킬 {skill.FocusCost} + 확정 {extraFocus})";
             if (Member.CurrentMP < skill.MPCost) return $"MP 부족 ({skill.MPCost} 필요)";
             if (Member.CurrentHP <= skill.HPCost) return $"HP 부족 ({skill.HPCost} 필요)";
             return null;

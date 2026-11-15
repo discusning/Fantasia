@@ -10,6 +10,7 @@ namespace Fantasia.World
         // 주사위 1~6을 굴려 이번 턴 이동력을 정한다. 사신에게 쫓기는 중이면 -2(최소 0).
         // 실제 이동 칸 수는 호출하는 쪽에서 0~이 값 사이로 플레이어가 선택한다
         // (HexBoard.ComputeReachability가 이미 그 범위를 BFS로 계산해준다).
+        public const int MinPursuedMove = 1;
         public static int RollMovePoints(bool pursuedByReaper) => RollMovePoints(pursuedByReaper, out _);
 
         // rolled: 주사위에 실제로 나온 눈 (보드 주사위 연출이 이 면을 보여 줌, 2026-11-06)
@@ -17,7 +18,8 @@ namespace Fantasia.World
         {
             int roll = DiceRoller.Roll(6);
             rolled = roll;
-            return pursuedByReaper ? System.Math.Max(0, roll - ReaperMovementPenalty) : roll;
+            // 11/15 팀장 "사신과 싸우려 해도 이동이 안 될 때가 있음": 1·2가 나오면 0칸이라 한 턴을 날림 → 최소 1칸
+            return pursuedByReaper ? System.Math.Max(MinPursuedMove, roll - ReaperMovementPenalty) : roll;
         }
 
         // 이벤트 발판 도착 시 추가 이동 0/1/2, 각 1/3 균등 추첨 (System.md "이벤트 수치·도시 거점 보완").
